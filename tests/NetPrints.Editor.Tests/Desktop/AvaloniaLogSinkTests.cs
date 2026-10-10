@@ -100,4 +100,38 @@ public class AvaloniaLogSinkTests
 
         Assert.True(sink.IsEnabled(LogEventLevel.Information, "Layout"));
     }
+
+    private const string DestroyUnknownMethod =
+        "Tmds.DBus.Protocol.DBusErrorReplyException: org.freedesktop.DBus.Error.UnknownMethod: Method Destroy is not implemented on interface org.freedesktop.IBus.Service";
+
+    private const string LocalisedMissingContext =
+        "Tmds.DBus.Protocol.DBusErrorReplyException: org.freedesktop.DBus.Error.UnknownObject: L'objet n'existe pas au chemin \"/org/freedesktop/IBus/InputContext_1354\"";
+
+    private sealed class IBusX11TextInputMethod;
+
+    private static LogLevel LevelOfImeError(string template, string exceptionText, object? source = null)
+    {
+        var factory = new RecordingLoggerFactory { MinimumLevel = LogLevel.Debug };
+        var sink = new AvaloniaLogSink(factory);
+
+        sink.Log(LogEventLevel.Error, "IME", source ?? new IBusX11TextInputMethod(), template, exceptionText);
+
+        return Assert.Single(factory.Loggers["Avalonia.IME"].Entries).Level;
+    }
+
+    [Fact]
+    public void TheIbusContextDestroyErrorIsLoggedAtDebug() =>
+        Assert.Equal(LogLevel.Debug, LevelOfImeError("Error while destroying the context:\n{Exception}", DestroyUnknownMethod));
+
+    [Fact]
+    public void TheIbusQueuedCallErrorIsLoggedAtDebugWhateverTheDaemonLanguage() =>
+        Assert.Equal(LogLevel.Debug, LevelOfImeError("Error:\n{Exception}", LocalisedMissingContext));
+
+    [Fact]
+    public void OtherImeErrorsStayErrors()
+    {
+        Assert.Equal(LogLevel.Error, LevelOfImeError("Error:\n{Exception}", "System.InvalidOperationException: the IME broke"));
+        Assert.Equal(LogLevel.Error, LevelOfImeError("Error:\n{Exception}", DestroyUnknownMethod, source: new object()));
+        Assert.Equal(LogLevel.Error, LevelOfImeError("Connection to IBus lost:\n{Exception}", DestroyUnknownMethod));
+    }
 }

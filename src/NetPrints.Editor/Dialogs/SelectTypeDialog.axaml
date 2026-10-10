@@ -4,16 +4,16 @@
         xmlns:edb="clr-namespace:NetPrints.Editor.Behaviors"
         xmlns:eddialogs="clr-namespace:NetPrints.Editor.Dialogs"
         x:Class="NetPrints.Editor.Dialogs.SelectTypeDialog"
-        x:DataType="eddialogs:SelectTypeDialogVM"
+        x:DataType="eddialogs:SelectTypeDialogViewModel"
         Title="Select Type"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
-        Width="500" Height="160"
+        SizeToContent="WidthAndHeight"
         WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SelectTypeDialog}">
   <!-- Closes with the VM's result once it asks to (D16, ADR-0007 batch X2b). -->
   <Interaction.Behaviors>
     <edb:DialogCloseBehavior />
   </Interaction.Behaviors>
-  <StackPanel Margin="12" Spacing="8">
+  <StackPanel Margin="{StaticResource Space.M}" Spacing="8" MinWidth="{StaticResource Dialog.MinWidth}" MaxWidth="{StaticResource Dialog.MaxWidth}">
     <!-- Editable chooser over the non-static types (PAR-58). -->
     <AutoCompleteBox x:Name="TypeBox" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SelectTypeBox}" FilterMode="ContainsOrdinal" MinimumPrefixLength="1" MaxDropDownHeight="300"
                      PlaceholderText="Type name" ItemsSource="{Binding Types}" SelectedItem="{Binding SelectedType}" Text="{Binding TypedText}" />

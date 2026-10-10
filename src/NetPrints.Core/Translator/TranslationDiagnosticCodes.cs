@@ -9,7 +9,7 @@ public static class TranslationDiagnosticCodes
 {
     /// <summary>
     /// A translation failure the caller has not yet mapped to a coded <see cref="TranslationException"/>
-    /// (an interim id until it does, e.g. <c>MainEditorVM.CompileAsync</c>'s <c>ClassTranslationFailure</c>
+    /// (an interim id until it does, e.g. <c>ProjectSessionViewModel.CompileAsync</c>'s <c>ClassTranslationFailure</c>
     /// handler).
     /// </summary>
     public const string Unclassified = "NPT000";

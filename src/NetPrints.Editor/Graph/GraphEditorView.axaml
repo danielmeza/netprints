@@ -1,23 +1,21 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
              xmlns:edcontrols="clr-namespace:NetPrints.Editor.Controls"
              xmlns:edgetset="clr-namespace:NetPrints.Editor.Graph.GetSet"
              xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
              xmlns:ednodes="clr-namespace:NetPrints.Editor.Graph.Nodes"
              xmlns:edpins="clr-namespace:NetPrints.Editor.Graph.Pins"
              xmlns:edsearch="clr-namespace:NetPrints.Editor.Search"
+             xmlns:edshell="clr-namespace:NetPrints.Editor.Shell"
              xmlns:nodify="clr-namespace:Nodify.Avalonia;assembly=Nodify.Avalonia"
              xmlns:nc="clr-namespace:Nodify.Avalonia.Connections;assembly=Nodify.Avalonia"
              x:Class="NetPrints.Editor.Graph.GraphEditorView"
-             x:DataType="edgraph:NodeGraphVM"
+             x:DataType="edgraph:NodeGraphViewModel"
              ClipToBounds="True">
   <UserControl.Styles>
     <!-- Cables: 0.7 opacity, full on hover; faint cables are thin and transparent (PAR-48). -->
-    <Style Selector="nc|Connection">
-      <Setter Property="Opacity" Value="0.7" />
-      <Setter Property="StrokeThickness" Value="4" />
-    </Style>
     <Style Selector="nc|Connection:pointerover">
       <Setter Property="Opacity" Value="1" />
     </Style>
@@ -30,9 +28,9 @@
   <Panel>
     <!-- The grid paints the canvas background behind a transparent editor (spec 002). -->
     <edgraph:GridBackground x:Name="Grid" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphGrid}" IsHitTestVisible="False"
-                            BackgroundColor="{DynamicResource SystemRegionColor}" MinorColor="{DynamicResource GraphGrid.MinorColor}" MajorColor="{DynamicResource GraphGrid.MajorColor}" />
+                            BackgroundColor="{DynamicResource Canvas.Background}" MinorColor="{DynamicResource GraphGrid.MinorColor}" MajorColor="{DynamicResource GraphGrid.MajorColor}" />
     <nodify:NodifyEditor x:Name="Editor" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphEditor}"
-                         Background="Transparent"
+                         Theme="{StaticResource NetPrints.NodifyEditor}"
                          ItemsSource="{Binding Nodes}"
                          Connections="{Binding Connections}"
                          GridCellSize="28"
@@ -40,34 +38,53 @@
                          MaxViewportZoom="1"
                          DragDrop.AllowDrop="True"
                          ConnectionCompletedCommand="{Binding ConnectionCompletedCommand}">
+      <Interaction.Behaviors>
+        <edbehaviors:GraphViewRequestBehavior />
+        <edbehaviors:ConnectionNavigationBehavior />
+        <edbehaviors:SelectionToContainersBehavior />
+        <!-- A graph's shortcuts act only with the canvas focused (SC-004): opening a graph focuses it. -->
+        <edbehaviors:FocusOnDataContextBehavior />
+      </Interaction.Behaviors>
+
       <nodify:NodifyEditor.ItemContainerTheme>
-        <!-- Nodify's own container chrome (a blue border, orange when selected) is turned off:
-             NodeView already draws the single border WPF had, green when selected. -->
-        <ControlTheme TargetType="nodify:ItemContainer" BasedOn="{StaticResource {x:Type nodify:ItemContainer}}" x:DataType="ednodes:NodeVM">
+        <!-- Nodify's own container chrome is turned off in NetPrints.ItemContainer: NodeView draws the one border. -->
+        <ControlTheme TargetType="nodify:ItemContainer" BasedOn="{StaticResource NetPrints.ItemContainer}" x:DataType="ednodes:NodeViewModel">
           <Setter Property="Location" Value="{Binding Location, Mode=TwoWay, Converter={x:Static edgraph:GraphPointConverter.Instance}}" />
           <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
           <Setter Property="ZIndex" Value="{Binding ZIndex}" />
-          <Setter Property="BorderBrush" Value="Transparent" />
-          <Setter Property="BorderThickness" Value="0" />
-          <Setter Property="HighlightBrush" Value="Transparent" />
-          <Setter Property="SelectedBrush" Value="Transparent" />
         </ControlTheme>
       </nodify:NodifyEditor.ItemContainerTheme>
 
       <nodify:NodifyEditor.ItemTemplate>
-        <DataTemplate x:DataType="ednodes:NodeVM">
+        <DataTemplate x:DataType="ednodes:NodeViewModel">
           <ednodes:NodeView />
         </DataTemplate>
       </nodify:NodifyEditor.ItemTemplate>
 
       <nodify:NodifyEditor.ConnectionTemplate>
-        <DataTemplate x:DataType="edpins:ConnectionVM">
+        <DataTemplate x:DataType="edpins:ConnectionViewModel">
           <nc:Connection AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Connection}" AutomationProperties.Name="{Binding AutomationName}" Source="{Binding Source.Anchor, Converter={x:Static edgraph:GraphPointConverter.Instance}}"
                          Target="{Binding Target.Anchor, Converter={x:Static edgraph:GraphPointConverter.Instance}}"
-                         Stroke="{Binding Kind, Converter={x:Static edgraph:PinKindBrushConverter.Instance}}"
+                         Theme="{StaticResource NetPrints.Connection}"
                          Classes.faint="{Binding IsFaint}"
                          SplitCommand="{Binding InsertRerouteCommand}"
-                         StrokeLineCap="Round" />
+                         ToolTip.Tip="{Binding ToolTip}">
+            <Interaction.Behaviors>
+              <edbehaviors:StyleClassBehavior ClassName="{Binding KindClass}" />
+            </Interaction.Behaviors>
+            <nc:Connection.ContextMenu>
+              <ContextMenu ItemsSource="{Binding MenuEntries}">
+                <ContextMenu.Styles>
+                  <Style Selector="MenuItem" x:DataType="edshell:CommandEntryViewModel">
+                    <Setter Property="Header" Value="{Binding Label}" />
+                    <Setter Property="Command" Value="{Binding RunCommand}" />
+                    <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
+                    <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />
+                  </Style>
+                </ContextMenu.Styles>
+              </ContextMenu>
+            </nc:Connection.ContextMenu>
+          </nc:Connection>
         </DataTemplate>
       </nodify:NodifyEditor.ConnectionTemplate>
 
@@ -79,8 +96,8 @@
     </nodify:NodifyEditor>
 
     <!-- Graph name watermark (PAR-38) -->
-    <TextBlock x:Name="Watermark" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphWatermark}" Text="{Binding Name}" FontWeight="Bold" FontSize="32" Foreground="{DynamicResource GraphWatermark.Foreground}"
-               VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="8" IsHitTestVisible="False" />
+    <TextBlock x:Name="Watermark" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphWatermark}" Text="{Binding Name}" FontWeight="Bold" FontSize="{StaticResource Font.Watermark}" Foreground="{DynamicResource GraphWatermark.Foreground}"
+               VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="{StaticResource Space.S}" IsHitTestVisible="False" />
 
     <!-- Node search (PAR-52). CanvasPopup anchors itself at the pointer (ADR-0004). -->
     <edcontrols:CanvasPopup x:Name="SearchPopup" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphSearchPopup}" IsOpen="{Binding Search.IsOpen, Mode=TwoWay}"

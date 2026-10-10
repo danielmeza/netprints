@@ -36,7 +36,7 @@ const config: Config = {
   themeConfig: {
     navbar: {
       title: 'NetPrints',
-      logo: {alt: 'NetPrints', src: 'img/logo.png'},
+      logo: {alt: 'NetPrints', src: 'img/logo.svg'},
       items: [
         {type: 'docSidebar', sidebarId: 'defaultSidebar', label: 'Docs', position: 'left'},
         {href: 'https://danielmeza.github.io/netprints/api/', label: 'API', position: 'left', target: '_self'},

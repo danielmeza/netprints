@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using NetPrints.Graph;
@@ -44,6 +45,32 @@ namespace NetPrints.Core
         {
             Id = IdGeneration.Current.NewId('m');
             Name = name;
+        }
+
+        /// <summary>
+        /// Renames this event graph. The name is a label, so the generated C# does not change.
+        /// </summary>
+        /// <param name="newName">The new name; it must not be used by another event graph of the class.</param>
+        /// <returns>A handle that restores the old name.</returns>
+        /// <exception cref="ArgumentException"><paramref name="newName"/> is blank, or another event graph of the class already has it.</exception>
+        public RenameResult Rename(string newName)
+        {
+            ArgumentNullException.ThrowIfNull(newName);
+            newName = newName.Trim();
+
+            if (newName.Length == 0)
+            {
+                throw new ArgumentException("An event graph name cannot be blank", nameof(newName));
+            }
+
+            if (Class is not null && Class.EventGraphs.Any(other => !ReferenceEquals(other, this) && other.Name == newName))
+            {
+                throw new ArgumentException($"An event graph named '{newName}' already exists", nameof(newName));
+            }
+
+            string oldName = Name;
+            Name = newName;
+            return new RenameResult(() => Name = oldName);
         }
 
         /// <summary>

@@ -1,1 +1,8 @@
 #nullable enable
+NetPrints.Reflection.CompositeReflectionProvider.GetHidingCatalogId(NetPrints.Core.TypeSpecifier! type) -> string?
+NetPrints.Reflection.ICatalogScope
+NetPrints.Reflection.ICatalogScope.GetHidingCatalogId(NetPrints.Core.TypeSpecifier! type) -> string?
+NetPrints.Reflection.ITypeAssemblyLocator
+NetPrints.Reflection.ITypeAssemblyLocator.GetAssemblyName(NetPrints.Core.TypeSpecifier! type) -> string?
+NetPrints.Reflection.MemoizedReflectionProvider.GetHidingCatalogId(NetPrints.Core.TypeSpecifier! type) -> string?
+NetPrints.Reflection.ReflectionProvider.GetAssemblyName(NetPrints.Core.TypeSpecifier! type) -> string?

@@ -207,7 +207,29 @@ namespace NetPrints.Core
         /// <summary>
         /// Marks this class dirty (it will be saved next time the project is saved).
         /// </summary>
-        public void MarkDirty() => IsDirty = true;
+        public void MarkDirty()
+        {
+            IsDirty = true;
+            EditVersion++;
+        }
+
+        /// <summary>
+        /// Counts the calls of <see cref="MarkDirty"/>; a saver compares it before and after writing to
+        /// tell whether the class was edited meanwhile.
+        /// </summary>
+        internal long EditVersion { get; private set; }
+
+        /// <summary>
+        /// Marks this class clean only if it has not been edited since <paramref name="editVersion"/> was read.
+        /// </summary>
+        /// <param name="editVersion">The <see cref="EditVersion"/> read before the class was written.</param>
+        internal void MarkCleanIfUnchanged(long editVersion)
+        {
+            if (EditVersion == editVersion)
+            {
+                IsDirty = false;
+            }
+        }
 
         /// <summary>
         /// Marks this class clean (nothing to save).

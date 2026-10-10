@@ -1,0 +1,44 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
+        xmlns:ed="clr-namespace:NetPrints.Editor"
+        xmlns:eddialogs="clr-namespace:NetPrints.Editor.Dialogs"
+        xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
+        x:Class="NetPrints.Editor.Dialogs.AboutDialog"
+        x:DataType="eddialogs:AboutViewModel"
+        Title="About NetPrints"
+        Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
+        SizeToContent="WidthAndHeight" CanResize="False"
+        WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.AboutDialog}">
+  <ctl:DialogShell Title="{Binding $parent[Window].Title}" IconId="{x:Static icons:IconIds.DialogInfo}">
+    <ctl:DialogShell.Actions>
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.AboutCloseButton}" Content="Close" Classes="dialogAction"
+              IsDefault="True" IsCancel="True">
+        <Interaction.Behaviors>
+          <ButtonClickEventTriggerBehavior>
+            <CloseWindowAction />
+          </ButtonClickEventTriggerBehavior>
+        </Interaction.Behaviors>
+      </Button>
+    </ctl:DialogShell.Actions>
+    <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="{StaticResource Space.S.Size}">
+      <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space.S.Size}">
+        <Image Source="{DynamicResource App.Mark}" Width="{DynamicResource Icon.Large}" Height="{DynamicResource Icon.Large}"
+               VerticalAlignment="Center" AutomationProperties.AccessibilityView="Raw" />
+        <TextBlock Text="NetPrints" FontSize="{StaticResource Font.Title}" FontWeight="SemiBold" VerticalAlignment="Center" />
+      </StackPanel>
+      <TextBlock Grid.Row="1" Text="{Binding Version, StringFormat='Version {0}'}"
+                 AutomationProperties.AutomationId="{x:Static ed:AutomationIds.AboutVersion}" />
+      <ItemsControl Grid.Row="2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.AboutLinks}" ItemsSource="{Binding Links}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="eddialogs:AboutLink">
+            <StackPanel Margin="0,2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.AboutLinkRow}" AutomationProperties.Name="{Binding Title}">
+              <TextBlock Text="{Binding Title}" />
+              <SelectableTextBlock Text="{Binding Url}" />
+            </StackPanel>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </Grid>
+  </ctl:DialogShell>
+</Window>

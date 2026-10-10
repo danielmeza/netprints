@@ -2,12 +2,15 @@ using Avalonia.Headless.XUnit;
 using NetPrints.Core;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Graph;
-using NetPrints.Editor.UITests.ClassEditor;
+using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.UITests.Hosting;
+using NetPrints.Editor.UITests.Shell;
 using NetPrints.Graph;
 using NetPrints.Testing.Ui.Dialogs;
 using NetPrints.Testing.Ui.Driving;
+using NetPrints.Testing.Ui.References;
+using NetPrints.Testing.Ui.Shell;
 using NetPrints.Testing.Ui.Snapshots;
 
 namespace NetPrints.Editor.UITests.Snapshots;
@@ -23,11 +26,15 @@ public class SnapshotTests
 
     private static SnapshotStore Store => UiArtifacts.Snapshots;
 
-    private static async Task MatchWindowAsync(IUiDriver driver, UiElement window, string name, SnapshotOptions? options = null)
-    {
-        var element = await window.GetAsync(Token);
-        Store.Match(name, await driver.ScreenshotAsync(element.Window, Token), options);
-    }
+    private static Task MatchStableAsync(string name, Func<CancellationToken, Task<UiImage>> capture, SnapshotOptions? options = null) =>
+        Store.MatchStableAsync(name, capture, options, cancellationToken: Token);
+
+    private static Task MatchWindowAsync(IUiDriver driver, UiElement window, string name, SnapshotOptions? options = null) =>
+        MatchStableAsync(name, async cancellationToken =>
+        {
+            var element = await window.GetAsync(cancellationToken);
+            return await driver.ScreenshotAsync(element.Window, cancellationToken);
+        }, options);
 
     /// <summary>Masks an element (a caret or a focus ring that may blink), in window pixels.</summary>
     private static async Task<SnapshotMask> MaskOfAsync(UiElement element)
@@ -37,47 +44,106 @@ public class SnapshotTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
-    public async Task MainWindow()
-    {
-        using var sample = new SampleCopy();
-        await using var app = HeadlessApp.Start();
-        await MatchWindowAsync(app.Driver, app.Main, "main-window-empty");
-
-        await app.OpenStartupProjectAsync(sample.ProjectPath, Token);
-        await MatchWindowAsync(app.Driver, app.Main, "main-window-project");
-
-        await app.Main.ShowProjectPaneAsync(Token);
-        await MatchWindowAsync(app.Driver, app.Main, "main-window-project-pane");
-
-        await app.Main.ShowSettingsPaneAsync(Token);
-        await MatchWindowAsync(app.Driver, app.Main, "main-window-settings-pane");
-    }
-
-    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
-    public async Task ClassEditorWithTheSampleGraph()
+    public async Task ShellWithTheSampleGraph()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
 
-        await MatchWindowAsync(session.Driver, session.ClassEditor, "class-editor-main");
-        Store.Match("node-call-method", await session.Graph.Node("CallMethodNode").ScreenshotAsync(Token)); // connected and unconnected pins
-        Store.Match("inspector-method", await session.ClassEditor.InspectorColumn.ScreenshotAsync(Token));
+        var status = await MaskOfAsync(new UiElement(session.Driver, new AutomationQuery(AutomationIds.ShellStatusBar))); // "Loaded project" fades after 5 s
+        await MatchWindowAsync(session.Driver, session.Page, "editor-shell-main", new SnapshotOptions { Masks = [status] });
+        await MatchStableAsync("node-call-method", session.Graph.Node("CallMethodNode").ScreenshotAsync); // connected and unconnected pins
+        await MatchStableAsync("inspector-method", session.Page.Inspector.ScreenshotAsync);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task ShellWithNoProjectOpen()
+    {
+        await using var app = ShellApp.Start();
+        EditorSession.UseFixedSize(app.Window);
+        await app.Composition.StartAsync([]);
+        var page = await new ShellPage(app.Driver).WaitShownAsync(Token);
+
+        var version = await MaskOfAsync(new UiElement(app.Driver, new AutomationQuery(AutomationIds.StartPageVersion)));
+        await MatchWindowAsync(app.Driver, page, "editor-shell-no-project", new SnapshotOptions { Masks = [version] });
+    }
+
+    [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]
+    [InlineData(1600, 1000, false, "start-page-wide-empty")]
+    [InlineData(1600, 1000, true, "start-page-wide-recent")]
+    [InlineData(900, 700, false, "start-page-narrow-empty")]
+    [InlineData(900, 700, true, "start-page-narrow-recent")]
+    public async Task StartPage(int width, int height, bool withRecent, string name)
+    {
+        using var rig = StartPageRig.Create(width, height, withRecent);
+
+        var version = await MaskOfAsync(rig.Element(AutomationIds.StartPageVersion));
+        await MatchWindowAsync(rig.Ui.Driver, rig.Element(AutomationIds.StartPageRoot), name, new SnapshotOptions { Masks = [version] });
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task Inspectors()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var page = session.ClassEditor;
+        var tree = session.Page.Tree;
+        var inspector = session.Page.Inspector;
 
-        await page.CreateVariableButton.ClickAsync(Token);
-        await page.VariableNameText("Variable").ClickAsync(Token);
-        await page.VariableInspector.WaitVisibleAsync(Token);
-        Store.Match("inspector-variable", await page.InspectorColumn.ScreenshotAsync(Token));
+        await session.AddVariableAsync(Token);
+        await tree.SelectAsync(await tree.RevealAsync(tree.Variable("Variable"), ProjectTreePage.VariablesGroup, Token), Token);
+        await inspector.VariableInspector.WaitVisibleAsync(Token);
+        await MatchStableAsync("inspector-variable", inspector.ScreenshotAsync);
 
-        await page.ClassButton.ClickAsync(Token);
-        await page.ClassInspector.WaitVisibleAsync(Token);
-        await page.ClassInspector.CodeView.WaitUntilAsync(e => (e.Text ?? "").Contains("class Program"), "generated code", Token);
-        Store.Match("inspector-class", await page.InspectorColumn.ScreenshotAsync(Token));
+        await tree.SelectAsync(tree.Class("Program"), Token);
+        await inspector.ClassInspector.WaitVisibleAsync(Token);
+        await inspector.ClassCodeView.WaitUntilAsync(e => (e.Text ?? "").Contains("class Program"), "generated code", Token);
+        await inspector.WaitClassCodeHighlightedAsync(Token);
+        await MatchStableAsync("inspector-class", inspector.ScreenshotAsync);
+    }
+
+    /// <summary>
+    /// Reproduction of issue #13: opens the class inspector <c>NETPRINTS_SNAPSHOT_REPEAT</c> times (default 20),
+    /// compares the first frame after the code text appears with the baseline, then a frame after the code view
+    /// reports its highlighting settled, then the stable frame. Explicit: run it alone, ideally pinned to few
+    /// CPUs. Fails if any stable frame mismatches; the other counts are the flake rates of a single capture.
+    /// </summary>
+    [AvaloniaFact(Explicit = true, Timeout = 900_000)]
+    public async Task ClassInspectorSnapshotRepeatedly()
+    {
+        int runs = int.TryParse(Environment.GetEnvironmentVariable("NETPRINTS_SNAPSHOT_REPEAT"), out int parsed) ? parsed : 20;
+        int immediate = 0, signalled = 0, settled = 0;
+        for (int i = 0; i < runs; i++)
+        {
+            await using var session = await EditorSession.OpenSampleMainAsync(Token);
+            var inspector = session.Page.Inspector;
+            await session.AddVariableAsync(Token);
+            await session.Page.Tree.SelectAsync(session.Page.Tree.Class("Program"), Token);
+            await inspector.ClassInspector.WaitVisibleAsync(Token);
+            await inspector.ClassCodeView.WaitUntilAsync(e => (e.Text ?? "").Contains("class Program", StringComparison.Ordinal), "generated code", Token);
+
+            var first = await inspector.ScreenshotAsync(Token);
+            var baseline = new UiImage(File.ReadAllBytes(Path.Combine(Store.BaselineDirectory, "inspector-class.png")));
+            if (!SnapshotComparer.Compare(first, baseline, SnapshotOptions.Default).Matches)
+            {
+                immediate++;
+            }
+
+            await inspector.WaitClassCodeHighlightedAsync(Token);
+            if (!SnapshotComparer.Compare(await inspector.ScreenshotAsync(Token), baseline, SnapshotOptions.Default).Matches)
+            {
+                signalled++;
+            }
+
+            try
+            {
+                await MatchStableAsync("inspector-class", inspector.ScreenshotAsync);
+            }
+            catch (SnapshotMismatchException)
+            {
+                settled++;
+            }
+        }
+
+        TestContext.Current.SendDiagnosticMessage($"inspector-class over {runs} runs: {immediate} immediate, {signalled} after the highlighting signal, {settled} stable captures mismatched");
+        File.WriteAllText(Path.Combine(Store.OutputDirectory, "repeat.txt"), $"{runs} runs: mismatches immediate {immediate}, after the highlighting signal {signalled}, stable {settled}{Environment.NewLine}");
+        Assert.Equal(0, settled);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
@@ -87,7 +153,7 @@ public class SnapshotTests
         // each parameter's type pin and value pin land on the same row (PinAlignmentTests has the pixel
         // checks; this is the human-reviewable picture of the fix).
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var entryNode = ((MethodGraph)session.GraphVM.Graph).MethodEntryNode;
+        var entryNode = ((MethodGraph)session.GraphViewModel.Graph).MethodEntryNode;
         entryNode.AddArgument();
         entryNode.AddArgument();
         entryNode.AddArgument();
@@ -98,22 +164,22 @@ public class SnapshotTests
         entryNode.OutputDataPins[2].Name = "aVeryLongParameterName";
         entryNode.OutputDataPins[2].PinType.Value = TypeSpecifier.FromType<bool>();
         entryNode.PositionX = 28; // the extra-wide node (from the long name above) would otherwise
-        entryNode.PositionY = 480; // overlap Console.WriteLine at its usual sample position.
+        entryNode.PositionY = 300; // overlap Console.WriteLine at its usual sample position.
         await session.WaitForRenderedAsync(Token);
         HeadlessDriver.Pump(); // the renames above don't add/remove nodes, so WaitForRenderedAsync's
                                // node/cable count check is already satisfied; pump once more so the
                                // node's width settles to the new (longer) pin names before the crop.
 
-        Store.Match("node-method-entry-parameters", await session.Graph.Node("MethodEntryNode").ScreenshotAsync(Token));
+        await MatchStableAsync("node-method-entry-parameters", session.Graph.Node("MethodEntryNode").ScreenshotAsync);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task EveryNodeKind()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        await session.ClassEditor.CreateVariableButton.ClickAsync(Token);
-        var variable = session.ClassVM.Variables.Single().Variable.Specifier;
-        var graph = session.GraphVM;
+        await session.AddVariableAsync(Token);
+        var variable = session.ClassContext.Variables.Single().Variable.Specifier;
+        var graph = session.GraphViewModel;
 
         // Arrange through the API: one node of each kind, on a grid below the sample's nodes.
         var add = new List<Func<GraphPoint, Node>>
@@ -142,7 +208,7 @@ public class SnapshotTests
             await session.Graph.WheelAsync(await session.Graph.OffsetAsync(0, 0, Token), -1, Token); // zoom out around the origin
         }
 
-        Store.Match("canvas-every-node-kind", await session.Graph.ScreenshotAsync(Token));
+        await MatchStableAsync("canvas-every-node-kind", session.Graph.ScreenshotAsync);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
@@ -154,7 +220,7 @@ public class SnapshotTests
         var from = await graph.Node("CallMethodNode").Output("Exec").Connector.CenterAsync(Token);
         var to = await graph.OffsetAsync(700, 450, Token);
         await session.Driver.PressAndMoveAsync(from, to, UiButton.Left, Token);
-        Store.Match("canvas-preview-cable", await graph.ScreenshotAsync(Token));
+        await MatchStableAsync("canvas-preview-cable", graph.ScreenshotAsync);
         await session.Driver.ReleaseAsync(to, UiButton.Left, Token);
         var search = await graph.Search.WaitOpenAsync(Token);
         await session.Driver.PressAsync("Escape", Token); // close without choosing
@@ -163,16 +229,17 @@ public class SnapshotTests
 
         search = await (await graph.RightClickAtAsync(280, 392, Token)).WaitOpenAsync(Token);
         var mask = await MaskOfAsync(search.SearchBox);
-        Store.Match("search-popup", await session.Driver.ScreenshotAsync((await graph.GetAsync(Token)).Window, Token),
-            new SnapshotOptions { Masks = [mask] });
+        var status = await MaskOfAsync(new UiElement(session.Driver, new AutomationQuery(AutomationIds.ShellStatusBar)));
+        await MatchStableAsync("search-popup", async cancellationToken => await session.Driver.ScreenshotAsync((await graph.GetAsync(cancellationToken)).Window, cancellationToken),
+            new SnapshotOptions { Masks = [mask, status] });
         await session.Driver.PressAsync("Escape", Token);
         await search.WaitClosedAsync(Token);
 
         var length = new VariableSpecifier("Length", TypeSpecifier.FromType<int>(), MemberVisibility.Public, MemberVisibility.Private,
             TypeSpecifier.FromType<string>(), VariableModifiers.None);
-        session.GraphVM.GetSetChooser.Open(length, new GraphPoint(280, 392));
+        session.GraphViewModel.GetSetChooser.Open(length, new GraphPoint(280, 392));
         await graph.GetSet.WaitOpenAsync(Token);
-        Store.Match("get-set-chooser", await graph.GetSet.View.ScreenshotAsync(Token));
+        await MatchStableAsync("get-set-chooser", graph.GetSet.View.ScreenshotAsync);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
@@ -187,8 +254,7 @@ public class SnapshotTests
         await MatchWindowAsync(ui.Driver, new SelectTypeDialogPage(ui.Driver), "dialog-select-type");
         ui.Tree.Windows.Last().Close();
 
-        var stringType = TypeSpecifier.FromType<string>();
-        ui.Show(new SelectMethodDialog([new MethodSpecifier("Trim", [], [stringType], MethodModifiers.None, MemberVisibility.Public, stringType, [])]));
+        ui.Show(new SelectMethodDialog(UITests.Dialogs.DialogTests.ExceptionOverrides(), new HashSet<string> { "Finalize" }));
         await MatchWindowAsync(ui.Driver, new SelectMethodDialogPage(ui.Driver), "dialog-select-method");
     }
 
@@ -199,7 +265,9 @@ public class SnapshotTests
         await using var app = HeadlessApp.Start();
         await app.OpenStartupProjectAsync(sample.ProjectPath, Token);
 
-        var references = await app.Main.OpenReferencesAsync(Token);
+        await (app.Composition.ProjectActions ?? throw new InvalidOperationException("No shell.")).ShowReferencesAsync(Token);
+        var references = new ReferencesDialogPage(app.Driver);
+        await references.GetAsync(Token);
         // The SDK-style sample declares no explicit references (research.md R21): wait for the
         // dialog itself to settle instead of a specific row.
         await references.AddAssemblyButton.GetAsync(Token);

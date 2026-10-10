@@ -192,7 +192,7 @@ namespace NetPrints.Reflection
     /// the given assemblies, source files and in-memory sources. See <see cref="MemoizedReflectionProvider"/>
     /// for a caching wrapper around repeated queries.
     /// </summary>
-    public class ReflectionProvider : IReflectionProvider
+    public class ReflectionProvider : IReflectionProvider, ITypeAssemblyLocator
     {
         private readonly MemberCache memberCache = new MemberCache();
         private readonly CSharpCompilation compilation;
@@ -253,7 +253,7 @@ namespace NetPrints.Reflection
             }
 
             var assemblyReferences = existingAssemblies
-                .Select(a => (MetadataReference)MetadataReference.CreateFromFile(a.Path))
+                .Select(SharedMetadataReferences.For)
                 .ToList();
 
             // Create syntax trees from sources
@@ -451,6 +451,13 @@ namespace NetPrints.Reflection
 
         private ITypeSymbol? GetTypeFromSpecifier(TypeSpecifier specifier) =>
             cachedTypeSpecifierSymbols.GetOrAdd(specifier, ComputeTypeFromSpecifier);
+
+        /// <inheritdoc/>
+        public string? GetAssemblyName(TypeSpecifier type)
+        {
+            ArgumentNullException.ThrowIfNull(type);
+            return GetTypeFromSpecifier(type)?.ContainingAssembly?.Name;
+        }
 
         private ITypeSymbol? ComputeTypeFromSpecifier(TypeSpecifier specifier)
         {

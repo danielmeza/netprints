@@ -1,29 +1,33 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ed="clr-namespace:NetPrints.Editor"
-             xmlns:edclasseditor="clr-namespace:NetPrints.Editor.ClassEditor"
+             xmlns:edinspectors="clr-namespace:NetPrints.Editor.Inspectors"
              xmlns:edcode="clr-namespace:NetPrints.Editor.CodeView"
              x:Class="NetPrints.Editor.Inspectors.ClassInspectorView"
-             x:DataType="edclasseditor:ClassEditorVM">
+             x:DataType="edinspectors:ClassInspectorViewModel">
   <!-- Class inspector (PAR-34) -->
-  <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*" ColumnDefinitions="Auto,*" Margin="4">
+  <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassInspector}" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*" Classes="propertyGrid" Margin="4">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="{StaticResource Inspector.LabelColumnWidth}" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
     <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
-    <TextBlock x:Name="NameLabel" Grid.Row="1" Text="Name" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock x:Name="NameLabel" Grid.Row="1" Text="Name" Classes="inspectorLabel" />
     <TextBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassInspectorName}" AutomationProperties.LabeledBy="{Binding #NameLabel}" Grid.Row="1" Grid.Column="1" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
-    <TextBlock x:Name="NamespaceLabel" Grid.Row="2" Text="Namespace" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock x:Name="NamespaceLabel" Grid.Row="2" Text="Namespace" Classes="inspectorLabel" />
     <TextBox AutomationProperties.LabeledBy="{Binding #NamespaceLabel}" Grid.Row="2" Grid.Column="1" Text="{Binding Namespace, UpdateSourceTrigger=PropertyChanged}" />
-    <TextBlock x:Name="VisibilityLabel" Grid.Row="3" Text="Visibility" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock x:Name="VisibilityLabel" Grid.Row="3" Text="Visibility" Classes="inspectorLabel" />
     <ComboBox AutomationProperties.LabeledBy="{Binding #VisibilityLabel}" Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding PossibleVisibilities}" SelectedItem="{Binding Visibility}" />
-    <TextBlock x:Name="SealedLabel" Grid.Row="4" Text="Sealed" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock x:Name="SealedLabel" Grid.Row="4" Text="Sealed" Classes="inspectorLabel" />
     <CheckBox AutomationProperties.LabeledBy="{Binding #SealedLabel}" Grid.Row="4" Grid.Column="1" IsChecked="{Binding IsSealed}" />
-    <TextBlock x:Name="AbstractLabel" Grid.Row="5" Text="Abstract" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock x:Name="AbstractLabel" Grid.Row="5" Text="Abstract" Classes="inspectorLabel" />
     <CheckBox AutomationProperties.LabeledBy="{Binding #AbstractLabel}" Grid.Row="5" Grid.Column="1" IsChecked="{Binding IsAbstract}" />
-    <TextBlock x:Name="StaticLabel" Grid.Row="6" Text="Static" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock x:Name="StaticLabel" Grid.Row="6" Text="Static" Classes="inspectorLabel" />
     <CheckBox AutomationProperties.LabeledBy="{Binding #StaticLabel}" Grid.Row="6" Grid.Column="1" IsChecked="{Binding IsStatic}" />
-    <TextBlock x:Name="PartialLabel" Grid.Row="7" Text="Partial" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock x:Name="PartialLabel" Grid.Row="7" Text="Partial" Classes="inspectorLabel" />
     <CheckBox AutomationProperties.LabeledBy="{Binding #PartialLabel}" Grid.Row="7" Grid.Column="1" IsChecked="{Binding IsPartial}" />
     <!-- Read-only C# code view (US6, FR-031..035): highlighting, line numbers, folding and no wrap,
-         kept live from the class's debounced analysis (CodeViewVM). -->
+         kept live from the class's debounced analysis (CodeViewViewModel). -->
     <edcode:CodeView x:Name="CodeView" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassInspectorCodeView}" Grid.Row="8" Grid.ColumnSpan="2" Margin="0,4,0,0"
                      DataContext="{Binding CodeView}" />
   </Grid>

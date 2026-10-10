@@ -1,0 +1,38 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
+        xmlns:ed="clr-namespace:NetPrints.Editor"
+        xmlns:edb="clr-namespace:NetPrints.Editor.Behaviors"
+        xmlns:eddialogs="clr-namespace:NetPrints.Editor.Dialogs"
+        xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
+        x:Class="NetPrints.Editor.Dialogs.RecoverDialog"
+        x:DataType="eddialogs:RecoverDialogViewModel"
+        Title="Recover unsaved work"
+        Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
+        SizeToContent="WidthAndHeight" CanResize="False"
+        WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.RecoverDialog}">
+  <Interaction.Behaviors>
+    <edb:DialogCloseBehavior />
+  </Interaction.Behaviors>
+  <ctl:DialogShell Title="{Binding $parent[Window].Title}" IconId="{x:Static icons:IconIds.DialogRecover}">
+    <ctl:DialogShell.Actions>
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.RecoverDiscardButton}" Content="Discard all" Classes="dialogAction" IsCancel="True" Command="{Binding DiscardCommand}" />
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.RecoverRestoreButton}" Content="Apply" Classes="dialogAction accent" IsDefault="True" Command="{Binding RestoreCommand}" />
+    </ctl:DialogShell.Actions>
+    <StackPanel Spacing="{StaticResource Space.S.Size}">
+      <TextBlock Text="The editor found backups of unsaved changes. Checked files are restored; unchecked ones are discarded." TextWrapping="Wrap" />
+      <ListBox ItemsSource="{Binding Rows}" MaxHeight="{StaticResource Dialog.ListMaxHeight}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.RecoverFiles}"
+               AutomationProperties.Name="Backed-up files">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="eddialogs:RecoveryRowViewModel">
+            <StackPanel>
+              <CheckBox Content="{Binding Path}" IsChecked="{Binding Restore}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.RecoverRow}" />
+              <TextBlock Text="Older than the file on disk" IsVisible="{Binding IsOlderThanFile}" FontStyle="Italic" Margin="24,0,0,0" />
+              <TextBlock Text="Never saved: restored as a new class" IsVisible="{Binding IsNewFile}" FontStyle="Italic" Margin="24,0,0,0" />
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </StackPanel>
+  </ctl:DialogShell>
+</Window>

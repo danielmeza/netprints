@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Globalization;
 using NetPrints.Desktop.E2ETests.Hosting;
 using NetPrints.Editor.Hosting.Automation;
@@ -70,12 +71,21 @@ public sealed class X11Driver(XServer server, EditorProcess editor, Tool tool) :
         double fromX = double.Parse(values["X"], CultureInfo.InvariantCulture);
         double fromY = double.Parse(values["Y"], CultureInfo.InvariantCulture);
         const int steps = 6;
-        for (int i = 1; i < steps; i++)
+        string at = I(fromX) + "," + I(fromY);
+        for (int i = 1; i <= steps; i++)
         {
-            await JumpToAsync(fromX + (x - fromX) * i / steps, fromY + (y - fromY) * i / steps, cancellationToken);
+            double stepX = i == steps ? x : fromX + (x - fromX) * i / steps;
+            double stepY = i == steps ? y : fromY + (y - fromY) * i / steps;
+            string next = I(stepX) + "," + I(stepY);
+
+            // `mousemove --sync` waits for the pointer to move, so a jump onto the point it is already at never returns.
+            if (next != at)
+            {
+                await JumpToAsync(stepX, stepY, cancellationToken);
+                at = next;
+            }
         }
 
-        await JumpToAsync(x, y, cancellationToken);
         await SettleAsync(cancellationToken);
     }
 
@@ -85,10 +95,36 @@ public sealed class X11Driver(XServer server, EditorProcess editor, Tool tool) :
         await SettleAsync(cancellationToken);
     }
 
+    private readonly List<string> inputTrace = [];
+    private readonly Stopwatch inputClock = Stopwatch.StartNew();
+    private long lastInputMs;
+
+    /// <inheritdoc/>
+    public string InputTrace => string.Join(Environment.NewLine, inputTrace);
+
     public async Task ClickAsync(UiTarget target, UiButton button, int clickCount, CancellationToken cancellationToken)
     {
+        long now = inputClock.ElapsedMilliseconds;
+        inputTrace.Add(string.Create(CultureInfo.InvariantCulture, $"click {button} x{clickCount} at ({target.X:0},{target.Y:0}) t={now} ms dt={now - lastInputMs} ms"));
+        lastInputMs = now;
         await MoveToAsync(target.X, target.Y, cancellationToken);
         await tool.XdotoolAsync(cancellationToken, "click", "--repeat", clickCount.ToString(CultureInfo.InvariantCulture), "--delay", "60", ButtonOf(button));
+        await SettleAsync(cancellationToken);
+    }
+
+    public async Task CtrlClickAsync(UiTarget target, CancellationToken cancellationToken)
+    {
+        await MoveToAsync(target.X, target.Y, cancellationToken);
+        await tool.XdotoolAsync(cancellationToken, "keydown", "ctrl");
+        try
+        {
+            await tool.XdotoolAsync(cancellationToken, "click", "--delay", "60", ButtonOf(UiButton.Left));
+        }
+        finally
+        {
+            await tool.XdotoolAsync(CancellationToken.None, "keyup", "ctrl");
+        }
+
         await SettleAsync(cancellationToken);
     }
 
@@ -139,6 +175,7 @@ public sealed class X11Driver(XServer server, EditorProcess editor, Tool tool) :
         "Alt" => "alt",
         "Enter" => "Return",
         "Esc" => "Escape",
+        "Space" => "space",
         var key when key.Length == 1 => key.ToLowerInvariant(),
         var key => key,
     }));
@@ -169,6 +206,26 @@ public sealed class X11Driver(XServer server, EditorProcess editor, Tool tool) :
     {
         await tool.XdotoolAsync(cancellationToken, "windowminimize", "--sync", X11WindowOf(window));
         await SettleAsync(cancellationToken);
+    }
+
+    public async Task MoveWindowAsync(string window, double x, double y, CancellationToken cancellationToken)
+    {
+        await tool.XdotoolAsync(cancellationToken, "windowmove", "--sync", X11WindowOf(window), I(x), I(y));
+        await SettleAsync(cancellationToken);
+    }
+
+    /// <summary>Resizes a window to a size in pixels (a real window manager).</summary>
+    public async Task ResizeWindowAsync(string window, double width, double height, CancellationToken cancellationToken)
+    {
+        await tool.XdotoolAsync(cancellationToken, "windowsize", "--sync", X11WindowOf(window), I(width), I(height));
+        await SettleAsync(cancellationToken);
+    }
+
+    /// <summary>Activates the window and sends the window manager's close shortcut, so the editor gets the same close request as from the title bar button.</summary>
+    public async Task CloseWindowAsync(string window, CancellationToken cancellationToken)
+    {
+        await tool.XdotoolAsync(cancellationToken, "windowactivate", "--sync", X11WindowOf(window));
+        await PressAsync("Alt+F4", cancellationToken);
     }
 
     public async Task<bool> IsMinimizedAsync(string window, CancellationToken cancellationToken)

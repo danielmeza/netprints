@@ -19,7 +19,7 @@ macOS, on the current .NET 10, with an automated test suite (headless UI tests p
 tests against the real desktop app) instead of manual verification.
 
 <p align="center">
-  <img src="tests/NetPrints.Editor.UITests/Snapshots/Baselines/class-editor-main.png" width="720" alt="The NetPrints class editor on Avalonia: a node graph wiring up a method, with the class inspector, generated C# preview and node search visible." />
+  <img src="tests/NetPrints.Editor.UITests/Snapshots/Baselines/editor-shell-main.png" width="720" alt="The NetPrints editor window on Avalonia: the project tree, a tab with a node graph wiring up a method, the inspector, and the Errors, Output and C# panels." />
 </p>
 
 ## Install
@@ -34,6 +34,12 @@ See the [full install guide](docs/guide/install.md) for details on each route, t
 requirement, and verifying an unsigned build.
 
 ## Using the editor
+
+The editor is one window per project. The menu bar and the command bar (save, compile, run, undo, redo, references)
+sit on top. The project tree on the left lists the classes and their methods, constructors, variables and event
+graphs; opening one shows its graph in a tab of the document area. The inspector on the right shows the selection
+(class, method, constructor, variable), next to the Variables panel; Errors, Output and C# are tabs of the bottom
+panel. Panes dock, tab and float, and **View › Reset layout** restores the default.
 
 Add references from **References → Add Assembly**: any NuGet package installed to
 `~/.nuget/packages` (or `%UserProfile%/.nuget/packages` on Windows) works, and its documentation
@@ -89,10 +95,10 @@ redesign and editor usability are the phases ahead.
 
 Building from source needs the [.NET 10 SDK](https://dotnet.microsoft.com/download) (10.0.100 or
 later — `global.json` rolls forward to newer feature bands). Build and test (no display server
-needed; `--ignore-exit-code 8` only suppresses the desktop E2E project's "zero tests" exit, since it
-runs zero tests with `NETPRINTS_E2E` unset. CI doesn't apply this flag to the whole solution: it
-runs the desktop E2E project as its own step with the flag, and every other test project without it,
-so a real zero-tests regression elsewhere still fails the job):
+needed; with `NETPRINTS_E2E` unset the desktop E2E scenarios skip and its always-on tests run, so the
+exit is 0 even without `--ignore-exit-code 8`, which only tolerates a project whose tests all skip. CI
+doesn't apply this flag to the whole solution: it runs the desktop E2E project as its own step with the
+flag, and every other test project without it, so a real zero-tests regression elsewhere still fails the job):
 
 ```bash
 dotnet build NetPrints.slnx -c Release

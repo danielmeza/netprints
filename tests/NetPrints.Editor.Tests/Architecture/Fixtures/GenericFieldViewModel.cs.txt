@@ -1,0 +1,12 @@
+using NetPrints.Editor.Shell;
+
+namespace NetPrints.Editor.Tests.Architecture.Fixtures;
+
+/// <summary>
+/// Holds the owning class context only as a generic type argument, for <c>ArchitectureGateTests</c>
+/// (review C, P13). Not compiled: the gate reads and scans it directly.
+/// </summary>
+public sealed class GenericFieldViewModel
+{
+    private readonly HashSet<ClassContext> contexts = [];
+}

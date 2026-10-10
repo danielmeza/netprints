@@ -114,9 +114,7 @@
     ]
   },
   "NetPrints.Graph.CallMethodNode": {
-    "IsPure": [
-      "IsPure"
-    ],
+    "IsPure": "\u003Cthrows\u003E",
     "Name": [
       "Name"
     ],

@@ -82,4 +82,17 @@ public sealed record DocumentIssue(DocumentIssueSeverity Severity, string Code, 
     /// text now names the new one, and the document still loaded.
     /// </summary>
     public const string InvalidIdReassigned = "NPD009";
+
+    /// <summary>
+    /// A call-method node was stored as pure, but its method returns no value,
+    /// so it cannot be pure (<c>CallMethodNode.CanSetPure</c>). It was loaded as an impure node.
+    /// </summary>
+    public const string PurityIgnored = "NPD010";
+
+    /// <summary>
+    /// A custom event argument's name in the <c>arguments</c> array was not a valid C# identifier or was
+    /// used twice. It was replaced by the name stored in the entry's pins, or by <c>InputN</c>, and the
+    /// document still loaded.
+    /// </summary>
+    public const string EventArgumentNameRepaired = "NPD011";
 }

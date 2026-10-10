@@ -8,7 +8,8 @@ using Microsoft.Extensions.Logging;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
-using NetPrints.Editor.Main;
+using NetPrints.Editor.State;
+using NetPrints.Extensibility.Settings;
 
 namespace NetPrints.Editor;
 
@@ -21,7 +22,16 @@ public partial class EditorApp : Application
     /// <summary>The embedded Inter font (Avalonia.Fonts.Inter), used as the default font family.</summary>
     public const string DefaultFontFamily = "avares://Avalonia.Fonts.Inter/Assets#Inter";
 
+    private static readonly Dictionary<EditorTheme, ThemeVariant> Variants = new()
+    {
+        [EditorTheme.Dark] = ThemeVariant.Dark,
+        [EditorTheme.Light] = ThemeVariant.Light,
+        [EditorTheme.System] = ThemeVariant.Default,
+    };
+
     private static EditorHostServices? hostServices;
+
+    private Style? noTransitions;
 
     /// <summary>
     /// Process-wide services (logging, extensions, settings, host channel, MSBuild availability). Set by the host (<c>NetPrints.Desktop</c>'s <c>Program</c>) before
@@ -52,14 +62,66 @@ public partial class EditorApp : Application
     /// Removes all transitions (theme animations), so screenshots and pixel checks are taken in a
     /// settled state. Used by the UI tests and by the desktop host in automation mode.
     /// </summary>
-    public void DisableTransitions() =>
-        Styles.Add(new Style(x => x.Is<Control>())
+    public void DisableTransitions()
+    {
+        if (noTransitions is not null)
+        {
+            return;
+        }
+
+        noTransitions = new Style(x => x.Is<Control>())
         {
             Setters = { new Setter(Animatable.TransitionsProperty, null) },
-        });
+        };
+        Styles.Add(noTransitions);
+    }
 
     /// <summary>
-    /// On a classic desktop lifetime: composes the editor's services, creates and shows the main
+    /// Restores the transitions that <see cref="DisableTransitions"/> removed; does nothing when they are on.
+    /// </summary>
+    public void EnableTransitions()
+    {
+        if (noTransitions is null)
+        {
+            return;
+        }
+
+        Styles.Remove(noTransitions);
+        noTransitions = null;
+    }
+
+    /// <summary>
+    /// Switches every transition on or off according to <see cref="NetPrintsSettings.EnableAnimations"/>, so a
+    /// motion declared in a style needs no switch of its own.
+    /// </summary>
+    /// <param name="settings">The settings to read the animations flag from.</param>
+    public void ApplyAnimationSetting(ISettingsStore settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        if (settings.Get(NetPrintsSettings.Descriptor).EnableAnimations)
+        {
+            EnableTransitions();
+        }
+        else
+        {
+            DisableTransitions();
+        }
+    }
+
+    /// <summary>Switches the application to a theme (FR-082); <see cref="EditorTheme.System"/> follows the operating system.</summary>
+    /// <param name="theme">The theme to switch to.</param>
+    public void ApplyTheme(EditorTheme theme) => RequestedThemeVariant = Variants[theme];
+
+    /// <summary>Applies the theme stored in the settings file, <see cref="EditorTheme.Dark"/> when none is.</summary>
+    /// <param name="settings">The settings to read the theme from.</param>
+    public void ApplyThemeSetting(ISettingsStore settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        ApplyTheme(settings.Get(EditorSettings.Descriptor).Theme);
+    }
+
+    /// <summary>
+    /// On a classic desktop lifetime: composes the editor's services, creates and shows the shell
     /// window, installs the unhandled-exception handler, and, when <c>NETPRINTS_AUTOMATION=1</c>,
     /// starts the automation agent (disabling UI transitions first, for settled screenshots) and
     /// exits loudly if it fails to start. Opens the project named on the command line, if any.
@@ -68,10 +130,13 @@ public partial class EditorApp : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            ApplyAnimationSetting(HostServices.Settings);
+            ApplyThemeSetting(HostServices.Settings);
+
             var composition = new EditorComposition(HostServices);
             var exceptionHandler = composition.InstallUnhandledExceptionHandler();
             desktop.Exit += (_, _) => exceptionHandler.Dispose();
-            var window = composition.CreateMainWindow();
+            var window = composition.CreateShellWindow();
             desktop.MainWindow = window;
             desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
 
@@ -79,12 +144,14 @@ public partial class EditorApp : Application
             var shutdownCoordinator = new ShutdownCoordinator(
                 async () =>
                 {
+                    await composition.FlushBackupsAsync();
                     composition.Dispose();
                     await HostServices.DisposeAsync();
                     Hosting.Log.HostServicesDisposed(shutdownLogger);
                 },
                 () => desktop.Shutdown(),
-                shutdownLogger);
+                shutdownLogger,
+                () => composition.ConfirmExitAsync(CancellationToken.None));
             desktop.ShutdownRequested += (_, e) => shutdownCoordinator.OnShutdownRequested(e);
 
             // Automation mode (E2E tests only): settled screenshots and a read-only agent.
@@ -99,11 +166,12 @@ public partial class EditorApp : Application
                 {
                     agent = new AutomationAgent(pipeName, tree, () => new AutomationStatus(
                         window.IsVisible,
-                        composition.MainEditor is { } mainEditor && mainEditor.Project is not null && !mainEditor.IsBusy,
+                        composition.Shell?.Session is not null,
                         composition.Context.Reflection.IsLoaded,
                         startupProject,
                         Environment.ProcessId),
-                        HostServices.LoggerFactory.CreateLogger<AutomationAgent>());
+                        HostServices.LoggerFactory.CreateLogger<AutomationAgent>(),
+                        composition.Context.RunState.Snapshot);
                 }
                 catch (Exception e)
                 {

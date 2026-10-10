@@ -7,7 +7,7 @@ namespace NetPrints.Editor.Dialogs;
 /// <summary>Chooses a type; defaults to <c>object</c> (PAR-58).</summary>
 public partial class SelectTypeDialog : Window, IDialogResult<TypeSpecifier>
 {
-    private readonly SelectTypeDialogVM viewModel;
+    private readonly SelectTypeDialogViewModel viewModel;
 
     /// <summary>Loads the dialog's XAML, with no choices set.</summary>
     public SelectTypeDialog() : this([], TypeSpecifier.FromType<object>())
@@ -19,7 +19,7 @@ public partial class SelectTypeDialog : Window, IDialogResult<TypeSpecifier>
     /// <param name="initial">Initially selected type.</param>
     public SelectTypeDialog(IEnumerable<TypeSpecifier> types, TypeSpecifier initial)
     {
-        viewModel = new SelectTypeDialogVM(types, initial);
+        viewModel = new SelectTypeDialogViewModel(types, initial);
         DataContext = viewModel;
         InitializeComponent();
     }

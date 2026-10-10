@@ -1,32 +1,37 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
         xmlns:ed="clr-namespace:NetPrints.Editor"
         xmlns:edb="clr-namespace:NetPrints.Editor.Behaviors"
         xmlns:eddialogs="clr-namespace:NetPrints.Editor.Dialogs"
+        xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
         x:Class="NetPrints.Editor.Dialogs.TrustDialog"
-        x:DataType="eddialogs:TrustDialogVM"
+        x:DataType="eddialogs:TrustDialogViewModel"
         Title="Trust this project's extensions?"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
-        Width="700" Height="360"
+        SizeToContent="WidthAndHeight"
         WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustDialog}">
   <!-- Closes with the VM's result once it asks to (D16, ADR-0007 batch X2b). -->
   <Interaction.Behaviors>
     <edb:DialogCloseBehavior />
   </Interaction.Behaviors>
-  <Grid RowDefinitions="Auto,*,Auto" Margin="8">
-    <TextBlock x:Name="Prompt" TextWrapping="Wrap" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustPrompt}" Text="{Binding Prompt}" />
-    <ScrollViewer Grid.Row="1" Margin="0,8" VerticalScrollBarVisibility="Auto">
-      <ItemsControl x:Name="FolderList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustFolders}" ItemsSource="{Binding ExtensionFolders}">
-        <ItemsControl.ItemTemplate>
-          <DataTemplate x:DataType="x:String">
-            <TextBlock Text="{Binding}" TextWrapping="Wrap" FontFamily="monospace" Margin="2" />
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
-    </ScrollViewer>
-    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustDontLoadButton}" Content="Don't load" MinWidth="80" IsCancel="True" Command="{Binding DontLoadCommand}" />
-      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustButton}" Content="Trust" MinWidth="80" Classes="accent" Command="{Binding TrustCommand}" />
-    </StackPanel>
-  </Grid>
+  <ctl:DialogShell Title="{Binding $parent[Window].Title}" IconId="{x:Static icons:IconIds.DialogTrust}">
+    <ctl:DialogShell.Actions>
+      <!-- Not loading is the default as well as the cancel: Enter never trusts a project by accident. -->
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustDontLoadButton}" Content="Don't load" Classes="dialogAction" IsDefault="True" IsCancel="True" Command="{Binding DontLoadCommand}" />
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustButton}" Content="Trust" Classes="dialogAction accent" Command="{Binding TrustCommand}" />
+    </ctl:DialogShell.Actions>
+    <Grid RowDefinitions="Auto,Auto" RowSpacing="{StaticResource Space.M.Size}">
+      <TextBlock x:Name="Prompt" TextWrapping="Wrap" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustPrompt}" Text="{Binding Prompt}" />
+      <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="{StaticResource Dialog.ListMaxHeight}">
+        <ItemsControl x:Name="FolderList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustFolders}" ItemsSource="{Binding ExtensionFolders}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <TextBlock Text="{Binding}" TextWrapping="Wrap" FontFamily="{StaticResource Font.Mono}" Margin="2" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </Grid>
+  </ctl:DialogShell>
 </Window>

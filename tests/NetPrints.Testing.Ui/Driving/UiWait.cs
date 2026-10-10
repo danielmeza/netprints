@@ -30,7 +30,7 @@ public static class UiWait
 
             if (clock.Elapsed > limit)
             {
-                throw new UiWaitTimeoutException(what, limit, await driver.DumpAsync(cancellationToken));
+                throw new UiWaitTimeoutException(what, limit, await driver.DumpAsync(cancellationToken), driver.InputTrace);
             }
 
             await Task.Delay(PollInterval, cancellationToken);
@@ -47,9 +47,13 @@ public static class UiWait
     }
 }
 
-/// <summary>A wait that ran out of time; carries a UI dump for the failure diagnostics.</summary>
-public sealed class UiWaitTimeoutException(string what, TimeSpan timeout, string dump)
-    : TimeoutException($"Timed out after {timeout.TotalSeconds:0.#} s waiting for: {what}")
+/// <summary>A wait that ran out of time; carries a UI dump and the driver's input trace for the failure diagnostics.</summary>
+public sealed class UiWaitTimeoutException(string what, TimeSpan timeout, string dump, string inputTrace = "")
+    : TimeoutException($"Timed out after {timeout.TotalSeconds:0.#} s waiting for: {what}"
+        + (inputTrace.Length == 0 ? "" : $"{Environment.NewLine}Input trace:{Environment.NewLine}{inputTrace}"))
 {
+    /// <summary>The pointer presses that preceded the wait (<see cref="IUiDriver.InputTrace"/>).</summary>
+    public string InputTrace { get; } = inputTrace;
+
     public string Dump { get; } = dump;
 }

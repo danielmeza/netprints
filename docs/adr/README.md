@@ -28,3 +28,16 @@ instead.
 - [0015: The `netprints` CLI: command surface and exit-code contract](0015-cli-commands-and-exit-codes.md)
 - [0016: Git integration for graph files: text conversion, merge driver and SchemaStore](0016-git-integration-for-graphs.md)
 - [0017: Experimental API opt-in is per project and per id](0017-experimental-api-opt-in.md)
+- [0018: The editor shell docks with Dock.Avalonia, behind a shell seam](0018-editor-shell-docking.md)
+- [0019: CI runs one job per test project, and a Windows job checks the CLI](0019-ci-test-matrix-and-windows-cli-leg.md)
+- [0020: One contribution registry drives the editor's commands, panels and menus](0020-editor-contribution-registry.md)
+- [0021: Editor icons come from one vector family, Material Design Icons, named by icon id](0021-editor-icon-family-and-icon-ids.md)
+- [0022: A pre-release editor build writes the latest released SDK version](0022-sdk-version-written-by-pre-release-builds.md)
+- [0023: The editor's base theme and controls are Semi.Avalonia and Ursa.Avalonia](0023-semi-ursa-base-theme.md)
+- [0031: The editor composes with MS.DI and our own registration generator](0031-editor-composition-and-di.md)
+- [0033: Logging goes through NLog 6 behind `ILogger`, and per-user files live in per-OS folders](0033-logging-and-per-user-folders.md)
+- [0034: Smart enums keep behaviour in each member; generic math builds the primitive table](0034-smart-enums-and-generic-math.md)
+
+Numbers 0024-0030 and 0032 are reserved by the roadmap for ADRs not yet written (analyzer and generator
+infrastructure, declarative pins, node kinds, localization, node search, node capabilities, the Extensibility
+Stairway split, graph rules); 0031 and later were written first.

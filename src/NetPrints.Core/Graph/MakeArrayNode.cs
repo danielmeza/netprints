@@ -31,11 +31,14 @@ namespace NetPrints.Graph
 
         /// <summary>
         /// Pin that specifies the size of the array.
-        /// Only used when UsePredefinedSize is true.
+        /// Only available when <see cref="UsePredefinedSize"/> is true.
         /// </summary>
+        /// <exception cref="InvalidOperationException"><see cref="UsePredefinedSize"/> is false, so the node has no size pin.</exception>
         public NodeInputDataPin SizePin
         {
-            get => InputDataPins[0];
+            get => UsePredefinedSize
+                ? InputDataPins[0]
+                : throw new InvalidOperationException("A make-array node has a size pin only when UsePredefinedSize is true.");
         }
 
         /// <summary>

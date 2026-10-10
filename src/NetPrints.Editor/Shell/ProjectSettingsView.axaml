@@ -1,0 +1,25 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:shell="clr-namespace:NetPrints.Editor.Shell"
+             x:Class="NetPrints.Editor.Shell.ProjectSettingsView"
+             x:DataType="shell:ProjectSettingsDocumentViewModel">
+  <!-- The Project settings document; replaces the launcher's settings pane. -->
+  <StackPanel Classes="formContainer" HorizontalAlignment="Left">
+    <TextBlock Classes="header" Text="Project settings" />
+    <Grid ColumnDefinitions="Auto,*" ToolTip.Tip="Type of binary to output.">
+      <TextBlock Text="Binary type" Classes="formLabel" />
+      <!-- OneWay: selecting an item runs the command, and a failed edit's change notification puts the actual value back. -->
+      <ComboBox x:Name="BinaryTypeChooser" Grid.Column="1" Classes="formInput"
+                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ProjectSettingsBinaryTypeChooser}"
+                ItemsSource="{Binding BinaryTypes}"
+                SelectedItem="{Binding OutputBinaryType, Mode=OneWay}">
+        <Interaction.Behaviors>
+          <EventTriggerBehavior EventName="SelectionChanged">
+            <InvokeCommandAction Command="{Binding SetOutputTypeCommand}" CommandParameter="{Binding #BinaryTypeChooser.SelectedItem}" />
+          </EventTriggerBehavior>
+        </Interaction.Behaviors>
+      </ComboBox>
+    </Grid>
+  </StackPanel>
+</UserControl>

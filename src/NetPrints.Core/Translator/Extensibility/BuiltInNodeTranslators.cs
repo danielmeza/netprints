@@ -151,6 +151,7 @@ internal static class BuiltInNodeTranslators
         }
 
         // Get arguments for method call
+        RequireVariablesForByRefArguments(node, node.ArgumentPins, node.MethodSpecifier.Parameters);
         var argumentNames = IncomingValues(context, node.ArgumentPins);
 
         // Check whether the method is an operator and we need to translate its name
@@ -301,6 +302,28 @@ internal static class BuiltInNodeTranslators
     }
 
     /// <summary>
+    /// Throws when an <c>out</c> or <c>ref</c> argument pin is not connected: C# needs a variable there, so
+    /// an unconnected value would produce invalid code.
+    /// </summary>
+    /// <param name="node">Node whose arguments are checked.</param>
+    /// <param name="pins">The node's argument pins, in parameter order.</param>
+    /// <param name="parameters">The called member's parameters, in the same order.</param>
+    /// <exception cref="TranslationException">A by-reference argument pin has no incoming connection (<c>NPT008</c>).</exception>
+    private static void RequireVariablesForByRefArguments(Node node, IList<NodeInputDataPin> pins, IEnumerable<MethodParameter> parameters)
+    {
+        foreach ((NodeInputDataPin pin, MethodParameter parameter) in pins.Zip(parameters, Tuple.Create))
+        {
+            if (parameter.PassType is MethodParameterPassType.Out or MethodParameterPassType.Reference && pin.IncomingPin is null)
+            {
+                string kind = parameter.PassType == MethodParameterPassType.Out ? "out" : "ref";
+                throw new TranslationException(TranslationDiagnosticCodes.UnsetRequiredInput,
+                    $"Connect a variable to {kind} parameter '{parameter.Name}' of {node}.",
+                    TranslatorUtil.TryGetGraphKey(node.Graph), node.Id);
+            }
+        }
+    }
+
+    /// <summary>
     /// Translates <paramref name="node"/> into a `new` expression: emits its pure dependencies,
     /// assigns the constructed instance to the node's output pin, and writes the constructor
     /// arguments (named and/or `out`/`ref`-prefixed as <see cref="TranslateCallMethodNode"/> does
@@ -322,6 +345,7 @@ internal static class BuiltInNodeTranslators
         context.Append($"{returnName} = new {node.ClassType}");
 
         // Write constructor arguments
+        RequireVariablesForByRefArguments(node, node.ArgumentPins, node.ConstructorSpecifier.Arguments);
         var argumentNames = IncomingValues(context, node.ArgumentPins);
         //context.AppendLine($"({string.Join(", ", argumentNames)});");
 

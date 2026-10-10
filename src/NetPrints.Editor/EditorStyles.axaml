@@ -1,12 +1,148 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia">
+        xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
+        xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
+        xmlns:nodify="clr-namespace:Nodify.Avalonia;assembly=Nodify.Avalonia"
+        xmlns:nc="clr-namespace:Nodify.Avalonia.Connections;assembly=Nodify.Avalonia"
+        xmlns:nn="clr-namespace:Nodify.Avalonia.Nodes;assembly=Nodify.Avalonia">
   <Styles.Resources>
     <ResourceDictionary>
+      <!-- Nodify control themes (FR-086): the defaults, re-coloured from tokens. A view applies one with Theme=. -->
+      <ControlTheme x:Key="NetPrints.SelectionRectangle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource Canvas.MarqueeFill}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Canvas.MarqueeBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+      </ControlTheme>
+      <ControlTheme x:Key="NetPrints.NodifyEditor" TargetType="nodify:NodifyEditor" BasedOn="{StaticResource {x:Type nodify:NodifyEditor}}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="SelectionRectangleTheme" Value="{StaticResource NetPrints.SelectionRectangle}" />
+      </ControlTheme>
+      <ControlTheme x:Key="NetPrints.ItemContainer" TargetType="nodify:ItemContainer" BasedOn="{StaticResource {x:Type nodify:ItemContainer}}">
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="HighlightBrush" Value="Transparent" />
+        <Setter Property="SelectedBrush" Value="Transparent" />
+      </ControlTheme>
+      <ControlTheme x:Key="NetPrints.Node" TargetType="nn:Node" BasedOn="{StaticResource {x:Type nn:Node}}">
+        <Setter Property="Background" Value="{DynamicResource Node.CardBackground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Node.Border}" />
+        <Setter Property="HeaderBrush" Value="{DynamicResource Node.Header.Flow}" />
+        <Setter Property="Foreground" Value="{DynamicResource Node.TitleForeground}" />
+      </ControlTheme>
+      <ControlTheme x:Key="NetPrints.Connection" TargetType="nc:Connection" BasedOn="{StaticResource {x:Type nc:Connection}}">
+        <Setter Property="Stroke" Value="{DynamicResource Pin.Generic}" />
+        <Setter Property="StrokeThickness" Value="4" />
+        <Setter Property="Opacity" Value="0.7" />
+        <Setter Property="StrokeLineCap" Value="Round" />
+      </ControlTheme>
+      <ControlTheme x:Key="NetPrints.Connector" TargetType="nc:Connector" BasedOn="{StaticResource {x:Type nc:Connector}}">
+        <Setter Property="Foreground" Value="{DynamicResource Pin.Generic}" />
+      </ControlTheme>
+      <!-- Pin rows draw no background of their own, so the node body shows behind them (FR-109). -->
+      <ControlTheme x:Key="NetPrints.NodeInput" TargetType="nn:NodeInput" BasedOn="{StaticResource {x:Type nn:NodeInput}}">
+        <Setter Property="Background" Value="Transparent" />
+      </ControlTheme>
+      <ControlTheme x:Key="NetPrints.NodeOutput" TargetType="nn:NodeOutput" BasedOn="{StaticResource {x:Type nn:NodeOutput}}">
+        <Setter Property="Background" Value="Transparent" />
+      </ControlTheme>
+      <!-- Type-pin shape (FR-109): Pin.TypeShape is the triangle until the owner picks at the contact sheet. -->
+      <StreamGeometry x:Key="Pin.TypeShape.Triangle">M0,0 L16,8 L0,16 Z</StreamGeometry>
+      <StreamGeometry x:Key="Pin.TypeShape.Diamond">M8,0 L16,8 L8,16 L0,8 Z</StreamGeometry>
+      <StaticResource x:Key="Pin.TypeShape" ResourceKey="Pin.TypeShape.Triangle" />
+      <x:Double x:Key="Pin.OutlineThickness">2</x:Double>
+      <!-- Start page recent row: a left-anchor icon tile (FR-110). -->
+      <x:Double x:Key="StartPage.RecentTileSize">32</x:Double>      <!-- Type ramp, spacing scale and shared widths (FR-080, research R11); none of these vary by theme. -->
+      <x:Double x:Key="Font.Caption">12</x:Double>
+      <x:Double x:Key="Font.Body">14</x:Double>
+      <x:Double x:Key="Font.Subtitle">16</x:Double>
+      <x:Double x:Key="Font.Title">20</x:Double>
+      <x:Double x:Key="Font.Watermark">32</x:Double>
+      <FontFamily x:Key="Font.Mono">avares://NetPrints.Editor/Assets/Fonts#Cascadia Mono</FontFamily>
+      <Thickness x:Key="Space.XS">4</Thickness>
+      <Thickness x:Key="Space.S">8</Thickness>
+      <Thickness x:Key="Space.M">12</Thickness>
+      <Thickness x:Key="Space.L">16</Thickness>
+      <Thickness x:Key="Space.XL">24</Thickness>
+      <x:Double x:Key="Space.XS.Size">4</x:Double>
+      <x:Double x:Key="Space.S.Size">8</x:Double>
+      <x:Double x:Key="Space.M.Size">12</x:Double>
+      <x:Double x:Key="Space.L.Size">16</x:Double>
+      <x:Double x:Key="Space.XL.Size">24</x:Double>
+      <GridLength x:Key="Inspector.LabelColumnWidth">120</GridLength>
+      <x:Double x:Key="Icon.Small">16</x:Double>
+      <x:Double x:Key="Icon.Medium">20</x:Double>
+      <!-- Interaction (FR-087): the ring, the shared corner radius and the density tokens. -->
+      <Thickness x:Key="Focus.RingThickness">2</Thickness>
+      <CornerRadius x:Key="Radius.Control">4</CornerRadius>
+      <x:Double x:Key="Density.RowHeight">24</x:Double>
+      <Thickness x:Key="Density.RowPadding">8,2</Thickness>
+      <x:Double x:Key="Density.CommandBarHeight">36</x:Double>
+      <!-- Motion (FR-087): every transition takes its duration and easing from here, so netprints.enableAnimations switches them all off. -->
+      <x:TimeSpan x:Key="Motion.Fast">0:0:0.1</x:TimeSpan>
+      <x:TimeSpan x:Key="Motion.Normal">0:0:0.15</x:TimeSpan>
+      <CubicEaseOut x:Key="Motion.Easing" />
+      <x:Double x:Key="Icon.Large">32</x:Double>
+      <!-- Empty state (FR-088): a centred icon, one sentence and an optional action. -->
+      <ControlTheme x:Key="{x:Type ctl:EmptyState}" TargetType="ctl:EmptyState">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Padding" Value="{StaticResource Space.L}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Template">
+          <ControlTemplate>
+            <StackPanel Margin="{TemplateBinding Padding}" Spacing="{StaticResource Space.S.Size}" HorizontalAlignment="Center" VerticalAlignment="Center">
+              <icons:IconPresenter IconId="{TemplateBinding IconId}" Width="{StaticResource Icon.Large}" Height="{StaticResource Icon.Large}"
+                                   HorizontalAlignment="Center" Opacity="0.6" />
+              <TextBlock Classes="secondary" Text="{TemplateBinding Message}" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="320" />
+              <Button HorizontalAlignment="Center" Content="{TemplateBinding ActionText}" Command="{TemplateBinding ActionCommand}"
+                      IsVisible="{TemplateBinding HasAction}" />
+            </StackPanel>
+          </ControlTemplate>
+        </Setter>
+      </ControlTheme>
+      <!-- Dialog shell (FR-088): shared widths and the height at which a dialog's list starts to scroll. -->
+      <x:Double x:Key="Dialog.MinWidth">360</x:Double>
+      <x:Double x:Key="Dialog.MaxWidth">640</x:Double>
+      <x:Double x:Key="Dialog.ListMaxHeight">360</x:Double>
+      <x:Double x:Key="Flyout.MethodPickerWidth">480</x:Double>
+      <ControlTheme x:Key="{x:Type ctl:DialogShell}" TargetType="ctl:DialogShell">
+        <Setter Property="MinWidth" Value="{StaticResource Dialog.MinWidth}" />
+        <Setter Property="MaxWidth" Value="{StaticResource Dialog.MaxWidth}" />
+        <Setter Property="Padding" Value="{StaticResource Space.M}" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Template">
+          <ControlTemplate>
+            <Grid Margin="{TemplateBinding Padding}" RowDefinitions="Auto,*,Auto" RowSpacing="{StaticResource Space.M.Size}">
+              <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space.S.Size}">
+                <icons:IconPresenter IconId="{TemplateBinding IconId}" Width="{StaticResource Icon.Medium}" Height="{StaticResource Icon.Medium}"
+                                     VerticalAlignment="Center" AutomationProperties.AccessibilityView="Raw" />
+                <TextBlock Classes="dialogTitle" Text="{TemplateBinding Title}" />
+              </StackPanel>
+              <ContentPresenter Grid.Row="1" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
+              <ItemsControl Grid.Row="2" HorizontalAlignment="Right" ItemsSource="{TemplateBinding SortedActions}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space.S.Size}" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+              </ItemsControl>
+            </Grid>
+          </ControlTemplate>
+        </Setter>
+      </ControlTheme>
+      <FocusAdornerTemplate x:Key="NetPrints.FocusAdorner">
+        <Border BorderThickness="{StaticResource Focus.RingThickness}" BorderBrush="{DynamicResource Focus.Ring}"
+                CornerRadius="{StaticResource Radius.Control}" IsHitTestVisible="False" />
+      </FocusAdornerTemplate>
       <!-- Graph canvas grid (spec 002): lines white on dark, black on light; minor 8% and major 18% alpha.
-           The canvas background is SystemRegionColor (EditorApp.axaml palette). -->
+           The canvas background is the Canvas.Background token (FR-109). -->
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Dark">
+          <Color x:Key="Canvas.Background">#FF000000</Color>
+          <SolidColorBrush x:Key="StartPage.RecentTileBackground">#FF2A2A30</SolidColorBrush>
+          <SolidColorBrush x:Key="Focus.Ring">#4FC3F7</SolidColorBrush>
+          <SolidColorBrush x:Key="State.Hover">#26FFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="State.Pressed">#3DFFFFFF</SolidColorBrush>
           <Color x:Key="GraphGrid.MinorColor">#14FFFFFF</Color>
           <Color x:Key="GraphGrid.MajorColor">#2EFFFFFF</Color>
           <SolidColorBrush x:Key="GraphWatermark.Foreground">#CCEEEEEE</SolidColorBrush>
@@ -17,18 +153,59 @@
           <SolidColorBrush x:Key="OpeningGraphIndicator.Background">#CC202020</SolidColorBrush>
           <SolidColorBrush x:Key="OpeningGraphIndicator.Foreground">White</SolidColorBrush>
           <SolidColorBrush x:Key="BusyOverlay.Background">#AA000000</SolidColorBrush>
+          <BoxShadows x:Key="Popup.Shadow">0 4 12 0 #40000000</BoxShadows>
           <!-- Pin hover stroke (PAR-43, R2-07): white reads fine over the dark card, invisible over Light. -->
           <SolidColorBrush x:Key="Pin.HoverStroke">White</SolidColorBrush>
           <!-- Error-list row severity icon (FR-032, OWN-03, owner report). -->
           <SolidColorBrush x:Key="Diagnostic.Error.Foreground">#FF6666</SolidColorBrush>
           <SolidColorBrush x:Key="Diagnostic.Warning.Foreground">#FFB74D</SolidColorBrush>
           <SolidColorBrush x:Key="Diagnostic.Info.Foreground">#64B5F6</SolidColorBrush>
+          <!-- Command bar compile button: the error count badge. -->
+          <SolidColorBrush x:Key="CommandBar.BadgeBackground">#C62828</SolidColorBrush>
+          <SolidColorBrush x:Key="CommandBar.BadgeForeground">White</SolidColorBrush>
+          
+          <!-- Domain Colors -->
+          <SolidColorBrush x:Key="Icon.Method.Foreground">#B388FF</SolidColorBrush>
+          <SolidColorBrush x:Key="Icon.Property.Foreground">#81D4FA</SolidColorBrush>
+          <SolidColorBrush x:Key="Icon.Event.Foreground">#FFCDD2</SolidColorBrush>
+          <SolidColorBrush x:Key="Icon.Class.Foreground">#A5D6A7</SolidColorBrush>
+
+          <!-- Node header roles (FR-086): each against Node.HeaderForeground reaches 4.5:1. -->
+          <SolidColorBrush x:Key="Node.HeaderForeground">#FFFFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Entry">#3F3FA3</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Call">#2A5C8C</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Pure">#2E7A3F</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Flow">#5A5A5A</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Variable">#1F7A7A</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Constructor">#8A5A00</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Async">#6B3FA0</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Throw">#B3261E</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Border">#CC303030</SolidColorBrush>
+          <!-- Pin kinds and data-type categories (FR-086). -->
+          <SolidColorBrush x:Key="Pin.Exec">#E0FFE0</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Type">#FFE0E0</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Bool">#EF5350</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Integer">#26C6DA</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Float">#66BB6A</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.String">#F06292</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Object">#90A4AE</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.ValueType">#FFB74D</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Delegate">#BA68C8</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Generic">#4DB6AC</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.DefaultValue">#10EEFF</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Hint">#FFB0B0B0</SolidColorBrush>
+          <!-- Selection, marquee and selected wire (FR-086). -->
+          <SolidColorBrush x:Key="Canvas.SelectionBorder">#4FC3F7</SolidColorBrush>
+          <SolidColorBrush x:Key="Canvas.MarqueeFill">#334FC3F7</SolidColorBrush>
+          <SolidColorBrush x:Key="Canvas.MarqueeBorder">#4FC3F7</SolidColorBrush>
+          <SolidColorBrush x:Key="Canvas.WireSelected">#FFD54F</SolidColorBrush>
         </ResourceDictionary>
-        <!-- Light (R2-17): unreachable today (EditorApp.axaml hard-codes RequestedThemeVariant="Dark",
-             no user setting) and incomplete (GraphBrushes in Graph/GraphConverters.cs is not themed).
-             Kept only because GridRenderTests already switches to Light and checks the grid tokens;
-             full tokenization and a Light snapshot test are deferred (P3a). -->
         <ResourceDictionary x:Key="Light">
+          <Color x:Key="Canvas.Background">#FFFFFFFF</Color>
+          <SolidColorBrush x:Key="StartPage.RecentTileBackground">#FFE4E6EC</SolidColorBrush>
+          <SolidColorBrush x:Key="Focus.Ring">#0277BD</SolidColorBrush>
+          <SolidColorBrush x:Key="State.Hover">#14000000</SolidColorBrush>
+          <SolidColorBrush x:Key="State.Pressed">#26000000</SolidColorBrush>
           <Color x:Key="GraphGrid.MinorColor">#14000000</Color>
           <Color x:Key="GraphGrid.MajorColor">#2E000000</Color>
           <SolidColorBrush x:Key="GraphWatermark.Foreground">#55202020</SolidColorBrush>
@@ -39,27 +216,273 @@
           <SolidColorBrush x:Key="OpeningGraphIndicator.Background">#CCF5F5F5</SolidColorBrush>
           <SolidColorBrush x:Key="OpeningGraphIndicator.Foreground">#FF202020</SolidColorBrush>
           <SolidColorBrush x:Key="BusyOverlay.Background">#66000000</SolidColorBrush>
+          <BoxShadows x:Key="Popup.Shadow">0 4 12 0 #30000000</BoxShadows>
           <SolidColorBrush x:Key="Pin.HoverStroke">Black</SolidColorBrush>
           <!-- Error-list row severity icon (FR-032, OWN-03, owner report). -->
           <SolidColorBrush x:Key="Diagnostic.Error.Foreground">#C62828</SolidColorBrush>
           <SolidColorBrush x:Key="Diagnostic.Warning.Foreground">#E65100</SolidColorBrush>
           <SolidColorBrush x:Key="Diagnostic.Info.Foreground">#1565C0</SolidColorBrush>
+          <SolidColorBrush x:Key="CommandBar.BadgeBackground">#C62828</SolidColorBrush>
+          <SolidColorBrush x:Key="CommandBar.BadgeForeground">White</SolidColorBrush>
+          
+          <!-- Domain Colors -->
+          <SolidColorBrush x:Key="Icon.Method.Foreground">#7E57C2</SolidColorBrush>
+          <SolidColorBrush x:Key="Icon.Property.Foreground">#29B6F6</SolidColorBrush>
+          <SolidColorBrush x:Key="Icon.Event.Foreground">#EF5350</SolidColorBrush>
+          <SolidColorBrush x:Key="Icon.Class.Foreground">#66BB6A</SolidColorBrush>
+
+          <SolidColorBrush x:Key="Node.HeaderForeground">#FF1A1A1A</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Entry">#C5CAF5</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Call">#BBD7F2</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Pure">#C2E6C8</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Flow">#D4D4D4</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Variable">#B6E3E3</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Constructor">#F0D9A8</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Async">#DCC8F0</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Throw">#F5B8B3</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Border">#CCB0B0B0</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Exec">#212121</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Type">#C62828</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Bool">#D32F2F</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Integer">#006B75</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Float">#2B6C2E</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.String">#C2185B</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Object">#4A616B</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.ValueType">#A04800</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Delegate">#7B1FA2</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Generic">#006F62</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.DefaultValue">#0097A7</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Hint">#FF5A5A5A</SolidColorBrush>
+          <SolidColorBrush x:Key="Canvas.SelectionBorder">#0277BD</SolidColorBrush>
+          <SolidColorBrush x:Key="Canvas.MarqueeFill">#330277BD</SolidColorBrush>
+          <SolidColorBrush x:Key="Canvas.MarqueeBorder">#0277BD</SolidColorBrush>
+          <SolidColorBrush x:Key="Canvas.WireSelected">#F57F17</SolidColorBrush>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>
   </Styles.Resources>
 
   <!-- Error-list row severity icon color (FR-032, OWN-03): the icon's class is set from
-       DiagnosticRowVM.Is{Error,Warning,Info} (Classes.<name>="{Binding ...}"), the state→visual mapping
+       DiagnosticRowViewModel.Is{Error,Warning,Info} (Classes.<name>="{Binding ...}"), the state→visual mapping
        this style then turns into a themed color. -->
-  <Style Selector="mi|MaterialIcon.error">
+  <Style Selector="icons|IconPresenter.error">
     <Setter Property="Foreground" Value="{DynamicResource Diagnostic.Error.Foreground}" />
   </Style>
-  <Style Selector="mi|MaterialIcon.warning">
+  <Style Selector="icons|IconPresenter.warning">
     <Setter Property="Foreground" Value="{DynamicResource Diagnostic.Warning.Foreground}" />
   </Style>
-  <Style Selector="mi|MaterialIcon.info">
+  <Style Selector="icons|IconPresenter.info">
     <Setter Property="Foreground" Value="{DynamicResource Diagnostic.Info.Foreground}" />
+  </Style>
+
+  <!-- Domain icon colors -->
+  <Style Selector="icons|IconPresenter[IconId='netprints.icon.class']">
+    <Setter Property="Foreground" Value="{DynamicResource Icon.Class.Foreground}" />
+  </Style>
+  <Style Selector="icons|IconPresenter[IconId='netprints.icon.method']">
+    <Setter Property="Foreground" Value="{DynamicResource Icon.Method.Foreground}" />
+  </Style>
+  <Style Selector="icons|IconPresenter[IconId='netprints.icon.constructor']">
+    <Setter Property="Foreground" Value="{DynamicResource Icon.Method.Foreground}" />
+  </Style>
+  <Style Selector="icons|IconPresenter[IconId='netprints.icon.variable']">
+    <Setter Property="Foreground" Value="{DynamicResource Icon.Property.Foreground}" />
+  </Style>
+  <Style Selector="icons|IconPresenter[IconId='netprints.icon.event']">
+    <Setter Property="Foreground" Value="{DynamicResource Icon.Event.Foreground}" />
+  </Style>
+
+  <!-- Node headers: the role class (NodeRole.StyleClass) picks the colour token; the text follows the variant (FR-086). -->
+  <Style Selector="Border.nodeHeader.role-entry">
+    <Setter Property="Background" Value="{DynamicResource Node.Header.Entry}" />
+  </Style>
+  <Style Selector="Border.nodeHeader.role-call">
+    <Setter Property="Background" Value="{DynamicResource Node.Header.Call}" />
+  </Style>
+  <Style Selector="Border.nodeHeader.role-pure">
+    <Setter Property="Background" Value="{DynamicResource Node.Header.Pure}" />
+  </Style>
+  <Style Selector="Border.nodeHeader.role-flow">
+    <Setter Property="Background" Value="{DynamicResource Node.Header.Flow}" />
+  </Style>
+  <Style Selector="Border.nodeHeader.role-variable">
+    <Setter Property="Background" Value="{DynamicResource Node.Header.Variable}" />
+  </Style>
+  <Style Selector="Border.nodeHeader.role-constructor">
+    <Setter Property="Background" Value="{DynamicResource Node.Header.Constructor}" />
+  </Style>
+  <Style Selector="Border.nodeHeader.role-async">
+    <Setter Property="Background" Value="{DynamicResource Node.Header.Async}" />
+  </Style>
+  <Style Selector="Border.nodeHeader.role-throw">
+    <Setter Property="Background" Value="{DynamicResource Node.Header.Throw}" />
+  </Style>
+  <Style Selector="Border.nodeHeader TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Node.HeaderForeground}" />
+  </Style>
+  <Style Selector="Border.nodeHeader icons|IconPresenter">
+    <Setter Property="Foreground" Value="{DynamicResource Node.HeaderForeground}" />
+  </Style>
+
+  <!-- Node card: the border is the selection mark. -->
+  <Style Selector="Border.nodeCard">
+    <Setter Property="BorderBrush" Value="{DynamicResource Node.Border}" />
+  </Style>
+  <Style Selector="Border.nodeCard.selected">
+    <Setter Property="BorderBrush" Value="{DynamicResource Canvas.SelectionBorder}" />
+  </Style>
+
+  <!-- Pins, cables and the preview cable by type family (FR-107). A pin is an outline in its family colour until it is connected, then filled with it (FR-108). -->
+  <Style Selector=":is(Shape).pin">
+    <Setter Property="Fill" Value="Transparent" />
+    <Setter Property="StrokeThickness" Value="{StaticResource Pin.OutlineThickness}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-exec">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Exec}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-exec.connected">
+    <Setter Property="Fill" Value="{DynamicResource Pin.Exec}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-type">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Type}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-type.connected">
+    <Setter Property="Fill" Value="{DynamicResource Pin.Type}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-bool">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Bool}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-bool.connected">
+    <Setter Property="Fill" Value="{DynamicResource Pin.Bool}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-integer">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Integer}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-integer.connected">
+    <Setter Property="Fill" Value="{DynamicResource Pin.Integer}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-float">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Float}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-float.connected">
+    <Setter Property="Fill" Value="{DynamicResource Pin.Float}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-string">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.String}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-string.connected">
+    <Setter Property="Fill" Value="{DynamicResource Pin.String}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-object">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Object}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-object.connected">
+    <Setter Property="Fill" Value="{DynamicResource Pin.Object}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-valuetype">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.ValueType}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-valuetype.connected">
+    <Setter Property="Fill" Value="{DynamicResource Pin.ValueType}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-delegate">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Delegate}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-delegate.connected">
+    <Setter Property="Fill" Value="{DynamicResource Pin.Delegate}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-generic">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Generic}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-generic.connected">
+    <Setter Property="Fill" Value="{DynamicResource Pin.Generic}" />
+  </Style>
+  <Style Selector="TextBlock.pinHint">
+    <Setter Property="Foreground" Value="{DynamicResource Pin.Hint}" />
+    <Setter Property="FontSize" Value="{StaticResource Font.Body}" />
+    <Setter Property="FontStyle" Value="Italic" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Polygon.defaultValue">
+    <Setter Property="Fill" Value="{DynamicResource Pin.DefaultValue}" />
+  </Style>
+  <Style Selector="Polygon.defaultValue.inactive">
+    <Setter Property="Opacity" Value="0.5" />
+  </Style>
+  <Style Selector="nc|Connection.pin-exec">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Exec}" />
+  </Style>
+  <Style Selector="nc|Connection.pin-type">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Type}" />
+  </Style>
+  <Style Selector="nc|Connection.pin-bool">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Bool}" />
+  </Style>
+  <Style Selector="nc|Connection.pin-integer">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Integer}" />
+  </Style>
+  <Style Selector="nc|Connection.pin-float">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Float}" />
+  </Style>
+  <Style Selector="nc|Connection.pin-string">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.String}" />
+  </Style>
+  <Style Selector="nc|Connection.pin-object">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Object}" />
+  </Style>
+  <Style Selector="nc|Connection.pin-valuetype">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.ValueType}" />
+  </Style>
+  <Style Selector="nc|Connection.pin-delegate">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Delegate}" />
+  </Style>
+  <Style Selector="nc|Connection.pin-generic">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Generic}" />
+  </Style>
+  <!-- The preview cable takes the BorderBrush of the connector it starts from (a NodeInput or NodeOutput), so each carries its family colour. -->
+  <Style Selector=":is(nc|Connector).pin-exec">
+    <Setter Property="BorderBrush" Value="{DynamicResource Pin.Exec}" />
+  </Style>
+  <Style Selector=":is(nc|Connector).pin-type">
+    <Setter Property="BorderBrush" Value="{DynamicResource Pin.Type}" />
+  </Style>
+  <Style Selector=":is(nc|Connector).pin-bool">
+    <Setter Property="BorderBrush" Value="{DynamicResource Pin.Bool}" />
+  </Style>
+  <Style Selector=":is(nc|Connector).pin-integer">
+    <Setter Property="BorderBrush" Value="{DynamicResource Pin.Integer}" />
+  </Style>
+  <Style Selector=":is(nc|Connector).pin-float">
+    <Setter Property="BorderBrush" Value="{DynamicResource Pin.Float}" />
+  </Style>
+  <Style Selector=":is(nc|Connector).pin-string">
+    <Setter Property="BorderBrush" Value="{DynamicResource Pin.String}" />
+  </Style>
+  <Style Selector=":is(nc|Connector).pin-object">
+    <Setter Property="BorderBrush" Value="{DynamicResource Pin.Object}" />
+  </Style>
+  <Style Selector=":is(nc|Connector).pin-valuetype">
+    <Setter Property="BorderBrush" Value="{DynamicResource Pin.ValueType}" />
+  </Style>
+  <Style Selector=":is(nc|Connector).pin-delegate">
+    <Setter Property="BorderBrush" Value="{DynamicResource Pin.Delegate}" />
+  </Style>
+  <Style Selector=":is(nc|Connector).pin-generic">
+    <Setter Property="BorderBrush" Value="{DynamicResource Pin.Generic}" />
+  </Style>
+  <Style Selector="nc|Connection:selected">
+    <Setter Property="Stroke" Value="{DynamicResource Canvas.WireSelected}" />
+  </Style>
+
+  <!-- Output panel: a line of the program's standard error. -->
+  <Style Selector="TextBlock.outputError">
+    <Setter Property="Foreground" Value="{DynamicResource Diagnostic.Error.Foreground}" />
+  </Style>
+
+  <!-- Inspector fields: the message of a refused edit. -->
+  <Style Selector="TextBlock.fieldError">
+    <Setter Property="Foreground" Value="{DynamicResource Diagnostic.Error.Foreground}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
 
   <!-- Round toolbar buttons (MahApps MetroCircleButtonStyle in the WPF editor). -->
@@ -97,13 +520,259 @@
     <Setter Property="Margin" Value="4" />
   </Style>
 
+  <!-- Breadcrumbs above a graph (FR-065): flat 24 px buttons separated by a chevron. -->
+  <Style Selector="Button.breadcrumb">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="MinHeight" Value="24" />
+    <Setter Property="Padding" Value="6,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="TextBlock.breadcrumbSeparator">
+    <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
   <Style Selector="TextBlock.header">
-    <Setter Property="FontSize" Value="24" />
+    <Setter Property="FontSize" Value="{StaticResource Font.Subtitle}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="Margin" Value="{StaticResource Space.XS}" />
+  </Style>
+
+  <!-- Command bar (contracts/commands.md section 1): a compact icon and label button, at most 40 px high with its bar. -->
+  <Style Selector="Button.command-bar">
+    <Setter Property="Padding" Value="8,4" />
+    <Setter Property="Margin" Value="2,0" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Height" Value="32" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="ToolTip.ShowOnDisabled" Value="True" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="4" />
+  </Style>
+  
+  <Style Selector="Button.command-bar:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource State.Hover}" />
+  </Style>
+  <Style Selector="Button.command-bar:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource State.Pressed}" />
+  </Style>
+
+  <!-- Keyboard focus ring and hover and pressed states (FR-087): the ring follows Radius.Control, the states are tokens. -->
+  <Style Selector="TreeViewItem, ListBoxItem, MenuItem, TextBox, Button.command-bar">
+    <Setter Property="FocusAdorner" Value="{StaticResource NetPrints.FocusAdorner}" />
+    <Setter Property="CornerRadius" Value="{StaticResource Radius.Control}" />
+  </Style>
+  <!-- Hover and pressed backgrounds fade over Motion.Fast. -->
+  <Style Selector="Button /template/ ContentPresenter#PART_ContentPresenter, ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="{x:Static ContentPresenter.BackgroundProperty}" Duration="{StaticResource Motion.Fast}" Easing="{StaticResource Motion.Easing}" />
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector="TreeViewItem /template/ Border#PART_LayoutRoot">
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="{x:Static Border.BackgroundProperty}" Duration="{StaticResource Motion.Fast}" Easing="{StaticResource Motion.Easing}" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <!-- Row density: tree items, the Errors and Output rows and the quick-pick rows share one height and padding. -->
+  <Style Selector="TreeView TreeViewItem, ListBox.rows ListBoxItem, ListBox.quickPick ListBoxItem">
+    <Setter Property="MinHeight" Value="{StaticResource Density.RowHeight}" />
+    <Setter Property="Padding" Value="{StaticResource Density.RowPadding}" />
+  </Style>
+
+  <!-- Method picker (FR-094): group headers and the current row are semibold, an overridden row is dimmed and, like a header, cannot be selected. -->
+  <Style Selector="ListBox.methodPicker ListBoxItem" x:DataType="ctl:MethodPickerRow">
+    <Setter Property="IsEnabled" Value="{Binding IsPickable}" />
+  </Style>
+  <Style Selector="Grid.methodRow:not(.header)">
+    <Setter Property="Margin" Value="12,0,0,0" />
+  </Style>
+  <Style Selector="Grid.methodRow.header TextBlock.methodText, Grid.methodRow.current TextBlock.methodText">
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="Grid.methodRow.header TextBlock.methodText">
+    <Setter Property="Foreground" Value="{DynamicResource SystemAccentColor}" />
+  </Style>
+  <Style Selector="Grid.methodRow.dimmed">
+    <Setter Property="Opacity" Value="0.5" />
+  </Style>
+  <Style Selector="TextBlock.methodMark">
+    <Setter Property="FontSize" Value="{StaticResource Font.Caption}" />
+    <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+  </Style>
+
+  <!-- Palette and node-search popups fade in over Motion.Normal: the root starts transparent and a Loaded trigger adds .shown. -->
+  <Style Selector=":is(Control).popupFade">
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="{StaticResource Motion.Normal}" Easing="{StaticResource Motion.Easing}" />
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector=":is(Control).popupFade.shown">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <Style Selector="TreeViewItem:not(:selected) /template/ Border#PART_LayoutRoot:pointerover">
+    <Setter Property="Background" Value="{DynamicResource State.Hover}" />
+  </Style>
+  <Style Selector="TreeViewItem:pressed /template/ Border#PART_LayoutRoot">
+    <Setter Property="Background" Value="{DynamicResource State.Pressed}" />
+  </Style>
+  <Style Selector="ListBoxItem:pointerover:not(:selected) /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource State.Hover}" />
+  </Style>
+  <Style Selector="ListBoxItem:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource State.Pressed}" />
+  </Style>
+  <Style Selector="MenuItem:pointerover /template/ Border#PART_LayoutRoot">
+    <Setter Property="Background" Value="{DynamicResource State.Hover}" />
+  </Style>
+  <Style Selector="MenuItem:pressed /template/ Border#PART_LayoutRoot">
+    <Setter Property="Background" Value="{DynamicResource State.Pressed}" />
+  </Style>
+  <Style Selector="Border.badge">
+    <Setter Property="Background" Value="{DynamicResource CommandBar.BadgeBackground}" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="MinWidth" Value="16" />
+    <Setter Property="Padding" Value="4,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.badge > TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource CommandBar.BadgeForeground}" />
+    <Setter Property="FontSize" Value="11" />
     <Setter Property="HorizontalAlignment" Value="Center" />
-    <Setter Property="Margin" Value="4" />
   </Style>
 
   <Style Selector="GridSplitter">
     <Setter Property="Background" Value="{DynamicResource SystemAccentColor}" />
+  </Style>
+  <!-- Type ramp for text roles: a view picks a class and never sets FontSize (rule E8). -->
+  <Style Selector="TextBlock.title">
+    <Setter Property="FontSize" Value="42" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="LetterSpacing" Value="-0.5" />
+    <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+  </Style>
+  <Style Selector="TextBlock.section">
+    <Setter Property="FontSize" Value="22" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+  </Style>
+  <Style Selector="TextBlock.secondary">
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+    <Setter Property="Opacity" Value="0.75" />
+  </Style>
+  <Style Selector="TextBlock.treeItem">
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+  <Style Selector="TextBlock.nodeTitle">
+    <Setter Property="FontSize" Value="18" />
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
+  <Style Selector="TextBlock.pinLabel">
+    <Setter Property="FontSize" Value="{StaticResource Font.Body}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="TextBox.pinLabel">
+    <Setter Property="FontSize" Value="{StaticResource Font.Body}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="TextBlock.memberName">
+    <Setter Property="FontSize" Value="{StaticResource Font.Body}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="TextBlock.inspectorLabel">
+    <Setter Property="Opacity" Value="0.75" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Margin" Value="0,0,8,4" />
+  </Style>
+  <!-- Inspector property grid: label column Auto, editors share one row rhythm (the inspectorLabel bottom margin). -->
+  <Style Selector="Grid.propertyGrid > :is(TextBox)">
+    <Setter Property="Margin" Value="0,0,0,4" />
+  </Style>
+  <Style Selector="Grid.propertyGrid > :is(ComboBox)">
+    <Setter Property="Margin" Value="0,0,0,4" />
+  </Style>
+  <Style Selector="Grid.propertyGrid > :is(StackPanel)">
+    <Setter Property="Margin" Value="0,0,0,4" />
+  </Style>
+  <Style Selector="Grid.propertyGrid > :is(CheckBox)">
+    <Setter Property="Margin" Value="0,0,0,4" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Padding" Value="4,0" />
+  </Style>
+
+  <!-- Dialogs: header, footer buttons and a read-only code-like text box. -->
+  <Style Selector="TextBlock.dialogTitle">
+    <Setter Property="FontSize" Value="{StaticResource Font.Subtitle}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="TextBlock.groupTitle">
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Margin" Value="2,4" />
+  </Style>
+  <Style Selector="Button.dialogAction">
+    <Setter Property="MinWidth" Value="80" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+  </Style>
+  <Style Selector="TextBox.codeBlock">
+    <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
+    <Setter Property="VerticalContentAlignment" Value="Top" />
+  </Style>
+
+  <!-- Monospace font with tabular (fixed-width) numerals. -->
+  <Style Selector="TextBlock.tabular">
+    <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
+    <Setter Property="FontFeatures" Value="tnum" />
+  </Style>
+  <Style Selector="TextBox.tabular">
+    <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
+    <Setter Property="FontFeatures" Value="tnum" />
+  </Style>
+
+  <!-- Search box flush with its popup. -->
+  <Style Selector="Grid.quickPickRow.disabled">
+    <Setter Property="Opacity" Value="0.5" />
+  </Style>
+  <Style Selector="TextBox.searchInput">
+    <Setter Property="Margin" Value="4" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <!-- Settings forms. -->
+  <Style Selector="StackPanel.formContainer">
+    <Setter Property="Margin" Value="16" />
+    <Setter Property="Spacing" Value="4" />
+    <Setter Property="MaxWidth" Value="480" />
+  </Style>
+  <Style Selector="TextBlock.formLabel">
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Margin" Value="4" />
+  </Style>
+  <Style Selector="ComboBox.formInput">
+    <Setter Property="Margin" Value="4" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+  </Style>
+
+  <!-- Key hint next to a menu item. -->
+  <Style Selector="TextBlock.menuShortcut">
+    <Setter Property="Margin" Value="24,0,0,0" />
+    <Setter Property="Opacity" Value="0.6" />
   </Style>
 </Styles>

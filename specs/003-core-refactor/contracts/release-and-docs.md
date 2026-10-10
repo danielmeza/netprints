@@ -70,7 +70,7 @@ Actions are pinned by commit SHA with the version in a comment, as in `ci.yml`. 
 | Checkout | `fetch-depth: 0` in every job that packs or publishes (`ci.yml` `build-test`, `packages`, `desktop-publish`; `release.yml` `pack`, `desktop`). Shallow clones fall back to the default version without a warning |
 | Reading the version in scripts | `dotnet msbuild src/NetPrints.Core/NetPrints.Core.csproj -t:MinVer -getProperty:MinVerVersion -p:Configuration=Release` (after restore) |
 | Repository scope | `samples/` (own `Directory.*` files, no CPM) and `legacy/NetPrintsVSIX` (CPM off) do not get MinVer |
-| Editor version | the editor's `{NetPrintsSdkVersion}` for new projects is its own `AssemblyInformationalVersion` without the `+<sha>` suffix (project-system.md §1) |
+| Editor version | the editor's `{NetPrintsSdkVersion}` for new projects and sample copies is its own `AssemblyInformationalVersion` without the `+<sha>` suffix when that is a release; a pre-release build writes the latest released version instead (ADR-0022; project-system.md §1) |
 
 The generated-file header no longer carries a version (project-system.md §3): with MinVer every commit has
 a different version, which would rewrite every committed `.netpc.g.cs` on each SDK update and make DF-T26

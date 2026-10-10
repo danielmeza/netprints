@@ -147,7 +147,7 @@ creates the pins and then applies `pins`.
 | `return` | `ReturnNode` | `returnCount` (int, omit 0) |
 | `classReturn` | `ClassReturnNode` | `interfaceCount` (int, omit 0) |
 | `typeReturn` | `TypeReturnNode` | — |
-| `eventEntry` | `EventEntryNode` (new) | `eventName`, `visibility`, `modifiers` (omit None), `overrides` (`MethodRef`, optional), `argumentCount` |
+| `eventEntry` | `EventEntryNode` (new) | `eventName`, `visibility`, `modifiers` (omit None), `overrides` (`MethodRef`, optional), `argumentCount`, `arguments` (`{type: TypeRef}[]`; written only for a custom entry (no `overrides`) with at least one argument whose type is not `object`, otherwise omitted; the names are the argument pins' names in `pins`; a legacy `name` per item is still read and repaired with `NPD011` when it is not a unique identifier; T083, T089) |
 | `callMethod` | `CallMethodNode` | `method` (`MethodRef`), `genericArgumentCount` (omit 0), `pure` (bool, omit `false`, R1-04) |
 | `constructor` | `ConstructorNode` | `constructor` (`ConstructorRef`), `pure` (bool, omit `false`, R1-04) |
 | `makeDelegate` | `MakeDelegateNode` | `method` (`MethodRef`) |
@@ -329,6 +329,8 @@ Document issue codes (`DocumentIssue.Code`):
 | `NPD007` | Warning | a node id (within its graph) or member id (within its class) was duplicated — a merge, or a hand-edited or copy-pasted file; the later occurrence (document order) was reassigned a fresh id and the document still loaded |
 | `NPD008` | Error | a graph document could not be read at all (malformed content, or a deserialization failure); a caller that keeps working after skipping it reports this instead of propagating the `DocumentFormatException` (added T044, `GraphCodeGenerator`) |
 | `NPD009` | Warning | a node id or member id does not match `IdFormat` for its prefix (a hand or AI edit, e.g. `"n0"` or `"start"`); it was replaced by a fresh id, references to it in the same document (connection endpoints, `layout` keys) follow, and the document still loaded (added T054b, research.md R21) |
+| `NPD010` | Warning | a `callMethod` node is stored with `pure: true` but its method returns no value, so it cannot be pure; it was loaded as an impure node |
+| `NPD011` | Warning | a custom event argument's `name` in `arguments` is not a valid C# identifier or is used twice; it was replaced by the name stored in the argument's pin state, or by `InputN`, and the document still loaded |
 
 ### 2.2 Formats — `IDocumentFormat.cs`, `DocumentFormatRegistry.cs`
 

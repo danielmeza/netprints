@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
+             xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
+             x:Class="NetPrints.Editor.Controls.MethodPickerList"
+             x:DataType="ctl:MethodPickerListViewModel"
+             AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MethodPicker}">
+  <UserControl.KeyBindings>
+    <KeyBinding Gesture="Escape" Command="{Binding CancelCommand}" />
+  </UserControl.KeyBindings>
+  <Grid RowDefinitions="Auto,Auto" RowSpacing="{StaticResource Space.S.Size}">
+    <TextBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MethodPickerFilter}" Text="{Binding Filter}" PlaceholderText="Filter methods">
+      <Interaction.Behaviors>
+        <FocusOnAttachedToVisualTreeBehavior />
+        <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding PickCommand}" />
+        <KeyTrigger Key="Down" EventRoutingStrategy="Tunnel">
+          <FocusControlAction TargetControl="RowList" />
+        </KeyTrigger>
+      </Interaction.Behaviors>
+    </TextBox>
+    <ctl:EmptyState Grid.Row="1" IconId="{x:Static icons:IconIds.EmptySearch}" Message="No method matches your filter." IsVisible="{Binding IsEmpty}"
+                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MethodPickerEmpty}" />
+    <ListBox x:Name="RowList" Grid.Row="1" Classes="rows methodPicker" Focusable="True" Height="{StaticResource Dialog.ListMaxHeight}" ItemsSource="{Binding Rows}"
+             SelectedItem="{Binding Selected}" SelectionMode="Single" IsVisible="{Binding !IsEmpty}"
+             AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MethodPickerRows}">
+      <Interaction.Behaviors>
+        <ExecuteCommandOnKeyDownBehavior EventRoutingStrategy="Tunnel" Key="Enter" Command="{Binding PickCommand}" />
+        <ExecuteCommandOnDoubleTappedBehavior Command="{Binding PickCommand}" />
+      </Interaction.Behaviors>
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="ctl:MethodPickerRow">
+          <Grid Classes="methodRow" Classes.header="{Binding IsHeader}" Classes.current="{Binding IsCurrent}" Classes.dimmed="{Binding IsOverridden}"
+                ColumnDefinitions="*,Auto" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MethodPickerRow}" AutomationProperties.Name="{Binding Text}">
+            <TextBlock Classes="methodText" Text="{Binding Text}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="{StaticResource Space.S.Size}" VerticalAlignment="Center">
+              <TextBlock Classes="methodMark" Text="current" IsVisible="{Binding IsCurrent}" />
+              <TextBlock Classes="methodMark" Text="abstract" IsVisible="{Binding IsAbstract}" />
+              <TextBlock Classes="methodMark" Text="overridden" IsVisible="{Binding IsOverridden}" />
+            </StackPanel>
+          </Grid>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </Grid>
+</UserControl>

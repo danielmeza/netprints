@@ -1,0 +1,25 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
+             xmlns:edoutput="clr-namespace:NetPrints.Editor.Output"
+             x:Class="NetPrints.Editor.Output.OutputPanelView"
+             x:DataType="edoutput:OutputPanelViewModel">
+  <!-- The build output, then the program's stdout and stderr; the list follows the newest line. -->
+  <Panel>
+    <ctl:EmptyState IconId="{x:Static icons:IconIds.EmptyOutput}" Message="Nothing has been built or run yet." IsVisible="{Binding IsEmpty}"
+                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.OutputEmpty}" />
+    <ListBox Classes="rows" ItemsSource="{Binding Lines}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.OutputLines}">
+      <Interaction.Behaviors>
+        <AutoScrollToBottomBehavior />
+      </Interaction.Behaviors>
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="edoutput:OutputLineViewModel">
+          <TextBlock Text="{Binding Text}" FontFamily="{StaticResource Font.Mono}" Classes.outputError="{Binding IsError}"
+                     AutomationProperties.AutomationId="{x:Static ed:AutomationIds.OutputLine}" />
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </Panel>
+</UserControl>

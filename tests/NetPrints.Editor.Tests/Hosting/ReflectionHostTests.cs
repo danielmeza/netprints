@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Editor.Hosting;
@@ -143,6 +144,65 @@ public class ReflectionHostTests
         Assert.Contains(host.NonStaticTypes, t => t == widget);
         Assert.Contains(host.Provider.GetNonStaticTypes(), t => t == widget);
         Assert.Contains(host.NonStaticTypes, t => t == TypeSpecifier.FromType<string>());
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task AReloadCancelledDuringItsWarmUpStopsThereAndPublishesNothing()
+    {
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        CancellingCatalog catalog = CancellingCatalog.Create(cancellation);
+        var manifest = new ExtensionManifest("editor.test", "Editor test", "1.0.0", string.Empty, "1.0", []);
+        await using var extensions = new ExtensionHost(
+            new ExtensionLoaderOptions([], [], [BuiltInExtension.InProcessEntry, (manifest, new GivenCatalogExtension(catalog.Catalog))]), NullLoggerFactory.Instance);
+        var host = new ReflectionHost(new InlineDispatcher(), extensions, NullLogger<ReflectionHost>.Instance);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => host.ReloadAsync(Project.FromSnapshot(TestSnapshots.Empty("P", "N")), cancellation.Token));
+
+        Assert.Equal(1, catalog.MethodsTaken);
+        Assert.False(host.IsLoaded);
+    }
+
+    /// <summary>An empty type catalog whose method enumeration cancels the reload, then offers three static methods.</summary>
+    public class CancellingCatalog : DispatchProxy
+    {
+        private ITypeCatalog? target;
+        private CancellationTokenSource? cancellation;
+        private int methodsTaken;
+
+        public int MethodsTaken => Volatile.Read(ref methodsTaken);
+
+        public ITypeCatalog Catalog => (ITypeCatalog)(object)this;
+
+        public static CancellingCatalog Create(CancellationTokenSource cancellation)
+        {
+            var catalog = (CancellingCatalog)(object)Create<ITypeCatalog, CancellingCatalog>();
+            catalog.target = new InMemoryTypeCatalog(new CatalogInfo("editor.test/cancelling", "1.0.0", []), [], [], [], [],
+                new Dictionary<TypeSpecifier, IReadOnlyList<string>>(), new Dictionary<MethodSpecifier, string>());
+            catalog.cancellation = cancellation;
+            return catalog;
+        }
+
+        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+        {
+            ArgumentNullException.ThrowIfNull(targetMethod);
+            return targetMethod.Name == nameof(IReflectionProvider.GetMethods) ? CancelThenOfferMethods() : targetMethod.Invoke(target, args);
+        }
+
+        private IEnumerable<MethodSpecifier> CancelThenOfferMethods()
+        {
+            cancellation?.Cancel();
+            for (int i = 0; i < 3; i++)
+            {
+                Interlocked.Increment(ref methodsTaken);
+                yield return new MethodSpecifier($"M{i}", [], [], MethodModifiers.Static, MemberVisibility.Public, new TypeSpecifier("Acme.Tools"), []);
+            }
+        }
+    }
+
+    private sealed class GivenCatalogExtension(ITypeCatalog catalog) : INetPrintsExtension
+    {
+        public void Register(IExtensionBuilder builder) => builder.AddTypeCatalog(catalog);
     }
 
     private sealed class CatalogExtension : INetPrintsExtension

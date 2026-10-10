@@ -11,18 +11,29 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing a method call.
     /// </summary>
-    public partial class CallMethodNode : ExecNode
+    public partial class CallMethodNode : ExecNode, IMemberReferencingNode
     {
         private const string ExceptionPinName = "Exception";
         private const string CatchPinName = "Catch";
 
         /// <summary>
-        /// Always <see langword="true"/>: a call-method node can become pure (no exec pins) when the
-        /// called method has no observable side effects worth sequencing, and impure otherwise.
+        /// <see langword="true"/> when the node has at least one result output data pin (see
+        /// <see cref="ResultPins"/>). A pure node is translated only when a consumer needs one of its
+        /// outputs, so a call without one would vanish from the generated code. When an <c>out</c>/<c>ref</c>
+        /// write of a pure call happens is up to the graph's author.
         /// </summary>
         public override bool CanSetPure
         {
-            get => true;
+            get => ResultPins.Count > 0;
+        }
+
+        /// <summary>
+        /// The output data pins that carry the call's results (today its return values), without the
+        /// <c>Exception</c> pin that exists while the catch pin is connected.
+        /// </summary>
+        private IReadOnlyList<NodeOutputDataPin> ResultPins
+        {
+            get => OutputDataPins.Where(pin => pin != ExceptionPin).ToList();
         }
 
         /// <summary>
@@ -30,6 +41,41 @@ namespace NetPrints.Graph
         /// </summary>
         [ObservableProperty]
         public partial MethodSpecifier MethodSpecifier { get; private set; }
+
+        /// <summary>
+        /// Points the node at a renamed method in place, keeping its pins and connections.
+        /// </summary>
+        /// <param name="specifier">The method's new specifier.</param>
+        /// <exception cref="ArgumentException"><paramref name="specifier"/> would change the node's pin shape.</exception>
+        public void Retarget(MethodSpecifier specifier)
+        {
+            ArgumentNullException.ThrowIfNull(specifier);
+
+            if (specifier.DeclaringType != MethodSpecifier.DeclaringType
+                || specifier.Modifiers.HasFlag(MethodModifiers.Static) != IsStatic
+                || !specifier.ArgumentTypes.SequenceEqual(MethodSpecifier.ArgumentTypes)
+                || !specifier.ReturnTypes.SequenceEqual(MethodSpecifier.ReturnTypes))
+            {
+                throw new ArgumentException("Retargeting a call node must keep its pin shape (declaring type, static-ness, parameter and return types).", nameof(specifier));
+            }
+
+            MethodSpecifier = specifier;
+        }
+
+        /// <inheritdoc />
+        public bool RefersTo(MemberKey member) =>
+            member.Kind is MemberKind.Method or MemberKind.Event
+            && MethodSpecifier.Name == member.Name
+            && MethodSpecifier.DeclaringType == member.DeclaringType
+            && MethodSpecifier.ArgumentTypes.SequenceEqual(member.Parameters);
+
+        /// <inheritdoc />
+        public Action Retarget(MemberKey member, string newName)
+        {
+            MethodSpecifier before = MethodSpecifier;
+            Retarget(before.WithName(newName));
+            return () => Retarget(before);
+        }
 
         /// <summary>
         /// Name of the method without any prefixes.

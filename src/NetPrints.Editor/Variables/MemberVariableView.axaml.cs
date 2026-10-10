@@ -13,7 +13,7 @@ public partial class MemberVariableView : UserControl
         InitializeComponent();
     }
 
-    private MemberVariableVM? ViewModel => DataContext as MemberVariableVM;
+    private MemberVariableViewModel? ViewModel => DataContext as MemberVariableViewModel;
 
     // Variables can be dragged onto the graph to open the Get/Set chooser (PAR-57).
     private readonly DragSourceHelper dragSource = new();

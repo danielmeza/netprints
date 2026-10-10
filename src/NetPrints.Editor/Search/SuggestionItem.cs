@@ -1,4 +1,5 @@
 using NetPrints.Core;
+using NetPrints.Editor.Icons;
 using NetPrints.Extensibility.Nodes;
 using NetPrints.Graph;
 
@@ -90,20 +91,15 @@ public sealed class SuggestionItem
         return text;
     }
 
-    private static readonly Dictionary<TypeSpecifier, (string Text, string Icon)> BuiltInNodes = BuiltInNodeLibrary.Instance.NodeKinds
-        .Where(kind => kind.Suggestions.Count > 0)
-        .ToDictionary(kind => TypeSpecifier.FromType(kind.NodeType), kind => (kind.Suggestions[0].DisplayName, kind.Suggestions[0].IconKey ?? ""));
-
     private static (string Text, string Icon) Describe(object value) => value switch
     {
-        MethodSpecifier method => (FormatMethod(method), OperatorUtil.IsOperator(method) ? "Operator_16x.png" : "Method_16x.png"),
-        VariableSpecifier variable => ($"{variable.Type} {variable.Name} : {variable.Type}", "Property_16x.png"),
-        NodeSuggestion suggestion => (suggestion.DisplayName, suggestion.IconKey ?? "None_16x.png"),
-        MakeDelegateTypeInfo makeDelegate => ($"Make Delegate For A Method Of {makeDelegate.Type.ShortName}", "Delegate_16x.png"),
-        CustomEventSuggestion => (CustomEventSuggestion.DisplayText, "None_16x.png"),
-        OverrideEventSuggestion overrideEvent => ($"Override {overrideEvent.Method.Name}", "Method_16x.png"),
-        TypeSpecifier type when BuiltInNodes.TryGetValue(type, out var builtIn) => builtIn,
-        TypeSpecifier type => (type.FullCodeName, "Type_16x.png"),
+        MethodSpecifier method => (FormatMethod(method), OperatorUtil.IsOperator(method) ? IconIds.CategoryOperator : IconIds.CategoryMethod),
+        VariableSpecifier variable => ($"{variable.Type} {variable.Name} : {variable.Type}", IconIds.CategoryProperty),
+        NodeSuggestion suggestion => (suggestion.DisplayName, suggestion.IconKey ?? IconIds.CategoryNone),
+        MakeDelegateTypeInfo makeDelegate => ($"Make Delegate For A Method Of {makeDelegate.Type.ShortName}", IconIds.CategoryDelegate),
+        CustomEventSuggestion => (CustomEventSuggestion.DisplayText, IconIds.CategoryNone),
+        OverrideEventSuggestion overrideEvent => ($"Override {overrideEvent.Method.Name}", IconIds.CategoryMethod),
+        TypeSpecifier type => (type.FullCodeName, IconIds.CategoryType),
         _ => throw new NotSupportedException($"Unsupported suggestion {value.GetType()}"),
     };
 }

@@ -153,51 +153,54 @@ namespace NetPrints.Tests.Core
         /// actually named — Extensibility/Serialization/Characterization/Translator/CodeView/hosting — and
         /// extended the scan to catch every future one); it can only shrink, one file at a time, never grow.
         /// </summary>
-        private static readonly HashSet<string> NullForgivingAllowlist = new(StringComparer.Ordinal)
+        private static readonly HashSet<(string File, string Line)> NullForgivingAllowlist =
+        [
+            ("tests/NetPrints.Desktop.E2ETests/Hosting/Tool.cs", "using var process = Process.Start(info)!;"),
+            ("tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs", "var process = Process.Start(info)!;"),
+            ("tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs", "windowManager = Process.Start(wm)!;"),
+            ("tests/NetPrints.Editor.Tests/Graph/NodeGraphViewModelTests.cs", "Assert.Equal(variable.Name, graph.GetSetChooser.Variable!.Name);"),
+            ("tests/NetPrints.Editor.Tests/Graph/Pins/NodePinViewModelTests.cs", "Assert.Contains(\"Monday\", enumPin.PossibleEnumNames!.ToList());"),
+            ("tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs", "Assert.Contains(\"Monday\", pin.PossibleEnumNames!);"),
+            ("tests/NetPrints.Editor.Tests/Search/SearchPerformanceTests.cs", "var output = TestContext.Current.TestOutputHelper!;"),
+            ("tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs", "var getter = variable.Getter!;"),
+            ("tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs", "var setter = variable.Setter!;"),
+            ("tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs", "Assert.Equal(MemberVisibility.Public, variable.Getter!.Visibility);"),
+            ("tests/NetPrints.Editor.UITests/Graph/GridRenderTests.cs", "Application.Current!.RequestedThemeVariant = ThemeVariant.Light;"),
+            ("tests/NetPrints.Editor.UITests/Graph/GridRenderTests.cs", "Application.Current!.TryGetResource(\"SystemRegionColor\", theme, out var value) && value is Color color"),
+            ("tests/NetPrints.Editor.UITests/TestAppBuilder.cs", ".AfterSetup(builder => ((EditorApp)builder.Instance!).DisableTransitions())"),
+            ("tests/NetPrints.Testing.Ui/Driving/UiElement.cs", "(await UiWait.ForAsync(Driver, () => TryGetAsync(cancellationToken), e => e is not null, $\"{this} to be shown\", cancellationToken))!;"),
+            ("tests/NetPrints.Testing.Ui/Driving/UiWait.cs", "T value = default!;"),
+            ("tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs", "return (double.Parse(e[AutomationPropertyNames.ViewportX]!, CultureInfo.InvariantCulture), double.Parse(e[AutomationPropertyNames.ViewportY]!, CultureInfo.InvariantCulture));"),
+            ("tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs", "return (double.Parse(e[AutomationPropertyNames.ViewportX]!, CultureInfo.InvariantCulture), double.Parse(e[AutomationPropertyNames.ViewportY]!, CultureInfo.InvariantCulture),"),
+            ("tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs", "double.Parse(e[AutomationPropertyNames.ViewportZoom]!, CultureInfo.InvariantCulture));"),
+            ("tests/NetPrints.Testing.Ui/Graph/NodeObject.cs", "return (double.Parse(e[AutomationPropertyNames.LocationX]!, CultureInfo.InvariantCulture), double.Parse(e[AutomationPropertyNames.LocationY]!, CultureInfo.InvariantCulture));"),
+            ("tests/NetPrints.Testing.Ui/Snapshots/UiImage.cs", "Directory.CreateDirectory(Path.GetDirectoryName(path)!);"),
+        ];
+
+        /// <summary>
+        /// The null-forgiving sites of <paramref name="source"/> that <paramref name="allowlist"/> does not list,
+        /// each as <c>file: line text</c>. A site is keyed by its file and the trimmed text of the line it starts on,
+        /// so edits elsewhere in the file do not move it.
+        /// </summary>
+        internal static List<string> NullForgivingOffenders(string relativePath, string source, ISet<(string File, string Line)> allowlist, System.Threading.CancellationToken cancellationToken)
         {
-            "tests/NetPrints.Desktop.E2ETests/Hosting/EditorProcess.cs:60",
-            "tests/NetPrints.Desktop.E2ETests/Hosting/Tool.cs:81",
-            "tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs:108",
-            "tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs:144",
-            "tests/NetPrints.Desktop.E2ETests/Scenarios/X11SmokeTests.cs:71",
-            "tests/NetPrints.Editor.Tests/ClassEditor/ClassEditorVMTests.cs:531",
-            "tests/NetPrints.Editor.Tests/ClassEditor/ClassEditorVMTests.cs:549",
-            "tests/NetPrints.Editor.Tests/Graph/GraphTestBase.cs:32",
-            "tests/NetPrints.Editor.Tests/Graph/NodeGraphVMTests.cs:131",
-            "tests/NetPrints.Editor.Tests/Graph/NodeGraphVMTests.cs:144",
-            "tests/NetPrints.Editor.Tests/Graph/Nodes/NodeVMTests.cs:70",
-            "tests/NetPrints.Editor.Tests/Graph/Pins/NodePinVMTests.cs:68",
-            "tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs:39",
-            "tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs:52",
-            "tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs:53",
-            "tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs:62",
-            "tests/NetPrints.Editor.Tests/Main/MainEditorVMTests.cs:121",
-            "tests/NetPrints.Editor.Tests/Reflection/ReflectionProviderTests.cs:116",
-            "tests/NetPrints.Editor.Tests/Search/SearchPerformanceTests.cs:28",
-            "tests/NetPrints.Editor.Tests/Search/SearchPerformanceTests.cs:39",
-            "tests/NetPrints.Editor.Tests/Search/SuggestionListVMTests.cs:41",
-            "tests/NetPrints.Editor.Tests/Search/SuggestionListVMTests.cs:47",
-            "tests/NetPrints.Editor.Tests/Variables/MemberVariableVMTests.cs:43",
-            "tests/NetPrints.Editor.Tests/Variables/MemberVariableVMTests.cs:50",
-            "tests/NetPrints.Editor.Tests/Variables/MemberVariableVMTests.cs:118",
-            "tests/NetPrints.Editor.UITests/ClassEditor/ClassEditorWindowTests.cs:80",
-            "tests/NetPrints.Editor.UITests/ClassEditor/EditorSession.cs:35",
-            "tests/NetPrints.Editor.UITests/ClassEditor/EditorSession.cs:36",
-            "tests/NetPrints.Editor.UITests/Graph/GridRenderTests.cs:117",
-            "tests/NetPrints.Editor.UITests/Graph/GridRenderTests.cs:130",
-            "tests/NetPrints.Editor.UITests/Scenarios/HeadlessSmokeTests.cs:28",
-            "tests/NetPrints.Editor.UITests/TestAppBuilder.cs:33",
-            "tests/NetPrints.Testing.Ui/ClassEditor/ClassEditorPage.cs:99",
-            "tests/NetPrints.Testing.Ui/ClassEditor/ClassEditorPage.cs:110",
-            "tests/NetPrints.Testing.Ui/Driving/AutomationClient.cs:60",
-            "tests/NetPrints.Testing.Ui/Driving/UiElement.cs:29",
-            "tests/NetPrints.Testing.Ui/Driving/UiWait.cs:44",
-            "tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs:65",
-            "tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs:86",
-            "tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs:87",
-            "tests/NetPrints.Testing.Ui/Graph/NodeObject.cs:40",
-            "tests/NetPrints.Testing.Ui/Snapshots/UiImage.cs:43",
-        };
+            SyntaxNode root = CSharpSyntaxTree.ParseText(source, cancellationToken: cancellationToken).GetRoot(cancellationToken);
+            var offenders = new List<string>();
+
+            foreach (PostfixUnaryExpressionSyntax node in root.DescendantNodes()
+                .OfType<PostfixUnaryExpressionSyntax>()
+                .Where(n => n.IsKind(SyntaxKind.SuppressNullableWarningExpression)))
+            {
+                int line = node.GetLocation().GetLineSpan().StartLinePosition.Line;
+                string lineText = node.SyntaxTree.GetText(cancellationToken).Lines[line].ToString().Trim();
+                if (!allowlist.Contains((relativePath, lineText)))
+                {
+                    offenders.Add($"{relativePath}: {lineText}");
+                }
+            }
+
+            return offenders;
+        }
 
         [Fact]
         public void NoNullForgivingOperator()
@@ -209,25 +212,29 @@ namespace NetPrints.Tests.Core
 
             foreach (string path in sourceFiles)
             {
-                SyntaxNode root = CSharpSyntaxTree.ParseText(File.ReadAllText(path), path: path, cancellationToken: TestContext.Current.CancellationToken).GetRoot(TestContext.Current.CancellationToken);
                 parsedFileCount++;
                 string relativePath = Path.GetRelativePath(repoRoot, path).Replace('\\', '/');
-
-                foreach (PostfixUnaryExpressionSyntax node in root.DescendantNodes()
-                    .OfType<PostfixUnaryExpressionSyntax>()
-                    .Where(n => n.IsKind(SyntaxKind.SuppressNullableWarningExpression)))
-                {
-                    int line = node.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
-                    string key = $"{relativePath}:{line}";
-                    if (!NullForgivingAllowlist.Contains(key))
-                    {
-                        offenders.Add($"{key}: {node}");
-                    }
-                }
+                offenders.AddRange(NullForgivingOffenders(relativePath, File.ReadAllText(path), NullForgivingAllowlist, TestContext.Current.CancellationToken));
             }
 
             Assert.True(parsedFileCount > 0, "Expected to parse at least one src/**/*.cs or tests/**/*.cs file.");
             Assert.Empty(offenders);
+        }
+
+        [Fact]
+        public void TheNullForgivingAllowlistSurvivesAShiftedLineButNotAChangedOne()
+        {
+            const string FxFile = "tests/Fx/Fx.cs";
+            const string Site = "var value = Lookup()!;";
+            HashSet<(string File, string Line)> allowlist = [(FxFile, Site)];
+            string original = $"class Fx\n{{\n    void Run()\n    {{\n        {Site}\n    }}\n}}\n";
+            string shifted = "using System;\n\n// unrelated edit\n" + original;
+            string changed = original.Replace(Site, "var value = Other()!;", StringComparison.Ordinal);
+
+            Assert.Empty(NullForgivingOffenders(FxFile, original, allowlist, TestContext.Current.CancellationToken));
+            Assert.Empty(NullForgivingOffenders(FxFile, shifted, allowlist, TestContext.Current.CancellationToken));
+            Assert.Single(NullForgivingOffenders(FxFile, changed, allowlist, TestContext.Current.CancellationToken));
+            Assert.Single(NullForgivingOffenders("tests/Fx/Other.cs", original, allowlist, TestContext.Current.CancellationToken));
         }
 
         /// <summary>
@@ -534,6 +541,48 @@ namespace NetPrints.Tests.Core
         [GeneratedRegex(@"^dotnet_diagnostic\.(?<rule>[A-Za-z0-9_-]+)\.severity\s*=\s*(?<severity>\S+)")]
         private static partial Regex EditorConfigSeverityPattern();
 
+        /// <summary>
+        /// ADR-0007 amendment (2026-10-01): view model types are named <c>&lt;Name&gt;ViewModel</c>, never
+        /// <c>&lt;Name&gt;VM</c>. This check parses every <c>src/**/*.cs</c> and <c>tests/**/*.cs</c> file,
+        /// finds every type declaration (class, record, struct, interface, enum) and delegate, and fails on any
+        /// name ending in <c>VM</c> or containing <c>VM</c> before an uppercase letter (<c>MVVM</c> excepted),
+        /// listing each.
+        /// </summary>
+        [Fact]
+        public void NoTypeNameEndsInVM()
+        {
+            string repoRoot = SampleProjectFactory.FindRepositoryRoot();
+            string[] sourceFiles = EnumerateSourceAndTestFiles(repoRoot);
+            var offenders = new List<string>();
+            int parsedFileCount = 0;
+
+            foreach (string path in sourceFiles)
+            {
+                parsedFileCount++;
+                SyntaxNode root = CSharpSyntaxTree.ParseText(File.ReadAllText(path), path: path, cancellationToken: TestContext.Current.CancellationToken).GetRoot(TestContext.Current.CancellationToken);
+                string relativePath = Path.GetRelativePath(repoRoot, path).Replace('\\', '/');
+
+                foreach (string? declared in root.DescendantNodes().Select(node => node switch
+                {
+                    BaseTypeDeclarationSyntax type => type.Identifier.Text,
+                    DelegateDeclarationSyntax @delegate => @delegate.Identifier.Text,
+                    _ => null,
+                }))
+                {
+                    if (declared is not null && (declared.EndsWith("VM", StringComparison.Ordinal) || EmbeddedVmName().IsMatch(declared.Replace("MVVM", string.Empty, StringComparison.Ordinal))))
+                    {
+                        offenders.Add(declared);
+                    }
+                }
+            }
+
+            Assert.True(parsedFileCount > 0, "Expected to parse at least one src/**/*.cs or tests/**/*.cs file.");
+            Assert.Empty(offenders);
+        }
+
+        [GeneratedRegex(@"VM[A-Z]")]
+        private static partial Regex EmbeddedVmName();
+
         [GeneratedRegex(@"<(?:\w+:)?Popup(?=[\s/>])")]
         private static partial Regex RawPopupTagPattern();
 
@@ -594,7 +643,7 @@ namespace NetPrints.Tests.Core
             ("src/**.cs", "CA1311", "warning"),
             ("src/{NetPrints.Core,NetPrints.Reflection}/**.cs", "CA1002", "suggestion"),
             ("src/{NetPrints.Core,NetPrints.Reflection}/**.cs", "CA2227", "suggestion"),
-            ("src/NetPrints.Editor/**VM.cs", "VSTHRD111", "none"),
+            ("src/NetPrints.Editor/**ViewModel.cs", "VSTHRD111", "none"),
             ("src/NetPrints.Editor/**.axaml.cs", "VSTHRD111", "none"),
             ("src/NetPrints.Editor/ModelSync/*.cs", "VSTHRD111", "none"),
             ("src/NetPrints.Editor/Hosting/EditorComposition.cs", "VSTHRD111", "none"),
@@ -640,6 +689,148 @@ namespace NetPrints.Tests.Core
 
             Assert.True(checkedCount > 0, "Expected to check at least one src/... severity entry in .editorconfig.");
             Assert.Empty(offenders);
+        }
+
+        /// <summary>Reviewed exceptions to <see cref="UiBoundCodeNeverUsesConfigureAwaitFalse"/>, keyed
+        /// <c>relative/path.cs:line</c> with a one-line reason.</summary>
+        private static readonly Dictionary<string, string> ConfigureAwaitFalseAllowlist = new(StringComparer.Ordinal);
+
+        /// <summary>Converts an .editorconfig section glob (<c>**</c>, <c>*</c>, <c>{a,b}</c>) to a regex.</summary>
+        private static Regex EditorConfigGlobToRegex(string glob)
+        {
+            var pattern = new System.Text.StringBuilder("^");
+            for (int i = 0; i < glob.Length; i++)
+            {
+                switch (glob[i])
+                {
+                    case '*' when i + 1 < glob.Length && glob[i + 1] == '*':
+                        pattern.Append(".*");
+                        i++;
+                        break;
+                    case '*':
+                        pattern.Append("[^/]*");
+                        break;
+                    case '{':
+                        pattern.Append("(?:");
+                        break;
+                    case '}':
+                        pattern.Append(')');
+                        break;
+                    case ',':
+                        pattern.Append('|');
+                        break;
+                    case '.':
+                        pattern.Append("\\.");
+                        break;
+                    default:
+                        pattern.Append(glob[i]);
+                        break;
+                }
+            }
+
+            return new Regex(pattern.Append('$').ToString(), RegexOptions.None, TimeSpan.FromSeconds(5));
+        }
+
+        /// <summary>
+        /// UI-bound code resumes on the UI thread, so a <c>ConfigureAwait(false)</c> there is a latent
+        /// cross-thread bug. The scope is whatever <c>.editorconfig</c> sets <c>VSTHRD111</c> to
+        /// <c>none</c> for; the non-UI scopes (which keep it at <c>error</c>) must use <c>false</c>.
+        /// </summary>
+        [Fact]
+        public void UiBoundCodeNeverUsesConfigureAwaitFalse()
+        {
+            string repoRoot = SampleProjectFactory.FindRepositoryRoot();
+            List<Regex> scopes = ConfigureAwaitUiScopes(File.ReadAllLines(Path.Combine(repoRoot, ".editorconfig")));
+            Assert.True(scopes.Count > 0, "Expected .editorconfig to define at least one VSTHRD111 = none scope.");
+
+            var offenders = new List<string>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            int scannedCount = 0;
+
+            foreach (string path in EnumerateSourceFiles(Path.Combine(repoRoot, "src"), "*.cs"))
+            {
+                string relativePath = Path.GetRelativePath(repoRoot, path).Replace('\\', '/');
+                if (!scopes.Any(scope => scope.IsMatch(relativePath)))
+                {
+                    continue;
+                }
+
+                scannedCount++;
+                offenders.AddRange(FindConfigureAwaitFalse(File.ReadAllText(path), relativePath, seen));
+            }
+
+            Assert.True(scannedCount > 0, "Expected at least one UI-bound source file.");
+            Assert.Empty(offenders);
+            Assert.True(ConfigureAwaitFalseAllowlist.Keys.All(seen.Contains), "A ConfigureAwait(false) allowlist entry no longer matches a call: remove it.");
+        }
+
+        [Fact]
+        public void ConfigureAwaitScopeIsReadFromEditorConfigAndFlagsAPlantedViolation()
+        {
+            List<Regex> scopes = ConfigureAwaitUiScopes(["[src/Ui/**.cs]", "dotnet_diagnostic.VSTHRD111.severity = none", "[src/Lib/**.cs]", "dotnet_diagnostic.VSTHRD111.severity = error"]);
+
+            Assert.Contains(scopes, scope => scope.IsMatch("src/Ui/Deep/View.cs"));
+            Assert.DoesNotContain(scopes, scope => scope.IsMatch("src/Lib/Thing.cs"));
+            Assert.Single(FindConfigureAwaitFalse("class C { async System.Threading.Tasks.Task M() { await System.Threading.Tasks.Task.Delay(1).ConfigureAwait(false); } }", "src/Ui/View.cs", []));
+            Assert.Empty(FindConfigureAwaitFalse("class C { async System.Threading.Tasks.Task M() { await System.Threading.Tasks.Task.Delay(1).ConfigureAwait(true); } }", "src/Ui/View.cs", []));
+        }
+
+        private static List<Regex> ConfigureAwaitUiScopes(string[] editorConfigLines)
+        {
+            var scopes = new List<Regex>();
+            string? section = null;
+            foreach (string line in editorConfigLines)
+            {
+                string trimmed = line.Trim();
+                Match header = EditorConfigSectionPattern().Match(trimmed);
+                if (header.Success)
+                {
+                    section = header.Groups["section"].Value;
+                    continue;
+                }
+
+                Match severity = EditorConfigSeverityPattern().Match(trimmed);
+                if (section is not null && severity.Success && severity.Groups["rule"].Value == "VSTHRD111" && severity.Groups["severity"].Value == "none")
+                {
+                    scopes.Add(EditorConfigGlobToRegex(section));
+                }
+            }
+
+            return scopes;
+        }
+
+        private static List<string> FindConfigureAwaitFalse(string code, string relativePath, HashSet<string> seen)
+        {
+            var offenders = new List<string>();
+            SyntaxNode root = CSharpSyntaxTree.ParseText(code, cancellationToken: TestContext.Current.CancellationToken).GetRoot(TestContext.Current.CancellationToken);
+            foreach (InvocationExpressionSyntax call in root.DescendantNodes().OfType<InvocationExpressionSyntax>())
+            {
+                if (call.Expression is MemberAccessExpressionSyntax { Name.Identifier.Text: "ConfigureAwait" }
+                    && call.ArgumentList.Arguments is [{ Expression: LiteralExpressionSyntax literal }]
+                    && literal.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.FalseLiteralExpression))
+                {
+                    string key = $"{relativePath}:{call.GetLocation().GetLineSpan().StartLinePosition.Line + 1}";
+                    seen.Add(key);
+                    if (!ConfigureAwaitFalseAllowlist.ContainsKey(key))
+                    {
+                        offenders.Add(key);
+                    }
+                }
+            }
+
+            return offenders;
+        }
+
+        [Fact]
+        public void NoRasterIconsInSource()
+        {
+            string src = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "src");
+            string[] pngFiles = [.. Directory.EnumerateFiles(src, "*.png", SearchOption.AllDirectories)
+                .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                    && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+                .OrderBy(path => path, StringComparer.Ordinal)];
+
+            Assert.True(pngFiles.Length == 0, $"Raster PNG files must be replaced with vector icons from IconIds (T092b): {string.Join("; ", pngFiles.Select(p => Path.GetRelativePath(src, p)))}");
         }
     }
 }

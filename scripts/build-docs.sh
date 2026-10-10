@@ -11,8 +11,8 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 mkdir -p website/static/img
-cp assets/icons/netprints-icon.png website/static/img/logo.png
-cp assets/icons/netprints-icon.png website/static/img/favicon.png
+cp assets/brand/netprints-mark.svg website/static/img/logo.svg
+cp assets/brand/netprints-mark-32.png website/static/img/favicon.png
 
 dotnet tool restore
 dotnet restore NetPrints.slnx

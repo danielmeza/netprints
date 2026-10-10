@@ -27,6 +27,69 @@ that turns each graph into C#. Nothing else about the project file is special �
 package references, target framework and output type all work exactly as they do in any other .NET
 project.
 
+## The start page
+
+With no project open the document area shows the **Start** page (**Help › Start page** shows it again at any time):
+
+- **Recent projects**: the projects you opened or created, most recent first, with pinned projects at the top and at
+  most 20 unpinned ones. A row opens the project; the pin button keeps it at the top; the remove button forgets it
+  (the project's files are never touched). The search box filters by name or path, and a project whose file is gone
+  stays in the list marked "Not found" until you remove it.
+- **Open folder or project…** opens a `.csproj`, or a folder that holds exactly one. A start-up argument that is not
+  one of those leaves the start page with a message naming the path.
+- **New project…** asks for a template, a project name (also its namespace) and a location, checks them before writing
+  anything, creates the project in `<location>/<name>` and opens it. The dialog shows that folder, and rejects one that
+  already exists and is not empty. The location is remembered for the next time and starts at the `NetPrints` folder
+  in your documents folder. **Console app** creates a project with a `Program` class graph that has an empty
+  `public static void Main()`, so it builds and runs at once; **Class library** creates a project with no classes
+  yet. If creating fails, the folder it created is removed and the dialog shows why.
+- **Samples** opens a bundled sample in one click: after one confirmation that names the folder, the sample is copied
+  to `<location>/<SampleName>` (a number is added when that folder exists) and the copy opens; **Change…** picks
+  another location first, and the next sample and New project start there. The bundled files are never changed. A
+  built copy needs the `NetPrints.Sdk` package version its project file names.
+- **Learn** links the getting started guide, the keyboard shortcuts sheet, the documentation and the release notes.
+- **What's new** shows the notes of the running version. It starts open when you have not seen this version's notes yet.
+- **Reopen the last project when NetPrints starts** (the check box beside the title) makes the editor open the most
+  recently opened project instead of showing the start page. A project passed on the command line always wins, and if
+  the last project is gone or fails to open, the start page shows with the reason. If NetPrints stops while reopening
+  (the project hangs or crashes the editor), the next start does not reopen it and says so on the start page.
+
+Drop a `.csproj` file, or a folder that holds exactly one, anywhere on the editor window to open it; the editor asks
+about unsaved changes first. Anything else is not opened: the start page shows why, or the status bar does while a
+project is open.
+
+Opening or creating a project closes the start page; closing the project brings it back.
+
+## Restored layout and sessions
+
+The editor remembers, per user, the window position, size and maximized state, the panel layout (sizes, docking,
+floating panes) and the recent list, in versioned JSON files in your application-data folder, never in the project.
+It also remembers, per project, the open graph tabs in order, the active tab and each graph's zoom and position, and
+restores them when the project opens. A graph or panel that no longer exists is skipped, a window that would be off
+every screen is moved to the centre of the primary one, and a state file that is unreadable or from a newer version is
+ignored with a log entry: the editor starts with the defaults. **View › Reset layout** restores the default layout.
+
+## The editor window
+
+The editor opens one project per window, from **File › Open folder or project…** or as the first argument
+on the command line. There is no launcher and no separate window per class. The window has:
+
+- a **menu bar** (File, Edit, View, Go, Build, Help) and a **command bar** with the common commands (save, compile,
+  run, undo, redo, class settings, references);
+- a **project tree** with the project, its classes, and per class its methods, constructors, variables and event
+  graphs; double-click or press Enter to open one, and use the context menu to add, rename or remove members;
+- a **document area** with one tab per open graph (close with the button, middle-click or Ctrl+W; Ctrl+Tab and
+  Ctrl+Shift+Tab switch tabs) and the project settings;
+- an **inspector** for the selected class, method, constructor or variable, with the **Variables** panel beside it
+  for a class's member variables and the active method's local variables;
+- a **bottom panel** with Errors (activate an entry to open its graph and select the node), Output (build and
+  program output) and C# (the generated code of the active class);
+- a status bar.
+
+Panes dock to any side, tab together and float into their own window; a graph tab can float and keep full editing
+there. Closing a pane hides it, and the View menu lists every panel to show it again; **View › Reset layout**
+restores the default. Opening or creating another project unloads the current one first.
+
 ## Generated code (`.netpc.g.cs`)
 
 Building the project runs the NetPrints generator before compilation. For each graph file

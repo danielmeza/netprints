@@ -1,5 +1,12 @@
+using Microsoft.Extensions.Logging.Abstractions;
+using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Editor.Hosting;
+using NetPrints.Editor.Tests.Hosting;
+using NetPrints.Projects;
 using NetPrints.Reflection;
+using NetPrints.Testing;
+using Project = NetPrints.Core.Project;
 
 namespace NetPrints.Editor.Tests.Reflection;
 
@@ -105,6 +112,92 @@ public class CompositeReflectionProviderTests(RuntimeReflectionFixture fixture) 
 
         Assert.Equal("from first", new CompositeReflectionProvider([silent, first, second]).GetMethodDocumentation(spawn));
         Assert.Null(new CompositeReflectionProvider([silent]).GetMethodDocumentation(spawn));
+    }
+
+    private static readonly TypeSpecifier Greeter = new("AnnotatedFixture.Greeter");
+    private static readonly TypeSpecifier Unlisted = new("AnnotatedFixture.Unlisted");
+    private static readonly TypeSpecifier Boxed = new("Mine.Boxed");
+    private static readonly string CoreLib = typeof(object).Assembly.GetName().Name ?? string.Empty;
+
+    private static async Task<ReflectionHost> HostReferencingAnnotatedLibAsync()
+    {
+        ProjectSnapshot runtime = TestSnapshots.WithRuntimeAssemblies("P", "N");
+        var project = Project.FromSnapshot(runtime with
+        {
+            References = [.. runtime.References, new ResolvedAssembly(FixtureExtensions.AnnotatedLibraryAssembly(), null)],
+        });
+        var host = new ReflectionHost(new InlineDispatcher(), TestExtensions.CreateBuiltIn(), NullLogger<ReflectionHost>.Instance);
+        await host.ReloadAsync(project, TestContext.Current.CancellationToken);
+        return host;
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task AScopedQueryForACatalogedTypeReturnsOnlyTheCatalogsMembers()
+    {
+        ReflectionHost host = await HostReferencingAnnotatedLibAsync();
+
+        var declared = host.Provider.GetMethods(new ReflectionProviderMethodQuery().WithType(Greeter)).Where(method => method.DeclaringType == Greeter).Select(method => method.Name).ToList();
+
+        Assert.Equal(["Count", "Greet"], declared.Order(StringComparer.Ordinal));
+        Assert.DoesNotContain("Undeclared", declared);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task AScopedQueryForATypeTheCoveringCatalogDoesNotListReturnsNothingAndNamesTheCatalog()
+    {
+        ReflectionHost host = await HostReferencingAnnotatedLibAsync();
+
+        Assert.Empty(host.Provider.GetMethods(new ReflectionProviderMethodQuery().WithType(Unlisted)));
+        Assert.Empty(host.Provider.GetVariables(new ReflectionProviderVariableQuery().WithType(Unlisted)));
+        var scope = Assert.IsAssignableFrom<ICatalogScope>(host.Provider);
+        Assert.Equal("catalogannotatedlib", scope.GetHidingCatalogId(Unlisted));
+        Assert.Null(scope.GetHidingCatalogId(Greeter));
+        Assert.Null(scope.GetHidingCatalogId(TypeSpecifier.FromType<Uri>()));
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task AScopedQueryForATypeNoCatalogCoversAnswersAsTheLiveProviderDid()
+    {
+        ReflectionHost host = await HostReferencingAnnotatedLibAsync();
+        var before = new ReflectionProvider(fixture.Assemblies, [], new HashSet<string>());
+        var uri = new ReflectionProviderMethodQuery().WithType(TypeSpecifier.FromType<Uri>());
+
+        Assert.Equal(before.GetMethods(uri), host.Provider.GetMethods(uri));
+        Assert.Equal(
+            before.GetVariables(new ReflectionProviderVariableQuery().WithType(TypeSpecifier.FromType<Uri>())).Select(variable => variable.Name).Distinct(),
+            host.Provider.GetVariables(new ReflectionProviderVariableQuery().WithType(TypeSpecifier.FromType<Uri>())).Select(variable => variable.Name).Distinct());
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task HiddenMembersStillResolveForExistingNodes()
+    {
+        ReflectionHost host = await HostReferencingAnnotatedLibAsync();
+        var undeclared = new MethodSpecifier("Undeclared", [], [TypeSpecifier.FromType<string>()], MethodModifiers.None, MemberVisibility.Public, Greeter, []);
+
+        Assert.Contains(host.Provider.GetPublicMethodOverloads(undeclared), method => method.Name == "Undeclared");
+        Assert.Contains(host.Provider.GetNonStaticTypes(), type => type == Greeter);
+    }
+
+    [Fact]
+    public void InheritedMembersComeFromTheSourceCoveringTheBaseTypesAssemblyAndProjectTypesAreLive()
+    {
+        const string Source = "namespace Mine { public class Boxed : System.Exception { public void Own() { } } }";
+        TypeSpecifier exception = TypeSpecifier.FromType<Exception>();
+        MethodSpecifier getBase = new("GetBaseException", [], [exception], MethodModifiers.None, MemberVisibility.Public, exception, []);
+        var core = new InMemoryTypeCatalog(
+            new CatalogInfo("core", "1.0", [CoreLib]),
+            [exception], [getBase], [], [],
+            new Dictionary<TypeSpecifier, IReadOnlyList<string>>(),
+            new Dictionary<MethodSpecifier, string>());
+        var live = new ReflectionProvider(fixture.Assemblies, [new SourceFile("boxed.cs", Source)], new HashSet<string>([CoreLib]));
+        var composite = new CompositeReflectionProvider([core, live]);
+
+        var members = composite.GetMethods(new ReflectionProviderMethodQuery().WithType(Boxed)).Select(method => method.Name).ToList();
+
+        Assert.Equal(["GetBaseException", "Own"], members.Order(StringComparer.Ordinal));
+        Assert.Null(composite.GetHidingCatalogId(Boxed));
+        Assert.Null(composite.GetHidingCatalogId(exception));
+        Assert.Equal("core", composite.GetHidingCatalogId(TypeSpecifier.FromType<string>()));
     }
 
     [Fact]

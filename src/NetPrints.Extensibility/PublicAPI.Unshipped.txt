@@ -340,3 +340,5 @@ virtual NetPrints.Extensibility.Loading.ExtensionLoadResult.PrintMembers(System.
 [NPXE0001]NetPrints.Extensibility.Hosting.InMemoryHostChannel.DisposeAsync() -> System.Threading.Tasks.ValueTask
 [NPXE0001]NetPrints.Extensibility.Loading.ExtensionRegistry.FindHostChannel(string! id) -> NetPrints.Extensibility.Hosting.IHostChannelFactory?
 [NPXE0002]NetPrints.Extensibility.Settings.JsonFileSettingsStore.SetAsync<T>(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>! descriptor, T value, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+NetPrints.Extensibility.Settings.NetPrintsSettings.EnableAnimations.get -> bool
+NetPrints.Extensibility.Settings.NetPrintsSettings.EnableAnimations.init -> void

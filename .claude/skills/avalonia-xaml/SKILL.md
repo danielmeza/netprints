@@ -26,8 +26,8 @@ again: the rules target *misplaced logic*, not the tools themselves.
 ## Related skills
 
 The XAML rules are split across three skills that share one numbering, so a rule ID cited in code, a test or a PR
-(E1-E6, D1-D16) means the same thing wherever it lives:
-- `avalonia-xaml` (this skill): E1-E6, D1-D4, D6, D10, D12-D16. It applies to every XAML change.
+(E1-E9, D1-D16) means the same thing wherever it lives:
+- `avalonia-xaml` (this skill): E1-E6, E9, D1-D4, D6, D10, D12-D16. It applies to every XAML change.
 - `avalonia-behaviors`: D9 (keyboard shortcuts) and D11 (behaviors, with the Xaml.Behaviors catalog). Load it as well
   when a change adds or replaces an event handler, calls `Focus()`, `Close()` or `ScrollToEnd()` from a view, or adds
   a shortcut, drag and drop or a dialog result.
@@ -49,15 +49,22 @@ The XAML rules are split across three skills that share one numbering, so a rule
   *Why:* each UI action is one view model (VM) command with its own unit test. Wire it with `Command`, `KeyBinding` or a behavior (D9, D11, `avalonia-behaviors`).
 - **E4. AutomationIds come from `AutomationIds`.** Write `AutomationProperties.AutomationId="{x:Static ed:AutomationIds.X}"`.
   Never use a string literal. *Why:* the UI and E2E tests share one set of constants, which lets renames compile-check.
-- **E5. Icon-only buttons have an accessible name.** Any `Button` whose only content is a `MaterialIcon`, `PathIcon` or `Image`
+- **E5. Icon-only buttons have an accessible name.** Any `Button` whose only content is an `IconPresenter`, `PathIcon` or `Image`
   must set `AutomationProperties.Name` (or `LabeledBy`). *Why:* the automation peer reads only Name/LabeledBy,
   so `ToolTip.Tip` alone leaves a screen reader announcing "button".
   ```xml
   <Button Classes="icon" ToolTip.Tip="Remove variable" AutomationProperties.Name="Remove variable"
-          Command="{Binding RemoveCommand}"><mi:MaterialIcon Kind="Minus" /></Button>
+          Command="{Binding RemoveCommand}"><icons:IconPresenter IconId="{x:Static icons:IconIds.Remove}" /></Button>
   ```
 - **E6. Theme tokens are never looked up with `StaticResource`.** A key defined under `ThemeDictionaries` must be
   referenced with `DynamicResource`. *Why:* `StaticResource` cannot see theme dictionaries, so the lookup throws at runtime or freezes one variant.
+- **E9. Icons come from `IconPresenter`.** No `MaterialIcon`, `SymbolIcon` or `FluentIcon` element and no bitmap `Image` source
+  in `src/**/*.axaml` outside `src/NetPrints.Editor/Icons/`. Name the icon by id (`IconIds`) and let `IconRegistry` resolve it.
+  *Why:* one family (Material Design Icons, ADR-0021 Amendment 1), one registry, an unknown id draws a fallback and logs one warning.
+  ```xml
+  <icons:IconPresenter IconId="{x:Static icons:IconIds.Save}" />
+  <icons:IconPresenter IconId="{Binding IconId}" IsActive="{Binding IsPinned}" Classes="medium" />
+  ```
 
 ## Default
 
@@ -78,7 +85,7 @@ only a parameterless method or one that takes a single `object`, and a plain met
 `ControlTheme` that contains bindings. When a binding crosses into another scope, cast it:
 ```xml
 <!-- src/NetPrints.Editor/Search/NodeSearchView.axaml, inside the result item template -->
-Command="{Binding $parent[ListBox].((edsearch:SuggestionListVM)DataContext).SelectCommand}"
+Command="{Binding $parent[ListBox].((edsearch:SuggestionListViewModel)DataContext).SelectCommand}"
 ```
 A view with no bindings, such as the code-behind dialogs, doesn't need `x:DataType`. Give it one when it gets a VM.
 
@@ -86,7 +93,7 @@ A view with no bindings, such as the code-behind dialogs, doesn't need `x:DataTy
 the `UserControl`. Avoid `$parent[Window]` from inside a template, and don't use numeric hops such as `$parent[Border;2]`. Both break
 when the layout is refactored. Better options, in order: (1) the item VM exposes the command itself; (2) `$parent[ItemsControl]`, the nearest items host;
 (3) restructure so that no reach-up is needed. For example, an inspector whose DataContext is overridden would need
-`$parent[Window]...ShowVariableInspector`; `ClassEditorWindow` wraps it instead:
+`$parent[Window]...ShowVariableInspector`; wrap it in a panel instead:
 ```xml
 <Panel IsVisible="{Binding ShowVariableInspector}">
   <edinspectors:VariableInspectorView DataContext="{Binding SelectedVariable}" />
@@ -98,7 +105,7 @@ when the layout is refactored. Better options, in order: (1) the item VM exposes
 
 **D10. Long work goes in async commands and shows busy state.** Write `[RelayCommand] async Task XAsync(CancellationToken ct)`.
 - Bind busy UI to `XCommand.IsRunning`. Use a VM `IsBusy` flag with `try/finally` only when one flag spans
-  several operations (as `MainEditorVM` does). Delay indicators for fast operations (`BusyIndicatorDelay`).
+  several operations (as the project session does). Delay indicators for fast operations (`BusyIndicatorDelay`).
 - `AllowConcurrentExecutions` stays `false`, which disables the button while a run is in progress. Add `IncludeCancelCommand = true` when the user can cancel.
 - Keep the default of rethrowing: a fault reaches the error dialog. Don't use `FlowExceptionsToTaskScheduler`, and don't
   write `ExecuteAsync(...).Forget()` from a view.
@@ -116,7 +123,7 @@ something that can be activated. Set decorative images to `AutomationProperties.
 gets an `AutomationIds` constant.
 
 **D14. Design-time data stays out of runtime.** A view with a non-trivial layout gets
-`<Design.DataContext><vm:XDesignVM /></Design.DataContext>` or a static design instance so that the previewer renders it.
+`<Design.DataContext><vm:XDesignViewModel /></Design.DataContext>` or a static design instance so that the previewer renders it.
 Design VMs live beside the view and are never used at runtime. Also use `Design.PreviewWith` for style files.
 
 **D15. Use `x:Name` only when something reads it.** That means code-behind, a `#Name` binding, or a behavior's `TargetControl`. Names are
@@ -124,7 +131,7 @@ PascalCase nouns with a role suffix (`SearchBox`, `ResultList`, `GraphEditor`). 
 Avalonia generates a field for each name, so an unused name is noise (for example `InputPins`, `ReferenceList`).
 
 **D16. Windows and popups go through the existing hosts.** Open dialogs through `IWindowService` and return results
-from a VM, as `SelectTypeDialogVM.ResolveSelection` does; the view doesn't compute them. Canvas overlays use
+from a VM, as `SelectTypeDialogViewModel.ResolveSelection` does; the view doesn't compute them. Canvas overlays use
 `CanvasPopup` (ADR-0004, which is already enforced).
 
 ## Consider
@@ -145,10 +152,6 @@ from a VM, as `SelectTypeDialogVM.ResolveSelection` does; the view doesn't compu
   the row `Background="Transparent"` (E2 allows it for this reason).
 - Headless tests have no window manager, real cursor or OS drag and drop (see `UiCapabilities`). A test that needs
   them belongs in the Desktop E2E project.
-
-## Known debt
-
-- `ClassEditorWindow.axaml` still reaches `$parent[Window]` from several item templates (D4). Don't copy it.
 
 ## Before you finish a XAML change
 

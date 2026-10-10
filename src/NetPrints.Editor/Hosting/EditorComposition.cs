@@ -3,9 +3,12 @@ using System.Reflection;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
+using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Diagnostics;
 using NetPrints.Editor.Hosting.Avalonia;
-using NetPrints.Editor.Main;
+using NetPrints.Editor.Lifecycle;
+using NetPrints.Editor.Shell;
+using NetPrints.Editor.State;
 using NetPrints.Projects;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Mapping;
@@ -15,8 +18,7 @@ using NetPrints.Workspace;
 namespace NetPrints.Editor.Hosting;
 
 /// <summary>
-/// Composition root: creates the Avalonia service implementations, the main view model and the
-/// main window (no DI container).
+/// Composition root: creates the Avalonia service implementations and the shell window (no DI container).
 /// </summary>
 public sealed class EditorComposition : IDisposable
 {
@@ -26,20 +28,26 @@ public sealed class EditorComposition : IDisposable
     public EditorComposition(EditorHostServices host)
     {
         var windows = new WindowService();
+        EditorDataPaths paths = EditorDataPaths.Resolve();
+        var fileSystem = new RealEditorFileSystem();
+        var stateStore = new JsonEditorStateStore(paths, fileSystem, host.LoggerFactory.CreateLogger<JsonEditorStateStore>());
         services = new EditorServices(host, windows,
             new EditorDialogs(() => windows.ActiveWindow),
             new StorageFilePickerService(() => windows.ActiveWindow),
-            new ProcessLauncher());
+            new ProcessLauncher(),
+            new BackupOptions(paths, fileSystem, TimeProvider.System, BackupService.ResolveDelay(Environment.GetEnvironmentVariable)),
+            new RecentProjects(stateStore, fileSystem, TimeProvider.System),
+            new WindowStateService(stateStore),
+            stateStore,
+            ProjectLocations.Resolve(stateStore, Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)));
     }
 
     /// <summary>The composed host services.</summary>
     public EditorContext Context => services.Context;
 
-    /// <summary>The concrete window service (not just <see cref="IWindowService"/>, for callers that need <see cref="WindowService.ClassEditorWindows"/> or <see cref="WindowService.MainWindow"/>).</summary>
+    /// <summary>The concrete window service (not just <see cref="IWindowService"/>, for callers that need <see cref="WindowService.MainWindow"/>).</summary>
     public WindowService Windows => services.Windows;
-
-    /// <summary>The main window's view model, created by <see cref="CreateMainWindow"/>, or <see langword="null"/> before it is called.</summary>
-    public MainEditorVM? MainEditor => services.MainEditor;
 
     /// <summary>
     /// Shows exceptions that escape to the UI thread in the error dialog instead of crashing
@@ -50,17 +58,38 @@ public sealed class EditorComposition : IDisposable
     /// <summary>
     /// Reports what went wrong before the window existed (a requested host channel that is not available, extensions
     /// that failed to load), then opens the project named on the command line, if any (FR-016, PAR-05). Call after
-    /// <see cref="CreateMainWindow"/>.
+    /// <see cref="CreateShellWindow"/>.
     /// </summary>
     /// <param name="args">The command-line arguments.</param>
     public Task StartAsync(IReadOnlyList<string> args) => services.StartAsync(args);
 
-    /// <summary>Creates the main window and its view model.</summary>
-    public MainWindow CreateMainWindow() => services.CreateMainWindow();
+    /// <summary>The composed shell state, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public ShellViewModel? Shell => services.Shell;
+
+    /// <summary>The shell API over the docking layout, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public IShell? ShellApi => services.ShellApi;
+
+    /// <summary>The invoker of the registered commands, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public CommandInvoker? Commands => services.Commands;
+
+    /// <summary>Creates the shell window over a project service (no legacy window opens).</summary>
+    public ShellWindow CreateShellWindow() => services.CreateShellWindow();
+
+    /// <summary>
+    /// Asks whether the application may exit, as closing the window does: waits for a build, asks to stop a running
+    /// program and asks about unsaved files. Passes when the shell does not exist yet.
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the prompts.</param>
+    /// <returns><see langword="true"/> to go on, <see langword="false"/> to keep the application running.</returns>
+    public Task<bool> ConfirmExitAsync(CancellationToken cancellationToken) => services.ConfirmExitAsync(cancellationToken);
+
+    /// <summary>Writes the backups of the open project that are still waiting.</summary>
+    /// <returns>A task that completes when they are written.</returns>
+    public Task FlushBackupsAsync() => services.FlushBackupsAsync();
 
     /// <summary>
     /// Stops rebinding persistence to the extension host's registry (see
-    /// <see cref="PersistenceBinding.Bind"/>), disposes <see cref="MainEditor"/>, if created, and the
+    /// <see cref="PersistenceBinding.Bind"/>), disposes the shell, if created, and the
     /// code analysis host (editor-services.md §6: "disposed with the main window").
     /// </summary>
     public void Dispose() => services.Dispose();
@@ -88,6 +117,8 @@ internal sealed class EditorServices : IDisposable
     private readonly string? hostChannelError;
     private readonly PersistenceBinding persistenceBinding;
     private readonly ICodeAnalysisHost codeAnalysis;
+    private readonly RunStateTracker runState;
+    private ShellHost? shellHost;
 
     /// <param name="host">Process-wide services created once by the host (desktop, headless tests).</param>
     /// <param name="windows">The window service, already constructed by the caller so it can hand the same
@@ -95,7 +126,12 @@ internal sealed class EditorServices : IDisposable
     /// <param name="dialogs">Shows modal dialogs (errors, references): Avalonia's in production, a test double in the headless UI tests.</param>
     /// <param name="filePicker">Opens native file/save pickers: Avalonia's in production, a test double in the headless UI tests.</param>
     /// <param name="processes">Starts external processes: the real launcher in production, a test double in the headless UI tests.</param>
-    public EditorServices(EditorHostServices host, WindowService windows, IEditorDialogs dialogs, IFilePickerService filePicker, IProcessLauncher processes)
+    /// <param name="backups">Where the open project's unsaved files are backed up; <see langword="null"/> (the headless tests) for no backups and no clean-up of the user's data folder.</param>
+    /// <param name="recent">The recent projects list; <see langword="null"/> (the headless tests) to keep none.</param>
+    /// <param name="windowState">Restores and saves the main window's bounds; <see langword="null"/> (the headless tests) to leave the window alone.</param>
+    /// <param name="stateStore">Keeps the dock layout and each project's session; <see langword="null"/> (the headless tests) to save and restore neither.</param>
+    /// <param name="locations">The parent folder New project and the samples use; <see langword="null"/> (the headless tests) for the user's documents folder.</param>
+    public EditorServices(EditorHostServices host, WindowService windows, IEditorDialogs dialogs, IFilePickerService filePicker, IProcessLauncher processes, BackupOptions? backups = null, RecentProjects? recent = null, WindowStateService? windowState = null, IEditorStateStore? stateStore = null, ProjectLocations? locations = null)
     {
         hostChannelError = host.HostChannelError;
         var dispatcher = new AvaloniaUiDispatcher();
@@ -115,6 +151,8 @@ internal sealed class EditorServices : IDisposable
         var reflection = new ReflectionHost(dispatcher, host.Extensions, host.LoggerFactory.CreateLogger<ReflectionHost>());
         codeAnalysis = new CodeAnalysisHost(reflection, host.Extensions, DefaultScheduler.Instance, dispatcher, host.LoggerFactory.CreateLogger<CodeAnalysisHost>());
 
+        runState = new RunStateTracker(processes);
+
         Context = new EditorContext(
             filePicker,
             dialogs,
@@ -131,7 +169,13 @@ internal sealed class EditorServices : IDisposable
             host.Extensions,
             host.HostChannel,
             host.Settings,
-            codeAnalysis);
+            codeAnalysis,
+            runState,
+            backups,
+            recent,
+            windowState,
+            stateStore,
+            locations);
     }
 
     /// <summary>The composed host services.</summary>
@@ -139,9 +183,6 @@ internal sealed class EditorServices : IDisposable
 
     /// <summary>The concrete window service.</summary>
     public WindowService Windows { get; }
-
-    /// <summary>The main window's view model, created by <see cref="CreateMainWindow"/>, or <see langword="null"/> before it is called.</summary>
-    public MainEditorVM? MainEditor { get; private set; }
 
     /// <summary>
     /// Shows exceptions that escape to the UI thread in the error dialog instead of crashing
@@ -153,58 +194,114 @@ internal sealed class EditorServices : IDisposable
     /// <summary>
     /// Reports what went wrong before the window existed (a requested host channel that is not available, extensions
     /// that failed to load), then opens the project named on the command line, if any (FR-016, PAR-05). Call after
-    /// <see cref="CreateMainWindow"/>.
+    /// <see cref="CreateShellWindow"/>.
     /// </summary>
     /// <param name="args">The command-line arguments.</param>
     public async Task StartAsync(IReadOnlyList<string> args)
     {
-        MainEditorVM mainEditor = MainEditor ?? throw new InvalidOperationException($"{nameof(CreateMainWindow)} must be called first.");
+        ProjectLoader loader = shellHost?.Actions.Loader ?? throw new InvalidOperationException($"{nameof(CreateShellWindow)} must be called first.");
         if (hostChannelError is not null)
         {
             await Context.Dialogs.ShowErrorAsync("Host channel unavailable", hostChannelError);
         }
 
-        await mainEditor.ReportExtensionFailuresAsync();
-        await mainEditor.OpenStartupProjectAsync(args);
+        await loader.ReportExtensionFailuresAsync();
+        await CleanUpBackupsAsync();
+        await loader.OpenStartupProjectAsync(args);
     }
 
-    /// <summary>Creates the main window and its view model.</summary>
-    public MainWindow CreateMainWindow()
+    // Off the UI thread: a folder on an unreachable share can take long to answer. Runs before a project opens, so nothing writes beside it.
+    private Task CleanUpBackupsAsync() =>
+        Context.Backups is { } options
+            ? Task.Run(() => BackupService.CleanUp(options.Paths, options.FileSystem, options.Time, Context.LoggerFactory.CreateLogger<BackupService>()))
+            : Task.CompletedTask;
+
+    /// <summary>The frozen registry the shell was generated from, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public IContributionRegistry? Registry => shellHost?.Registry;
+
+    /// <summary>The composed shell state, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public ShellViewModel? Shell => shellHost?.Shell;
+
+    /// <summary>The shell API over the docking layout, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public IShell? ShellApi => shellHost?.Adapter;
+
+    /// <summary>The invoker of the registered commands, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public CommandInvoker? Commands => shellHost?.Invoker;
+
+    /// <summary>The project flows of the shell, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    internal IProjectActions? ProjectActions => shellHost?.Actions;
+
+    /// <summary>Asks whether the application may exit; passes when the shell does not exist yet.</summary>
+    /// <param name="cancellationToken">Cancels the prompts.</param>
+    /// <returns><see langword="true"/> to go on.</returns>
+    public Task<bool> ConfirmExitAsync(CancellationToken cancellationToken) =>
+        shellHost?.Actions.ConfirmExitAsync(cancellationToken) ?? Task.FromResult(true);
+
+    /// <summary>Writes the backups of the open project that are still waiting; the exit cleanup awaits it before disposing the composition.</summary>
+    /// <returns>A task that completes when they are written.</returns>
+    public Task FlushBackupsAsync() => shellHost?.Actions.Loader.FlushBackupsAsync() ?? Task.CompletedTask;
+
+    /// <summary>
+    /// Creates the shell window: the registry, <see cref="ShellViewModel"/>, the docking adapter and the project flows
+    /// that open, create and close projects.
+    /// </summary>
+    public ShellWindow CreateShellWindow()
     {
-        MainEditor?.Dispose();
-        MainEditor = new MainEditorVM(Context);
-        var window = new MainWindow { DataContext = MainEditor };
-        Windows.MainWindow = window;
-        return window;
+        shellHost?.Dispose();
+        shellHost = ShellHost.Create(Context);
+        Windows.MainWindow = shellHost.Window;
+        return shellHost.Window;
     }
 
     /// <summary>
     /// Stops rebinding persistence to the extension host's registry (see
-    /// <see cref="PersistenceBinding.Bind"/>), disposes <see cref="MainEditor"/>, if created, and the
+    /// <see cref="PersistenceBinding.Bind"/>), disposes the shell, if created, and the
     /// code analysis host (editor-services.md §6: "disposed with the main window").
     /// </summary>
     public void Dispose()
     {
-        MainEditor?.Dispose();
+        shellHost?.Dispose();
         persistenceBinding.Dispose();
         codeAnalysis.Dispose();
+        runState.Dispose();
     }
 }
 
 /// <summary>
-/// Derives the editor's own version for <see cref="ProjectSystemOptions.NetPrintsSdkVersion"/>
-/// (release-and-docs.md, "Editor version").
+/// Derives the <c>NetPrints.Sdk</c> version a new project or sample copy references
+/// (release-and-docs.md, "Editor version"; ADR-0022).
 /// </summary>
 internal static class EditorSdkVersion
 {
     /// <summary>Used when the assembly carries no informational version, e.g. run without MinVer having stamped one.</summary>
     internal const string Fallback = "0.1.0-dev";
 
-    /// <summary>The editor assembly's informational version, stripped of its <c>+&lt;sha&gt;</c> suffix, or <see cref="Fallback"/>.</summary>
+    /// <summary>The assembly metadata key the build stamps with the latest released version (the nearest <c>v*</c> git tag).</summary>
+    internal const string LatestReleaseKey = "NetPrints.LatestRelease";
+
+    /// <summary>The version to write: the editor's own when it is a release, else the latest published one.</summary>
     internal static string Resolve(Assembly assembly)
     {
-        string? informational = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-        return informational is null ? Fallback : StripBuildMetadata(informational);
+        string? latest = assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
+            .FirstOrDefault(attribute => string.Equals(attribute.Key, LatestReleaseKey, StringComparison.Ordinal))?.Value;
+        return Choose(assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion, latest);
+    }
+
+    /// <summary>
+    /// A build between releases (a pre-release version other than the latest tag) is not on nuget.org, so it writes
+    /// <paramref name="latestRelease"/>; a release writes its own version.
+    /// </summary>
+    internal static string Choose(string? informationalVersion, string? latestRelease)
+    {
+        string? own = informationalVersion is null ? null : StripBuildMetadata(informationalVersion);
+        if (string.IsNullOrWhiteSpace(latestRelease))
+        {
+            return own ?? Fallback;
+        }
+
+        return own is null || (own.Contains('-', StringComparison.Ordinal) && !string.Equals(own, latestRelease, StringComparison.Ordinal))
+            ? latestRelease
+            : own;
     }
 
     /// <summary>Strips MinVer's <c>+&lt;sha&gt;</c> build-metadata suffix, if present.</summary>

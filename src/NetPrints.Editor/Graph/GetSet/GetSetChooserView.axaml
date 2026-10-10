@@ -3,7 +3,7 @@
         xmlns:ed="clr-namespace:NetPrints.Editor"
              xmlns:edgetset="clr-namespace:NetPrints.Editor.Graph.GetSet"
              x:Class="NetPrints.Editor.Graph.GetSet.GetSetChooserView"
-             x:DataType="edgetset:GetSetChooserVM"
+             x:DataType="edgetset:GetSetChooserViewModel"
              Width="200" Height="60">
   <!-- Get/Set chooser (PAR-55). Light-dismiss and Escape are CanvasPopup's job (ADR-0004). -->
   <Border AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GetSetChooser}" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" BorderBrush="{DynamicResource SystemAccentColor}"

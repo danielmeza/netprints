@@ -6,135 +6,6 @@ namespace NetPrints.Editor;
 /// </summary>
 public static class AutomationIds
 {
-    // Main window
-    /// <summary>
-    /// Automation id for the main window's button that opens the project pane.
-    /// </summary>
-    public const string MainProjectButton = "Main.ProjectButton";
-    /// <summary>
-    /// Automation id for the main window's button that opens the references dialog.
-    /// </summary>
-    public const string MainReferencesButton = "Main.ReferencesButton";
-    /// <summary>
-    /// Automation id for the main window's button that opens the settings pane.
-    /// </summary>
-    public const string MainSettingsButton = "Main.SettingsButton";
-    /// <summary>
-    /// Automation id for the main window's compile button.
-    /// </summary>
-    public const string MainCompileButton = "Main.CompileButton";
-    /// <summary>
-    /// Automation id for the main window's run button.
-    /// </summary>
-    public const string MainRunButton = "Main.RunButton";
-    /// <summary>
-    /// Automation id for the main window's project pane.
-    /// </summary>
-    public const string MainProjectPane = "Main.ProjectPane";
-    /// <summary>
-    /// Automation id for the main window's settings pane.
-    /// </summary>
-    public const string MainSettingsPane = "Main.SettingsPane";
-    /// <summary>
-    /// Automation id for the main window's save-project button.
-    /// </summary>
-    public const string MainSaveProjectButton = "Main.SaveProjectButton";
-    /// <summary>
-    /// Automation id for the main window's button that creates a new class.
-    /// </summary>
-    public const string MainNewClassButton = "Main.NewClassButton";
-    /// <summary>
-    /// Automation id for the main window's list of the project's classes.
-    /// </summary>
-    public const string MainClassList = "Main.ClassList";
-    /// <summary>
-    /// Automation id for the main window's button that opens the selected class.
-    /// </summary>
-    public const string MainOpenClassButton = "Main.OpenClassButton";
-    /// <summary>
-    /// Automation id for the main window's busy overlay, shown while an operation is running.
-    /// </summary>
-    public const string MainBusyOverlay = "Main.BusyOverlay";
-
-    // Class editor window
-    /// <summary>
-    /// Automation id for the class editor window's compile button.
-    /// </summary>
-    public const string ClassEditorCompileButton = "ClassEditor.CompileButton";
-    /// <summary>
-    /// Automation id for the class editor window's run button.
-    /// </summary>
-    public const string ClassEditorRunButton = "ClassEditor.RunButton";
-    /// <summary>
-    /// Automation id for the class editor window's button that opens the class inspector.
-    /// </summary>
-    public const string ClassEditorClassButton = "ClassEditor.ClassButton";
-    /// <summary>
-    /// Automation id for the class editor window's save button.
-    /// </summary>
-    public const string ClassEditorSaveButton = "ClassEditor.SaveButton";
-    /// <summary>
-    /// Automation id for the class editor window's list of the class's methods.
-    /// </summary>
-    public const string ClassEditorMethodList = "ClassEditor.MethodList";
-    /// <summary>
-    /// Automation id for a method list row's name text.
-    /// </summary>
-    public const string ClassEditorMethodName = "ClassEditor.MethodName";
-    /// <summary>
-    /// Automation id for the class editor window's list of the class's variables.
-    /// </summary>
-    public const string ClassEditorVariableList = "ClassEditor.VariableList";
-    /// <summary>
-    /// Automation id for the class editor window's chooser for adding an override method.
-    /// </summary>
-    public const string ClassEditorOverrideChooser = "ClassEditor.OverrideChooser";
-    /// <summary>
-    /// Automation id for the class editor window's list of compile errors.
-    /// </summary>
-    public const string ClassEditorErrorList = "ClassEditor.ErrorList";
-    /// <summary>
-    /// Automation id for an error list row's diagnostic id text (US6, ED-T03).
-    /// </summary>
-    public const string ClassEditorErrorId = "ClassEditor.ErrorId";
-    /// <summary>
-    /// Automation id for an error list row's severity icon (FR-032, OWN-03). Its AutomationProperties.Name carries the severity.
-    /// </summary>
-    public const string ClassEditorErrorSeverity = "ClassEditor.ErrorSeverity";
-    /// <summary>
-    /// Automation id for an error list row's class text (FR-032, OWN-03).
-    /// </summary>
-    public const string ClassEditorErrorClass = "ClassEditor.ErrorClass";
-    /// <summary>
-    /// Automation id for an error list row's method text (FR-032, OWN-03).
-    /// </summary>
-    public const string ClassEditorErrorMethod = "ClassEditor.ErrorMethod";
-    /// <summary>
-    /// Automation id for the class editor window's output tab.
-    /// </summary>
-    public const string ClassEditorOutputTab = "ClassEditor.OutputTab";
-    /// <summary>
-    /// Automation id for the class editor window's output text pane.
-    /// </summary>
-    public const string ClassEditorOutputText = "ClassEditor.OutputText";
-    /// <summary>
-    /// Automation id for the class editor window's button that clears the output pane.
-    /// </summary>
-    public const string ClassEditorClearOutputButton = "ClassEditor.ClearOutputButton";
-    /// <summary>
-    /// Automation id for the class editor window's status text.
-    /// </summary>
-    public const string ClassEditorStatusText = "ClassEditor.StatusText";
-    /// <summary>
-    /// Automation id for the class editor window's graph canvas host.
-    /// </summary>
-    public const string ClassEditorGraph = "ClassEditor.Graph";
-    /// <summary>
-    /// Automation id for the "Opening &lt;name&gt;…" busy overlay shown over the canvas while a graph
-    /// is opening (batch D1).
-    /// </summary>
-    public const string ClassEditorOpeningGraphIndicator = "ClassEditor.OpeningGraphIndicator";
-
     // Inspectors
     /// <summary>
     /// Automation id for the class inspector pane.
@@ -157,11 +28,98 @@ public static class AutomationIds
     /// </summary>
     public const string VariableInspector = "Inspectors.Variable";
 
+    /// <summary>The prefix of the name box (<c>Tree.rename.&lt;kind&gt;.&lt;name&gt;</c>) and refusal message (<c>Tree.rename.error.&lt;kind&gt;.&lt;name&gt;</c>) of a project tree row in edit mode.</summary>
+    public const string TreeRenamePrefix = "Tree.rename.";
+
+    /// <summary>The refused-name message of the method inspector.</summary>
+    public const string MethodInspectorError = "Inspectors.Method.Error";
+
+    /// <summary>The refused-name message of the variable inspector.</summary>
+    public const string VariableInspectorError = "Inspectors.Variable.Error";
+
+    /// <summary>The event graph inspector pane.</summary>
+    public const string EventGraphInspector = "Inspector.EventGraph";
+
+    /// <summary>The name field of the event graph inspector.</summary>
+    public const string EventGraphInspectorName = "Inspector.EventGraph.Name";
+
+    /// <summary>The refused-name message of the event graph inspector.</summary>
+    public const string EventGraphInspectorError = "Inspector.EventGraph.Error";
+
+    /// <summary>The Select button of an entry line in the event graph inspector.</summary>
+    public const string EventGraphInspectorSelectEntry = "Inspector.EventGraph.SelectEntry";
+
+    /// <summary>The event entry inspector pane.</summary>
+    public const string EventEntryInspector = "Inspector.EventEntry";
+
+    /// <summary>The name field of the event entry inspector.</summary>
+    public const string EventEntryInspectorName = "Inspector.EventEntry.Name";
+
+    /// <summary>The kind (custom event or override) of the event entry inspector.</summary>
+    public const string EventEntryInspectorKind = "Inspector.EventEntry.Kind";
+
+    /// <summary>The refused-edit message of the event entry inspector.</summary>
+    public const string EventEntryInspectorError = "Inspector.EventEntry.Error";
+
+    /// <summary>The note on where an override's signature comes from.</summary>
+    public const string EventEntryInspectorBaseSignature = "Inspector.EventEntry.BaseSignature";
+
+    /// <summary>The add argument button of the event entry inspector.</summary>
+    public const string EventEntryInspectorAddArgument = "Inspector.EventEntry.AddArgument";
+
+    /// <summary>The list of arguments of the event entry inspector.</summary>
+    public const string EventEntryInspectorArguments = "Inspector.EventEntry.Arguments";
+
+    /// <summary>One argument row of the event entry inspector.</summary>
+    public const string EventEntryInspectorArgument = "Inspector.EventEntry.Argument";
+
+    /// <summary>The name field of an argument row.</summary>
+    public const string EventEntryInspectorArgumentName = "Inspector.EventEntry.Argument.Name";
+
+    /// <summary>The type button of an argument row.</summary>
+    public const string EventEntryInspectorArgumentType = "Inspector.EventEntry.Argument.Type";
+
+    /// <summary>The move up button of an argument row.</summary>
+    public const string EventEntryInspectorArgumentMoveUp = "Inspector.EventEntry.Argument.MoveUp";
+
+    /// <summary>The move down button of an argument row.</summary>
+    public const string EventEntryInspectorArgumentMoveDown = "Inspector.EventEntry.Argument.MoveDown";
+
+    /// <summary>The remove button of an argument row.</summary>
+    public const string EventEntryInspectorArgumentRemove = "Inspector.EventEntry.Argument.Remove";
+
+    /// <summary>The name field of the variable inspector.</summary>
+    public const string VariableInspectorName = "Inspectors.Variable.Name";
+
+    /// <summary>The "Open getter" button of the variable inspector.</summary>
+    public const string VariableInspectorOpenGetter = "Inspectors.Variable.OpenGetter";
+
+    /// <summary>The "Open setter" button of the variable inspector.</summary>
+    public const string VariableInspectorOpenSetter = "Inspectors.Variable.OpenSetter";
+
+    /// <summary>The "Open type graph" button of the variable inspector.</summary>
+    public const string VariableInspectorOpenTypeGraph = "Inspectors.Variable.OpenTypeGraph";
+
     // Variables list
     /// <summary>
     /// Automation id for a variable list row's name field.
     /// </summary>
     public const string VariableName = "Variables.Name";
+
+    /// <summary>Automation id for the Variables panel's empty-state text.</summary>
+    public const string VariablesEmpty = "Variables.Empty";
+
+    /// <summary>Automation id for the Variables panel's "Class" group.</summary>
+    public const string VariablesClassGroup = "Variables.ClassGroup";
+
+    /// <summary>Automation id for the Variables panel's "Method" group.</summary>
+    public const string VariablesMethodGroup = "Variables.MethodGroup";
+
+    /// <summary>Automation id for the Variables panel's "Add variable" button.</summary>
+    public const string VariablesAddVariable = "Variables.AddVariable";
+
+    /// <summary>Automation id for the Variables panel's "Add local variable" button.</summary>
+    public const string VariablesAddLocalVariable = "Variables.AddLocalVariable";
 
     // Graph canvas
     /// <summary>
@@ -295,27 +253,175 @@ public static class AutomationIds
     /// </summary>
     public const string TrustDontLoadButton = "Dialogs.Trust.DontLoad";
     /// <summary>
+    /// Automation id for the confirmation dialog window itself.
+    /// </summary>
+    public const string ConfirmDialog = "Dialogs.Confirm";
+    /// <summary>
+    /// Automation id for the confirmation dialog's message.
+    /// </summary>
+    public const string ConfirmMessage = "Dialogs.Confirm.Message";
+    /// <summary>
+    /// Automation id for the confirmation dialog's confirm button.
+    /// </summary>
+    public const string ConfirmButton = "Dialogs.Confirm.Confirm";
+    /// <summary>
+    /// Automation id for the confirmation dialog's Cancel button.
+    /// </summary>
+    public const string ConfirmCancelButton = "Dialogs.Confirm.Cancel";
+    /// <summary>
+    /// Automation id for the command palette window itself.
+    /// </summary>
+    public const string PaletteDialog = "Palette.Dialog";
+    /// <summary>
+    /// Automation id for the command palette's search box.
+    /// </summary>
+    public const string PaletteQuery = "Palette.Query";
+    /// <summary>
+    /// Automation id for the command palette's list of commands.
+    /// </summary>
+    public const string PaletteList = "Palette.List";
+    /// <summary>
+    /// Automation id for a row of the command palette.
+    /// </summary>
+    public const string PaletteRow = "Palette.Row";
+    /// <summary>
+    /// Automation id for the message the command palette shows when no command matches.
+    /// </summary>
+    public const string PaletteEmpty = "Palette.Empty";
+    /// <summary>
+    /// Automation id for the go to anything window itself.
+    /// </summary>
+    public const string GoToDialog = "GoTo.Dialog";
+    /// <summary>
+    /// Automation id for go to anything's search box.
+    /// </summary>
+    public const string GoToQuery = "GoTo.Query";
+    /// <summary>
+    /// Automation id for go to anything's list of results.
+    /// </summary>
+    public const string GoToList = "GoTo.List";
+    /// <summary>
+    /// Automation id for a result row of go to anything.
+    /// </summary>
+    public const string GoToRow = "GoTo.Row";
+    /// <summary>
+    /// Automation id for a group header of go to anything.
+    /// </summary>
+    public const string GoToHeader = "GoTo.Header";
+    /// <summary>
+    /// Automation id for the message go to anything shows when nothing matches.
+    /// </summary>
+    public const string GoToEmpty = "GoTo.Empty";
+    /// <summary>
+    /// Automation id for the keyboard shortcuts dialog window itself.
+    /// </summary>
+    public const string ShortcutsDialog = "Dialogs.Shortcuts";
+    /// <summary>
+    /// Automation id for the keyboard shortcuts dialog's list of groups.
+    /// </summary>
+    public const string ShortcutsList = "Dialogs.Shortcuts.List";
+    /// <summary>
+    /// Automation id for a keyboard shortcuts group's title.
+    /// </summary>
+    public const string ShortcutsGroupTitle = "Dialogs.Shortcuts.GroupTitle";
+    /// <summary>
+    /// Automation id for a row of the keyboard shortcuts dialog.
+    /// </summary>
+    public const string ShortcutsRow = "Dialogs.Shortcuts.Row";
+    /// <summary>
+    /// Automation id for the keyboard shortcuts dialog's Close button.
+    /// </summary>
+    public const string ShortcutsCloseButton = "Dialogs.Shortcuts.Close";
+    /// <summary>
+    /// Automation id for the About dialog window itself.
+    /// </summary>
+    public const string AboutDialog = "Dialogs.About";
+    /// <summary>
+    /// Automation id for the About dialog's version text.
+    /// </summary>
+    public const string AboutVersion = "Dialogs.About.Version";
+    /// <summary>
+    /// Automation id for the About dialog's list of links.
+    /// </summary>
+    public const string AboutLinks = "Dialogs.About.Links";
+    /// <summary>
+    /// Automation id for a link of the About dialog.
+    /// </summary>
+    public const string AboutLinkRow = "Dialogs.About.Link";
+    /// <summary>
+    /// Automation id for the About dialog's Close button.
+    /// </summary>
+    public const string AboutCloseButton = "Dialogs.About.Close";
+    /// <summary>
+    /// Automation id for the unsaved changes dialog window itself.
+    /// </summary>
+    public const string UnsavedDialog = "Dialogs.Unsaved";
+    /// <summary>
+    /// Automation id for the unsaved changes dialog's list of files.
+    /// </summary>
+    public const string UnsavedFiles = "Dialogs.Unsaved.Files";
+    /// <summary>
+    /// Automation id for the unsaved changes dialog's Save all button.
+    /// </summary>
+    public const string UnsavedSaveAllButton = "Dialogs.Unsaved.SaveAll";
+    /// <summary>
+    /// Automation id for the unsaved changes dialog's Don't save button.
+    /// </summary>
+    public const string UnsavedDontSaveButton = "Dialogs.Unsaved.DontSave";
+    /// <summary>
+    /// Automation id for the unsaved changes dialog's Cancel button.
+    /// </summary>
+    public const string UnsavedCancelButton = "Dialogs.Unsaved.Cancel";
+    /// <summary>
+    /// Automation id for the dialog that names the folder a sample is copied to.
+    /// </summary>
+    public const string SampleTargetDialog = "Dialogs.SampleTarget";
+    /// <summary>
+    /// Automation id for the folder text of the sample target dialog.
+    /// </summary>
+    public const string SampleTargetFolder = "Dialogs.SampleTarget.Folder";
+    /// <summary>
+    /// Automation id for the Copy and open button of the sample target dialog.
+    /// </summary>
+    public const string SampleTargetOpenButton = "Dialogs.SampleTarget.Open";
+    /// <summary>
+    /// Automation id for the Change button of the sample target dialog.
+    /// </summary>
+    public const string SampleTargetChangeButton = "Dialogs.SampleTarget.Change";
+    /// <summary>
+    /// Automation id for the Cancel button of the sample target dialog.
+    /// </summary>
+    public const string SampleTargetCancelButton = "Dialogs.SampleTarget.Cancel";
+    /// <summary>
+    /// Automation id for the recovery dialog window itself.
+    /// </summary>
+    public const string RecoverDialog = "Dialogs.Recover";
+    /// <summary>
+    /// Automation id for the recovery dialog's list of backed-up files.
+    /// </summary>
+    public const string RecoverFiles = "Dialogs.Recover.Files";
+    /// <summary>
+    /// Automation id for the recovery dialog's button that restores the checked files and discards the others.
+    /// </summary>
+    public const string RecoverRestoreButton = "Dialogs.Recover.Restore";
+    /// <summary>
+    /// Automation id for each row's restore checkbox in the recovery dialog.
+    /// </summary>
+    public const string RecoverRow = "Dialogs.Recover.Row";
+    /// <summary>
+    /// Automation id for the recovery dialog's button that discards every backup.
+    /// </summary>
+    public const string RecoverDiscardButton = "Dialogs.Recover.Discard";
+    /// <summary>
     /// Automation id for the select-type dialog's search box.
     /// </summary>
     public const string SelectTypeBox = "Dialogs.SelectType.Box";
-    /// <summary>
-    /// Automation id for the select-method dialog's search box.
-    /// </summary>
-    public const string SelectMethodBox = "Dialogs.SelectMethod.Box";
     /// <summary>
     /// Automation id for the references dialog's close button.
     /// </summary>
     public const string ReferencesCloseButton = "References.Close";
 
-    // Windows (AutomationProperties.Name carries the class full name for class windows)
-    /// <summary>
-    /// Automation id for the main window itself.
-    /// </summary>
-    public const string MainWindow = "Main.Window";
-    /// <summary>
-    /// Automation id for the class editor window itself. Its AutomationProperties.Name carries the class's full name.
-    /// </summary>
-    public const string ClassEditorWindow = "ClassEditor.Window";
+    // Dialog windows
     /// <summary>
     /// Automation id for the references dialog window itself.
     /// </summary>
@@ -340,107 +446,30 @@ public static class AutomationIds
     /// Automation id for the select-method dialog's select button.
     /// </summary>
     public const string SelectMethodButton = "Dialogs.SelectMethod.Select";
-
-    // Main window panes
     /// <summary>
-    /// Automation id for the main window's button that creates a new project.
+    /// Automation id for the select-method dialog's cancel button.
     /// </summary>
-    public const string MainCreateProjectButton = "Main.CreateProjectButton";
+    public const string SelectMethodCancelButton = "Dialogs.SelectMethod.Cancel";
     /// <summary>
-    /// Automation id for the main window's button that opens an existing project.
+    /// Automation id for the method picker list control (the override dialog and the overload flyout).
     /// </summary>
-    public const string MainOpenProjectButton = "Main.OpenProjectButton";
+    public const string MethodPicker = "MethodPicker";
     /// <summary>
-    /// Automation id for the main window's button that adds an existing class to the project.
+    /// Automation id for the method picker's filter box.
     /// </summary>
-    public const string MainExistingClassButton = "Main.ExistingClassButton";
+    public const string MethodPickerFilter = "MethodPicker.Filter";
     /// <summary>
-    /// Automation id for the main window's button that removes the selected class from the project.
+    /// Automation id for the method picker's list of group headers and method rows.
     /// </summary>
-    public const string MainRemoveClassButton = "Main.RemoveClassButton";
+    public const string MethodPickerRows = "MethodPicker.Rows";
     /// <summary>
-    /// Automation id for the main window's binary-type chooser.
+    /// Automation id for a row of the method picker (a group header or a method); its name is the row text and its style classes tell current, dimmed and header apart.
     /// </summary>
-    public const string MainBinaryTypeChooser = "Main.BinaryTypeChooser";
-
-    // Class editor lists and splitters
+    public const string MethodPickerRow = "MethodPicker.Row";
     /// <summary>
-    /// Automation id for the class editor window's list of the class's constructors.
+    /// Automation id for the method picker's empty state while no method matches the filter.
     /// </summary>
-    public const string ClassEditorConstructorList = "ClassEditor.ConstructorList";
-    /// <summary>
-    /// Automation id for the class editor window's button that creates a new method.
-    /// </summary>
-    public const string ClassEditorCreateMethodButton = "ClassEditor.CreateMethodButton";
-    /// <summary>
-    /// Automation id for the class editor window's button that creates a new constructor.
-    /// </summary>
-    public const string ClassEditorCreateConstructorButton = "ClassEditor.CreateConstructorButton";
-    /// <summary>
-    /// Automation id for the class editor window's button that creates a new variable.
-    /// </summary>
-    public const string ClassEditorCreateVariableButton = "ClassEditor.CreateVariableButton";
-    /// <summary>
-    /// Automation id for the class editor window's left column (methods/constructors/variables lists).
-    /// </summary>
-    public const string ClassEditorLeftColumn = "ClassEditor.LeftColumn";
-    /// <summary>
-    /// Automation id for the class editor window's inspector column.
-    /// </summary>
-    public const string ClassEditorInspectorColumn = "ClassEditor.InspectorColumn";
-    /// <summary>
-    /// Automation id for the splitter above the class editor window's method list.
-    /// </summary>
-    public const string ClassEditorMethodsSplitter = "ClassEditor.Splitter.Methods";
-    /// <summary>
-    /// Automation id for the splitter above the class editor window's constructor list.
-    /// </summary>
-    public const string ClassEditorConstructorsSplitter = "ClassEditor.Splitter.Constructors";
-    /// <summary>
-    /// Automation id for the splitter between the class editor window's left column and graph.
-    /// </summary>
-    public const string ClassEditorLeftSplitter = "ClassEditor.Splitter.Left";
-    /// <summary>
-    /// Automation id for the splitter above the class editor window's error list.
-    /// </summary>
-    public const string ClassEditorErrorsSplitter = "ClassEditor.Splitter.Errors";
-    /// <summary>
-    /// Automation id for the splitter between the class editor window's graph and inspector column.
-    /// </summary>
-    public const string ClassEditorInspectorSplitter = "ClassEditor.Splitter.Inspector";
-    /// <summary>
-    /// Automation id for the splitter above the class editor window's event graph list.
-    /// </summary>
-    public const string ClassEditorEventGraphsSplitter = "ClassEditor.Splitter.EventGraphs";
-
-    // Event graphs (US4)
-    /// <summary>
-    /// Automation id for the class editor window's list of the class's event graphs.
-    /// </summary>
-    public const string EventGraphList = "ClassEditor.EventGraphList";
-    /// <summary>
-    /// Automation id for an event graph list row's name text.
-    /// </summary>
-    public const string EventGraphName = "ClassEditor.EventGraphName";
-    /// <summary>
-    /// Automation id for the class editor window's button that creates a new event graph.
-    /// </summary>
-    public const string CreateEventGraphButton = "ClassEditor.CreateEventGraphButton";
-
-    // Method-local variables (US5, sub-phase H)
-    /// <summary>
-    /// Automation id for the Variables panel's "Class" group (the class's member variables).
-    /// </summary>
-    public const string VariablesClassGroup = "ClassEditor.VariablesClassGroup";
-    /// <summary>
-    /// Automation id for the Variables panel's "Method: &lt;name&gt;" group (the opened method's or
-    /// constructor's local variables); only shown while such a graph is open.
-    /// </summary>
-    public const string VariablesMethodGroup = "ClassEditor.VariablesMethodGroup";
-    /// <summary>
-    /// Automation id for the Variables panel's button that creates a new local variable.
-    /// </summary>
-    public const string CreateLocalVariableButton = "ClassEditor.CreateLocalVariableButton";
+    public const string MethodPickerEmpty = "MethodPicker.Empty";
 
     // Variables list rows (AutomationProperties.Name carries the variable name)
     /// <summary>
@@ -503,4 +532,347 @@ public static class AutomationIds
     /// Automation id for a references dialog row's remove button.
     /// </summary>
     public const string ReferenceRemove = "References.Remove";
+
+    /// <summary>
+    /// Automation id for the binary type chooser of the Project settings document.
+    /// </summary>
+    public const string ProjectSettingsBinaryTypeChooser = "ProjectSettings.BinaryTypeChooser";
+
+    // Shell (contracts/shell.md section 6)
+    /// <summary>Automation id of the shell window.</summary>
+    public const string ShellWindow = "Shell.Window";
+
+    /// <summary>
+    /// Prefix of the automation id of a tool pane's content: the panel id follows, such as <c>Shell.Panel.netprints.panel.errors</c>.
+    /// </summary>
+    public const string ShellPanelPrefix = "Shell.Panel.";
+    /// <summary>
+    /// Prefix of the automation id of a document's content: the document id follows, such as <c>Shell.Document.graph:A.cs#method:1</c>.
+    /// </summary>
+    public const string ShellDocumentPrefix = "Shell.Document.";
+    /// <summary>
+    /// Prefix of a menu's automation id: the menu name, or for an item the command id, follows, such as <c>Menu.File</c> and <c>Menu.netprints.command.save</c>.
+    /// </summary>
+    public const string MenuPrefix = "Menu.";
+    /// <summary>
+    /// Prefix of a command bar button's automation id: the command id follows, such as <c>CommandBar.netprints.command.save</c>.
+    /// </summary>
+    public const string CommandBarPrefix = "CommandBar.";
+    /// <summary>
+    /// Automation id for the shell window's menu bar.
+    /// </summary>
+    public const string ShellMenuBar = "Shell.MenuBar";
+    /// <summary>
+    /// Automation id for the shell window's command bar.
+    /// </summary>
+    public const string ShellCommandBar = "Shell.CommandBar";
+    /// <summary>
+    /// Automation id for the shell window's status bar.
+    /// </summary>
+    public const string ShellStatusBar = "Shell.StatusBar";
+    /// <summary>
+    /// Automation id for the status bar's message.
+    /// </summary>
+    public const string ShellStatusMessage = "Shell.StatusMessage";
+    /// <summary>
+    /// Automation id for the status bar's build state.
+    /// </summary>
+    public const string ShellBuildState = "Shell.BuildState";
+    /// <summary>
+    /// Automation id for the status bar's busy indicator (progress bar and text).
+    /// </summary>
+    public const string ShellBusy = "Shell.Busy";
+    /// <summary>
+    /// Automation id for the busy indicator's text.
+    /// </summary>
+    public const string ShellBusyText = "Shell.BusyText";
+    /// <summary>
+    /// Automation id for the error badge of the command bar's compile button.
+    /// </summary>
+    public const string ShellCompileBadge = "Shell.CompileBadge";
+    /// <summary>
+    /// Automation id for the shortcut text of a menu item.
+    /// </summary>
+    public const string ShellMenuShortcut = "Shell.MenuShortcut";
+
+    // Project tree and inspector panels (contracts/shell.md section 6)
+    /// <summary>
+    /// Automation id for the project tree control.
+    /// </summary>
+    public const string TreeView = "Tree.View";
+    /// <summary>
+    /// Prefix of a tree item's automation id: the kind and the name follow, such as <c>Tree.method.Main</c>.
+    /// </summary>
+    public const string TreePrefix = "Tree.";
+    /// <summary>
+    /// Prefix of a tree context menu entry's automation id: the command id follows.
+    /// </summary>
+    public const string TreeMenuPrefix = "Tree.Menu.";
+
+    /// <summary>
+    /// Prefix of a connection context menu entry's automation id: the command id follows.
+    /// </summary>
+    public const string ConnectionMenuPrefix = "Connection.Menu.";
+
+    /// <summary>
+    /// The breadcrumbs above a graph document.
+    /// </summary>
+    public const string Breadcrumbs = "Breadcrumbs.Bar";
+
+    /// <summary>
+    /// One breadcrumb segment (the project, the class or the graph); its name is the segment's text.
+    /// </summary>
+    public const string BreadcrumbSegment = "Breadcrumbs.Segment";
+    /// <summary>
+    /// Tree item kind of the project.
+    /// </summary>
+    public const string TreeKindProject = "project";
+    /// <summary>
+    /// Tree item kind of a class.
+    /// </summary>
+    public const string TreeKindClass = "class";
+    /// <summary>
+    /// Tree item kind of a group of a class (Methods, Constructors, Variables, Event graphs).
+    /// </summary>
+    public const string TreeKindGroup = "group";
+    /// <summary>
+    /// Tree item kind of a method.
+    /// </summary>
+    public const string TreeKindMethod = "method";
+    /// <summary>
+    /// Tree item kind of a constructor.
+    /// </summary>
+    public const string TreeKindConstructor = "constructor";
+    /// <summary>
+    /// Tree item kind of a variable.
+    /// </summary>
+    public const string TreeKindVariable = "variable";
+    /// <summary>
+    /// Tree item kind of an event graph.
+    /// </summary>
+    public const string TreeKindEventGraph = "eventgraph";
+    /// <summary>
+    /// Automation id for the inspector panel's hosted content.
+    /// </summary>
+    public const string InspectorContent = "Inspector.Content";
+    /// <summary>
+    /// Automation id for the inspector panel's empty-state text.
+    /// </summary>
+    public const string InspectorEmpty = "Inspector.Empty";
+    /// <summary>
+    /// Automation id for the Errors panel's list of rows.
+    /// </summary>
+    public const string ErrorsList = "Errors.List";
+    /// <summary>
+    /// Automation id for the Errors panel's empty-state text.
+    /// </summary>
+    public const string ErrorsEmpty = "Errors.Empty";
+    /// <summary>
+    /// Automation id for the Errors panel's empty state while the project has no diagnostics.
+    /// </summary>
+    public const string ErrorsClean = "Errors.Clean";
+    /// <summary>
+    /// Automation id for the Output panel's empty state while it has no lines.
+    /// </summary>
+    public const string OutputEmpty = "Output.Empty";
+    /// <summary>
+    /// Automation id for the project tree's empty state while no project is open.
+    /// </summary>
+    public const string TreeEmpty = "Tree.Empty";
+    /// <summary>
+    /// Automation id for the node search popup's empty state while no node matches.
+    /// </summary>
+    public const string SearchEmpty = "Search.Empty";
+    /// <summary>
+    /// Automation id for the Output panel's list of lines.
+    /// </summary>
+    public const string OutputLines = "Output.Lines";
+    /// <summary>
+    /// Automation id for the C# panel's code view.
+    /// </summary>
+    public const string CSharpCode = "CSharp.Code";
+    /// <summary>
+    /// Automation id for the C# panel's empty-state text.
+    /// </summary>
+    public const string CSharpEmpty = "CSharp.Empty";
+    /// <summary>
+    /// Automation id for a row of the Errors panel.
+    /// </summary>
+    public const string ErrorsRow = "Errors.Row";
+    /// <summary>
+    /// Automation id for a line of the Output panel.
+    /// </summary>
+    public const string OutputLine = "Output.Line";
+    /// <summary>
+    /// Automation id for the start page.
+    /// </summary>
+    public const string StartPageRoot = "StartPage.Root";
+    /// <summary>
+    /// Automation id for the start page's error text.
+    /// </summary>
+    public const string StartPageError = "StartPage.Error";
+    /// <summary>
+    /// Automation id for the recent tile's search box.
+    /// </summary>
+    public const string StartPageRecentSearch = "StartPage.RecentSearch";
+    /// <summary>
+    /// Automation id for the recent tile's list.
+    /// </summary>
+    public const string StartPageRecentList = "StartPage.RecentList";
+    /// <summary>
+    /// Automation id for the recent tile's empty-state text.
+    /// </summary>
+    public const string StartPageRecentEmpty = "StartPage.RecentEmpty";
+    /// <summary>
+    /// Automation id for a row of the recent list.
+    /// </summary>
+    public const string StartPageRecentRow = "StartPage.RecentRow";
+    /// <summary>
+    /// Automation id for the open button of a recent row.
+    /// </summary>
+    public const string StartPageRecentOpen = "StartPage.RecentOpen";
+    /// <summary>
+    /// Automation id for the pin button of a recent row.
+    /// </summary>
+    public const string StartPageRecentPin = "StartPage.RecentPin";
+    /// <summary>
+    /// Automation id for the unpin button of a recent row.
+    /// </summary>
+    public const string StartPageRecentUnpin = "StartPage.RecentUnpin";
+    /// <summary>
+    /// Automation id for the remove button of a recent row.
+    /// </summary>
+    public const string StartPageRecentRemove = "StartPage.RecentRemove";
+    /// <summary>
+    /// Automation id for the open folder or project button.
+    /// </summary>
+    public const string StartPageOpenButton = "StartPage.OpenButton";
+    /// <summary>
+    /// Automation id for the new project button.
+    /// </summary>
+    public const string StartPageNewButton = "StartPage.NewButton";
+    /// <summary>
+    /// Automation id for the samples tile's list.
+    /// </summary>
+    public const string StartPageSamplesList = "StartPage.SamplesList";
+    /// <summary>
+    /// Automation id for the open button of a sample.
+    /// </summary>
+    public const string StartPageSampleOpen = "StartPage.SampleOpen";
+    /// <summary>
+    /// Automation id for the what's new tile's content.
+    /// </summary>
+    public const string StartPageWhatsNew = "StartPage.WhatsNew";
+    /// <summary>
+    /// Automation id for the Learn card's link to the release notes.
+    /// </summary>
+    public const string StartPageReleasesLink = "StartPage.ReleasesLink";
+    /// <summary>
+    /// Automation id for the Learn card.
+    /// </summary>
+    public const string StartPageLearn = "StartPage.Learn";
+    /// <summary>
+    /// Automation id for the Learn card's link to the getting started guide.
+    /// </summary>
+    public const string StartPageLearnGuide = "StartPage.LearnGuide";
+    /// <summary>
+    /// Automation id for the Learn card's link to the keyboard shortcuts sheet.
+    /// </summary>
+    public const string StartPageLearnShortcuts = "StartPage.LearnShortcuts";
+    /// <summary>
+    /// Automation id for the Learn card's link to the documentation.
+    /// </summary>
+    public const string StartPageLearnDocs = "StartPage.LearnDocs";
+    /// <summary>
+    /// Automation id for the start page's centred content column.
+    /// </summary>
+    public const string StartPageContent = "StartPage.Content";
+    /// <summary>
+    /// Automation id for the product version beside the start page's title.
+    /// </summary>
+    public const string StartPageVersion = "StartPage.Version";
+    /// <summary>
+    /// Automation id for the start page's check box that reopens the last project when the editor starts.
+    /// </summary>
+    public const string StartPageReopenLast = "StartPage.ReopenLast";
+    /// <summary>
+    /// Automation id for the start page's Get started card list.
+    /// </summary>
+    public const string StartPageGetStarted = "StartPage.GetStarted";
+    /// <summary>
+    /// Automation id for the start page's Open recent section.
+    /// </summary>
+    public const string StartPageRecentSection = "StartPage.RecentSection";
+    /// <summary>
+    /// Automation id for the start page's What's new header, which opens and closes the section.
+    /// </summary>
+    public const string StartPageWhatsNewToggle = "StartPage.WhatsNewToggle";
+    /// <summary>
+    /// Automation id for the date group title above a recent row.
+    /// </summary>
+    public const string StartPageRecentGroup = "StartPage.RecentGroup";
+    /// <summary>
+    /// Automation id for the relative date of a recent row.
+    /// </summary>
+    public const string StartPageRecentDate = "StartPage.RecentDate";
+    /// <summary>
+    /// Automation id for the "Not found" text of an unavailable recent row.
+    /// </summary>
+    public const string StartPageRecentStatus = "StartPage.RecentStatus";
+    /// <summary>
+    /// Automation id for the Open item of a recent row's context menu.
+    /// </summary>
+    public const string StartPageRecentMenuOpen = "StartPage.RecentMenuOpen";
+    /// <summary>
+    /// Automation id for the Open containing folder item of a recent row's context menu.
+    /// </summary>
+    public const string StartPageRecentMenuFolder = "StartPage.RecentMenuFolder";
+    /// <summary>
+    /// Automation id for the Copy path item of a recent row's context menu.
+    /// </summary>
+    public const string StartPageRecentMenuCopy = "StartPage.RecentMenuCopy";
+    /// <summary>
+    /// Automation id for the Pin or Unpin item of a recent row's context menu.
+    /// </summary>
+    public const string StartPageRecentMenuPin = "StartPage.RecentMenuPin";
+    /// <summary>
+    /// Automation id for the Remove from list item of a recent row's context menu.
+    /// </summary>
+    public const string StartPageRecentMenuRemove = "StartPage.RecentMenuRemove";
+    /// <summary>
+    /// Automation id for the New project dialog.
+    /// </summary>
+    public const string NewProjectDialog = "NewProject.Dialog";
+    /// <summary>
+    /// Automation id for the template list of the New project dialog.
+    /// </summary>
+    public const string NewProjectTemplates = "NewProject.Templates";
+    /// <summary>
+    /// Automation id for the name box of the New project dialog.
+    /// </summary>
+    public const string NewProjectName = "NewProject.Name";
+    /// <summary>
+    /// Automation id for the location box (the parent folder) of the New project dialog.
+    /// </summary>
+    public const string NewProjectLocation = "NewProject.Location";
+    /// <summary>
+    /// Automation id for the text that previews the project folder of the New project dialog.
+    /// </summary>
+    public const string NewProjectPreview = "NewProject.Preview";
+    /// <summary>
+    /// Automation id for the browse button of the New project dialog.
+    /// </summary>
+    public const string NewProjectBrowse = "NewProject.Browse";
+    /// <summary>
+    /// Automation id for the validation or error text of the New project dialog.
+    /// </summary>
+    public const string NewProjectMessage = "NewProject.Message";
+    /// <summary>
+    /// Automation id for the Create button of the New project dialog.
+    /// </summary>
+    public const string NewProjectCreate = "NewProject.Create";
+    /// <summary>
+    /// Automation id for the Cancel button of the New project dialog.
+    /// </summary>
+    public const string NewProjectCancel = "NewProject.Cancel";
 }

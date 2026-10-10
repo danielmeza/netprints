@@ -1,0 +1,45 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
+             xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
+             xmlns:ederrorlist="clr-namespace:NetPrints.Editor.ErrorList"
+             x:Class="NetPrints.Editor.ErrorList.ErrorListView"
+             x:DataType="ederrorlist:ErrorListViewModel">
+  <!-- The project's diagnostics, each row labelled with its class; double-click or Enter on a row opens its graph and selects its node. -->
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Classes="tabular" Margin="{StaticResource Space.S}" Text="{Binding Header}" />
+    <Panel>
+    <ctl:EmptyState IconId="{x:Static icons:IconIds.EmptyErrors}" Message="No errors or warnings." IsVisible="{Binding IsEmpty}"
+                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ErrorsClean}" />
+    <ListBox x:Name="Rows" Classes="rows" ItemsSource="{Binding Rows}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ErrorsList}">
+      <Interaction.Behaviors>
+        <edbehaviors:ExecuteCommandOnItemDoubleClickBehavior Command="{Binding NavigateCommand}" />
+        <KeyTrigger Key="Enter" EventRoutingStrategy="Tunnel">
+          <InvokeCommandAction Command="{Binding NavigateCommand}" CommandParameter="{Binding #Rows.SelectedItem}" />
+        </KeyTrigger>
+      </Interaction.Behaviors>
+      <ListBox.Styles>
+        <Style Selector="ListBoxItem">
+          <Setter Property="AutomationProperties.AutomationId" Value="{x:Static ed:AutomationIds.ErrorsRow}" />
+        </Style>
+      </ListBox.Styles>
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="ederrorlist:DiagnosticRowViewModel">
+          <Grid ColumnDefinitions="Auto, 80, *, Auto, Auto">
+            <icons:IconPresenter Grid.Column="0" VerticalAlignment="Center" Margin="0,0,8,0"
+                             IconId="{Binding Severity, Converter={x:Static ederrorlist:SeverityIconConverter.Instance}}"
+                             Classes.error="{Binding IsError}" Classes.warning="{Binding IsWarning}" Classes.info="{Binding IsInfo}"
+                             AutomationProperties.Name="{Binding Severity}" />
+            <TextBlock Grid.Column="1" Text="{Binding Id}" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+            <TextBlock Grid.Column="2" Text="{Binding Message}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,16,0" />
+            <TextBlock Grid.Column="3" Text="{Binding ClassFullName}" VerticalAlignment="Center" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="0,0,8,0" />
+            <TextBlock Grid.Column="4" Text="{Binding MemberName}" VerticalAlignment="Center" Foreground="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+          </Grid>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+    </Panel>
+  </DockPanel>
+</UserControl>

@@ -9,13 +9,48 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing the creation of a delegate (method pointer).
     /// </summary>
-    public partial class MakeDelegateNode : Node
+    public partial class MakeDelegateNode : Node, IMemberReferencingNode
     {
         /// <summary>
         /// Specifier describing the method the delegate is created for.
         /// </summary>
         [ObservableProperty]
         public partial MethodSpecifier MethodSpecifier { get; private set; }
+
+        /// <summary>
+        /// Points the node at a renamed method in place, keeping its pins and connections.
+        /// </summary>
+        /// <param name="specifier">The method's new specifier.</param>
+        /// <exception cref="ArgumentException"><paramref name="specifier"/> would change the node's pin shape.</exception>
+        public void Retarget(MethodSpecifier specifier)
+        {
+            ArgumentNullException.ThrowIfNull(specifier);
+
+            if (specifier.DeclaringType != MethodSpecifier.DeclaringType
+                || specifier.Modifiers.HasFlag(MethodModifiers.Static) != IsFromStaticMethod
+                || !specifier.ArgumentTypes.SequenceEqual(MethodSpecifier.ArgumentTypes)
+                || !specifier.ReturnTypes.SequenceEqual(MethodSpecifier.ReturnTypes))
+            {
+                throw new ArgumentException("Retargeting a delegate node must keep its pin shape (declaring type, static-ness, parameter and return types).", nameof(specifier));
+            }
+
+            MethodSpecifier = specifier;
+        }
+
+        /// <inheritdoc />
+        public bool RefersTo(MemberKey member) =>
+            member.Kind is MemberKind.Method or MemberKind.Event
+            && MethodSpecifier.Name == member.Name
+            && MethodSpecifier.DeclaringType == member.DeclaringType
+            && MethodSpecifier.ArgumentTypes.SequenceEqual(member.Parameters);
+
+        /// <inheritdoc />
+        public Action Retarget(MemberKey member, string newName)
+        {
+            MethodSpecifier before = MethodSpecifier;
+            Retarget(before.WithName(newName));
+            return () => Retarget(before);
+        }
 
         /// <summary>
         /// The target this delegate is for ("this").

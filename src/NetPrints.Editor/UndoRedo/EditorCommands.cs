@@ -108,7 +108,7 @@ public static class EditorCommands
     /// that follows the replacements; otherwise undoing two changes in a row would act on a node
     /// that is no longer in the graph.
     /// </summary>
-    private sealed class NodeHandle(Node node)
+    internal sealed class NodeHandle(Node node)
     {
         public Node Node { get; set; } = node;
     }
@@ -143,22 +143,465 @@ public static class EditorCommands
             });
     }
 
-    /// <summary>Removes a method or constructor. As in the WPF editor, undo does nothing.</summary>
+    /// <summary>Name of the command <see cref="AddNode"/> returns.</summary>
+    public const string AddNodeName = "Add node";
+
+    /// <summary>
+    /// Records the creation of a node the caller already made, with the connections made at creation, for
+    /// <see cref="UndoRedoStack.Record"/>: undo disconnects and removes it, redo puts it back at its index and reconnects it.
+    /// </summary>
+    /// <param name="node">The new node, already in its graph.</param>
+    /// <param name="before">The graph's connections captured before the node was created; undo puts back the ones creating the node displaced. Null when the creation displaced none.</param>
+    /// <returns>The command, named <see cref="AddNodeName"/>.</returns>
+    public static IUndoableCommand AddNode(Node node, GraphLinks? before = null)
+    {
+        var handle = NodeHandles.GetValue(node, n => new NodeHandle(n));
+        NodeConnectionSnapshot? removed = null;
+        List<Link> displaced = before is null ? [] : [.. before.Links.Except(CaptureLinks(node.Graph).Links)];
+
+        return new DelegateUndoableCommand(AddNodeName,
+            () =>
+            {
+                if (removed is not null)
+                {
+                    RestoreAndReconnect(removed);
+                }
+            },
+            () =>
+            {
+                removed = CaptureAndDisconnect(handle);
+                displaced.ForEach(Reconnect);
+            });
+    }
+
+    /// <summary>
+    /// Changes the pin lists of <paramref name="node"/> (the make-array, method entry, return and class return "+" and "-" buttons) as one
+    /// step. Undo puts the same pin objects back, with every connection they and the other pins had; redo repeats the edit.
+    /// </summary>
+    /// <param name="node">The node whose pins change.</param>
+    /// <param name="label">The name of the step.</param>
+    /// <param name="edit">Adds or removes the pins.</param>
+    /// <returns>The command.</returns>
+    public static IUndoableCommand EditPins(Node node, string label, Action edit)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        ArgumentNullException.ThrowIfNull(label);
+        ArgumentNullException.ThrowIfNull(edit);
+        NodeHandle handle = HandleOf(node);
+        PinListState? before = null;
+        PinListState? after = null;
+
+        return new DelegateUndoableCommand(label,
+            () =>
+            {
+                if (after is null)
+                {
+                    before = CapturePins(handle);
+                    edit();
+                    after = CapturePins(handle);
+                }
+                else
+                {
+                    ApplyPins(handle, after);
+                }
+            },
+            () => ApplyPins(handle, before ?? throw new InvalidOperationException(NoDoActionMessage)));
+    }
+
+    /// <summary>
+    /// Changes the parameters of the method that owns <paramref name="entry"/> (its +/- buttons and its type-pin connections) as one step:
+    /// <see cref="EditPins"/> for the entry's pins, and <see cref="SignatureChange.RetargetCallers"/> so the calls to the method in
+    /// <paramref name="classes"/> move to the new parameter list in the same step. Undo reverses both.
+    /// </summary>
+    /// <param name="classes">The classes whose graphs may call the method (the whole project).</param>
+    /// <param name="entry">The method's entry node.</param>
+    /// <param name="label">The name of the step.</param>
+    /// <param name="edit">Changes the parameters.</param>
+    /// <param name="sourceIndexes">For each new parameter, the index it had before, or -1 for a new one.</param>
+    /// <returns>The command.</returns>
+    public static IUndoableCommand EditMethodSignature(IReadOnlyList<ClassGraph> classes, MethodEntryNode entry, string label, Action edit, IReadOnlyList<int> sourceIndexes)
+    {
+        ArgumentNullException.ThrowIfNull(classes);
+        ArgumentNullException.ThrowIfNull(entry);
+        ArgumentNullException.ThrowIfNull(sourceIndexes);
+        IUndoableCommand pins = EditPins(entry, label, edit);
+        Action undoCallers = () => { };
+
+        return new DelegateUndoableCommand(label,
+            () =>
+            {
+                MemberKey? oldKey = entry.MethodGraph is { Class: { } cls } method
+                    ? new MemberKey(MemberKind.Method, cls.Type, method.Name, method.ArgumentTypes.ToList())
+                    : null;
+                pins.Execute();
+                undoCallers = oldKey is { } key
+                    ? SignatureChange.RetargetCallers(classes, key, [.. entry.OutputDataPins.Select(pin => new Named<BaseType>(pin.Name, pin.PinType.RequireValue()))], sourceIndexes)
+                    : () => { };
+            },
+            () =>
+            {
+                undoCallers();
+                pins.Undo();
+            });
+    }
+
+    private sealed record PinListState(
+        IReadOnlyList<NodeInputExecPin> InputExec,
+        IReadOnlyList<NodeOutputExecPin> OutputExec,
+        IReadOnlyList<NodeInputDataPin> InputData,
+        IReadOnlyList<NodeOutputDataPin> OutputData,
+        IReadOnlyList<NodeInputTypePin> InputType,
+        IReadOnlyList<NodeOutputTypePin> OutputType,
+        IReadOnlyList<Link> Links);
+
+    private static PinListState CapturePins(NodeHandle handle)
+    {
+        Node node = handle.Node;
+        return new PinListState(
+            [.. node.InputExecPins], [.. node.OutputExecPins], [.. node.InputDataPins], [.. node.OutputDataPins], [.. node.InputTypePins], [.. node.OutputTypePins],
+            [.. CaptureLinks(node.Graph).Links.Where(link => link.From.Handle == handle || link.To.Handle == handle)]);
+    }
+
+    private static void ApplyPins(NodeHandle handle, PinListState state)
+    {
+        Node node = handle.Node;
+        GraphUtil.DisconnectNodePins(node);
+        SetList(node.InputExecPins, state.InputExec);
+        SetList(node.OutputExecPins, state.OutputExec);
+        SetList(node.InputDataPins, state.InputData);
+        SetList(node.OutputDataPins, state.OutputData);
+        SetList(node.InputTypePins, state.InputType);
+        SetList(node.OutputTypePins, state.OutputType);
+        foreach (Link link in state.Links)
+        {
+            Reconnect(link);
+        }
+    }
+
+    private static void SetList<TPin>(ObservableRangeCollection<TPin> list, IReadOnlyList<TPin> target)
+        where TPin : NodePin
+    {
+        for (int i = list.Count - 1; i >= 0; i--)
+        {
+            if (!target.Contains(list[i]))
+            {
+                list.RemoveAt(i);
+            }
+        }
+
+        for (int i = 0; i < target.Count; i++)
+        {
+            if (i < list.Count && ReferenceEquals(list[i], target[i]))
+            {
+                continue;
+            }
+
+            list.Remove(target[i]);
+            list.Insert(i, target[i]);
+        }
+    }
+
+    /// <summary>The connections of a graph at one moment, for <see cref="AddNode"/>.</summary>
+    public sealed class GraphLinks
+    {
+        internal GraphLinks(IReadOnlyList<Link> links) => Links = links;
+
+        internal IReadOnlyList<Link> Links { get; }
+    }
+
+    /// <summary>Records every exec, data and type connection of <paramref name="graph"/>.</summary>
+    /// <param name="graph">The graph.</param>
+    /// <returns>The connections.</returns>
+    public static GraphLinks CaptureLinks(NodeGraph graph)
+    {
+        ArgumentNullException.ThrowIfNull(graph);
+        List<Link> links = [];
+        foreach (Node node in graph.Nodes)
+        {
+            foreach (NodeOutputExecPin pin in node.OutputExecPins)
+            {
+                if (pin.OutgoingPin is { } to)
+                {
+                    links.Add(new Link(LinkKind.Exec, ExecOut(pin), ExecIn(to)));
+                }
+            }
+
+            foreach (NodeInputDataPin pin in node.InputDataPins)
+            {
+                if (pin.IncomingPin is { } from)
+                {
+                    links.Add(new Link(LinkKind.Data, DataOut(from), DataIn(pin)));
+                }
+            }
+
+            foreach (NodeInputTypePin pin in node.InputTypePins)
+            {
+                if (pin.IncomingPin is { } from)
+                {
+                    links.Add(new Link(LinkKind.Type, TypeOut(from), TypeIn(pin)));
+                }
+            }
+        }
+
+        return new GraphLinks(links);
+    }
+
+    internal enum LinkKind
+    {
+        Exec,
+        Data,
+        Type,
+    }
+
+    internal readonly record struct Link(LinkKind Kind, PinRef From, PinRef To);
+
+    private static void Reconnect(Link link)
+    {
+        Node from = link.From.Handle.Node;
+        Node to = link.To.Handle.Node;
+        switch (link.Kind)
+        {
+            case LinkKind.Exec:
+                GraphUtil.ConnectExecPins(from.OutputExecPins[link.From.Index], to.InputExecPins[link.To.Index]);
+                break;
+            case LinkKind.Data:
+                GraphUtil.ConnectDataPins(from.OutputDataPins[link.From.Index], to.InputDataPins[link.To.Index]);
+                break;
+            case LinkKind.Type:
+                GraphUtil.ConnectTypePins(from.OutputTypePins[link.From.Index], to.InputTypePins[link.To.Index]);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Removes nodes from their graph; undo puts them back at their indexes and restores every connection, including
+    /// those between the removed nodes.
+    /// </summary>
+    /// <param name="nodes">The nodes to remove, all of one graph.</param>
+    /// <returns>The command, named <c>Delete node</c> or <c>Delete nodes</c>.</returns>
+    public static IUndoableCommand RemoveNodes(IReadOnlyList<Node> nodes)
+    {
+        ArgumentNullException.ThrowIfNull(nodes);
+        var handles = nodes.Select(HandleOf).ToArray();
+        var removed = new List<NodeConnectionSnapshot>();
+
+        return new DelegateUndoableCommand(nodes.Count == 1 ? "Delete node" : "Delete nodes",
+            () =>
+            {
+                removed.Clear();
+                removed.AddRange(handles.Select(CaptureAndDisconnect));
+            },
+            () =>
+            {
+                for (int i = removed.Count - 1; i >= 0; i--)
+                {
+                    RestoreAndReconnect(removed[i]);
+                }
+            });
+    }
+
+    /// <summary>Adds a method (or an override, when <paramref name="create"/> builds one) to the class; undo removes it and redo restores the same graph.</summary>
+    /// <param name="cls">The class.</param>
+    /// <param name="create">Creates the method and adds it to the class on the first run; may return null when nothing could be created.</param>
+    public static IUndoableCommand AddMethod(ClassGraph cls, Func<MethodGraph?> create)
+    {
+        MethodGraph? method = null;
+        return new DelegateUndoableCommand("Add method",
+            () =>
+            {
+                if (method is null)
+                {
+                    method = create();
+                }
+                else
+                {
+                    cls.Methods.Add(method);
+                }
+            },
+            () =>
+            {
+                if (method is not null)
+                {
+                    cls.Methods.Remove(method);
+                }
+            });
+    }
+
+    /// <summary>Adds a constructor to the class; undo removes it and redo restores the same graph.</summary>
+    public static IUndoableCommand AddConstructor(ClassGraph cls, ConstructorGraph constructor) =>
+        new DelegateUndoableCommand("Add constructor",
+            () => cls.Constructors.Add(constructor),
+            () => cls.Constructors.Remove(constructor));
+
+    /// <summary>Removes a method or constructor; undo puts it back at its index.</summary>
     public static IUndoableCommand RemoveMethod(ClassGraph cls, ExecutionGraph graph)
     {
+        int index = -1;
         return new DelegateUndoableCommand("Remove method",
             () =>
             {
                 if (graph is MethodGraph method)
                 {
+                    index = cls.Methods.IndexOf(method);
                     cls.Methods.Remove(method);
                 }
                 else if (graph is ConstructorGraph constructor)
                 {
+                    index = cls.Constructors.IndexOf(constructor);
                     cls.Constructors.Remove(constructor);
                 }
             },
-            () => { });
+            () =>
+            {
+                if (graph is MethodGraph method)
+                {
+                    cls.Methods.Insert(Math.Clamp(index, 0, cls.Methods.Count), method);
+                }
+                else if (graph is ConstructorGraph constructor)
+                {
+                    cls.Constructors.Insert(Math.Clamp(index, 0, cls.Constructors.Count), constructor);
+                }
+            });
+    }
+
+    /// <summary>
+    /// Renames <paramref name="method"/> and every call and delegate node in <paramref name="classes"/> that
+    /// refers to it (<see cref="MemberRename.RenameMethod"/>); undo reverses both.
+    /// </summary>
+    public static IUndoableCommand RenameMethod(IReadOnlyList<ClassGraph> classes, MethodGraph method, string newName)
+    {
+        RenameResult? result = null;
+        return new DelegateUndoableCommand("Rename method",
+            () => result = MemberRename.RenameMethod(classes, method, newName),
+            () => (result ?? throw new InvalidOperationException(NoDoActionMessage)).Undo());
+    }
+
+    /// <summary>
+    /// Renames <paramref name="variable"/> and every getter and setter node in <paramref name="classes"/> that
+    /// refers to it (<see cref="MemberRename.RenameVariable"/>); undo reverses both.
+    /// </summary>
+    public static IUndoableCommand RenameVariable(IReadOnlyList<ClassGraph> classes, Variable variable, string newName)
+    {
+        RenameResult? result = null;
+        return new DelegateUndoableCommand("Rename variable",
+            () => result = MemberRename.RenameVariable(classes, variable, newName),
+            () => (result ?? throw new InvalidOperationException(NoDoActionMessage)).Undo());
+    }
+
+    /// <summary>
+    /// Renames the custom event <paramref name="entry"/> and every call node in <paramref name="classes"/> that
+    /// refers to it (<see cref="MemberRename.RenameEvent"/>); undo reverses both.
+    /// </summary>
+    public static IUndoableCommand RenameEvent(IReadOnlyList<ClassGraph> classes, EventEntryNode entry, string newName)
+    {
+        RenameResult? result = null;
+        return new DelegateUndoableCommand("Rename event",
+            () => result = MemberRename.RenameEvent(classes, entry, newName),
+            () => (result ?? throw new InvalidOperationException(NoDoActionMessage)).Undo());
+    }
+
+    /// <summary>Renames <paramref name="graph"/> (<see cref="EventGraph.Rename"/>); undo restores the name.</summary>
+    public static IUndoableCommand RenameEventGraph(EventGraph graph, string newName)
+    {
+        RenameResult? result = null;
+        return new DelegateUndoableCommand("Rename event graph",
+            () => result = graph.Rename(newName),
+            () => (result ?? throw new InvalidOperationException(NoDoActionMessage)).Undo());
+    }
+
+    /// <summary>
+    /// Replaces the arguments of the custom event <paramref name="entry"/> (<see cref="EventEntryNode.SetArguments"/>) as one step.
+    /// The connections of each argument's data pin and type pin follow the argument to its new position; undo puts the old pins
+    /// and every connection back. The calls to the event in <paramref name="classes"/> move to the new signature in the same step.
+    /// </summary>
+    /// <param name="classes">The classes whose graphs may call the event (the whole project).</param>
+    /// <param name="entry">The custom event entry.</param>
+    /// <param name="label">The name of the step, such as <c>Add argument</c>.</param>
+    /// <param name="arguments">The new arguments.</param>
+    /// <param name="sourceIndexes">For each new argument, the index it had before, or -1 for a new one.</param>
+    /// <returns>The command.</returns>
+    public static IUndoableCommand SetEventArguments(IReadOnlyList<ClassGraph> classes, EventEntryNode entry, string label, IReadOnlyList<EventArgument> arguments, IReadOnlyList<int> sourceIndexes)
+    {
+        ArgumentNullException.ThrowIfNull(classes);
+        ArgumentNullException.ThrowIfNull(entry);
+        ArgumentNullException.ThrowIfNull(label);
+        ArgumentNullException.ThrowIfNull(arguments);
+        ArgumentNullException.ThrowIfNull(sourceIndexes);
+        IReadOnlyList<EventArgument> previous = [];
+        List<ArgumentLinks> previousLinks = [];
+        Action undoCallers = () => { };
+
+        return new DelegateUndoableCommand(label,
+            () =>
+            {
+                previous = entry.DeclaredArguments;
+                previousLinks = DetachArguments(entry);
+                ClassGraph? cls = entry.Graph.Class;
+                MemberKey? oldKey = cls is null ? null : new MemberKey(MemberKind.Event, cls.Type, entry.EventName, entry.Arguments.Select(argument => (BaseType)argument.Type).ToList());
+                try
+                {
+                    entry.SetArguments(arguments);
+                }
+                catch (ArgumentException)
+                {
+                    entry.SetArguments(previous);
+                    AttachArguments(entry, previousLinks, Enumerable.Range(0, previousLinks.Count).ToList());
+                    throw;
+                }
+
+                AttachArguments(entry, previousLinks, sourceIndexes);
+                undoCallers = oldKey is { } key
+                    ? SignatureChange.RetargetCallers(classes, key, [.. arguments.Select(argument => new Named<BaseType>(argument.Name, argument.Type))], sourceIndexes)
+                    : () => { };
+            },
+            () =>
+            {
+                undoCallers();
+                DetachArguments(entry);
+                entry.SetArguments(previous);
+                AttachArguments(entry, previousLinks, Enumerable.Range(0, previousLinks.Count).ToList());
+            });
+    }
+
+    private sealed record ArgumentLinks(IReadOnlyList<NodeInputDataPin> Targets, NodeOutputTypePin? TypeSource);
+
+    private static List<ArgumentLinks> DetachArguments(EventEntryNode entry)
+    {
+        List<ArgumentLinks> links = [];
+        for (int i = 0; i < entry.OutputDataPins.Count; i++)
+        {
+            NodeInputTypePin? typePin = i < entry.InputTypePins.Count ? entry.InputTypePins[i] : null;
+            links.Add(new ArgumentLinks([.. entry.OutputDataPins[i].OutgoingPins], typePin?.IncomingPin));
+            GraphUtil.DisconnectOutputDataPin(entry.OutputDataPins[i]);
+            if (typePin is not null)
+            {
+                GraphUtil.DisconnectInputTypePin(typePin);
+            }
+        }
+
+        return links;
+    }
+
+    private static void AttachArguments(EventEntryNode entry, IReadOnlyList<ArgumentLinks> links, IReadOnlyList<int> sourceIndexes)
+    {
+        for (int i = 0; i < sourceIndexes.Count && i < entry.OutputDataPins.Count; i++)
+        {
+            if (sourceIndexes[i] < 0 || sourceIndexes[i] >= links.Count)
+            {
+                continue;
+            }
+
+            ArgumentLinks link = links[sourceIndexes[i]];
+            foreach (NodeInputDataPin target in link.Targets)
+            {
+                GraphUtil.ConnectDataPins(entry.OutputDataPins[i], target);
+            }
+
+            if (link.TypeSource is not null && i < entry.InputTypePins.Count)
+            {
+                GraphUtil.ConnectTypePins(link.TypeSource, entry.InputTypePins[i]);
+            }
+        }
     }
 
     /// <summary>Adds a local variable of type <c>object</c> named <paramref name="name"/> (US5); undo removes it.</summary>
@@ -279,7 +722,7 @@ public static class EditorCommands
             {
                 index = graph.LocalVariables.IndexOf(local);
                 graph.LocalVariables.Remove(local);
-                removedNodes = FindLocalVariableNodes(graph, local.Name).Select(CaptureAndDisconnect).ToList();
+                removedNodes = FindLocalVariableNodes(graph, local.Name).Select(HandleOf).Select(CaptureAndDisconnect).ToList();
             },
             () =>
             {
@@ -325,7 +768,7 @@ public static class EditorCommands
     {
         var specifier = local.ToSpecifier();
         var staleNodes = FindLocalVariableNodes(graph, local.Name).Where(n => n.Variable.Type != specifier.Type).ToList();
-        var originals = staleNodes.Select(CaptureConnections).ToList();
+        var originals = staleNodes.Select(HandleOf).Select(CaptureConnections).ToList();
 
         foreach (var original in originals)
         {
@@ -371,10 +814,11 @@ public static class EditorCommands
     {
         for (int i = 0; i < original.InputExecIncoming.Count && i < replacement.InputExecPins.Count; i++)
         {
-            foreach (var from in original.InputExecIncoming[i])
+            foreach (var fromRef in original.InputExecIncoming[i])
             {
+                var from = fromRef.Handle.Node.OutputExecPins[fromRef.Index];
                 var source = replacementByOriginalNode.TryGetValue(from.Node, out var replacedFrom)
-                    ? replacedFrom.OutputExecPins[from.Node.OutputExecPins.IndexOf(from)]
+                    ? replacedFrom.OutputExecPins[fromRef.Index]
                     : from;
                 GraphUtil.ConnectExecPins(source, replacement.InputExecPins[i]);
             }
@@ -382,58 +826,86 @@ public static class EditorCommands
 
         for (int i = 0; i < original.OutputExecOutgoing.Count && i < replacement.OutputExecPins.Count; i++)
         {
-            if (original.OutputExecOutgoing[i] is { } to)
+            if (original.OutputExecOutgoing[i] is { } toRef)
             {
+                var to = toRef.Handle.Node.InputExecPins[toRef.Index];
                 var target = replacementByOriginalNode.TryGetValue(to.Node, out var replacedTo)
-                    ? replacedTo.InputExecPins[to.Node.InputExecPins.IndexOf(to)]
+                    ? replacedTo.InputExecPins[toRef.Index]
                     : to;
                 GraphUtil.ConnectExecPins(replacement.OutputExecPins[i], target);
             }
         }
     }
 
+    private static NodeHandle HandleOf(Node node) => NodeHandles.GetValue(node, n => new NodeHandle(n));
+
+    /// <summary>A pin of a neighbouring node as the node's handle and the pin's index, so it resolves to the current node after an overload change.</summary>
+    internal readonly record struct PinRef(NodeHandle Handle, int Index);
+
+    private static PinRef ExecOut(NodeOutputExecPin pin) => new(HandleOf(pin.Node), pin.Node.OutputExecPins.IndexOf(pin));
+
+    private static PinRef ExecIn(NodeInputExecPin pin) => new(HandleOf(pin.Node), pin.Node.InputExecPins.IndexOf(pin));
+
+    private static PinRef DataOut(NodeOutputDataPin pin) => new(HandleOf(pin.Node), pin.Node.OutputDataPins.IndexOf(pin));
+
+    private static PinRef DataIn(NodeInputDataPin pin) => new(HandleOf(pin.Node), pin.Node.InputDataPins.IndexOf(pin));
+
+    private static PinRef TypeOut(NodeOutputTypePin pin) => new(HandleOf(pin.Node), pin.Node.OutputTypePins.IndexOf(pin));
+
+    private static PinRef TypeIn(NodeInputTypePin pin) => new(HandleOf(pin.Node), pin.Node.InputTypePins.IndexOf(pin));
+
     /// <summary>A removed node's position, index and every pin connection, captured so <see cref="RestoreAndReconnect"/> can undo the removal exactly.</summary>
     private sealed class NodeConnectionSnapshot
     {
-        public required Node Node { get; init; }
+        public required NodeHandle Handle { get; init; }
+        public Node Node => Handle.Node;
         public required int Index { get; init; }
-        public required IReadOnlyList<IReadOnlyList<NodeOutputExecPin>> InputExecIncoming { get; init; }
-        public required IReadOnlyList<NodeInputExecPin?> OutputExecOutgoing { get; init; }
-        public required IReadOnlyList<NodeOutputDataPin?> InputDataIncoming { get; init; }
-        public required IReadOnlyList<IReadOnlyList<NodeInputDataPin>> OutputDataOutgoing { get; init; }
+        public required IReadOnlyList<IReadOnlyList<PinRef>> InputExecIncoming { get; init; }
+        public required IReadOnlyList<PinRef?> OutputExecOutgoing { get; init; }
+        public required IReadOnlyList<PinRef?> InputDataIncoming { get; init; }
+        public required IReadOnlyList<IReadOnlyList<PinRef>> OutputDataOutgoing { get; init; }
+        public required IReadOnlyList<PinRef?> InputTypeIncoming { get; init; }
+        public required IReadOnlyList<IReadOnlyList<PinRef>> OutputTypeOutgoing { get; init; }
     }
 
-    /// <summary>Records every connection of <paramref name="node"/>, then disconnects and removes it.</summary>
-    private static NodeConnectionSnapshot CaptureAndDisconnect(Node node)
+    /// <summary>Records every connection of the node behind <paramref name="handle"/>, then disconnects and removes it.</summary>
+    private static NodeConnectionSnapshot CaptureAndDisconnect(NodeHandle handle)
     {
-        var snapshot = CaptureConnections(node);
+        var node = handle.Node;
+        var snapshot = CaptureConnections(handle);
         GraphUtil.DisconnectNodePins(node);
         node.Graph.Nodes.Remove(node);
         return snapshot;
     }
 
-    /// <summary>Records every connection of <paramref name="node"/> without disconnecting or removing it.</summary>
-    private static NodeConnectionSnapshot CaptureConnections(Node node) => new()
+    /// <summary>Records every connection of the node behind <paramref name="handle"/> without disconnecting or removing it.</summary>
+    private static NodeConnectionSnapshot CaptureConnections(NodeHandle handle)
     {
-        Node = node,
-        Index = node.Graph.Nodes.IndexOf(node),
-        InputExecIncoming = node.InputExecPins.Select(p => (IReadOnlyList<NodeOutputExecPin>)p.IncomingPins.ToArray()).ToArray(),
-        OutputExecOutgoing = node.OutputExecPins.Select(p => p.OutgoingPin).ToArray(),
-        InputDataIncoming = node.InputDataPins.Select(p => p.IncomingPin).ToArray(),
-        OutputDataOutgoing = node.OutputDataPins.Select(p => (IReadOnlyList<NodeInputDataPin>)p.OutgoingPins.ToArray()).ToArray(),
-    };
+        var node = handle.Node;
+        return new()
+        {
+            Handle = handle,
+            Index = node.Graph.Nodes.IndexOf(node),
+            InputExecIncoming = node.InputExecPins.Select(p => (IReadOnlyList<PinRef>)p.IncomingPins.Select(ExecOut).ToArray()).ToArray(),
+            OutputExecOutgoing = node.OutputExecPins.Select(p => p.OutgoingPin is { } to ? ExecIn(to) : (PinRef?)null).ToArray(),
+            InputDataIncoming = node.InputDataPins.Select(p => p.IncomingPin is { } from ? DataOut(from) : (PinRef?)null).ToArray(),
+            OutputDataOutgoing = node.OutputDataPins.Select(p => (IReadOnlyList<PinRef>)p.OutgoingPins.Select(DataIn).ToArray()).ToArray(),
+            InputTypeIncoming = node.InputTypePins.Select(p => p.IncomingPin is { } from ? TypeOut(from) : (PinRef?)null).ToArray(),
+            OutputTypeOutgoing = node.OutputTypePins.Select(p => (IReadOnlyList<PinRef>)p.OutgoingPins.Select(TypeIn).ToArray()).ToArray(),
+        };
+    }
 
     /// <summary>Reinserts a captured node at its original position and restores every recorded connection.</summary>
     private static void RestoreAndReconnect(NodeConnectionSnapshot snapshot)
     {
-        var node = snapshot.Node;
+        var node = snapshot.Handle.Node;
         node.Graph.Nodes.Insert(Math.Clamp(snapshot.Index, 0, node.Graph.Nodes.Count), node);
 
         for (int i = 0; i < snapshot.InputExecIncoming.Count; i++)
         {
             foreach (var from in snapshot.InputExecIncoming[i])
             {
-                GraphUtil.ConnectExecPins(from, node.InputExecPins[i]);
+                GraphUtil.ConnectExecPins(from.Handle.Node.OutputExecPins[from.Index], node.InputExecPins[i]);
             }
         }
 
@@ -441,7 +913,7 @@ public static class EditorCommands
         {
             if (snapshot.OutputExecOutgoing[i] is { } to)
             {
-                GraphUtil.ConnectExecPins(node.OutputExecPins[i], to);
+                GraphUtil.ConnectExecPins(node.OutputExecPins[i], to.Handle.Node.InputExecPins[to.Index]);
             }
         }
 
@@ -449,7 +921,7 @@ public static class EditorCommands
         {
             if (snapshot.InputDataIncoming[i] is { } from)
             {
-                GraphUtil.ConnectDataPins(from, node.InputDataPins[i]);
+                GraphUtil.ConnectDataPins(from.Handle.Node.OutputDataPins[from.Index], node.InputDataPins[i]);
             }
         }
 
@@ -457,7 +929,23 @@ public static class EditorCommands
         {
             foreach (var to in snapshot.OutputDataOutgoing[i])
             {
-                GraphUtil.ConnectDataPins(node.OutputDataPins[i], to);
+                GraphUtil.ConnectDataPins(node.OutputDataPins[i], to.Handle.Node.InputDataPins[to.Index]);
+            }
+        }
+
+        for (int i = 0; i < snapshot.InputTypeIncoming.Count; i++)
+        {
+            if (snapshot.InputTypeIncoming[i] is { } from)
+            {
+                GraphUtil.ConnectTypePins(from.Handle.Node.OutputTypePins[from.Index], node.InputTypePins[i]);
+            }
+        }
+
+        for (int i = 0; i < snapshot.OutputTypeOutgoing.Count; i++)
+        {
+            foreach (var to in snapshot.OutputTypeOutgoing[i])
+            {
+                GraphUtil.ConnectTypePins(node.OutputTypePins[i], to.Handle.Node.InputTypePins[to.Index]);
             }
         }
     }

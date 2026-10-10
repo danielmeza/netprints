@@ -2,7 +2,11 @@ using System.Diagnostics;
 using System.Text;
 using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Editor.Commands.KeyboardShortcuts;
+using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
+using NetPrints.Editor.Hosting.Avalonia;
+using NetPrints.Editor.Lifecycle;
 using NetPrints.Editor.References;
 using NetPrints.Projects;
 using NetPrints.Testing;
@@ -18,12 +22,17 @@ public sealed class RecordingDialogs : IEditorDialogs
     public TypeSpecifier? TypeAnswer { get; set; } = TypeSpecifier.FromType<int>();
 
     /// <summary>When set, the references dialog is shown for real (non-modal) instead of being skipped.</summary>
-    public Func<ReferenceListVM, Task>? ShowReferences { get; set; }
+    public Func<ReferenceListViewModel, Task>? ShowReferences { get; set; }
 
     public Task ShowErrorAsync(string title, string message)
     {
         Errors.Add((title, message));
         return Task.CompletedTask;
+    }
+
+    public void ShowNotification(string title, string message)
+    {
+        // Do nothing for now in the fake
     }
 
     public Task<TypeSpecifier?> SelectTypeAsync(IEnumerable<TypeSpecifier> types, TypeSpecifier initial)
@@ -35,6 +44,9 @@ public sealed class RecordingDialogs : IEditorDialogs
     public Task<MethodSpecifier?> SelectMethodAsync(IEnumerable<MethodSpecifier> methods) =>
         Task.FromResult(methods.FirstOrDefault());
 
+    public Task<MethodSpecifier?> SelectOverrideAsync(IEnumerable<MethodSpecifier> methods, IReadOnlySet<string> overriddenNames) =>
+        SelectMethodAsync(methods);
+
     /// <summary>What <see cref="ConfirmTrustAsync"/> answers.</summary>
     public bool TrustAnswer { get; set; }
 
@@ -45,13 +57,64 @@ public sealed class RecordingDialogs : IEditorDialogs
 
     public Task<bool> ConfirmTrustAsync(string projectPath, IReadOnlyList<string> extensionFolders) => Task.FromResult(TrustAnswer);
 
+    /// <summary>What <see cref="ConfirmAsync"/> answers.</summary>
+    public bool ConfirmAnswer { get; set; } = true;
+
+    public List<(string Title, string Message)> ConfirmCalls { get; } = [];
+
+    /// <summary>What <see cref="ConfirmUnsavedAsync"/> answers.</summary>
+    public UnloadChoice UnsavedAnswer { get; set; } = UnloadChoice.Cancel;
+
+    public List<IReadOnlyList<UnsavedFile>> UnsavedCalls { get; } = [];
+
+    /// <summary>What <see cref="ConfirmRecoverAsync"/> answers.</summary>
+    public RecoveryChoice RecoverAnswer { get; set; } = RecoveryChoice.Later;
+
+    public List<IReadOnlyList<RecoveryFile>> RecoverCalls { get; } = [];
+
+    /// <summary>The paths <see cref="ConfirmRecoverAsync"/> chooses to restore with <see cref="RecoveryChoice.Restore"/>; every offered file when null.</summary>
+    public IReadOnlyCollection<string>? RecoverRestorePaths { get; set; }
+
+    public Task<RecoveryAnswer> ConfirmRecoverAsync(IReadOnlyList<RecoveryFile> files)
+    {
+        RecoverCalls.Add(files);
+        return Task.FromResult(new RecoveryAnswer(RecoverAnswer, RecoverAnswer == RecoveryChoice.Restore ? RecoverRestorePaths ?? [.. files.Select(file => file.Path)] : []));
+    }
+
+    public Task<UnloadChoice> ConfirmUnsavedAsync(IReadOnlyList<UnsavedFile> files)
+    {
+        UnsavedCalls.Add(files);
+        return Task.FromResult(UnsavedAnswer);
+    }
+
+    public Task<SampleTargetChoice> ConfirmSampleTargetAsync(string sampleName, string targetFolder) => Task.FromResult(SampleTargetChoice.Open);
+
+    public Task<bool> ConfirmAsync(string title, string message, string confirmLabel)
+    {
+        ConfirmCalls.Add((title, message));
+        return Task.FromResult(ConfirmAnswer);
+    }
+
     public Task ShowIssuesAsync(string title, IReadOnlyList<CodeDiagnostic> issues)
     {
         IssueDialogs.Add((title, issues));
         return ShowIssues?.Invoke(title, issues) ?? Task.CompletedTask;
     }
 
-    public Task ShowReferencesAsync(ReferenceListVM references)
+    public Task ShowKeyboardShortcutsAsync(KeyboardShortcutsViewModel sheet) => Task.CompletedTask;
+
+    public Task ShowAboutAsync(AboutViewModel about) => Task.CompletedTask;
+
+    public Task ShowGoToAnythingAsync(NetPrints.Editor.Navigation.GoToAnythingViewModel goTo) => Task.CompletedTask;
+
+    public Task ShowCommandPaletteAsync(NetPrints.Editor.Commands.CommandPalette.CommandPaletteViewModel palette) => Task.CompletedTask;
+
+    /// <summary>Shows the New project dialog and answers with its result; when null the dialog is cancelled.</summary>
+    public Func<NewProjectDialogViewModel, Task<string?>>? ShowNewProject { get; set; }
+
+    public Task<string?> ShowNewProjectAsync(NewProjectDialogViewModel dialog) => ShowNewProject?.Invoke(dialog) ?? Task.FromResult<string?>(null);
+
+    public Task ShowReferencesAsync(ReferenceListViewModel references)
     {
         if (ShowReferences is not null)
         {
@@ -64,17 +127,40 @@ public sealed class RecordingDialogs : IEditorDialogs
 }
 
 /// <summary>
-/// Starts processes for real with their output captured (the headless stand-in for the editor's
-/// terminal), and records what was started.
+/// Starts processes for real through the editor's own <see cref="ProcessLauncher"/> (its exit follows the drain of the output),
+/// with their output captured (the headless stand-in for the editor's terminal), and records what was started.
 /// </summary>
 public sealed class CapturingProcessLauncher : IProcessLauncher, IDisposable
 {
     private readonly StringBuilder output = new();
-    private readonly List<Process> processes = [];
+    private readonly ProcessLauncher launcher = new();
+    private readonly List<CancellationTokenSource> runs = [];
+
+    public CapturingProcessLauncher()
+    {
+        launcher.OutputReceived += line =>
+        {
+            lock (output)
+            {
+                output.AppendLine(line);
+            }
+
+            OutputReceived?.Invoke(line);
+        };
+        launcher.ProcessStarted += (id, request) => ProcessStarted?.Invoke(id, request);
+        launcher.LineReceived += (id, stream, line) => LineReceived?.Invoke(id, stream, line);
+        launcher.ProcessExited += (id, code) => ProcessExited?.Invoke(id, code);
+    }
 
     public List<ProcessStartRequest> Started { get; } = [];
 
     public event Action<string>? OutputReceived;
+
+    public event Action<int, ProcessStartRequest>? ProcessStarted;
+
+    public event Action<int, ProcessStream, string>? LineReceived;
+
+    public event Action<int, int>? ProcessExited;
 
     public string Output
     {
@@ -87,74 +173,20 @@ public sealed class CapturingProcessLauncher : IProcessLauncher, IDisposable
         }
     }
 
-    public void Start(ProcessStartRequest request)
+    public void Start(ProcessStartRequest request, CancellationToken cancellationToken = default)
     {
         Started.Add(request);
-        var startInfo = new ProcessStartInfo(request.FileName)
-        {
-            WorkingDirectory = request.WorkingDirectory,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-        };
-
-        foreach (string argument in request.Arguments)
-        {
-            startInfo.ArgumentList.Add(argument);
-        }
-
-        if (request.EnvironmentVariables is not null)
-        {
-            foreach ((string key, string value) in request.EnvironmentVariables)
-            {
-                startInfo.Environment[key] = value;
-            }
-        }
-
-        var process = new Process
-        {
-            StartInfo = startInfo,
-            EnableRaisingEvents = true,
-        };
-        process.OutputDataReceived += (_, e) => Append(e.Data);
-        process.ErrorDataReceived += (_, e) => Append(e.Data);
-        process.Exited += (_, _) => OutputReceived?.Invoke($"Process exited (code {process.ExitCode}).");
-        process.Start();
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
-        processes.Add(process);
-    }
-
-    private void Append(string? line)
-    {
-        if (line is not null)
-        {
-            lock (output)
-            {
-                output.AppendLine(line);
-            }
-
-            OutputReceived?.Invoke(line);
-        }
+        var run = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken); // cancelled on dispose, which kills the program
+        runs.Add(run);
+        launcher.Start(request, run.Token);
     }
 
     public void Dispose()
     {
-        foreach (var process in processes)
+        foreach (var run in runs)
         {
-            try
-            {
-                if (!process.HasExited)
-                {
-                    process.Kill(entireProcessTree: true);
-                }
-            }
-            catch (InvalidOperationException)
-            {
-                // Already gone.
-            }
-
-            process.Dispose();
+            run.Cancel();
+            run.Dispose();
         }
     }
 }

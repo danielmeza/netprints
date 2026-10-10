@@ -58,8 +58,8 @@ internal static class Program
         EditorApp.HostServices = new EditorHostServices(loggerFactory, extensions, settings, channel.Channel, channel.Error, msBuildAvailable,
             async () =>
             {
-                await extensions.DisposeAsync().ConfigureAwait(false);
-                await channel.Channel.DisposeAsync().ConfigureAwait(false);
+                await extensions.DisposeAsync();
+                await channel.Channel.DisposeAsync();
             });
 
         // EditorApp's ShutdownRequested handler awaits HostServices.DisposeAsync() before the app exits.

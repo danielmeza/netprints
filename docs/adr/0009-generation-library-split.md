@@ -36,7 +36,7 @@ Extract `GraphCodeGenerator` and `GenerateRequestFile` (with their `GraphJob`/`G
 - `NetPrints.Generator` keeps only `Program.cs` (the `generate <request.rsp>` CLI entry point,
   `UseAppHost=false`, always run via `dotnet exec` from `NetPrints.Sdk.targets`) and becomes a thin
   host: a plain `ProjectReference` to `NetPrints.Generation`.
-- `NetPrints.Editor` (`MainEditorVM`/`ClassEditorVM`) takes a plain `ProjectReference` to
+- `NetPrints.Editor` (`MainEditorViewModel`/`ClassEditorViewModel`) takes a plain `ProjectReference` to
   `NetPrints.Generation` — a normal library reference, not to an `Exe` project — so
   `ReferenceOutputAssembly="false"` and the `HintPath` workaround are gone entirely. There is no
   `Exe` project on the Editor's reference graph anymore, so a self-contained, RID-published build

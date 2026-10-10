@@ -1,0 +1,139 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:sp="clr-namespace:NetPrints.Editor.StartPage"
+             xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
+             x:Class="NetPrints.Editor.StartPage.RecentProjectsTileView"
+             x:DataType="sp:RecentProjectsTileViewModel">
+  <!-- Open recent: a search box over the list grouped by date. A row's buttons and menu run the tile's commands through the row's Owner. -->
+  <UserControl.Styles>
+    <Style Selector="ListBoxItem">
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ListBox">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.row-open /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.row-open:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.row-open:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Border.row">
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="ListBoxItem:pointerover Border.row">
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListLowBrush}" />
+    </Style>
+    <Style Selector="ListBoxItem:selected Border.row">
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListMediumBrush}" />
+    </Style>
+    <Style Selector="Border.row.unavailable">
+      <Setter Property="Opacity" Value="0.55" />
+    </Style>
+    <Style Selector="StackPanel.actions">
+      <Setter Property="Opacity" Value="0" />
+    </Style>
+    <Style Selector="ListBoxItem:pointerover StackPanel.actions, ListBoxItem:selected StackPanel.actions, ListBoxItem:focus-within StackPanel.actions">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+  </UserControl.Styles>
+  <StackPanel Spacing="8" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentSection}">
+    <TextBlock Classes="section" Text="Open recent" />
+    <TextBox x:Name="SearchBox" Text="{Binding SearchText}" PlaceholderText="Search by name or path" AutomationProperties.Name="Search recent projects"
+             AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentSearch}">
+      <Interaction.Behaviors>
+        <FocusOnAttachedToVisualTreeBehavior />
+        <KeyTrigger Key="Down" EventRoutingStrategy="Tunnel">
+          <InvokeCommandAction Command="{Binding SelectFirstCommand}" />
+          <FocusControlAction TargetControl="RecentList" />
+        </KeyTrigger>
+      </Interaction.Behaviors>
+    </TextBox>
+    <TextBlock Text="No recent projects" IsVisible="{Binding IsEmpty}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentEmpty}" />
+    <ListBox x:Name="RecentList" Focusable="True" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" ScrollViewer.VerticalScrollBarVisibility="Disabled"
+             AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentList}">
+      <Interaction.Behaviors>
+        <edbehaviors:KeepFocusOnSelectedItemBehavior />
+        <ExecuteCommandOnKeyDownBehavior EventRoutingStrategy="Tunnel" Key="Enter" Command="{Binding OpenSelectedCommand}" />
+        <ExecuteCommandOnKeyDownBehavior EventRoutingStrategy="Tunnel" Key="Delete" Command="{Binding RemoveSelectedCommand}" />
+        <ExecuteCommandOnKeyDownBehavior EventRoutingStrategy="Tunnel" Gesture="Ctrl+P" Command="{Binding TogglePinSelectedCommand}" />
+      </Interaction.Behaviors>
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="sp:RecentProjectItemViewModel">
+          <StackPanel>
+            <TextBlock Classes="secondary" Margin="8,12,0,4" Text="{Binding GroupTitle}" IsVisible="{Binding ShowGroupHeader}"
+                       AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentGroup}" />
+            <Border Classes="row" Classes.unavailable="{Binding !IsAvailable}">
+              <Border.ContextMenu>
+                <ContextMenu>
+                  <MenuItem Header="Open" Command="{Binding Owner.OpenCommand}" CommandParameter="{Binding}"
+                            AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentMenuOpen}" />
+                  <MenuItem Header="Open containing folder" Command="{Binding Owner.OpenContainingFolderCommand}" CommandParameter="{Binding}"
+                            AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentMenuFolder}" />
+                  <MenuItem Header="Copy path" Command="{Binding Owner.CopyPathCommand}" CommandParameter="{Binding}"
+                            AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentMenuCopy}" />
+                  <MenuItem Header="Pin or unpin" Command="{Binding Owner.TogglePinCommand}" CommandParameter="{Binding}"
+                            AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentMenuPin}" />
+                  <Separator />
+                  <MenuItem Header="Remove from list" Command="{Binding Owner.RemoveCommand}" CommandParameter="{Binding}"
+                            AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentMenuRemove}" />
+                </ContextMenu>
+              </Border.ContextMenu>
+              <Grid ColumnDefinitions="Auto,*,Auto,Auto" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentRow}"
+                    AutomationProperties.Name="{Binding DisplayName}">
+                <Border Margin="{StaticResource Space.S}" VerticalAlignment="Center" Width="{StaticResource StartPage.RecentTileSize}" Height="{StaticResource StartPage.RecentTileSize}"
+                        CornerRadius="{StaticResource Radius.Control}" Background="{DynamicResource StartPage.RecentTileBackground}" AutomationProperties.AccessibilityView="Raw">
+                  <icons:IconPresenter IconId="{x:Static icons:IconIds.Project}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <Button Grid.Column="1" Classes="flat row-open" Margin="0" Padding="12,8" HorizontalContentAlignment="Left" HorizontalAlignment="Stretch"
+                        Command="{Binding Owner.OpenCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding Path}"
+                        AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentOpen}" AutomationProperties.Name="{Binding DisplayName, StringFormat='Open {0}'}">
+                  <StackPanel>
+                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
+                    <TextBlock Classes="secondary" Text="{Binding DisplayPath}" TextTrimming="CharacterEllipsis" />
+                  </StackPanel>
+                </Button>
+                <TextBlock Grid.Column="2" Classes="secondary" VerticalAlignment="Center" Margin="8,0" MinWidth="96" TextAlignment="Right"
+                           Text="{Binding StatusText}" IsVisible="{Binding StatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                           AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentStatus}" />
+                <TextBlock Grid.Column="2" Classes="secondary" VerticalAlignment="Center" Margin="8,0" MinWidth="96" TextAlignment="Right"
+                           Text="{Binding RelativeDate}" IsVisible="{Binding IsAvailable}"
+                           AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentDate}" />
+                <StackPanel Grid.Column="3" Classes="actions" Orientation="Horizontal" VerticalAlignment="Center">
+                  <Button Classes="flat" IsVisible="{Binding !Pinned}" ToolTip.Tip="Pin" AutomationProperties.Name="Pin"
+                          Command="{Binding Owner.PinCommand}" CommandParameter="{Binding}"
+                          AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentPin}">
+                    <icons:IconPresenter IconId="{x:Static icons:IconIds.Pin}" />
+                  </Button>
+                  <Button Classes="flat" IsVisible="{Binding Pinned}" ToolTip.Tip="Unpin" AutomationProperties.Name="Unpin"
+                          Command="{Binding Owner.UnpinCommand}" CommandParameter="{Binding}"
+                          AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentUnpin}">
+                    <icons:IconPresenter IconId="{x:Static icons:IconIds.Pin}" IsActive="True" />
+                  </Button>
+                  <Button Classes="flat" ToolTip.Tip="Remove from the list" AutomationProperties.Name="Remove from the list"
+                          Command="{Binding Owner.RemoveCommand}" CommandParameter="{Binding}"
+                          AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentRemove}">
+                    <icons:IconPresenter IconId="{x:Static icons:IconIds.Close}" />
+                  </Button>
+                </StackPanel>
+              </Grid>
+            </Border>
+          </StackPanel>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </StackPanel>
+</UserControl>

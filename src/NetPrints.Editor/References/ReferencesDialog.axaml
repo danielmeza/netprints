@@ -2,14 +2,14 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ed="clr-namespace:NetPrints.Editor"
         xmlns:edreferences="clr-namespace:NetPrints.Editor.References"
-        xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
         x:Class="NetPrints.Editor.References.ReferencesDialog"
-        x:DataType="edreferences:ReferenceListVM"
+        x:DataType="edreferences:ReferenceListViewModel"
         Title="References"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
-        Width="700" Height="450"
+        SizeToContent="Height" Width="{StaticResource Dialog.MaxWidth}"
         WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferencesDialog}">
-  <Grid RowDefinitions="Auto,*,Auto" Margin="8">
+  <Grid RowDefinitions="Auto,*,Auto" Margin="{StaticResource Space.S}">
     <Grid ColumnDefinitions="*,*">
       <Button Classes="flat" Content="Assembly" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferencesAddAssemblyButton}" Command="{Binding AddAssemblyCommand}"
               ToolTip.Tip="Add an assembly reference" />
@@ -17,13 +17,13 @@
               ToolTip.Tip="Add a source code directory reference which searches for .cs files" />
     </Grid>
 
-    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="{StaticResource Dialog.ListMaxHeight}">
       <ItemsControl x:Name="ReferenceList" ItemsSource="{Binding References}">
         <ItemsControl.ItemTemplate>
-          <DataTemplate x:DataType="edreferences:DeclaredReferenceVM">
+          <DataTemplate x:DataType="edreferences:DeclaredReferenceViewModel">
             <Grid ColumnDefinitions="*,150,Auto" Margin="2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferenceRow}" AutomationProperties.Name="{Binding DisplayText}">
               <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
-                         FontSize="14" ToolTip.Tip="{Binding DisplayText}" />
+                         FontSize="{StaticResource Font.Body}" ToolTip.Tip="{Binding DisplayText}" />
               <!-- OneWay (R2-10, D10): toggling invokes SetIncludedCommand instead of a property setter
                    kicking off an untracked async edit. The parameter is the switch's own clicked state
                    (F-06), not the row's last-applied state, so a stale switch cannot invert the next click. -->
@@ -41,9 +41,9 @@
               </ToggleSwitch>
               <Button Grid.Column="2" Classes="icon" Width="32" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferenceRemove}" Height="32" CornerRadius="16"
                       ToolTip.Tip="Remove this reference" AutomationProperties.Name="Remove this reference"
-                      Command="{Binding $parent[ItemsControl].((edreferences:ReferenceListVM)DataContext).RemoveCommand}"
+                      Command="{Binding $parent[ItemsControl].((edreferences:ReferenceListViewModel)DataContext).RemoveCommand}"
                       CommandParameter="{Binding}">
-                <mi:MaterialIcon Kind="Minus" />
+                <icons:IconPresenter IconId="{x:Static icons:IconIds.Remove}" />
               </Button>
             </Grid>
           </DataTemplate>

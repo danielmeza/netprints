@@ -20,6 +20,10 @@
     <NetPrintsExperimentalOptIn Include="NPXE0002" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Semi.Avalonia's SemiTheme creates the zh-CN culture in a static initializer, which throws in globalization-invariant mode (ADR-0023). -->
+    <RuntimeHostConfigurationOption Include="System.Globalization.PredefinedCulturesOnly" Value="false" />
+  </ItemGroup>
+  <ItemGroup>
     <InternalsVisibleTo Include="NetPrints.Editor.Tests" />
   </ItemGroup>
 
@@ -35,6 +39,22 @@
          application folder, and that folder is only copied for a direct PackageReference, not one
          pulled in transitively through the NetPrints.Workspace project reference. -->
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The bundled samples (FR-043): the sample's project, graphs and generated files, not its build output. The editor copies one to a folder the user picks. -->
+    <Content Include="..\..\samples\HelloWorld\**"
+             Exclude="..\..\samples\HelloWorld\bin\**;..\..\samples\HelloWorld\obj\**;..\..\samples\HelloWorld\Compiled_*\**"
+             Link="samples\HelloWorld\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\THIRD-PARTY-NOTICES.md"
+             Link="THIRD-PARTY-NOTICES.md"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,48 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
+        xmlns:ed="clr-namespace:NetPrints.Editor"
+        xmlns:edks="clr-namespace:NetPrints.Editor.Commands.KeyboardShortcuts"
+        xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
+        x:Class="NetPrints.Editor.Dialogs.KeyboardShortcutsDialog"
+        x:DataType="edks:KeyboardShortcutsViewModel"
+        Title="Keyboard shortcuts"
+        Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsDialog}">
+  <ctl:DialogShell Title="{Binding $parent[Window].Title}" IconId="{x:Static icons:IconIds.DialogInfo}">
+    <ctl:DialogShell.Actions>
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsCloseButton}" Content="Close" Classes="dialogAction"
+              IsDefault="True" IsCancel="True">
+        <Interaction.Behaviors>
+          <ButtonClickEventTriggerBehavior>
+            <CloseWindowAction />
+          </ButtonClickEventTriggerBehavior>
+        </Interaction.Behaviors>
+      </Button>
+    </ctl:DialogShell.Actions>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="{StaticResource Dialog.ListMaxHeight}">
+      <ItemsControl AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsList}" ItemsSource="{Binding Groups}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="edks:ShortcutGroup">
+            <StackPanel Margin="0,0,0,8">
+              <TextBlock Text="{Binding Title}" Classes="groupTitle"
+                         AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsGroupTitle}" />
+              <ItemsControl ItemsSource="{Binding Rows}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="edks:ShortcutRow">
+                    <Grid ColumnDefinitions="*,Auto" Margin="12,2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsRow}"
+                          AutomationProperties.Name="{Binding Label}">
+                      <TextBlock Text="{Binding Label}" />
+                      <TextBlock Grid.Column="1" Text="{Binding Shortcuts}" FontFamily="{StaticResource Font.Mono}" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+  </ctl:DialogShell>
+</Window>

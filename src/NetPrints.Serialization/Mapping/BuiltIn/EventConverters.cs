@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using NetPrints.Core;
 using NetPrints.Graph;
 using NetPrints.Serialization.Documents;
@@ -18,6 +19,62 @@ internal static class EventConverters
     /// <summary>Every converter this file contributes.</summary>
     public static IReadOnlyList<INodeDocumentConverter> All { get; } = [new EventEntryNodeConverter()];
 
+    private static readonly TypeSpecifier ObjectType = TypeSpecifier.FromType<object>();
+
+    private const string ArgumentPinKeyPrefix = "out.data.Input";
+
+    /// <summary>
+    /// The names of <paramref name="doc"/>'s custom arguments: the written name when it is a usable
+    /// identifier, else the name stored in the argument's pin state, else <c>InputN</c>. Each repaired
+    /// argument adds a message to <paramref name="repairs"/>.
+    /// </summary>
+    internal static List<string> ResolveNames(EventEntryNodeDocument doc, List<string> repairs)
+    {
+        List<string> names = [];
+        HashSet<string> used = [];
+        IReadOnlyList<EventArgumentDocument> arguments = doc.Arguments ?? [];
+
+        for (int i = 0; i < arguments.Count; i++)
+        {
+            string defaultName = $"Input{i}";
+            string pinName = doc.Pins?.FirstOrDefault(pin => pin.Pin == ArgumentPinKeyPrefix + i)?.Name ?? defaultName;
+            string? written = arguments[i].Name;
+
+            string name;
+            if (written is null)
+            {
+                name = Usable(pinName) ? pinName : Fallback();
+            }
+            else if (Usable(written))
+            {
+                name = written;
+            }
+            else
+            {
+                name = Usable(pinName) ? pinName : Fallback();
+                repairs.Add($"Event '{doc.EventName}' argument {i} has the name '{written}', which is not a valid or unique identifier; it is now '{name}'.");
+            }
+
+            used.Add(name);
+            names.Add(name);
+
+            bool Usable(string candidate) => EventEntryNode.IsValidArgumentName(candidate) && !used.Contains(candidate);
+
+            string Fallback()
+            {
+                string candidate = defaultName;
+                while (!Usable(candidate))
+                {
+                    candidate += "_";
+                }
+
+                return candidate;
+            }
+        }
+
+        return names;
+    }
+
     private sealed class EventEntryNodeConverter : INodeDocumentConverter
     {
         public string Kind => BuiltInNodeKinds.EventEntry;
@@ -29,8 +86,13 @@ internal static class EventConverters
             var entry = (EventEntryNode)node;
             MethodRef? overrides = entry.OverriddenMethod is { } overridden ? context.ToRef(overridden) : null;
 
+            IReadOnlyList<EventArgument> typed = entry.DeclaredArguments;
+            IReadOnlyList<EventArgumentDocument>? arguments = overrides is null && typed.Any(argument => !argument.Type.Equals(ObjectType))
+                ? typed.Select(argument => new EventArgumentDocument(null, context.ToRef(argument.Type))).ToList()
+                : null;
+
             return new EventEntryNodeDocument(entry.Id, null, null, entry.EventName, entry.Visibility,
-                entry.Modifiers, overrides, entry.OutputDataPins.Count);
+                entry.Modifiers, overrides, entry.OutputDataPins.Count, arguments);
         }
 
         public Node CreateNode(NodeDocument document, NodeGraph graph, NodeMappingContext context)
@@ -53,6 +115,16 @@ internal static class EventConverters
                 for (int i = 0; i < doc.ArgumentCount; i++)
                 {
                     entry.AddArgument();
+                }
+
+                if (doc.Arguments is { Count: > 0 } arguments)
+                {
+                    List<string> names = ResolveNames(doc, []);
+                    List<EventArgument> typed = arguments
+                        .Select((argument, i) => new EventArgument(names[i], context.FromTypeRef(argument.Type, $"Event '{doc.EventName}' argument '{names[i]}' type")))
+                        .ToList();
+
+                    entry.SetArguments(typed);
                 }
             }
 

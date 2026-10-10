@@ -10,4 +10,5 @@ namespace NetPrints.Editor.Hosting.Automation;
 [JsonSourceGenerationOptions(JsonSerializerDefaults.Web, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(AutomationRequest))]
 [JsonSerializable(typeof(AutomationResponse))]
+[JsonSerializable(typeof(RunStateSnapshot))]
 public sealed partial class AutomationJsonContext : JsonSerializerContext;

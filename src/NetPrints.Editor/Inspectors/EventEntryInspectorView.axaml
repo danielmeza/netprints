@@ -1,0 +1,63 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edevents="clr-namespace:NetPrints.Editor.Events"
+             xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
+             x:Class="NetPrints.Editor.Inspectors.EventEntryInspectorView"
+             x:DataType="edevents:EventEntryInspectorViewModel">
+  <!-- Event entry inspector (US8, FR-071 to FR-074): name, kind and arguments; an override's are read-only. -->
+  <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspector}" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Classes="propertyGrid">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="{StaticResource Inspector.LabelColumnWidth}" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+    <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+    <TextBlock Grid.Row="1" Classes="inspectorLabel" Text="Kind" />
+    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Kind}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorKind}" />
+    <TextBlock x:Name="NameLabel" Grid.Row="2" Classes="inspectorLabel" Text="Name" />
+    <TextBox Grid.Row="2" Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorName}"
+             AutomationProperties.LabeledBy="{Binding #NameLabel}" IsReadOnly="{Binding IsNameReadOnly}" Text="{Binding Name, UpdateSourceTrigger=LostFocus}">
+      <Interaction.Behaviors>
+        <LoseFocusOnEnterBehavior />
+      </Interaction.Behaviors>
+    </TextBox>
+    <TextBlock Grid.Row="3" Grid.Column="1" Classes="fieldError" Text="{Binding Error}" IsVisible="{Binding HasError}"
+               AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorError}" />
+    <TextBlock Grid.Row="4" Grid.Column="1" Classes="secondary" Text="{Binding BaseSignatureNote}" IsVisible="{Binding IsOverride}"
+               AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorBaseSignature}" />
+    <TextBlock Grid.Row="5" Classes="inspectorLabel" Text="Arguments" />
+    <Button Grid.Row="5" Grid.Column="1" Classes="flat" Content="Add argument" Command="{Binding AddArgumentCommand}"
+            IsVisible="{Binding IsEditable}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorAddArgument}" />
+    <TextBlock Grid.Row="6" Grid.ColumnSpan="2" Classes="secondary" Text="No arguments." IsVisible="{Binding HasNoArguments}" />
+    <ItemsControl Grid.Row="7" Grid.ColumnSpan="2" ItemsSource="{Binding Arguments}"
+                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorArguments}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="edevents:EventArgumentViewModel">
+          <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorArgument}"
+                AutomationProperties.Name="{Binding Name}">
+            <TextBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorArgumentName}" AutomationProperties.Name="Argument name"
+                     IsReadOnly="{Binding !IsEditable}" Text="{Binding Name, UpdateSourceTrigger=LostFocus}">
+              <Interaction.Behaviors>
+                <LoseFocusOnEnterBehavior />
+              </Interaction.Behaviors>
+            </TextBox>
+            <Button Grid.Column="1" Classes="flat" Content="{Binding TypeName}" ToolTip.Tip="Change type" Command="{Binding ChangeTypeCommand}"
+                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorArgumentType}" />
+            <Button Grid.Column="2" Classes="icon" ToolTip.Tip="Move up" AutomationProperties.Name="Move argument up" Command="{Binding MoveUpCommand}"
+                    IsVisible="{Binding IsEditable}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorArgumentMoveUp}">
+              <icons:IconPresenter IconId="{x:Static icons:IconIds.MoveUp}" />
+            </Button>
+            <Button Grid.Column="3" Classes="icon" ToolTip.Tip="Move down" AutomationProperties.Name="Move argument down" Command="{Binding MoveDownCommand}"
+                    IsVisible="{Binding IsEditable}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorArgumentMoveDown}">
+              <icons:IconPresenter IconId="{x:Static icons:IconIds.MoveDown}" />
+            </Button>
+            <Button Grid.Column="4" Classes="icon" ToolTip.Tip="Remove argument" AutomationProperties.Name="Remove argument" Command="{Binding RemoveCommand}"
+                    IsVisible="{Binding IsEditable}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorArgumentRemove}">
+              <icons:IconPresenter IconId="{x:Static icons:IconIds.Remove}" />
+            </Button>
+          </Grid>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+  </Grid>
+</UserControl>
