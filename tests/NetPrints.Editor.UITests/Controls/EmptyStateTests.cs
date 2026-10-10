@@ -114,6 +114,12 @@ public class EmptyStateTests
 
         EmptyState state = ShownOne(session.Window, AutomationIds.SearchEmpty);
         Assert.Equal(IconIds.EmptySearch, state.IconId);
+        Assert.Equal("No node matches your search.", state.Message);
+
+        session.GraphViewModel.Search.HidingCatalogId = "acme";
+        HeadlessDriver.Pump();
+
+        Assert.Contains("acme", ShownOne(session.Window, AutomationIds.SearchEmpty).Message, StringComparison.Ordinal);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

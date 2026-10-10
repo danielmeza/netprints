@@ -2372,3 +2372,25 @@ test-first. The spec's Clarifications, session 2026-10-09, record them.
   the leg's remaining time. Sharing one warmed provider between hosts with the same references and sources is the next lever, and
   needs a design for the catalog layers. `InteractionStateTests.PointerOverAndPressedUseTheStateTokensInBothVariants("errors row")`
   (the flake of G4d) failed once on CI (`38017248872`, first attempt) and once in the local whole-suite run; it passes alone.
+
+## Batch G5b (T093, T094, T095: theme, type-scoped catalog routing, hidden-type empty state)
+
+- T093: `EditorSettings` (`Theme`: `EditorTheme` Dark/Light/System) is the `netprints.editor` section of `settings.json`
+  (`extensions["netprints.editor"].theme`, lower-case names) through the settings store. The three `theme.*` commands share
+  `ThemeCommandHandler`; `IProjectActions.SetThemeAsync` applies the variant (`EditorApp.ApplyTheme`; System maps to
+  `ThemeVariant.Default`) and stores the choice. `EditorApp` applies the stored theme at start-up, Dark when none. The T025
+  pending list is empty.
+- T094: `CompositeReflectionProvider` routes a type-scoped `GetMethods`/`GetVariables` per declaring type: the catalog that
+  covers its assembly answers (own members only); a covered type the catalog does not list returns nothing; other types answer
+  as before (when no declaring type is covered the old path runs unchanged). The assembly comes from the new
+  `ITypeAssemblyLocator` (implemented by `ReflectionProvider`); `ICatalogScope.GetHidingCatalogId` (composite, memoized) names
+  the hiding catalog. Public API additions are in `PublicAPI.Unshipped.txt`. "Listed" means the catalog has a type entry,
+  methods, variables or constructors for the type.
+- T095: `SuggestionListViewModel.HidingCatalogId` is set when the search is opened from an output data pin whose type a catalog
+  hides; `EmptyMessage` feeds the node search `EmptyState`. The sentence shows only when nothing else matches, because the
+  pin-scoped search also lists static methods that take the type.
+- Deviation: "a graph that uses a hidden member builds and runs with unchanged output" is pinned by
+  `HiddenMembersStillResolveForExistingNodes` (`GetPublicMethodOverloads` and the type list are unchanged), not by building and
+  running a graph; the translator does not query the provider by type.
+- Red/green: the settings round-trip tests and the headless theme tests were written together with the new types, so they were
+  not seen red as assertions; the command routing, the composite routing and the empty message were seen red first.

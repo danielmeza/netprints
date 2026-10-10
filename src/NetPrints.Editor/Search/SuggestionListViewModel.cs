@@ -21,6 +21,7 @@ namespace NetPrints.Editor.Search;
 /// </summary>
 public sealed partial class SuggestionListViewModel : ObservableObject, IDisposable
 {
+    private const string DefaultEmptyMessage = "No node matches your search.";
     private const string NetPrintsCategory = "NetPrints";
     private const string ThisMethodsCategory = "This Methods";
     private const string ThisVariablesCategory = "This Variables";
@@ -90,6 +91,14 @@ public sealed partial class SuggestionListViewModel : ObservableObject, IDisposa
     /// <summary>Gets a value indicating whether the list has loaded and no suggestion matches the search text.</summary>
     public bool IsEmpty => !IsLoading && !items.Any(item => !item.IsHeader);
 
+    /// <summary>Gets the id of the catalog that hides the type of the pin the search was opened from, or null when none does (FR-091).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(EmptyMessage))]
+    public partial string? HidingCatalogId { get; set; }
+
+    /// <summary>Gets the sentence the empty state shows: the default, or the catalog that hides the pin's type.</summary>
+    public string EmptyMessage => HidingCatalogId is { } id ? $"No members: this type is hidden by catalog {id}." : DefaultEmptyMessage;
+
     /// <summary>Where the chosen node is created (graph coordinates).</summary>
     [ObservableProperty]
     public partial GraphPoint Position { get; set; }
@@ -129,15 +138,17 @@ public sealed partial class SuggestionListViewModel : ObservableObject, IDisposa
         Position = position;
         SuggestionPin = pin;
         SearchText = "";
+        HidingCatalogId = null;
         IsLoading = true;
         IsOpen = true;
 
         List<SuggestionItem> built;
+        string? hidingCatalog;
         try
         {
             // Suggestions come from reflection: wait for the first load instead of showing nothing.
             await graph.Context.Reflection.Loaded.WaitAsync(cancellationToken);
-            built = await Task.Run(() => BuildItems(pin), cancellationToken);
+            (built, hidingCatalog) = await Task.Run(() => (BuildItems(pin), FindHidingCatalog(pin)), cancellationToken);
         }
         catch (Exception ex)
         {
@@ -152,9 +163,15 @@ public sealed partial class SuggestionListViewModel : ObservableObject, IDisposa
             return;
         }
 
+        HidingCatalogId = hidingCatalog;
         SetItems(built);
         IsLoading = false;
     }
+
+    private string? FindHidingCatalog(NodePin? pin) =>
+        pin is NodeOutputDataPin odp && odp.PinType.Value is TypeSpecifier pinType && graph.Context.Reflection.Provider is ICatalogScope scope
+            ? scope.GetHidingCatalogId(pinType)
+            : null;
 
     /// <summary>Replaces the suggestion rows.</summary>
     internal void SetItems(IReadOnlyList<SuggestionItem> rows)

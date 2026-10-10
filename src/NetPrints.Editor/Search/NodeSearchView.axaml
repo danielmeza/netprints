@@ -31,7 +31,7 @@
         </Interaction.Behaviors>
       </TextBox>
       <TextBlock Grid.Row="1" Text="Loading..." IsVisible="{Binding IsLoading}" Margin="8" />
-      <ctl:EmptyState Grid.Row="1" IconId="{x:Static icons:IconIds.EmptySearch}" Message="No node matches your search." IsVisible="{Binding IsEmpty}"
+      <ctl:EmptyState Grid.Row="1" IconId="{x:Static icons:IconIds.EmptySearch}" Message="{Binding EmptyMessage}" IsVisible="{Binding IsEmpty}"
                       AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SearchEmpty}" />
       <!-- IsEnabled="{Binding !IsFiltering}" (FLAKE-01): disabled while the debounced filter is
            still in flight, so a row that only matches the previous, unfiltered view cannot be

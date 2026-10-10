@@ -1186,7 +1186,7 @@ re-baselines the snapshots it changes (open every PNG).
   output. Then `src/NetPrints.Reflection/Catalogs/CompositeReflectionProvider.cs`, and Reflection's
   `PublicAPI.Unshipped.txt` if its public API changes. T094a's goldens (G5a), over a fixture assembly that no catalog
   covers, stay green.
-- [ ] T095 [US10] The scoped search's empty state names the hiding catalog (FR-091), through the `EmptyState` control
+- [x] T095 [US10] The scoped search's empty state names the hiding catalog (FR-091), through the `EmptyState` control
   (T092e, FR-088): `src/NetPrints.Editor/Search/SuggestionListViewModel.cs` and its view; headless test first.
 
 ### Batch G6 — model: sonnet — T096–T097 — 4 units
