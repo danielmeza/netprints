@@ -84,7 +84,7 @@ public class RegistrySurfaceTests
         Assert.Equal(Ids("newProject", "openProject", "closeProject", Separator, "newClass", "addExistingClass", Separator, "save", "saveAll", Separator, "projectSettings", "references", Separator, "exit"), Layout(rig.Open("File")).Select(Strip(MenuId)));
         Assert.Equal(Ids("undo", "redo", Separator, "delete", "rename", "selectAll", Separator, "nodeSearch", Separator, "classSettings", "addMethod", "addConstructor", "addVariable", "addEventGraph", "overrideMethod"), Layout(rig.Open("Edit")).Select(Strip(MenuId)));
         Assert.Equal(
-            Ids("frameSelection", "fitAll", Separator, "showPanel.projectTree", "showPanel.inspector", "showPanel.variables", "showPanel.errors", "showPanel.output", "showPanel.csharp", Separator, "floatDocument", "dockDocument", "resetLayout", Separator, "commandPalette"),
+            Ids("frameSelection", "fitAll", Separator, "showPanel.projectTree", "showPanel.inspector", "showPanel.variables", "showPanel.errors", "showPanel.output", "showPanel.csharp", Separator, "floatDocument", "dockDocument", "resetLayout", Separator, "theme.dark", "theme.light", "theme.system", Separator, "commandPalette"),
             Layout(rig.Open("View")).Select(Strip(MenuId)));
         Assert.Equal(Ids("compile", Separator, "run", "stop"), Layout(rig.Open("Build")).Select(Strip(MenuId)));
         Assert.Equal(Ids("goToAnything", Separator, "navigateBack", "navigateForward", Separator, "nextTab", "previousTab", "closeTab", Separator, "goToSource", "goToTarget"), Layout(rig.Open("Go")).Select(Strip(MenuId)));
