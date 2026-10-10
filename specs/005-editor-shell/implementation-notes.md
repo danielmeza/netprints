@@ -2346,3 +2346,29 @@ test-first. The spec's Clarifications, session 2026-10-09, record them.
   24 minutes in run 38005902584, so it deserves the same heap-dump look.
 - Whole suite (Release): 3798 tests, 3770 passed, 0 failed, 28 skipped (as before). Desktop E2E with `NETPRINTS_E2E=1` and
   `--fail-skips on`: 47 passed. Release build 0 warnings, `dotnet format` clean.
+
+### CI UI leg (batch CI-H2: `Test (Editor UI (headless))`)
+
+- Cause, from heap dumps of the test host mid-run (CI command on 4 pinned CPUs): the host grew about 1 GB per minute to 13.2 GB
+  (959 s). There is no run-wide reflection host here; each test builds its own editor, and `AvaloniaFact` runs every test in
+  its own application and dispatcher (the default `AvaloniaTestIsolationLevel.PerTest`). After 5 minutes 40 editors, 39 code
+  analysis sessions and 54 shut-down dispatchers were alive. Static caches of Avalonia objects (Material.Icons' icon geometry
+  parser, AvaloniaEdit's key bindings) keep the dispatcher of the test that first filled them, and a dispatcher keeps its timers
+  and its render loop's top levels, so any window a test left open kept its shell, reflection provider and analysis session.
+  Tests with unsaved changes left their shell window open: the dispose closed it with the prompt answering Cancel.
+  On top of that every `CodeAnalysisSession` and `ReflectionProvider` read all reference images again.
+- Fix: `dc6ef79d` adds `SharedMetadataReferences` (one weakly held `MetadataReference` per file, documentation file and last
+  write) used by both; `d34ed042` makes `ShellApp` and `HeadlessApp` answer Discard when they close their windows. Red first, as
+  assertions: `SharedMetadataReferencesTests.TheSameAssemblyYieldsTheSameReferenceWhileItIsAlive` and
+  `ShellAppReleaseTests.DisposingTheAppClosesTheShellWindowOfAProjectWithUnsavedChanges`.
+- After, locally with the CI command on 4 pinned CPUs: peak RSS 2.2 GB (was 13.2 GB), 12:23 (was 15:59), 701 passed, 2 skipped.
+  Sharing the references alone gave 5.5 GB and 14:27. The `AutomationAgentTests` that call `DrainFinalizers` went from 24 s to 7 s:
+  a forced full collection costs time in proportion to the leaked heap. CI (`38017248872`, re-run of the failed job): leg 18:13,
+  test host at most 1.9 GB (was 11.7 GB), 12.5 of 16 GB used at most, no swap.
+- Tried and dropped: `AvaloniaTestIsolationLevel.PerAssembly` (one application for the run) used more memory (17 GB) and ran
+  slower, because windows left open keep being rendered by every later test.
+- Open: 250 of the 700 tests open the sample project and spend about 2.7 s each in `ReflectionHost.ReloadAsync` (building the
+  provider and the warm-up that enumerates about 120k static methods); the UI thread runs them one at a time, so this is most of
+  the leg's remaining time. Sharing one warmed provider between hosts with the same references and sources is the next lever, and
+  needs a design for the catalog layers. `InteractionStateTests.PointerOverAndPressedUseTheStateTokensInBothVariants("errors row")`
+  (the flake of G4d) failed once on CI (`38017248872`, first attempt) and once in the local whole-suite run; it passes alone.
