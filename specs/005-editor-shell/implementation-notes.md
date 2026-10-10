@@ -2338,8 +2338,11 @@ test-first. The spec's Clarifications, session 2026-10-09, record them.
   warnings 14.
 - Diagnostics kept (`7a197b0c`): the test matrix prints the runner image, logs memory, swap, load and the biggest processes every
   30 s (`[monitor]` lines, also uploaded as `hang-<leg>`), dumps and stops a test host after 8 minutes without test progress
-  (`Microsoft.Testing.Extensions.HangDump` 1.9.1), ends the Test step at 24 minutes and prints the kernel OOM lines.
-- Follow-up (not done): `ReflectionProvider` and every `CodeAnalysisSession` each read all reference images again; sharing the
-  `MetadataReference`s per file would remove most of the remaining native churn in the editor and in the tests.
+  (`Microsoft.Testing.Extensions.HangDump` 1.9.1) and prints the kernel OOM lines. A 24-minute step timeout was tried and dropped:
+  it cut the headless UI leg in run 38005902584, whose Test step alone takes 16-28 minutes.
+- Follow-ups (not done): `ReflectionProvider` and every `CodeAnalysisSession` each read all reference images again; sharing the
+  `MetadataReference`s per file would remove most of the remaining native churn in the editor and in the tests. The headless UI
+  leg is close to its 30-minute job timeout (jobs of 16-28 minutes on 2026-10-09) and its test host grew to 11.7 GB after
+  24 minutes in run 38005902584, so it deserves the same heap-dump look.
 - Whole suite (Release): 3798 tests, 3770 passed, 0 failed, 28 skipped (as before). Desktop E2E with `NETPRINTS_E2E=1` and
   `--fail-skips on`: 47 passed. Release build 0 warnings, `dotnet format` clean.

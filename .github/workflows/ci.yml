@@ -160,10 +160,10 @@ jobs:
       - name: Build
         run: dotnet build ${{ matrix.project }} -c Release
 
-      # A stalled test host gets a dump and is stopped after 8 minutes without test progress, and the step
-      # ends before the job timeout, so the uploads below still run. [monitor] lines log memory every 30 s.
+      # A stalled test host gets a dump and is stopped after 8 minutes without test progress, so the step fails
+      # and the uploads below still run. [monitor] lines log memory every 30 s. No step timeout: the headless UI
+      # leg alone takes 16-28 minutes.
       - name: Test
-        timeout-minutes: 24
         run: |
           mkdir -p TestResults
           monitor() {
