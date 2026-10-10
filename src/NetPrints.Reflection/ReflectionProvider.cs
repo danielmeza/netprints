@@ -253,7 +253,7 @@ namespace NetPrints.Reflection
             }
 
             var assemblyReferences = existingAssemblies
-                .Select(a => (MetadataReference)MetadataReference.CreateFromFile(a.Path))
+                .Select(SharedMetadataReferences.For)
                 .ToList();
 
             // Create syntax trees from sources

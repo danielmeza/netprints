@@ -100,3 +100,5 @@ NetPrints.Core.MethodParameter.IsParams.get -> bool
 NetPrints.Core.MethodParameter.IsParams.init -> void
 static NetPrints.Core.MemberNames.ThrowIfTaken(NetPrints.Core.ClassGraph! cls, string! name, object? self, NetPrints.Core.MemberNameKind kind) -> void
 static NetPrints.Core.MemberNames.Unique(NetPrints.Core.ClassGraph! cls, string! baseName) -> string!
+NetPrints.Compilation.SharedMetadataReferences
+static NetPrints.Compilation.SharedMetadataReferences.For(NetPrints.Projects.ResolvedAssembly! assembly) -> Microsoft.CodeAnalysis.MetadataReference!
