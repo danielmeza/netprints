@@ -10,6 +10,7 @@ using NetPrints.Editor.Graph;
 using NetPrints.Editor.Navigation;
 using NetPrints.Editor.References;
 using NetPrints.Editor.Shell;
+using NetPrints.Editor.State;
 using NetPrints.Reflection;
 
 namespace NetPrints.Editor.Hosting;
@@ -215,6 +216,17 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
     /// <inheritdoc/>
     public Task ShowKeyboardShortcutsAsync(CancellationToken cancellationToken) =>
         context.Dialogs.ShowKeyboardShortcutsAsync(new KeyboardShortcutsViewModel(shell.Registry));
+
+    /// <inheritdoc/>
+    public async Task SetThemeAsync(EditorTheme theme, CancellationToken cancellationToken)
+    {
+        if (global::Avalonia.Application.Current is EditorApp app)
+        {
+            app.ApplyTheme(theme);
+        }
+
+        await context.Settings.SetAsync(EditorSettings.Descriptor, new EditorSettings { Theme = theme }, cancellationToken).ConfigureAwait(true);
+    }
 
     /// <inheritdoc/>
     public Task ShowCommandPaletteAsync(CancellationToken cancellationToken) =>

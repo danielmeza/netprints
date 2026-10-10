@@ -60,9 +60,9 @@ public class BuiltInCommandTableTests
         new("floatDocument", "Float tab", "View", "layout", [], Everywhere, null, typeof(FloatDocumentCommandHandler)),
         new("dockDocument", "Dock tab", "View", "layout", [], Everywhere, null, typeof(DockDocumentCommandHandler)),
         new("resetLayout", "Reset layout", "View", "layout", [], Everywhere, null, typeof(ResetLayoutCommandHandler)),
-        new("theme.dark", "Dark", "View", "theme", [], Everywhere, null, null),
-        new("theme.light", "Light", "View", "theme", [], Everywhere, null, null),
-        new("theme.system", "System", "View", "theme", [], Everywhere, null, null),
+        new("theme.dark", "Dark", "View", "theme", [], Everywhere, null, typeof(ThemeCommandHandler)),
+        new("theme.light", "Light", "View", "theme", [], Everywhere, null, typeof(ThemeCommandHandler)),
+        new("theme.system", "System", "View", "theme", [], Everywhere, null, typeof(ThemeCommandHandler)),
         new("commandPalette", "Command palette…", "View", "find", ["Ctrl+Shift+P"], Everywhere, null, typeof(CommandPaletteCommandHandler)),
         new("goToAnything", "Go to anything…", "Go", "find", ["Ctrl+P"], Everywhere, null, typeof(GoToAnythingCommandHandler)),
         new("navigateBack", "Back", "Go", "history", ["Alt+Left"], Everywhere, null, typeof(NavigateHistoryCommandHandler)),
@@ -86,9 +86,6 @@ public class BuiltInCommandTableTests
     /// </summary>
     private static readonly Dictionary<string, string> PendingCommandIds = new()
     {
-        ["theme.dark"] = "T093",
-        ["theme.light"] = "T093",
-        ["theme.system"] = "T093",
     };
 
     private static readonly string[] MenuOrder = ["File", "Edit", "View", "Go", "Build", "Help"];
@@ -170,11 +167,7 @@ public class BuiltInCommandTableTests
     }
 
     [Fact]
-    public void ThePendingListHoldsOnlyTheThemeCommandsOfT093()
-    {
-        Assert.Equal(["theme.dark", "theme.light", "theme.system"], PendingCommandIds.Keys.Order(StringComparer.Ordinal));
-        Assert.All(PendingCommandIds.Values, task => Assert.Equal("T093", task));
-    }
+    public void ThePendingListIsEmpty() => Assert.Empty(PendingCommandIds);
 
     [Fact]
     public void ARowWithoutAHandlerIsOnThePendingList() =>

@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
+using NetPrints.Editor.State;
 using NetPrints.Extensibility.Settings;
 
 namespace NetPrints.Editor;
@@ -20,6 +21,13 @@ public partial class EditorApp : Application
 {
     /// <summary>The embedded Inter font (Avalonia.Fonts.Inter), used as the default font family.</summary>
     public const string DefaultFontFamily = "avares://Avalonia.Fonts.Inter/Assets#Inter";
+
+    private static readonly Dictionary<EditorTheme, ThemeVariant> Variants = new()
+    {
+        [EditorTheme.Dark] = ThemeVariant.Dark,
+        [EditorTheme.Light] = ThemeVariant.Light,
+        [EditorTheme.System] = ThemeVariant.Default,
+    };
 
     private static EditorHostServices? hostServices;
 
@@ -100,6 +108,18 @@ public partial class EditorApp : Application
         }
     }
 
+    /// <summary>Switches the application to a theme (FR-082); <see cref="EditorTheme.System"/> follows the operating system.</summary>
+    /// <param name="theme">The theme to switch to.</param>
+    public void ApplyTheme(EditorTheme theme) => RequestedThemeVariant = Variants[theme];
+
+    /// <summary>Applies the theme stored in the settings file, <see cref="EditorTheme.Dark"/> when none is.</summary>
+    /// <param name="settings">The settings to read the theme from.</param>
+    public void ApplyThemeSetting(ISettingsStore settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        ApplyTheme(settings.Get(EditorSettings.Descriptor).Theme);
+    }
+
     /// <summary>
     /// On a classic desktop lifetime: composes the editor's services, creates and shows the shell
     /// window, installs the unhandled-exception handler, and, when <c>NETPRINTS_AUTOMATION=1</c>,
@@ -111,6 +131,7 @@ public partial class EditorApp : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             ApplyAnimationSetting(HostServices.Settings);
+            ApplyThemeSetting(HostServices.Settings);
 
             var composition = new EditorComposition(HostServices);
             var exceptionHandler = composition.InstallUnhandledExceptionHandler();

@@ -1170,7 +1170,7 @@ re-baselines the snapshots it changes (open every PNG).
 
 ### Batch G5b — model: sonnet — T093, T094, T095 — 4 units
 
-- [ ] T093 [US9] Theme (FR-082). Test first in `tests/NetPrints.Editor.Tests/State/EditorSettingsTests.cs` plus a headless
+- [x] T093 [US9] Theme (FR-082). Test first in `tests/NetPrints.Editor.Tests/State/EditorSettingsTests.cs` plus a headless
   test: `theme.dark`, `theme.light` and `theme.system` set `RequestedThemeVariant`; the choice is stored as
   `netprints.editor` → `theme` in `settings.json` through the P1 settings API (`EditorSettings`) and applied at startup
   (Dark by default). This closes SC-005's theme part and empties the T025 pending list.

@@ -8,6 +8,7 @@ using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Shell.Docking;
+using NetPrints.Editor.State;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.UITests.Hosting;
 
@@ -52,6 +53,8 @@ internal sealed class NoProjectActions : IProjectActions
     public Task ShowGoToAnythingAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
 
     public Task ShowCommandPaletteAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
+
+    public Task SetThemeAsync(EditorTheme theme, CancellationToken cancellationToken) => throw new NotSupportedException();
 
     public Task NewClassAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
 

@@ -1,4 +1,5 @@
 using NetPrints.Core;
+using NetPrints.Editor.State;
 
 namespace NetPrints.Editor.Shell;
 
@@ -79,6 +80,12 @@ public interface IProjectActions
     /// <param name="cancellationToken">Cancels the flow.</param>
     /// <returns>A task that completes when the dialog is closed.</returns>
     Task ShowAboutAsync(CancellationToken cancellationToken);
+
+    /// <summary>Switches the editor to a theme and keeps the choice in the settings file.</summary>
+    /// <param name="theme">The theme to switch to.</param>
+    /// <param name="cancellationToken">Cancels the write of the settings file.</param>
+    /// <returns>A task that completes when the theme is applied and stored.</returns>
+    Task SetThemeAsync(EditorTheme theme, CancellationToken cancellationToken);
 
     /// <summary>Adds a uniquely named class to the open project.</summary>
     /// <param name="cancellationToken">Cancels the flow.</param>

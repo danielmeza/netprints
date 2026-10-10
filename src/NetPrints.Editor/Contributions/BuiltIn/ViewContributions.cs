@@ -1,5 +1,6 @@
 using NetPrints.Editor.Commands;
 using NetPrints.Editor.Icons;
+using NetPrints.Editor.State;
 
 namespace NetPrints.Editor.Contributions.BuiltIn;
 
@@ -10,6 +11,7 @@ public static class ViewContributions
     internal const string PanelsGroup = "panels";
     private const string ViewportGroup = "viewport";
     private const string LayoutGroup = "layout";
+    private const string ThemeGroup = "theme";
     private const string FindGroup = "find";
 
     /// <summary>Registers the View menu's commands.</summary>
@@ -71,6 +73,21 @@ public static class ViewContributions
                 handler,
                 IconId: icon,
                 Menu: new MenuPlacement(MenuName, LayoutGroup, order)));
+        }
+
+        (string Id, string Label, EditorTheme Theme)[] themes =
+        [
+            ("theme.dark", "Dark", EditorTheme.Dark),
+            ("theme.light", "Light", EditorTheme.Light),
+            ("theme.system", "System", EditorTheme.System),
+        ];
+        foreach ((int order, (string id, string label, EditorTheme theme)) in themes.Index())
+        {
+            registry.AddCommand(new CommandDescriptor(
+                ContributionIds.CommandPrefix + id,
+                label,
+                new ThemeCommandHandler(theme),
+                Menu: new MenuPlacement(MenuName, ThemeGroup, order)));
         }
 
         registry.AddCommand(new CommandDescriptor(

@@ -1,5 +1,6 @@
 using NetPrints.Core;
 using NetPrints.Editor.Shell;
+using NetPrints.Editor.State;
 
 namespace NetPrints.Editor.Tests.Shell;
 
@@ -81,6 +82,13 @@ public sealed class FakeProjectActions : IProjectActions
     public Task ShowKeyboardShortcutsAsync(CancellationToken cancellationToken)
     {
         Calls.Add("ShowKeyboardShortcuts");
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public Task SetThemeAsync(EditorTheme theme, CancellationToken cancellationToken)
+    {
+        Calls.Add($"SetTheme:{theme}");
         return Task.CompletedTask;
     }
 
