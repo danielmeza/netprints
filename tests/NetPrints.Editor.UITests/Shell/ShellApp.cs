@@ -127,6 +127,7 @@ internal sealed class ShellApp : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        Dialogs.UnsavedAnswer = UnloadChoice.Discard;
         Ui.Dispose();
         exceptionHandler.Dispose();
         Processes.Dispose();

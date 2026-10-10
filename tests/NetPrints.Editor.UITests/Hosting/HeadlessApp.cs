@@ -124,6 +124,7 @@ public sealed class HeadlessApp : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await SaveDiagnosticsAsync();
+        Dialogs.UnsavedAnswer = UnloadChoice.Discard;
         foreach (var window in Tree.Windows.Reverse().ToList())
         {
             window.Close();
