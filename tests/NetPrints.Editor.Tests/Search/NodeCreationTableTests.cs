@@ -144,6 +144,52 @@ public sealed class NodeCreationTableTests(IReflectionHost sharedReflection)
         Assert.Equal("Add node", ClassContext.UndoRedo.UndoName);
     }
 
+    private SuggestionItem VariableItem(string name) => Graph.Search.AllSuggestions.First(item => item.Value is VariableSpecifier variable && variable.Name == name);
+
+    [Fact(Timeout = 60000)]
+    public async Task AGetOnlyVariablePickedFromAnOutputPinCreatesAConnectedGetter()
+    {
+        var upper = new CallMethodNode(Method, FindMethod(typeof(string), "ToUpperInvariant"));
+        await Graph.OpenSearchAsync(new GraphPoint(42, 24), upper.ReturnValuePins[0], Token);
+
+        await Graph.Search.SelectCommand.ExecuteAsync(VariableItem("Length"));
+
+        VariableGetterNode getter = Assert.Single(Method.Nodes.OfType<VariableGetterNode>());
+        Assert.False(Graph.GetSetChooser.IsOpen);
+        Assert.Same(upper.ReturnValuePins[0], getter.TargetPin?.IncomingPin);
+        Assert.Equal("Add node", ClassContext.UndoRedo.UndoName);
+        ClassContext.UndoRedo.Undo();
+        Assert.Empty(Method.Nodes.OfType<VariableGetterNode>());
+    }
+
+    [Fact(Timeout = 60000)]
+    public void AVariablePickedFromAnInputDataPinCreatesAConnectedGetter()
+    {
+        var write = new CallMethodNode(Method, ConsoleWriteLine(StringType));
+        var variable = new VariableSpecifier("Fake", StringType, MemberVisibility.Public, MemberVisibility.Public, StringType, VariableModifiers.Static);
+
+        Graph.GetSetChooser.Open(variable, new GraphPoint(0, 0), write.ArgumentPins[0]);
+
+        VariableGetterNode getter = Assert.Single(Method.Nodes.OfType<VariableGetterNode>());
+        Assert.False(Graph.GetSetChooser.IsOpen);
+        Assert.Same(getter.OutputDataPins[0], write.ArgumentPins[0].IncomingPin);
+    }
+
+    [Fact(Timeout = 60000)]
+    public void AReadableAndWritableVariableFromAnOutputPinKeepsTheChooserAndConnectsTheChoice()
+    {
+        var upper = new CallMethodNode(Method, FindMethod(typeof(string), "ToUpperInvariant"));
+        var variable = new VariableSpecifier("Fake", IntType, MemberVisibility.Public, MemberVisibility.Public, StringType, VariableModifiers.None);
+
+        Graph.GetSetChooser.Open(variable, new GraphPoint(0, 0), upper.ReturnValuePins[0]);
+        Assert.True(Graph.GetSetChooser.IsOpen);
+        Graph.GetSetChooser.SetCommand.Execute(null);
+
+        VariableSetterNode setter = Assert.Single(Method.Nodes.OfType<VariableSetterNode>());
+        Assert.Same(upper.ReturnValuePins[0], setter.TargetPin?.IncomingPin);
+        Assert.Equal("Add node", ClassContext.UndoRedo.UndoName);
+    }
+
     [Fact(Timeout = 60000)]
     public async Task AnExecOutputIsConnectedToTheNewNodesExecInput()
     {

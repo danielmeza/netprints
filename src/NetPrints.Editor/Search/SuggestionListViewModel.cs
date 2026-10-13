@@ -469,7 +469,7 @@ public sealed partial class SuggestionListViewModel : ObservableObject, IDisposa
                     break;
 
                 case VariableSpecifier variable:
-                    graph.GetSetChooser.Open(variable, Position);
+                    graph.GetSetChooser.Open(variable, Position, pin);
                     break;
 
                 case CustomEventSuggestion:
