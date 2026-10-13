@@ -20,6 +20,13 @@ eng/brand/export-mark.sh
 It needs `rsvg-convert` or ImageMagick. Then update `App.Mark` by hand so it draws the same rectangles in the same colours.
 `BrandAssetTests` checks the sizes, the `.ico` frames, the copies and `THIRD-PARTY-NOTICES.md`.
 
+## Reviewing the mark
+
+The mark is approved on the contact sheet. `ContactSheetTests` renders `App.Mark` in Dark and Light next to the rest of the editor
+and writes `contact-sheet.png`; CI uploads it as the `contact-sheet` artifact of the headless UI shard 1. Download it from the
+run, look at the "Product mark" tiles, and approve or ask for a change to the master SVG before running the export. The file is
+a reading aid: no baseline is compared, so a changed mark never fails a test by itself (`BrandAssetTests` checks the exports).
+
 ## Third-party notices
 
 `THIRD-PARTY-NOTICES.md` at the repository root lists every bundled third-party asset (icon glyphs, fonts and the theme

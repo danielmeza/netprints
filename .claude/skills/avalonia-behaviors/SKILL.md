@@ -91,6 +91,13 @@ and the dialog behaviors. Their decisions and side effects belong in commands an
 - `EventTriggerBehavior EventName="..."` finds the event by reflection, so a typo fails only at runtime.
 - `AutoScrollToBottomBehavior` does nothing on a `TextBox`. Attach it to a `ScrollViewer` or an `ItemsControl`.
 
+## What stays in code-behind
+
+After T098 the E7 list has 16 entries: CodeView (AvaloniaEdit interop and hover gestures), `EditorApp`'s entry point, and in
+`GraphEditorView` the pointer gestures, drag over and drop, and the viewport math. Drag sources and the canvas pointer tracker are
+behaviors now (`VariableDragSourceBehavior`, `CanvasPointerTrackerBehavior`); look in `src/NetPrints.Editor/Behaviors/` before
+writing a new one, and delete the E7 entry of any handler you migrate.
+
 ## Known debt
 
 - `Ctrl+` in a gesture is documented to map to Cmd on macOS, but it has not been verified on a Mac.

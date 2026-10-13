@@ -83,6 +83,9 @@ add a class there (D8) when none fits, and name it for its role, not its look (`
   foreground, so colour it through a style class or a token on the parent, not a converter. Size comes from the `Icon.Small`
   (16) and `Icon.Medium` (20, class `medium`) tokens. `IsActive` draws the filled glyph of an outline and filled pair.
 - A new glyph is one entry in `IconRegistry` plus one constant in `IconIds`; `IconRegistry` is the only code that names `MaterialIconKind`.
+- The product mark is not an icon id: it is the `App.Mark` `DrawingImage` (`Icons/AppMark.axaml`, colours as `Brand.*` tokens),
+  shown with `<Image Source="{DynamicResource App.Mark}" />`. Nothing in `src/` may be a raster image except the `.ico` window icons
+  (`NoRasterIconsInSource`).
 
 ## Gotchas
 
@@ -98,3 +101,7 @@ add a class there (D8) when none fits, and name it for its role, not its look (`
 3. Check both variants. In a headless test, set `RequestedThemeVariant` (on the app or a `ThemeVariantScope`) to
    `ThemeVariant.Light` and then `ThemeVariant.Dark` and assert what resolves, as `GridRenderTests` does; for a quick
    look, run the editor and switch the variant.
+4. When a change alters how a surface looks, run `ContactSheetTests` (UI artifacts folder, `contact-sheet.png`; CI uploads it as
+   the `contact-sheet` artifact) and read it: panels, start page, graph, dialogs and pickers in Dark and Light at 1.0 and 2.0. Its
+   owner-call strip overrides `Pin.TypeShape`, `Canvas.Background` and `Node.CardBackground` on one tile only; the product carries
+   no option for them, so don't add one.

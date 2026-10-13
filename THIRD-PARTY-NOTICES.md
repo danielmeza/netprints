@@ -1,6 +1,9 @@
 # Third-party notices
 
 NetPrints bundles the following third-party assets. The NetPrints source is under the MIT licence (see `LICENSE`).
+The NetPrints mark (`assets/brand/netprints-mark.svg` and its exports) is first-party work under the same licence and is not listed below.
+The entries were checked against `Directory.Packages.props` at Checkpoint G: Material.Icons.Avalonia 3.0.2, Semi.Avalonia 12.1.0.1,
+Irihi.Ursa and Irihi.Ursa.Themes.Semi 2.2.0, Avalonia.Fonts.Inter 12.1.3.
 
 ## Material Design Icons
 

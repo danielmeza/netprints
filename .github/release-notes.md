@@ -24,6 +24,16 @@
 
 **Changed:** a call that returns no value can no longer be pure. A graph file that stores `pure: true` on one loads it as impure with the warning `NPD010`. An unconnected `out` or `ref` argument is now reported as `NPT008` ("Connect a variable to …") instead of generating invalid C#. Setting an instance indexer now writes the index in the generated code. A custom event argument with an invalid or duplicate name in a graph file is repaired with the warning `NPD011` instead of failing the whole class, and the argument names are written once, in the pins.
 
+**Added:** Light and System themes. **View › Theme** switches between Dark, Light and System (which follows the operating system); the choice is stored and applied at the next start. Colours, the type scale and the spacing come from shared tokens, so every pane, dialog and the graph canvas look right in both variants.
+
+**Changed:** every icon is a vector and every glyph comes from one family, so icons stay sharp at 150% and 200% display scaling; the NetPrints mark is drawn as a vector too (start page and About). Controls show a focus ring when you tab to them, hover and pressed states are consistent, and the Errors, Output, project tree, node search, command palette, go to anything and inspector panes show an empty state with an icon and one sentence instead of a blank area. The Unsaved changes, Confirm, Keyboard shortcuts, Trust, Issues, Recover, About and Error dialogs share one layout (title, icon, body, buttons in the platform's order, Enter for the default, Esc for cancel) and size to their content.
+
+**Changed:** choosing a method to override and changing the overload of a call use one readable list: methods are grouped under their declaring type, shown as `void WriteLine(string format, object arg0)` with no namespaces, and a filter box narrows the rows as you type. **Override method** dims the methods the class already has. A call node has an overloads button that opens the same list under it.
+
+**Changed:** the graph canvas. Pins and wires are coloured by data type, and a pin is an outline until it is connected, then filled. Pin rows are clean (no background of their own, so the node body shows through), execution pins are squares and type pins have their own shape. An unconnected Target pin on a member of the graph's own class or a base class says "self". Nodes use the header role colours and kind glyphs, and node headers and pins meet the contrast ratios in both themes.
+
+**Added:** each recent project on the start page has an icon tile. Setting Pure on a call can be undone and redone. A search scoped to a type follows the catalogs: it lists the members of the catalog that covers the type's assembly, hides the members that catalog omits, and says which catalog does not list the type when it has no entry for it; graphs that already use a hidden member still load, build and run.
+
 ## Downloads
 
 | Platform | File |

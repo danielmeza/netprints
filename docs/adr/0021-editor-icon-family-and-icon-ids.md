@@ -117,3 +117,18 @@ Options weighed:
 - Apache-2.0 asks that the licence text travel with the redistributed glyphs; the notices file ships with the
   Desktop app, so it does.
 - Sources: implementation-notes.md "Batch E-F8 (icons)" and the spec's Clarifications, session 2026-10-08.
+
+## Amendment 2: the state at the end of sub-phase G (T090b, T092b, T092n, T099)
+
+- **No raster icons.** The 16 PNG files are gone. `src/` holds no image file but the two `NetPrintsLogo.ico` window icons, and
+  `SourceHygieneTests.NoRasterIconsInSource` fails on any other. Every built-in id resolves (`IconRegistryTests`).
+- **The product mark is a vector.** `App.Mark` (`src/NetPrints.Editor/Icons/AppMark.axaml`) draws `assets/brand/netprints-mark.svg` as
+  rectangles with `Brand.*` colour tokens, and `IconPresenter` is not involved: the mark is the one image outside the icon family
+  (FR-085). The contact sheet shows it in Dark and Light for the owner's approval.
+- **Pin glyphs coloured by type shipped in G** (FR-107, FR-108), not as icon ids: pin shapes and wire colours come from the pin
+  family tokens, which reach 3:1 against the node body and the canvas in both variants (`PinContrastTests`). The Decision's note that
+  they are P6 work is superseded for pins and wires; visibility overlays on tree items stay P6.
+- **Notices.** `THIRD-PARTY-NOTICES.md` matches the packages in `Directory.Packages.props` (Material.Icons.Avalonia 3.0.2,
+  Semi.Avalonia 12.1.0.1, Irihi.Ursa and Irihi.Ursa.Themes.Semi 2.2.0, Avalonia.Fonts.Inter 12.1.3) and the Cascadia Mono font file.
+- The Amendment 1 consequence "the contact sheet and its review check that icons look consistent across panes, both themes and 200 %"
+  is met by `contact-sheet.png` of the T098b CI run; the review itself is T100.

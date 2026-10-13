@@ -2417,3 +2417,60 @@ test-first. The spec's Clarifications, session 2026-10-09, record them.
   Project tree row differs per scale (the pointer sits at a fixed logical point); grid line weights vary between scales.
 - Red/green: `ScaledSnapshotTests` red with "No baseline", then written once; the two behavior tests were seen red by leaving the
   behavior off.
+
+## Batch G7b (T098b contact sheet, T099 Checkpoint G)
+
+- T098b: `ContactSheetTests` opens the HelloWorld sample once, a start page rig, nine dialog windows (the eight P3a dialogs and Override
+  method) and a mark window, then loops Dark 1.0, Light 1.0, Dark 2.0, Light 2.0 and crops each surface (panels to their top-left
+  700x525 so a wide strip stays legible; a 2.0 tile is shrunk to its 1.0 size, then into a 560x420 cell). `ContactSheetComposer`
+  draws the labelled grid with Avalonia (the Linux Skia build has no system fonts, so SkiaSharp text would draw nothing) and writes
+  `contact-sheet.png` (2300x9350, 2.2 MB) to the UI artifacts folder. 72 grid tiles (18 surfaces x 2 themes x 2 scales) + 5 owner calls
+  + 2 product mark tiles = 79; the assertion and the task text say `18 x 2 x 2 + 5 + 2`. The owner calls override
+  `Pin.TypeShape`, `Canvas.Background` and `Node.CardBackground` in the `GraphEditorView` resources for one capture and restore them.
+  The mark is `App.Mark` in a 256 px window, Dark and Light. CI uploads the file as `contact-sheet` from shard 1 (the shard that runs
+  the `Snapshots` namespace); `CiWorkflowTests.TheContactSheetIsUploadedFromTheShardThatRunsTheSnapshots` derives that shard from the
+  namespace filters. `UiImage.Fit` is new (shrink to a box).
+- Composition fixes found by looking at the sheet: a mid-grey matte under every tile (a dark window on a dark sheet had no visible
+  edge); the Output panel's empty state sits at the centre of a 1200 px strip, so the crop is 700 px wide and the test adds four output
+  lines; the overloads tile is the canvas plus the flyout, which reaches past the canvas edge; the graph carries a connected type pin,
+  an unconnected one and a coloured data wire, because the sample has no type pin to show a diamond on. The flat-colour assertion caught
+  the empty Output crop.
+- Seen on the sheet, not product bugs of this batch: the Return node is cut by the canvas edge (the viewport does not fit the graph);
+  the Issues dialog has no body with an empty list (the shell shows title and OK only); the Keyboard shortcuts list scrolls, so 18
+  rows show; the Errors panel shows NPT008 because the added literal node's own input is unconnected.
+- Red/green: `ContactSheetTests` red against the composer stub that throws `NotImplementedException` (an exception, not an assertion, as
+  T098b specifies), then green; the tile-count and flat-colour assertions already held at that point, and the flat-colour assertion
+  failed once as a real assertion on the Output tile of an earlier, narrower panel crop (560 px), before the crop became 700 px and the
+  test added the output lines. The CI test was red as an
+  assertion with the workflow change stashed ("did not contain any matching items") and green with it.
+
+**Checkpoint G.** Local, Debug: whole suite 3844 tests, 3813 passed, 31 skipped (`HeadlessSmokeTests.PanCursor`, the explicit
+`ClassInspectorSnapshotRepeatedly` and the 29 desktop scenarios that need `NETPRINTS_E2E=1`, counted by a run without it), 0 failed; Desktop E2E with
+`NETPRINTS_E2E=1 --fail-skips on`: 50 tests, 50 passed, 0 skipped. Trim ratchet (`eng/trim-warnings.sh`): 14 warnings, baseline 14.
+
+| Item | Result | Evidence |
+|---|---|---|
+| SC-007: a type-scoped search for a cataloged type lists 0 members outside its catalog; an uncovered assembly lists what it did; a hidden member still builds | pass, one deviation | `CompositeReflectionProviderTests` 13 of 13 (`AScopedQueryForACatalogedTypeReturnsOnlyTheCatalogsMembers`, `...ATypeTheCoveringCatalogDoesNotListReturnsNothingAndNamesTheCatalog`, `...ATypeNoCatalogCoversAnswersAsTheLiveProviderDid`, `HiddenMembersStillResolveForExistingNodes`); the empty-state sentence is T095. Deviation (G5b): "builds and runs with unchanged output" is pinned by resolution, not by running a graph; the code generation goldens are byte-identical (no change under `tests/NetPrints.Core.Tests/Fixtures/Golden` since the commit before G1, and `NetPrints.Core.Tests` passes) |
+| SC-008, tokens | pass | `ThemeTokenTests.EveryColourTokenResolvesInDarkAndLight`: 49 colour tokens, each resolved in Dark and Light; `ThemeTokenTests` 72 of 72 |
+| SC-008, no colour literal in a view | pass | E2 allowlist 0 entries; `XamlHygieneTests` 26 of 26; grep of `src/**/*.axaml` for a colour attribute literal outside `EditorStyles.axaml` and `Icons/`: 0 |
+| SC-008, no type name ending in `VM` | pass | `SourceHygieneTests.NoTypeNameEndsInVM` (17 of 17 in the class); grep for `class/record/struct \w+VM` in `src`: 0 |
+| SC-008, allowlists empty | pass | E1 0, E2 0, E3 0, E5 0, E8 0, E9 0, `DialogSizingAllowlist` 0 entries (E4 and E6 have none); counted in `XamlHygieneTests.cs` |
+| SC-008, the ratchet's FontSize count | 0 | `xaml-literal-ratchet.txt` has 0 `FontSize` rows; grep of `FontSize="<digit>` in views outside `EditorStyles.axaml` and `EditorApp.axaml`: 0. Margin: 52 literals in 22 views, never raised |
+| SC-008, every E7 entry justified | pass, 16 entries | `E7_AllowlistEntriesNameAKnownCategoryAndGiveAReason`: 8 gesture (CodeView hover x3, canvas pointer x3, drag over, drop), 6 editor interop (CodeView x5, `EditorApp` entry point), 2 viewport math (`GraphEditorView`); 23 at the start of G7, 7 migrated to behaviors in T098 |
+| SC-011, no raster icon | pass | `SourceHygieneTests.NoRasterIconsInSource`; `find src` for png, jpg, gif, bmp, webp, ico (outside bin and obj): only the two `NetPrintsLogo.ico` copies |
+| SC-011, icon ids resolve | pass | `IconRegistryTests` 112 of 112 |
+| SC-011, node-header contrast 4.5:1 | pass | `CanvasPaletteTests` 59 of 59 (`MinimumContrast` 4.5, both variants) |
+| SC-011, pin family tokens 3:1 | pass | `PinContrastTests` 42 of 42 (body and canvas, both variants; the outline and the wire at their drawn opacity) |
+| SC-011, snapshot set at 1.0, 1.5, 2.0 in Dark and Light | pass | `ScaledSnapshotTests` 2 of 2 over 24 baselines; no Bitmap-backed `Image` at 2.0 |
+| SC-011, the review carries a contact sheet | pass | CI run 38476587833 on `44927c59`, artifact `contact-sheet` (2.2 MB, 2300x9350, 79 tiles); shard 1 10m42s, shard 2 9m03s |
+| SC-012, no namespace and no repeated declaring type in the pickers | pass | `MethodSignatureFormatterTests` 25 of 25, `MethodPickerListViewModelTests` 13, `DialogViewModelTests` 11 (Exception members grouped under their type, rows are `string ToString()` and `void WriteLine(string format, object arg0)`); UI `MethodPickerListTests` 10, `OverloadFlyoutTests` 6; the Console.WriteLine rows are on the contact sheet |
+| SC-012, a keystroke leaves exactly the matching rows and headers | pass | `MethodPickerListViewModelTests.FilterMatchesTheNameOrTheSignatureIgnoringCaseAndDropsEmptyGroups`, `TheFirstPickableRowIsSelectedAfterEachFilterChange` |
+| SC-012, "self" on every FR-096 Target pin; goldens identical | pass | `TargetPinSelfTests` 29 of 29 (getter, setter, call, delegate); goldens as above |
+| SC-005, the theme part | pass | `ThemeSettingTests` 7 of 7 (the command stores the variant, the start-up applies Dark, Light and System as stored, Dark by default) and E2E `ThemeSwitchTests` in the 50 of 50 |
+
+Docs updated: ADR-0007 (Amendment 2, the code-behind result), ADR-0021 (Amendment 2, the product mark, raster icons and pin colours),
+`THIRD-PARTY-NOTICES.md` (versions checked, first-party mark), `docs/contributing/brand-assets.md` (the contact sheet approves the mark),
+the `avalonia-xaml`, `avalonia-styling` and `avalonia-behaviors` skills, `.github/release-notes.md` (Unreleased).
+
+**Open for T100.** The owner reviews `contact-sheet.png`: the type-pin shape, the canvas base colour and the card opacity are still
+undecided (FR-109 ships the triangle, `#000` and `#AA202020`), and the owner approves the mark on the same sheet.

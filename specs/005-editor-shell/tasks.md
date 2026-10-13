@@ -1231,7 +1231,7 @@ re-baselines the snapshots it changes (open every PNG).
   The test asserts the tile count (18 × 2 × 2 + 5 + 2) and that no tile is one flat colour. It compares no
   baseline. Then `.github/workflows/ci.yml` uploads the file as the `contact-sheet` artifact of the UI tests job
   (`CiWorkflowTests` updated).
-- [ ] T099 **Checkpoint G**: report SC-007, SC-008 (tokens in both variants, no colour literal, no type name ending in
+- [x] T099 **Checkpoint G**: report SC-007, SC-008 (tokens in both variants, no colour literal, no type name ending in
   `VM`, the E1–E6, E8, E9 and dialog-sizing allowlists empty, the ratchet's FontSize count 0, every E7 entry
   justified), SC-011 (with the contact sheet's CI run id), SC-012 and SC-005's theme part. Docs updated: ADR-0007's
   amendment, ADR-0021 (as amended), `THIRD-PARTY-NOTICES.md`, the brand export page in `docs/contributing/`, the

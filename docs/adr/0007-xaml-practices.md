@@ -146,3 +146,14 @@ Three enforced rules join E1-E6 in `XamlHygieneTests`:
   `Image` source outside `src/NetPrints.Editor/Icons/` (see Amendment 1 of ADR-0021 for the family).
 
 The `avalonia-xaml` skill documents the three rules next to E1-E6.
+
+## Amendment 2: the code-behind result at the end of sub-phase G (T098, T099)
+
+D11's order (prebuilt behavior, then custom behavior, then code-behind) was applied to every handler of the editor views.
+`VariableDragSourceBehavior` replaced the pointer handlers of `LocalVariableView` and `MemberVariableView`, and
+`CanvasPointerTrackerBehavior` replaced `GraphEditorView.OnAttachedToVisualTree`; seven E7 entries went, 23 to 16. The 16 that
+stay are 8 gestures (CodeView hover and pointer exit, the canvas pointer handlers, drag over and drop), 6 editor interop (CodeView
+and the `EditorApp` entry point) and 2 viewport math (`GraphEditorView.CenterWhenSized` and `OnDataContextChanged`). No view added
+in P3a has a handler. At Checkpoint G every other allowlist (E1, E2, E3, E5, E8, E9 and the dialog-sizing list) is empty, E4 and E6
+have none, and the literal ratchet holds 0 `FontSize` literals and 52 `Margin` literals, which may not rise. The list stays
+shrink-only; a new handler is a failing test until it is migrated or justified with a category and a reason.
