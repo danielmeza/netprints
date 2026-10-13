@@ -96,7 +96,7 @@ Runs on every pull request to `master`, every push to `master` and on demand.
 | Job | Check name | What it does |
 |---|---|---|
 | `checks` | Repository checks (Linux) | Builds `NetPrints.slnx` in Release, runs the graph checks (`regen --check`, `format --check`), `dotnet format --verify-no-changes`, the Desktop E2E smoke step (no display, always-on tests only), the CLI smoke and the sample compile and run, and fails on any changed generated file. |
-| `test` | Test (Core), Test (Catalog), Test (CLI), Test (Editor), Test (Editor UI (headless)) | One matrix leg per test project, run in parallel (`fail-fast: false`). Each leg builds only its own project in Release and runs it with `--report-xunit-trx` and static code coverage ([ADR-0008](../adr/0008-static-only-code-coverage.md)). |
+| `test` | Test (Core), Test (Catalog), Test (CLI), Test (Editor), Test (Editor UI (headless) 1/2), Test (Editor UI (headless) 2/2) | One matrix leg per test project, run in parallel (`fail-fast: false`); the headless UI project runs in two shards split by namespace (shard 2 is the complement of shard 1's `--filter-namespace` list). Each leg builds only its own project in Release and runs it with `--report-xunit-trx` and static code coverage ([ADR-0008](../adr/0008-static-only-code-coverage.md)). |
 | `build-test` | **Build and test (Linux)** | The aggregate. It runs even when a job it needs failed and fails unless `checks` and every `test` leg succeeded. |
 | `e2e` | **Desktop E2E (Linux, Xvfb)** | The Desktop E2E project on Xvfb with `NETPRINTS_E2E=1` and `--fail-skips on`. |
 | `packages`, `desktop-publish`, `jsonschema` | Packages (local feed), Self-contained editor smoke (linux-x64), JSON Schema (metaschema, lint, validate) | Packaging and schema checks; they run no tests. |
@@ -108,9 +108,9 @@ Artifacts, uploaded even when a job fails:
 
 | Artifact | From | Content |
 |---|---|---|
-| `test-results-<leg>` | each `test` leg (`core`, `catalog`, `cli`, `editor`, `editor-ui`) | The `.trx` results of that project. |
+| `test-results-<leg>` | each `test` leg (`core`, `catalog`, `cli`, `editor`, `editor-ui-1`, `editor-ui-2`) | The `.trx` results of that project. |
 | `coverage-<leg>` | each `test` leg | Cobertura coverage of that project. |
-| `ui-headless` | the `editor-ui` leg | Snapshot actual and diff images, flow screenshots and per-test diagnostics. |
+| `ui-headless-<leg>` | each `editor-ui-*` shard | Snapshot actual and diff images, flow screenshots and per-test diagnostics. |
 | `e2e-results` | `e2e` | The `.trx` results, `ui/`, `e2e-timings-*.md` and `e2e-diagnostics/` (see [Diagnostics of a failed scenario](#diagnostics-of-a-failed-scenario)). |
 
 ### `Performance budgets (non-blocking)` (the `perf` job in `ci.yml`)

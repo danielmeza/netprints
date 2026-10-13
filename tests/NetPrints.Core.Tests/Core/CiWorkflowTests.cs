@@ -38,11 +38,70 @@ namespace NetPrints.Tests.Core
                     .Order(StringComparer.Ordinal),
             ];
 
-            string[] actual = [.. MatrixLegs().Select(leg => Text(Get(leg, "project"))).Order(StringComparer.Ordinal)];
+            string[] actual = [.. MatrixLegs().Select(leg => Text(Get(leg, "project"))).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
 
             Assert.NotEmpty(expected);
             Assert.Equal(expected, actual);
         }
+
+        [Fact]
+        public void TheUiShardsRunEveryTestNamespaceExactlyOnce()
+        {
+            string root = SampleProjectFactory.FindRepositoryRoot();
+            string project = Path.Combine(root, "tests", "NetPrints.Editor.UITests");
+            List<(string Include, string Exclude)> shards =
+            [
+                .. MatrixLegs()
+                    .Where(leg => Text(Get(leg, "project")) == "tests/NetPrints.Editor.UITests")
+                    .Select(leg => Text(Get(leg, "filter")))
+                    .Select(filter => (NamespaceFilters(filter, "--filter-namespace"), NamespaceFilters(filter, "--filter-not-namespace"))),
+            ];
+            Assert.True(shards.Count >= 2, "The UI project has to run in at least two shards.");
+
+            string[] namespaces =
+            [
+                .. Directory.EnumerateFiles(project, "*.cs", SearchOption.AllDirectories)
+                    .Where(file => !file.Contains(Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+                        && !file.Contains(Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+                    .Select(File.ReadAllText)
+                    .Where(text => TestAttribute().IsMatch(text))
+                    .Select(text => NamespaceDeclaration().Match(text).Groups[1].Value)
+                    .Distinct(StringComparer.Ordinal)
+                    .Order(StringComparer.Ordinal),
+            ];
+            Assert.NotEmpty(namespaces);
+            Assert.DoesNotContain(string.Empty, namespaces);
+
+            foreach (string name in namespaces)
+            {
+                int running = shards.Count(shard => RunsNamespace(shard, name));
+                Assert.True(running == 1, $"Test namespace {name} runs in {running} UI shards, expected exactly 1.");
+            }
+
+            foreach ((string include, _) in shards)
+            {
+                foreach (string name in include.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    Assert.Contains(name, namespaces);
+                }
+            }
+        }
+
+        private static bool RunsNamespace((string Include, string Exclude) shard, string name)
+        {
+            string[] include = shard.Include.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            string[] exclude = shard.Exclude.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            return (include.Length == 0 || include.Contains(name, StringComparer.Ordinal)) && !exclude.Contains(name, StringComparer.Ordinal);
+        }
+
+        private static string NamespaceFilters(string filter, string option) =>
+            string.Join(' ', Regex.Matches(filter, Regex.Escape(option) + @"\s+(\S+)").Select(match => match.Groups[1].Value));
+
+        [GeneratedRegex(@"^\s*\[(Avalonia)?(Fact|Theory)\b", RegexOptions.Multiline)]
+        private static partial Regex TestAttribute();
+
+        [GeneratedRegex(@"^\s*namespace\s+([\w.]+)", RegexOptions.Multiline)]
+        private static partial Regex NamespaceDeclaration();
 
         [Fact]
         public void TestMatrixHasTheContractLegsWithUniqueNames()
@@ -51,7 +110,7 @@ namespace NetPrints.Tests.Core
             string[] names = [.. legs.Select(leg => Text(Get(leg, "name")))];
             string[] slugs = [.. legs.Select(leg => Text(Get(leg, "leg")))];
 
-            Assert.Equal(["Core", "Catalog", "CLI", "Editor", "Editor UI (headless)"], names);
+            Assert.Equal(["Core", "Catalog", "CLI", "Editor", "Editor UI (headless) 1/2", "Editor UI (headless) 2/2"], names);
             Assert.All(slugs, slug => Assert.NotEmpty(slug));
             Assert.Equal(slugs.Length, slugs.Distinct(StringComparer.Ordinal).Count());
         }
