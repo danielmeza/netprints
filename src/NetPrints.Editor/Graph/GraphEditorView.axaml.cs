@@ -58,18 +58,6 @@ public partial class GraphEditorView : UserControl
         SearchPopup.Opened += (_, _) => SearchView.FocusSearchBox();
         SearchPopup.FallbackPositionRequested += (_, e) => e.Position = FallbackScreenPosition();
         GetSetPopup.FallbackPositionRequested += (_, e) => e.Position = FallbackScreenPosition();
-
-        AttachedToVisualTree += OnAttachedToVisualTree;
-    }
-
-    private void OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
-    {
-        // Attaches the tracker now, not lazily on first popup open, so it does not miss the very
-        // pointer event that triggers that first open.
-        if (TopLevel.GetTopLevel(this) is { } topLevel)
-        {
-            CanvasPointerTracker.For(topLevel);
-        }
     }
 
     /// <summary>The bound graph view model, or <see langword="null"/> if the data context is not one.</summary>

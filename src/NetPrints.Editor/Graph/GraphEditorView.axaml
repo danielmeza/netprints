@@ -39,6 +39,7 @@
                          DragDrop.AllowDrop="True"
                          ConnectionCompletedCommand="{Binding ConnectionCompletedCommand}">
       <Interaction.Behaviors>
+        <edbehaviors:CanvasPointerTrackerBehavior />
         <edbehaviors:GraphViewRequestBehavior />
         <edbehaviors:ConnectionNavigationBehavior />
         <edbehaviors:SelectionToContainersBehavior />

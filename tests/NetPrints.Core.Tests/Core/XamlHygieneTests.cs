@@ -735,7 +735,6 @@ namespace NetPrints.Tests.Core
             Editor("CodeView/CodeView.axaml.cs", "OnAttachedToVisualTree", EditorInterop, "Subscribes the AvaloniaEdit and theme events while attached."),
             Editor("CodeView/CodeView.axaml.cs", "OnDetachedFromVisualTree", EditorInterop, "Unsubscribes the AvaloniaEdit and theme events when detached."),
             Editor("EditorApp.axaml.cs", "OnFrameworkInitializationCompleted", EditorInterop, "Application entry point that builds the shell window and the lifetime hooks."),
-            Editor("Graph/GraphEditorView.axaml.cs", "OnAttachedToVisualTree", FocusPlumbing, "Attaches the canvas pointer tracker before the first popup can open."),
             Editor("Graph/GraphEditorView.axaml.cs", "CenterWhenSized", ViewportMath, "Centers the Nodify viewport on a revealed node once the canvas has a size."),
             Editor("Graph/GraphEditorView.axaml.cs", "OnEditorPointerPressed", Gesture, "Starts the connector and canvas pointer gestures on the Nodify editor."),
             Editor("Graph/GraphEditorView.axaml.cs", "OnEditorPointerMoved", Gesture, "Tracks the pointer for the drag-to-connect gesture."),
