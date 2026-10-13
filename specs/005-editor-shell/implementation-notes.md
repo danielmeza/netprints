@@ -2394,3 +2394,26 @@ test-first. The spec's Clarifications, session 2026-10-09, record them.
   running a graph; the translator does not query the provider by type.
 - Red/green: the settings round-trip tests and the headless theme tests were written together with the new types, so they were
   not seen red as assertions; the command routing, the composite routing and the empty message were seen red first.
+
+## Batch G7a (CI shards, T098, T098a)
+
+- CI: the headless UI leg runs as two matrix legs of `tests/NetPrints.Editor.UITests`, `Test (Editor UI (headless) 1/2)` and
+  `2/2` (slugs `editor-ui-1`, `editor-ui-2`). Shard 1 lists the `Graph`, `Snapshots` and `Scenarios` namespaces with
+  `--filter-namespace`; shard 2 passes the same list to `--filter-not-namespace`, so a namespace added later lands in shard 2.
+  `CiWorkflowTests.TheUiShardsRunEveryTestNamespaceExactlyOnce` reads the test sources and fails for a namespace in no shard or in
+  both, and for a listed namespace that no longer exists. Artifacts are `ui-headless-<leg>`; the hang dump, `[monitor]` lines and
+  OOM step run per shard. First run: shard 1 8m48s, shard 2 14m32s (was about 23 minutes). The required check
+  `Build and test (Linux)` is unchanged; the two new job names replace `Test (Editor UI (headless))` for anyone who listed it.
+- T098: `VariableDragSourceBehavior` (tunnel, handled events too) replaces the pointer handlers of `LocalVariableView` and
+  `MemberVariableView`; `CanvasPointerTrackerBehavior` replaces `GraphEditorView.OnAttachedToVisualTree`. Seven E7 entries went
+  (24 to 17). What stays: `CodeView` (AvaloniaEdit interop and hover gestures), `EditorApp.OnFrameworkInitializationCompleted`
+  (entry point), and in `GraphEditorView` the pointer gestures, drag over/drop, and the viewport math (`CenterWhenSized`,
+  `OnDataContextChanged`). No new P3a view has a handler.
+- T098a: `ScaledSnapshotTests` writes 24 baselines `<name>-<dark|light>-<1.0|1.5|2.0>.png` over four surfaces (shell, inspector,
+  canvas with every node kind, Unsaved changes dialog) with two tests that open the sample once. Element crops use the bounds times
+  the scale. At 2.0 no `Image` shows a `Bitmap`. `SnapshotComparer` now counts on the raw pixel rows and draws the diff image only
+  on a mismatch: the per-pixel pass made a 3200x2000 comparison take seconds and the test hit its 90 s limit.
+- Seen in the baselines: nodes overlap on the every-node canvas (For Loop and Literal, Ternary and Explicit Cast); the hovered
+  Project tree row differs per scale (the pointer sits at a fixed logical point); grid line weights vary between scales.
+- Red/green: `ScaledSnapshotTests` red with "No baseline", then written once; the two behavior tests were seen red by leaving the
+  behavior off.

@@ -1207,12 +1207,12 @@ re-baselines the snapshots it changes (open every PNG).
 
 ### Batch G7 — model: sonnet — T098–T099 — 5 units
 
-- [ ] T098 Migrate code-behind (2 units): every handler a prebuilt behavior covers (the catalog in
+- [x] T098 Migrate code-behind (2 units): every handler a prebuilt behavior covers (the catalog in
   `.claude/skills/avalonia-behaviors/`), and the rest that a custom behavior can express (ADR-0007 D11), across
   `GraphEditorView`, `CodeView`, `LocalVariableView`, `MemberVariableView`, `EditorApp.axaml.cs` and every new P3a
   view; remove their E7 entries. What stays is a gesture, viewport math, editor interop or focus plumbing. Each
   migration keeps its tests green, and each new behavior gets a headless test.
-- [ ] T098a [US9] High-DPI snapshots (FR-089). Test first:
+- [x] T098a [US9] High-DPI snapshots (FR-089). Test first:
   `tests/NetPrints.Editor.UITests/Snapshots/ScaledSnapshotTests.cs`: `editor-shell-main`, `canvas-every-node-kind`,
   `inspector-method` and the Unsaved changes dialog at render scaling 1.0, 1.5 and 2.0 in Dark and Light (24
   baselines named `<name>-<dark|light>-<scale>.png`, using the scaling hook of `grid-background-150`); red because no
