@@ -683,7 +683,7 @@
           "visibility": "public",
           "modifiers": ["static"],
           "parameters": [
-            { "name": "values", "type": { "name": "System.Array" }, "params": true, "summary": "The values." }
+            { "name": "values", "type": { "name": "System.Int32[]" }, "params": true, "summary": "The values." }
           ],
           "returnType": { "name": "System.Int32" },
           "returnSummary": "The sum.",

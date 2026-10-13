@@ -66,15 +66,25 @@ namespace NetPrints.Core
         {
             get
             {
-                string codeName = base.FullCodeName;
+                return WithGenericArguments(base.FullCodeName, g => g.FullCodeName);
+            }
+        }
 
-                if (GenericArguments.Count > 0)
-                {
-                    codeName += $"<{string.Join(",", GenericArguments.Select(g => g.FullCodeName))}>";
-                }
-
+        private string WithGenericArguments(string codeName, Func<BaseType, string> argumentName)
+        {
+            if (GenericArguments.Count == 0)
+            {
                 return codeName;
             }
+
+            // An array suffix ([], [,]) closes the name, after the generic arguments.
+            int suffixAt = codeName.IndexOf('[', StringComparison.Ordinal);
+            if (suffixAt < 0)
+            {
+                suffixAt = codeName.Length;
+            }
+
+            return $"{codeName[..suffixAt]}<{string.Join(",", GenericArguments.Select(argumentName))}>{codeName[suffixAt..]}";
         }
 
         /// <summary>
@@ -85,14 +95,7 @@ namespace NetPrints.Core
         {
             get
             {
-                string codeName = base.FullCodeNameUnbound;
-
-                if (GenericArguments.Count > 0)
-                {
-                    codeName += $"<{string.Join(",", GenericArguments.Select(g => g.FullCodeNameUnbound))}>";
-                }
-
-                return codeName;
+                return WithGenericArguments(base.FullCodeNameUnbound, g => g.FullCodeNameUnbound);
             }
         }
 

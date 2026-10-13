@@ -135,7 +135,7 @@ public sealed class ParityTests
 
     private static readonly TypeSpecifier?[] VisibleFrom = [null, new("Fixture.Geometry.Circle"), new("Fixture.Geometry.ShapeBase"), new("Fixture.Geometry.Vector2")];
 
-    // Types outside a catalog are known by identity only, and an array parameter is System.Array in a catalog: neither String (which
+    // Types outside a catalog are known by identity only: neither String (which
     // implements IEnumerable<char>) nor System.Array can be compared with what the live provider knows about them.
     private static readonly TypeSpecifier[] SearchTypes =
     [
