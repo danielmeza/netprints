@@ -2474,3 +2474,53 @@ the `avalonia-xaml`, `avalonia-styling` and `avalonia-behaviors` skills, `.githu
 
 **Open for T100.** The owner reviews `contact-sheet.png`: the type-pin shape, the canvas base colour and the card opacity are still
 undecided (FR-109 ships the triangle, `#000` and `#AA202020`), and the owner approves the mark on the same sheet.
+
+## Review G (T100)
+
+Scope: the whole diff of sub-phase G, `c5f649c6^..68e33ae8`: G1 to G7b, with D-G, S-G2, G3-b, G4a–G4e, G5a–G5b, CI-H, CI-H2,
+G6, G7a and G7b (73 commits, 325 files). It was reviewed against spec.md (US9, US10, FR-080–FR-100, FR-107–FR-110), research
+R10–R12 and R17, ADR-0007, ADR-0021 (both with their amendments), ADR-0023, the `avalonia-*` skills, the constitution and plan.md's
+standing constraints. The visual review used the contact sheet of CI run 38476587833 (artifact `contact-sheet`). Review on PR #12.
+
+Verdict: request changes, 0 blockers, 4 majors, 8 minors, 6 nits (18 findings), plus the 4 owner calls (G-R19 to G-R22).
+
+Evidence:
+
+- Whole suite in Release at `68e33ae8`: 3844 tests, 3813 passed, 31 skipped, 0 failed (13 min 31 s).
+- Desktop E2E with `NETPRINTS_E2E=1 --fail-skips on`: 50 of 50, 0 skipped.
+- 9 probes, kept with the review notes outside the repository. 8 were red at `68e33ae8`. The green one shows that a click
+  opens the overloads flyout at zoom 0.5.
+- The measured pin colour distances are in G-R5.
+
+The CI-H and CI-H2 leak fixes were checked: `ScopedReflectionHost`, reload cancellation and `SharedMetadataReferences` are
+correct, with no finding. Suggested fix batches for T101:
+
+- G-F1 (behaviour): G-R1, G-R3, G-R4, G-R6 and G-R11.
+- G-F2 (pickers and hygiene): G-R2, G-R10 and G-R12.
+- G-F3 (look): G-R5, G-R7, G-R8, G-R9, G-R13 and G-R17, the owner calls, and the sheet fixes of G-R14.
+- Docs: G-R16. G-R15 and G-R18 go to H-R.
+
+| Id | Sev | Summary | Batch | Status |
+|---|---|---|---|---|
+| G-R1 | major | FR-091: the hidden-type message never shows in a real pin search, because the make-delegate row and the static methods that take the type fill the list (probe: 1502 rows) | G5b (T095) | open |
+| G-R2 | major | FR-093, SC-012: array parameters read `Array` in both pickers (`void WriteLine(Array buffer)`), so `String.Join` overloads that differ by element type differ only by parameter name; tile "Overloads flyout" | G4c (T092h) | open |
+| G-R3 | major | FR-088, FR-101: shell dialogs open with no keyboard focus inside them, so Esc and Enter do nothing until a click; `DialogShellKeysTests` clicks the heading first (probe: focus-within False) | G4b, G6 | open |
+| G-R4 | major | Signature edits that skip `RetargetCallers`: retyping through the wired type node's own pins, Return node values, generic-argument +/-; deleting the wired type node leaves the parameter typed with an empty type pin | G5a (T094b) | open |
+| G-R5 | minor | Pin family colours too close to tell apart: Light Type and Bool ΔE00 3.2; Integer and Generic 10.3 (Light), 11.4 (Dark); no distinctness test; `canvas-every-node-kind-light-1.0` | G4e (T092n) | open |
+| G-R6 | minor | An impure ternary (the default) keeps the Pure header, while impure casts and awaits are Flow; tile "Graph document" | G2 (T091a) | open |
+| G-R7 | minor | The default dialog button looks like the others: `accent` has no style under Semi; tiles "Unsaved changes", "Confirm", "Trust", "Recover", "Override method" | G4b (T092f) | open |
+| G-R8 | minor | FR-082: View › Theme is three bare items with no submenu or prefix and no mark on the active one; the release notes describe a submenu | G5b (T093) | open |
+| G-R9 | minor | FR-080: `EditorStyles.axaml` still sets FontSize 42, 22, 18, 13, 13 and 11 outside the ramp; E8 checks only views | G3 (T092) | open |
+| G-R10 | minor | FR-100: E7 misses lambda and non-EventArgs handlers in code-behind (GraphEditorView ×6, EditorApp ×3) | G6 (T097) | open |
+| G-R11 | minor | Pre-existing: a variable picked from a pin search opens Get/Set and is created unconnected | T094a table | open |
+| G-R12 | minor | FR-092, SC-007: "builds and runs with unchanged output" for a hidden member is pinned only by resolution | G5b (T094) | open |
+| G-R13 | nit | `tabular` also sets Cascadia Mono, so the Errors header, the status bar and the badges render in the code font; tile "Errors" | G3 (T092a) | open |
+| G-R14 | nit | Contact sheet content: Return node cut, added nodes overlapping, blank C# tile (NPT008), empty Issues dialog, made-up Override signatures, overlapping every-node canvas | G7b (T098b), G2 | open |
+| G-R15 | nit | The flake retry `ba08aec3` is a bounded wait for its precondition and masks no product bug, but it never asserts the precondition; the flake is open | G4e | open (H-R) |
+| G-R16 | nit | Wording: T092k's "zoom 2.0" (the canvas stops at 1.0); SC-007 "0 members outside its catalog" against R10's inheritance rule | spec | open |
+| G-R17 | nit | Plausible: the node-search fade runs only on the first open (`shown` is never removed) | G4a (T092d) | open |
+| G-R18 | nit | Process: shell edits in G3-b, G4a, G4e and G5b; no over-match found in the diffs checked | process | open (H-R) |
+| G-R19 | owner call | Type-pin shape: triangle (ships) or diamond | T101 | pending owner |
+| G-R20 | owner call | Canvas base colour in Dark: #000 (ships) or #262626 | T101 | pending owner |
+| G-R21 | owner call | Card opacity: #AA202020 (ships) or #FF202020 | T101 | pending owner |
+| G-R22 | owner call | Product mark approval | T101 | pending owner |
