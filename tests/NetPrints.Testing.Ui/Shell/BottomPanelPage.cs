@@ -21,6 +21,9 @@ public sealed class BottomPanelPage(IUiDriver driver, AutomationQuery window) : 
     /// <summary>A row of the Errors panel (one per diagnostic, errors first); <paramref name="index"/> counts from the top.</summary>
     public UiElement ErrorRow(int index = 0) => ErrorsList.Find(AutomationIds.ErrorsRow, index: index);
 
+    /// <summary>The empty state of the Errors panel of an open project without diagnostics.</summary>
+    public UiElement ErrorsClean => Panel(PanelContributions.ErrorsId).Find(AutomationIds.ErrorsClean);
+
     public UiElement ErrorsEmpty => Panel(PanelContributions.ErrorsId).Find(AutomationIds.ErrorsEmpty);
 
     public UiElement OutputList => Panel(PanelContributions.OutputId).Find(AutomationIds.OutputLines);

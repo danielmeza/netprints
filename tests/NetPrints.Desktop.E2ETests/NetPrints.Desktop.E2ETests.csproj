@@ -31,6 +31,8 @@
   <ItemGroup>
     <ProjectReference Include="..\NetPrints.Testing\NetPrints.Testing.csproj" />
     <ProjectReference Include="..\NetPrints.Testing.Ui\NetPrints.Testing.Ui.csproj" />
+    <!-- Built first, never referenced: the type-scoped search test points a project's Reference at the DLL. -->
+    <ProjectReference Include="..\Fixtures\Catalog\CatalogAnnotatedLib\CatalogAnnotatedLib.csproj" ReferenceOutputAssembly="false" />
     <!-- Built first; started as a separate process from its own output folder. -->
     <ProjectReference Include="..\..\src\NetPrints.Desktop\NetPrints.Desktop.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>

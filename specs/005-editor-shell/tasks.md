@@ -1191,7 +1191,7 @@ re-baselines the snapshots it changes (open every PNG).
 
 ### Batch G6 — model: sonnet — T096–T097 — 4 units
 
-- [ ] T096 [US9] [US10] Desktop E2E (3 units, FR-102). `ThemeSwitchTests`: View › Theme › Light changes the canvas and a
+- [x] T096 [US9] [US10] Desktop E2E (3 units, FR-102). `ThemeSwitchTests`: View › Theme › Light changes the canvas and a
   pane to their Light token values, and the choice survives a restart; in Light, a Call node's header has the Light
   `Node.Header.Call` value, the command bar's icons are drawn by `IconPresenter` with no fallback glyph, and the empty
   Errors panel shows its `EmptyState`. `DialogShellKeysTests`: with an unsaved change, File › Close project opens the

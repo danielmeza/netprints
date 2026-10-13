@@ -559,6 +559,10 @@ public static class AutomationIds
     /// </summary>
     public const string CommandBarPrefix = "CommandBar.";
     /// <summary>
+    /// Automation id for the icon presenter inside a command bar button.
+    /// </summary>
+    public const string CommandBarIcon = "CommandBar.Icon";
+    /// <summary>
     /// Automation id for the shell window's menu bar.
     /// </summary>
     public const string ShellMenuBar = "Shell.MenuBar";

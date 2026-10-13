@@ -21,4 +21,7 @@ public static class ShellCommands
     public const string FloatDocument = ContributionIds.CommandPrefix + "floatDocument";
     public const string DockDocument = ContributionIds.CommandPrefix + "dockDocument";
     public const string ResetLayout = ContributionIds.CommandPrefix + "resetLayout";
+    public const string ThemeDark = ContributionIds.CommandPrefix + "theme.dark";
+    public const string ThemeLight = ContributionIds.CommandPrefix + "theme.light";
+    public const string ThemeSystem = ContributionIds.CommandPrefix + "theme.system";
 }

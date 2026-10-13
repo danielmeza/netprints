@@ -71,7 +71,7 @@
                       </Style>
                     </Button.Styles>
                     <StackPanel Orientation="Horizontal" Spacing="6">
-                      <icons:IconPresenter IconId="{Binding IconId}" AutomationProperties.AccessibilityView="Raw" />
+                      <icons:IconPresenter IconId="{Binding IconId}" AutomationProperties.AccessibilityView="Raw" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.CommandBarIcon}" />
                       <TextBlock Text="{Binding StaticLabel}" VerticalAlignment="Center" />
                       <Border Classes="badge" IsVisible="{Binding HasBadge}">
                         <TextBlock Classes="tabular" Text="{Binding BadgeText}" AutomationProperties.Name="{Binding BadgeName}"
