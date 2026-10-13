@@ -2406,7 +2406,7 @@ test-first. The spec's Clarifications, session 2026-10-09, record them.
   `Build and test (Linux)` is unchanged; the two new job names replace `Test (Editor UI (headless))` for anyone who listed it.
 - T098: `VariableDragSourceBehavior` (tunnel, handled events too) replaces the pointer handlers of `LocalVariableView` and
   `MemberVariableView`; `CanvasPointerTrackerBehavior` replaces `GraphEditorView.OnAttachedToVisualTree`. Seven E7 entries went
-  (24 to 17). What stays: `CodeView` (AvaloniaEdit interop and hover gestures), `EditorApp.OnFrameworkInitializationCompleted`
+  (23 to 16). What stays: `CodeView` (AvaloniaEdit interop and hover gestures), `EditorApp.OnFrameworkInitializationCompleted`
   (entry point), and in `GraphEditorView` the pointer gestures, drag over/drop, and the viewport math (`CenterWhenSized`,
   `OnDataContextChanged`). No new P3a view has a handler.
 - T098a: `ScaledSnapshotTests` writes 24 baselines `<name>-<dark|light>-<1.0|1.5|2.0>.png` over four surfaces (shell, inspector,
