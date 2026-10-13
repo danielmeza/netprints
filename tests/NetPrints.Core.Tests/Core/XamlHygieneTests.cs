@@ -743,12 +743,6 @@ namespace NetPrints.Tests.Core
             Editor("Graph/GraphEditorView.axaml.cs", "OnDragOver", Gesture, "Accepts a variable dragged from the panels onto the canvas."),
             Editor("Graph/GraphEditorView.axaml.cs", "OnDrop", Gesture, "Drops a dragged variable at a canvas position, converting screen to graph coordinates."),
             Editor("Graph/GraphEditorView.axaml.cs", "OnDataContextChanged", ViewportMath, "Resets the Nodify viewport zoom and location when a new graph opens."),
-            Editor("Variables/LocalVariableView.axaml.cs", "OnNamePointerPressed", Gesture, "Starts the drag of a variable out of the panel."),
-            Editor("Variables/LocalVariableView.axaml.cs", "OnNamePointerMoved", Gesture, "Continues the variable drag past the drag threshold."),
-            Editor("Variables/LocalVariableView.axaml.cs", "OnNamePointerReleased", Gesture, "Ends the variable drag."),
-            Editor("Variables/MemberVariableView.axaml.cs", "OnNamePointerPressed", Gesture, "Starts the drag of a variable out of the panel."),
-            Editor("Variables/MemberVariableView.axaml.cs", "OnNamePointerMoved", Gesture, "Continues the variable drag past the drag threshold."),
-            Editor("Variables/MemberVariableView.axaml.cs", "OnNamePointerReleased", Gesture, "Ends the variable drag."),
         ];
 
         private static string[] FindCodeBehindHandlers(string relativePath, string source)

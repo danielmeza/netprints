@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
              xmlns:edvariables="clr-namespace:NetPrints.Editor.Variables"
              xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
              x:Class="NetPrints.Editor.Variables.LocalVariableView"
@@ -13,8 +14,12 @@
       <TextBlock Text="Name" Opacity="0.75" VerticalAlignment="Center" Margin="4,0,0,0" />
     </StackPanel>
     <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
-      <TextBox x:Name="NameBox" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableName}" 
-               Text="{Binding Name, UpdateSourceTrigger=LostFocus}" />
+      <TextBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableName}"
+               Text="{Binding Name, UpdateSourceTrigger=LostFocus}">
+        <Interaction.Behaviors>
+          <edbehaviors:VariableDragSourceBehavior />
+        </Interaction.Behaviors>
+      </TextBox>
       <Button Grid.Column="1" Classes="flat" Content="{Binding Type.ShortName}" ToolTip.Tip="Change type" Command="{Binding RetypeCommand}" Margin="4,0,0,0" />
     </Grid>
   </Grid>

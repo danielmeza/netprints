@@ -1,6 +1,4 @@
 using Avalonia.Controls;
-using Avalonia.Input;
-using NetPrints.Editor.Graph;
 
 namespace NetPrints.Editor.Variables;
 
@@ -12,21 +10,4 @@ public partial class MemberVariableView : UserControl
     {
         InitializeComponent();
     }
-
-    private MemberVariableViewModel? ViewModel => DataContext as MemberVariableViewModel;
-
-    // Variables can be dragged onto the graph to open the Get/Set chooser (PAR-57).
-    private readonly DragSourceHelper dragSource = new();
-
-    private void OnNamePointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (ViewModel is { } variable)
-        {
-            dragSource.Pressed(e, this, variable);
-        }
-    }
-
-    private void OnNamePointerMoved(object? sender, PointerEventArgs e) => dragSource.Moved(e, this);
-
-    private void OnNamePointerReleased(object? sender, PointerReleasedEventArgs e) => dragSource.Released();
 }

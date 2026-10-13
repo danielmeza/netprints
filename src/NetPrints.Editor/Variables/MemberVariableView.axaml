@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
              xmlns:edvariables="clr-namespace:NetPrints.Editor.Variables"
              xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
              x:Class="NetPrints.Editor.Variables.MemberVariableView"
@@ -13,10 +14,10 @@
       </Button>
       <TextBlock Text="Name" Opacity="0.75" VerticalAlignment="Center" Margin="4,0,0,0" />
     </StackPanel>
-    <TextBlock x:Name="NameText" Classes="memberName" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableName}" Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis"
-               VerticalAlignment="Center" Background="Transparent"
-               PointerPressed="OnNamePointerPressed" PointerMoved="OnNamePointerMoved" PointerReleased="OnNamePointerReleased" Margin="0,0,0,4">
+    <TextBlock Classes="memberName" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableName}" Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis"
+               VerticalAlignment="Center" Background="Transparent" Margin="0,0,0,4">
       <Interaction.Behaviors>
+        <edbehaviors:VariableDragSourceBehavior />
         <ExecuteCommandOnTappedBehavior Command="{Binding SelectCommand}" />
       </Interaction.Behaviors>
     </TextBlock>
