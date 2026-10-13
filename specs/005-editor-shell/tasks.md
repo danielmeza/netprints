@@ -1218,7 +1218,7 @@ re-baselines the snapshots it changes (open every PNG).
   baselines named `<name>-<dark|light>-<scale>.png`, using the scaling hook of `grid-background-150`); red because no
   baseline exists, then written once with `NETPRINTS_UPDATE_SNAPSHOTS=1` and reviewed by hand. At 2.0 a visual-tree
   scan finds no `Image` backed by a `Bitmap`.
-- [ ] T098b [US9] Contact sheet (FR-089). Test first:
+- [x] T098b [US9] Contact sheet (FR-089). Test first:
   `tests/NetPrints.Editor.UITests/Snapshots/ContactSheetTests.cs` (red: the composer is a stub that throws): every
   panel (project tree, inspector, variables, Errors, Output, C#), the start page, a graph document, the eight P3a
   dialogs, the Override method dialog (T092j) and a call node with its overloads flyout open (T092k), in Dark and
@@ -1227,7 +1227,8 @@ re-baselines the snapshots it changes (open every PNG).
   with diamond type pins (`Pin.TypeShape.Diamond`, T092m), with the canvas at dark grey (`Canvas.Background`
   `#262626` instead of #000), with an opaque card (`Node.CardBackground` `#FF202020` instead of `#AA202020`), and
   with all three; the test overrides those resources on the tile, so the product carries no option for them. The
-  test asserts the tile count (18 × 2 × 2 + 5) and that no tile is one flat colour. It compares no
+  strip also carries the product mark (`App.Mark`) in Dark and Light, because the owner approves the logo on this sheet.
+  The test asserts the tile count (18 × 2 × 2 + 5 + 2) and that no tile is one flat colour. It compares no
   baseline. Then `.github/workflows/ci.yml` uploads the file as the `contact-sheet` artifact of the UI tests job
   (`CiWorkflowTests` updated).
 - [ ] T099 **Checkpoint G**: report SC-007, SC-008 (tokens in both variants, no colour literal, no type name ending in

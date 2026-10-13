@@ -221,6 +221,15 @@ jobs:
           path: TestResults/ui/**
           if-no-files-found: warn
 
+      # The contact sheet of ContactSheetTests (Snapshots namespace, shard 1) for the sub-phase G visual review.
+      - name: Upload contact sheet
+        if: always() && matrix.leg == 'editor-ui-1'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: contact-sheet
+          path: TestResults/ui/contact-sheet.png
+          if-no-files-found: error
+
       # Cobertura coverage from Microsoft.Testing.Extensions.CodeCoverage (--coverage above).
       - name: Upload coverage
         if: always()

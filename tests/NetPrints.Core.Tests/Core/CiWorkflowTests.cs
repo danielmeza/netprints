@@ -136,6 +136,26 @@ namespace NetPrints.Tests.Core
         }
 
         [Fact]
+        public void TheContactSheetIsUploadedFromTheShardThatRunsTheSnapshots()
+        {
+            string snapshots = "NetPrints.Editor.UITests.Snapshots";
+            string[] legs =
+            [
+                .. MatrixLegs()
+                    .Where(leg => Text(Get(leg, "project")) == "tests/NetPrints.Editor.UITests")
+                    .Where(leg => RunsNamespace((NamespaceFilters(Text(Get(leg, "filter")), "--filter-namespace"), NamespaceFilters(Text(Get(leg, "filter")), "--filter-not-namespace")), snapshots))
+                    .Select(leg => Text(Get(leg, "leg"))),
+            ];
+            string leg = Assert.Single(legs);
+
+            object? upload = Assert.Single(Items(Get(Ci(), "jobs", "test", "steps")), step => Text(Get(step, "with", "name")) == "contact-sheet");
+
+            Assert.StartsWith("actions/upload-artifact@", Text(Get(upload, "uses")), StringComparison.Ordinal);
+            Assert.Equal("TestResults/ui/contact-sheet.png", Text(Get(upload, "with", "path")));
+            Assert.Contains($"matrix.leg == '{leg}'", Text(Get(upload, "if")), StringComparison.Ordinal);
+        }
+
+        [Fact]
         public void TestMatrixLegsRunTheirOwnProjectWithTheAdr0008CoverageSettings()
         {
             string[] runs = [.. Items(Get(Ci(), "jobs", "test", "steps")).Select(step => Text(Get(step, "run")))];

@@ -38,6 +38,23 @@ public sealed class UiImage
         return new UiImage(data.ToArray());
     }
 
+    /// <summary>The image shrunk to fit a box, keeping its proportions; an image that already fits is returned as it is.</summary>
+    public UiImage Fit(int maxWidth, int maxHeight)
+    {
+        double ratio = Math.Min((double)maxWidth / Width, (double)maxHeight / Height);
+        if (ratio >= 1)
+        {
+            return this;
+        }
+
+        var info = new SKImageInfo(Math.Max(1, (int)(Width * ratio)), Math.Max(1, (int)(Height * ratio)));
+        using var resized = bitmap.Resize(info, new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear))
+            ?? throw new InvalidOperationException("The image could not be resized.");
+        using var image = SKImage.FromBitmap(resized);
+        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+        return new UiImage(data.ToArray());
+    }
+
     public void Save(string path)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
