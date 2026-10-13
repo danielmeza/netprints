@@ -9,11 +9,6 @@ namespace NetPrints.Desktop.E2ETests.Scenarios;
 public sealed class DialogShellKeysTests(DesktopWorkerPool pool) : ProjectEditorTestBase(pool)
 {
     private const string UnsavedDialogType = "UnsavedChangesDialog";
-    private const double HeadingColumn = 0.5;
-    private const double HeadingRow = 0.2;
-
-    private async Task FocusDialogAsync(UnsavedChangesDialogPage prompt, CancellationToken cancellationToken) =>
-        await Driver.ClickAsync(await prompt.PointAsync(HeadingColumn, HeadingRow, cancellationToken), UiButton.Left, 1, cancellationToken);
 
     [Fact]
     public Task EscCancelsAndEnterSavesAndClosesTheProject() => RunScenarioAsync(async token =>
@@ -37,7 +32,6 @@ public sealed class DialogShellKeysTests(DesktopWorkerPool pool) : ProjectEditor
 
         using (Step("Esc cancels and the project stays open"))
         {
-            await FocusDialogAsync(prompt, token);
             await Driver.PressAsync("Escape", token);
             await prompt.WaitHiddenAsync(token);
             Assert.False(LeasedEditor.HasExited, "The editor exited although the prompt was cancelled.");
@@ -49,7 +43,6 @@ public sealed class DialogShellKeysTests(DesktopWorkerPool pool) : ProjectEditor
         {
             await Shell.Menu.InvokeAsync("File", ShellCommands.CloseProject, token);
             await prompt.WaitVisibleAsync(token);
-            await FocusDialogAsync(prompt, token);
             await Driver.PressAsync("Enter", token);
             await prompt.WaitHiddenAsync(token);
             await Shell.Tree.Project("HelloWorld").WaitHiddenAsync(token);

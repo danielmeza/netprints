@@ -118,6 +118,20 @@ public class DialogShellTests
 
     [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]
     [MemberData(nameof(Names))]
+    public void TheDefaultButtonHasTheKeyboardFocusWhenTheDialogOpens(string name)
+    {
+        Row row = Rows[name];
+        using var ui = HeadlessUi.Create();
+
+        Window window = ui.Show(row.Create());
+
+        var focused = Assert.IsAssignableFrom<Control>(window.FocusManager?.GetFocusedElement());
+        Assert.True(window.IsVisualAncestorOf(focused), $"{name}: the focus is inside the dialog");
+        Assert.Equal(row.DefaultId, AutomationProperties.GetAutomationId(focused));
+    }
+
+    [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]
+    [MemberData(nameof(Names))]
     public async Task EnterRunsTheDefaultButton(string name)
     {
         Row row = Rows[name];

@@ -1,5 +1,8 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 
 namespace NetPrints.Editor.Controls;
 
@@ -7,7 +10,8 @@ namespace NetPrints.Editor.Controls;
 /// The one frame of a dialog (FR-088): an icon and a title above the content, and the footer buttons below in the
 /// platform's order. Its look, widths (<c>Dialog.MinWidth</c> to <c>Dialog.MaxWidth</c>) and spacing are the
 /// <c>DialogShell</c> control theme in <c>EditorStyles.axaml</c>. Enter and Esc come from the footer buttons' <c>IsDefault</c>
-/// and <c>IsCancel</c>.
+/// and <c>IsCancel</c>. When it loads with no focus inside it, it focuses the first editable text box, else the default
+/// button, else the first button, so the keys work without a click.
 /// </summary>
 public sealed class DialogShell : ContentControl
 {
@@ -74,5 +78,29 @@ public sealed class DialogShell : ContentControl
         }
     }
 
+    /// <inheritdoc />
+    protected override void OnLoaded(RoutedEventArgs e)
+    {
+        base.OnLoaded(e);
+        FocusInitialControl();
+    }
+
     private void Arrange() => SortedActions = ButtonOrder.Arrange(Actions);
+
+    private void FocusInitialControl()
+    {
+        if (TopLevel.GetTopLevel(this)?.FocusManager is not { } focus || focus.GetFocusedElement() is Visual focused && this.IsVisualAncestorOf(focused))
+        {
+            return;
+        }
+
+        Control? target = this.GetVisualDescendants().OfType<TextBox>().FirstOrDefault(box => !box.IsReadOnly && box.Focusable && box.IsEffectivelyVisible);
+        target ??= SortedActions.OfType<Button>().FirstOrDefault(button => button.IsDefault)
+            ?? SortedActions.OfType<Button>().FirstOrDefault();
+        target?.Focus(NavigationMethod.Tab);
+        if (TopLevel.GetTopLevel(this) is Window { IsActive: false } window)
+        {
+            window.Activate();
+        }
+    }
 }
