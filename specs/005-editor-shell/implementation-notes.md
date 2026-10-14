@@ -2524,3 +2524,18 @@ correct, with no finding. Suggested fix batches for T101:
 | G-R20 | owner call | Canvas base colour in Dark: #000 (ships) or #262626 | T101 | pending owner |
 | G-R21 | owner call | Card opacity: #AA202020 (ships) or #FF202020 | T101 | pending owner |
 | G-R22 | owner call | Product mark approval | T101 | pending owner |
+
+## G-F1 (T101, first of four batches; T101 stays open)
+
+- **G-R3 fixed** (119db4c2, 0d6768ed): `DialogShell` focuses the first editable text box, else the default button, when it
+  loads, and activates its window (without the activation the key still went to the owner window under openbox). The
+  headless `DialogShellTests` row `TheDefaultButtonHasTheKeyboardFocusWhenTheDialogOpens` was red for all 8 dialogs. The
+  Unsaved changes E2E no longer clicks the heading. The Error and Unsaved changes baselines now show the default button's ring.
+- **G-R2 fixed** (f393fd75): `ReflectionConverter` and the catalog walker name an array after its element and ranks
+  (`System.Int32[][,]`), with the element's generic arguments on the specifier, and `TypeSpecifier` puts the suffix after
+  the generic arguments in its code names. An array of a type parameter or a pointer stays `System.Array`. The goldens are
+  unchanged; the catalog snapshot `public-api.npcat.json` now has `System.Int32[]` for `Helpers.Sum`.
+- **G-R11 fixed** (91d80f3c, d567b5e6): the Get/Set chooser takes the pin. An input data pin takes a Get; an output pin takes
+  the only enabled accessor; the chooser stays when both are possible. One undo step.
+- Known gap: the provider's name-to-type lookup builds mixed jagged ranks in the reverse order (`int[][,]` resolves as
+  `int[,][]`). It matters only for a method that takes such a type.
