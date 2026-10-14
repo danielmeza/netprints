@@ -30,6 +30,7 @@ public sealed class EditorComposition : IDisposable
         var windows = new WindowService();
         EditorDataPaths paths = EditorDataPaths.Resolve();
         var fileSystem = new RealEditorFileSystem();
+        new StateMigration(paths, fileSystem, new RealStateFolderMover(), host.LoggerFactory.CreateLogger<StateMigration>()).Run();
         var stateStore = new JsonEditorStateStore(paths, fileSystem, host.LoggerFactory.CreateLogger<JsonEditorStateStore>());
         services = new EditorServices(host, windows,
             new EditorDialogs(() => windows.ActiveWindow),
