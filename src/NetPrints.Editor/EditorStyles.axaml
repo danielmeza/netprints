@@ -155,6 +155,7 @@
           <SolidColorBrush x:Key="OpeningGraphIndicator.Foreground">White</SolidColorBrush>
           <SolidColorBrush x:Key="BusyOverlay.Background">#AA000000</SolidColorBrush>
           <BoxShadows x:Key="Popup.Shadow">0 4 12 0 #40000000</BoxShadows>
+          <SolidColorBrush x:Key="Popup.Background">#FF202024</SolidColorBrush>
           <!-- Pin hover stroke (PAR-43, R2-07): white reads fine over the dark card, invisible over Light. -->
           <SolidColorBrush x:Key="Pin.HoverStroke">White</SolidColorBrush>
           <!-- Error-list row severity icon (FR-032, OWN-03, owner report). -->
@@ -218,6 +219,7 @@
           <SolidColorBrush x:Key="OpeningGraphIndicator.Foreground">#FF202020</SolidColorBrush>
           <SolidColorBrush x:Key="BusyOverlay.Background">#66000000</SolidColorBrush>
           <BoxShadows x:Key="Popup.Shadow">0 4 12 0 #30000000</BoxShadows>
+          <SolidColorBrush x:Key="Popup.Background">#FFFFFFFF</SolidColorBrush>
           <SolidColorBrush x:Key="Pin.HoverStroke">Black</SolidColorBrush>
           <!-- Error-list row severity icon (FR-032, OWN-03, owner report). -->
           <SolidColorBrush x:Key="Diagnostic.Error.Foreground">#C62828</SolidColorBrush>

@@ -24,6 +24,7 @@ public class ThemeTokenTests
         "OpeningGraphIndicator.Foreground",
         "BusyOverlay.Background",
         "Popup.Shadow",
+        "Popup.Background",
         "Pin.HoverStroke",
         "Diagnostic.Error.Foreground",
         "Diagnostic.Warning.Foreground",

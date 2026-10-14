@@ -13,7 +13,7 @@
       <AddClassAction ClassName="shown" />
     </LoadedTrigger>
   </Interaction.Behaviors>
-  <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+  <Border Background="{DynamicResource Popup.Background}" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
           BorderThickness="1" BoxShadow="{DynamicResource Popup.Shadow}">
     <Grid RowDefinitions="Auto,Auto,*">
       <TextBox x:Name="SearchBox" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SearchBox}" Text="{Binding SearchText}" PlaceholderText="Search" Classes="searchInput">
