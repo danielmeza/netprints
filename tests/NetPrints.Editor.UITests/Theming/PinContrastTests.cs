@@ -15,6 +15,8 @@ public class PinContrastTests
 {
     public const double MinimumContrast = 3.0;
 
+    public const double MinimumCardSeparation = 1.15;
+
     public static TheoryData<string, string> FamiliesByVariant()
     {
         TheoryData<string, string> data = [];
@@ -38,14 +40,7 @@ public class PinContrastTests
 
     public static Color WithOpacity(Color color, double opacity) => Color.FromArgb((byte)Math.Round(color.A * opacity), color.R, color.G, color.B);
 
-    public static double WireOpacity()
-    {
-        var theme = Assert.IsType<ControlTheme>(CanvasPaletteTests.Resolve("NetPrints.Connection", ThemeVariant.Default));
-        return theme.Setters.OfType<Setter>()
-            .Where(setter => setter.Property == Visual.OpacityProperty)
-            .Select(setter => Assert.IsType<double>(setter.Value))
-            .Single();
-    }
+    public static double WireOpacity() => Assert.IsType<double>(CanvasPaletteTests.Resolve("Wire.Opacity", ThemeVariant.Default));
 
     private static (Color Pin, Color Body, Color Canvas) Colours(string variant, string family)
     {
@@ -112,5 +107,18 @@ public class PinContrastTests
 
         Assert.True(onCanvas >= MinimumContrast, $"{family} wire on the canvas in {variant}: {onCanvas:F2}");
         Assert.True(onBody >= MinimumContrast, $"{family} wire on the body in {variant}: {onBody:F2}");
+    }
+
+    [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]
+    [MemberData(nameof(CanvasPaletteTests.Variants), MemberType = typeof(CanvasPaletteTests))]
+    public void TheCardSeparatesFromTheCanvasWhenComposited(string variant)
+    {
+        ThemeVariant theme = CanvasPaletteTests.VariantOf(variant);
+        Color canvas = CanvasPaletteTests.ColorOf(CanvasPaletteTests.Resolve("Canvas.Background", theme));
+        Color card = CanvasPaletteTests.ColorOf(CanvasPaletteTests.Resolve("Node.CardBackground", theme));
+
+        double separation = CanvasPaletteTests.Contrast(Composite(card, canvas), canvas);
+
+        Assert.True(separation >= MinimumCardSeparation, $"card on the canvas in {variant}: {separation:F3}");
     }
 }

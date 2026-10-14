@@ -48,8 +48,8 @@ public class TargetPinSelfViewTests
             Assert.Equal(CanvasPaletteTests.ColorOf(CanvasPaletteTests.Resolve("Pin.Hint", CanvasPaletteTests.VariantOf(variant))), hintColour);
 
             Color card = CanvasPaletteTests.ColorOf(CanvasPaletteTests.Resolve("Node.CardBackground", CanvasPaletteTests.VariantOf(variant)));
-            Color region = CanvasPaletteTests.ColorOf(CanvasPaletteTests.Resolve("SystemRegionColor", CanvasPaletteTests.VariantOf(variant)));
-            Assert.True(CanvasPaletteTests.Contrast(hintColour, Composite(card, region)) >= CanvasPaletteTests.MinimumContrast);
+            Color canvas = CanvasPaletteTests.ColorOf(CanvasPaletteTests.Resolve("Canvas.Background", CanvasPaletteTests.VariantOf(variant)));
+            Assert.True(CanvasPaletteTests.Contrast(hintColour, Composite(card, canvas)) >= CanvasPaletteTests.MinimumContrast);
         }
         finally
         {

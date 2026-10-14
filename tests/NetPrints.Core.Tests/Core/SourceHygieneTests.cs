@@ -166,7 +166,6 @@ namespace NetPrints.Tests.Core
             ("tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs", "var setter = variable.Setter!;"),
             ("tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs", "Assert.Equal(MemberVisibility.Public, variable.Getter!.Visibility);"),
             ("tests/NetPrints.Editor.UITests/Graph/GridRenderTests.cs", "Application.Current!.RequestedThemeVariant = ThemeVariant.Light;"),
-            ("tests/NetPrints.Editor.UITests/Graph/GridRenderTests.cs", "Application.Current!.TryGetResource(\"SystemRegionColor\", theme, out var value) && value is Color color"),
             ("tests/NetPrints.Editor.UITests/TestAppBuilder.cs", ".AfterSetup(builder => ((EditorApp)builder.Instance!).DisableTransitions())"),
             ("tests/NetPrints.Testing.Ui/Driving/UiElement.cs", "(await UiWait.ForAsync(Driver, () => TryGetAsync(cancellationToken), e => e is not null, $\"{this} to be shown\", cancellationToken))!;"),
             ("tests/NetPrints.Testing.Ui/Driving/UiWait.cs", "T value = default!;"),

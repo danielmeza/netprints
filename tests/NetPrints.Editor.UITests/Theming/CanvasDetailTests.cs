@@ -88,6 +88,17 @@ public class CanvasDetailTests
 
     [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]
     [MemberData(nameof(CanvasPaletteTests.Variants), MemberType = typeof(CanvasPaletteTests))]
+    public void ThePinTypeShapeIsTheDiamondByDefault(string variant)
+    {
+        Avalonia.Styling.ThemeVariant theme = CanvasPaletteTests.VariantOf(variant);
+        Geometry shape = Assert.IsAssignableFrom<Geometry>(CanvasPaletteTests.Resolve("Pin.TypeShape", theme));
+
+        Assert.Same(CanvasPaletteTests.Resolve("Pin.TypeShape.Diamond", theme), shape);
+        Assert.NotSame(CanvasPaletteTests.Resolve("Pin.TypeShape.Triangle", theme), shape);
+    }
+
+    [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]
+    [MemberData(nameof(CanvasPaletteTests.Variants), MemberType = typeof(CanvasPaletteTests))]
     public async Task EveryTypePinDrawsThePinTypeShapeGeometry(string variant)
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
@@ -155,10 +166,10 @@ public class CanvasDetailTests
         try
         {
             Color token = CanvasPaletteTests.ColorOf(CanvasPaletteTests.Resolve("Canvas.Background", CanvasPaletteTests.VariantOf(variant)));
-            Color today = CanvasPaletteTests.ColorOf(CanvasPaletteTests.Resolve("SystemRegionColor", CanvasPaletteTests.VariantOf(variant)));
+            Color dock = CanvasPaletteTests.ColorOf(CanvasPaletteTests.Resolve("DockSurfaceEditorBrush", CanvasPaletteTests.VariantOf(variant)));
             GridBackground grid = session.Window.GetVisualDescendants().OfType<GridBackground>().Single();
 
-            Assert.Equal(today, token);
+            Assert.Equal(token, dock);
             Assert.Equal(token, grid.BackgroundColor);
         }
         finally

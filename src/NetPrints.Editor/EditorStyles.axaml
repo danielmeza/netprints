@@ -32,7 +32,7 @@
       <ControlTheme x:Key="NetPrints.Connection" TargetType="nc:Connection" BasedOn="{StaticResource {x:Type nc:Connection}}">
         <Setter Property="Stroke" Value="{DynamicResource Pin.Generic}" />
         <Setter Property="StrokeThickness" Value="4" />
-        <Setter Property="Opacity" Value="0.7" />
+        <Setter Property="Opacity" Value="{DynamicResource Wire.Opacity}" />
         <Setter Property="StrokeLineCap" Value="Round" />
       </ControlTheme>
       <ControlTheme x:Key="NetPrints.Connector" TargetType="nc:Connector" BasedOn="{StaticResource {x:Type nc:Connector}}">
@@ -45,11 +45,12 @@
       <ControlTheme x:Key="NetPrints.NodeOutput" TargetType="nn:NodeOutput" BasedOn="{StaticResource {x:Type nn:NodeOutput}}">
         <Setter Property="Background" Value="Transparent" />
       </ControlTheme>
-      <!-- Type-pin shape (FR-109): Pin.TypeShape is the triangle until the owner picks at the contact sheet. -->
+      <!-- Type-pin shape (FR-109): Pin.TypeShape is the diamond; a theme may point it at the triangle. -->
       <StreamGeometry x:Key="Pin.TypeShape.Triangle">M0,0 L16,8 L0,16 Z</StreamGeometry>
       <StreamGeometry x:Key="Pin.TypeShape.Diamond">M8,0 L16,8 L8,16 L0,8 Z</StreamGeometry>
-      <StaticResource x:Key="Pin.TypeShape" ResourceKey="Pin.TypeShape.Triangle" />
+      <StaticResource x:Key="Pin.TypeShape" ResourceKey="Pin.TypeShape.Diamond" />
       <x:Double x:Key="Pin.OutlineThickness">2</x:Double>
+      <x:Double x:Key="Wire.Opacity">0.78</x:Double>
       <!-- Start page recent row: a left-anchor icon tile (FR-110). -->
       <x:Double x:Key="StartPage.RecentTileSize">32</x:Double>      <!-- Type ramp, spacing scale and shared widths (FR-080, research R11); none of these vary by theme. -->
       <x:Double x:Key="Font.Caption">12</x:Double>
@@ -138,7 +139,7 @@
            The canvas background is the Canvas.Background token (FR-109). -->
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Dark">
-          <Color x:Key="Canvas.Background">#FF000000</Color>
+          <Color x:Key="Canvas.Background">#FF262626</Color>
           <SolidColorBrush x:Key="StartPage.RecentTileBackground">#FF2A2A30</SolidColorBrush>
           <SolidColorBrush x:Key="Focus.Ring">#4FC3F7</SolidColorBrush>
           <SolidColorBrush x:Key="State.Hover">#26FFFFFF</SolidColorBrush>
@@ -146,7 +147,7 @@
           <Color x:Key="GraphGrid.MinorColor">#14FFFFFF</Color>
           <Color x:Key="GraphGrid.MajorColor">#2EFFFFFF</Color>
           <SolidColorBrush x:Key="GraphWatermark.Foreground">#CCEEEEEE</SolidColorBrush>
-          <SolidColorBrush x:Key="Node.CardBackground">#AA202020</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.CardBackground">#D9141414</SolidColorBrush>
           <BoxShadows x:Key="Node.CardShadow">4 4 8 0 #80000000</BoxShadows>
           <SolidColorBrush x:Key="Node.TitleForeground">#FFEEEEEE</SolidColorBrush>
           <SolidColorBrush x:Key="Node.SubtitleForeground">#FFEEEEEE</SolidColorBrush>
@@ -209,7 +210,7 @@
           <Color x:Key="GraphGrid.MinorColor">#14000000</Color>
           <Color x:Key="GraphGrid.MajorColor">#2E000000</Color>
           <SolidColorBrush x:Key="GraphWatermark.Foreground">#55202020</SolidColorBrush>
-          <SolidColorBrush x:Key="Node.CardBackground">#AAF0F0F0</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.CardBackground">#AAE4E4E4</SolidColorBrush>
           <BoxShadows x:Key="Node.CardShadow">2 2 6 0 #40000000</BoxShadows>
           <SolidColorBrush x:Key="Node.TitleForeground">#FF202020</SolidColorBrush>
           <SolidColorBrush x:Key="Node.SubtitleForeground">#FF202020</SolidColorBrush>

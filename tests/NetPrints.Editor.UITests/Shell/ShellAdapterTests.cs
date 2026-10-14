@@ -467,7 +467,7 @@ public class ShellAdapterTests
             Assert.Equal(Color.FromUInt32(expected), Assert.IsType<Color>(chrome));
             Assert.True(rig.Main.TryFindResource("DockSurfaceHeaderBrush", variant, out object? header));
             Assert.Equal((Color)chrome, Assert.IsAssignableFrom<ISolidColorBrush>(header).Color);
-            Assert.True(rig.Main.TryFindResource("SystemRegionColor", variant, out object? region));
+            Assert.True(rig.Main.TryFindResource("Canvas.Background", variant, out object? region));
             Assert.True(rig.Main.TryFindResource("DockSurfaceEditorBrush", variant, out object? editor));
             Assert.Equal(Assert.IsType<Color>(region), Assert.IsAssignableFrom<ISolidColorBrush>(editor).Color);
             Window host = Assert.Single(rig.Ui.Tree.Windows, window => !ReferenceEquals(window, rig.Main));

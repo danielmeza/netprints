@@ -261,18 +261,18 @@ public class ContactSheetTests
 
             Apply(ThemeVariant.Dark, 1.0, windows);
             var view = session.Window.GetVisualDescendants().OfType<GraphEditorView>().First();
-            CurrentApplication.TryGetResource("Pin.TypeShape.Diamond", CurrentApplication.ActualThemeVariant, out object? diamond);
-            Assert.NotNull(diamond);
-            void Diamond(ResourceDictionary resources) => resources["Pin.TypeShape"] = diamond;
-            void Canvas(ResourceDictionary resources) => resources["Canvas.Background"] = Color.Parse("#FF262626");
-            void Card(ResourceDictionary resources) => resources["Node.CardBackground"] = new SolidColorBrush(Color.Parse("#FF202020"));
+            CurrentApplication.TryGetResource("Pin.TypeShape.Triangle", CurrentApplication.ActualThemeVariant, out object? triangle);
+            Assert.NotNull(triangle);
+            void Triangle(ResourceDictionary resources) => resources["Pin.TypeShape"] = triangle;
+            void Canvas(ResourceDictionary resources) => resources["Canvas.Background"] = Color.Parse("#FF000000");
+            void Card(ResourceDictionary resources) => resources["Node.CardBackground"] = new SolidColorBrush(Color.Parse("#AA202020"));
             (string Label, Action<ResourceDictionary> Overrides)[] calls =
             [
                 ("As it ships", _ => { }),
-                ("Diamond type pins", Diamond),
-                ("Canvas #262626", Canvas),
-                ("Opaque card #FF202020", Card),
-                ("Diamond, canvas and card", resources => { Diamond(resources); Canvas(resources); Card(resources); }),
+                ("Triangle type pins", Triangle),
+                ("Canvas #000", Canvas),
+                ("Card #AA202020", Card),
+                ("Triangle, canvas and card", resources => { Triangle(resources); Canvas(resources); Card(resources); }),
             ];
             List<ContactTile> strip = [];
             foreach ((string label, Action<ResourceDictionary> overrides) in calls)

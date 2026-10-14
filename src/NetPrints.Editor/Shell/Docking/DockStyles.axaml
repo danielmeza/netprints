@@ -10,7 +10,7 @@
       </ResourceDictionary.MergedDictionaries>
       <!-- Dock's surface tokens: make the header blend smoothly with the editor background. -->
       <SolidColorBrush x:Key="DockSurfaceHeaderBrush" Color="{DynamicResource SystemAltMediumHighColor}" />
-      <SolidColorBrush x:Key="DockSurfaceEditorBrush" Color="{DynamicResource SystemRegionColor}" />
+      <SolidColorBrush x:Key="DockSurfaceEditorBrush" Color="{DynamicResource Canvas.Background}" />
       <!-- Glyph box and button size of the chrome; Dock sizes each glyph by its own geometry, so the box is fixed here and every geometry below shares one grid. -->
       <sys:Double x:Key="DockChromeIconSize">16</sys:Double>
       <sys:Double x:Key="DockChromeButtonSize">24</sys:Double>

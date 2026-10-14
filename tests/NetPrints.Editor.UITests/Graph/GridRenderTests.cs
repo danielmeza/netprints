@@ -127,9 +127,9 @@ public class GridRenderTests
     }
 
     private static string RegionColor(ThemeVariant theme) =>
-        Application.Current!.TryGetResource("SystemRegionColor", theme, out var value) && value is Color color
+        Theming.CanvasPaletteTests.Resolve("Canvas.Background", theme) is Color color
             ? color.ToString()
-            : throw new InvalidOperationException("No SystemRegionColor");
+            : throw new InvalidOperationException("No Canvas.Background");
 
     /// <summary>The most common pixel color of a canvas screenshot (the background), as #aarrggbb.</summary>
     private static string BackgroundOf(UiImage image)
