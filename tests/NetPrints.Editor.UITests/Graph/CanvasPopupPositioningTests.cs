@@ -55,17 +55,17 @@ public class CanvasPopupPositioningTests
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var cls = session.GraphViewModel.Graph.Class ?? throw new InvalidOperationException("Main has no class.");
-        var variable = new Variable(cls, "V", TypeSpecifier.FromType<Version>(), null, null, VariableModifiers.None);
+        var variable = new Variable(cls, "V", TypeSpecifier.FromType<System.Text.StringBuilder>(), null, null, VariableModifiers.None);
         cls.Variables.Add(variable);
         session.GraphViewModel.AddNode<VariableGetterNode>(new GraphPoint(400, 100), null, variable.Specifier);
         await session.WaitForRenderedAsync(Token);
 
         // Drag from the object pin to empty canvas: opens the member search for its type (owner-reported bug).
         var dropPoint = await session.Graph.EmptyPointAsync(Token, UnclampedDx, UnclampedDy);
-        await session.Graph.Node("VariableGetterNode").Output("Version").DragCableToAsync(dropPoint, Token);
+        await session.Graph.Node("VariableGetterNode").Output("StringBuilder").DragCableToAsync(dropPoint, Token);
         var search = await session.Graph.Search.WaitOpenAsync(Token);
 
-        string rowText = await search.FilterAsync("major", t => t.Contains("Major", StringComparison.Ordinal), Token);
+        string rowText = await search.FilterAsync("capacity", t => t.Contains("Capacity", StringComparison.Ordinal), Token);
         var rowCenter = await search.Row(rowText).CenterAsync(Token);
 
         await search.ChooseAsync(rowText, Token);
