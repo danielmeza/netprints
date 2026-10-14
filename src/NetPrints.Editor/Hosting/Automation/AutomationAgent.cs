@@ -79,6 +79,10 @@ public sealed class AutomationAgent : IDisposable
     /// <summary>Most automation connections served at once; the rest are refused immediately.</summary>
     private const int MaxConcurrentConnections = 8;
 
+    private const int FramesToWaitFor = 2;
+
+    private static readonly TimeSpan FrameWait = TimeSpan.FromMilliseconds(500);
+
     private readonly string pipeName;
     private readonly AutomationTree tree;
     private readonly Func<AutomationStatus> status;
@@ -256,6 +260,7 @@ public sealed class AutomationAgent : IDisposable
                 // Everything queued before this request, including layout, has run.
                 await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
                 await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+                await WaitForRenderedFramesAsync().ConfigureAwait(false);
                 return new AutomationResponse(true);
             default:
                 throw new ArgumentException($"Unknown operation '{request.Op}'.");
@@ -276,6 +281,23 @@ public sealed class AutomationAgent : IDisposable
         if (query.Within is { } within)
         {
             ValidateQuery(within);
+        }
+    }
+
+    /// <summary>Waits for a rendered frame of every shown window after the queued work ran, so a control that just appeared is hit by the pointer; a window that draws no frame within <see cref="FrameWait"/> is not waited for.</summary>
+    private async Task WaitForRenderedFramesAsync()
+    {
+        Task[] frames = await Dispatcher.UIThread.InvokeAsync(() => tree.Windows.Where(window => window.IsVisible).Select(NextFrameAsync).ToArray());
+        await Task.WhenAny(Task.WhenAll(frames), Task.Delay(FrameWait)).ConfigureAwait(false);
+    }
+
+    private static async Task NextFrameAsync(global::Avalonia.Controls.Window window)
+    {
+        for (int i = 0; i < FramesToWaitFor; i++)
+        {
+            var frame = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            window.RequestAnimationFrame(_ => frame.TrySetResult());
+            await frame.Task.ConfigureAwait(true);
         }
     }
 
