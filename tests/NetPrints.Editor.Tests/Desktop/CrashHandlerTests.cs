@@ -1,12 +1,12 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using NetPrints.Desktop.Logging;
-using LogEventInfo = NLog.LogEventInfo;
-using LogFactory = NLog.LogFactory;
 using NLog.Config;
 using NLog.Extensions.Logging;
 using NLog.Targets;
 using NLog.Targets.Wrappers;
+using LogEventInfo = NLog.LogEventInfo;
+using LogFactory = NLog.LogFactory;
 
 namespace NetPrints.Editor.Tests.Desktop;
 
