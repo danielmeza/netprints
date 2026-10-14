@@ -1255,7 +1255,7 @@ re-baselines the snapshots it changes (open every PNG).
 
 ### Batch G-F — model: sonnet — T101 (reserved: fix review findings)
 
-- [ ] T101 [US9] [US10] Fix every finding of T100, visual findings included (test first for behaviour findings), reply
+- [x] T101 [US9] [US10] Fix every finding of T100, visual findings included (test first for behaviour findings), reply
   on each review thread with the fixing commit or the reason for deferral, and attach a new contact sheet to the reply
   when a fix changes what it shows. The owner's three calls are applied here as token values (`Pin.TypeShape`,
   `Canvas.Background` in Dark, `Node.CardBackground`) with `PinContrastTests` and `CanvasPaletteTests` green, the

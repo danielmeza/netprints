@@ -2630,3 +2630,35 @@ correct, with no finding. Suggested fix batches for T101:
   `Font.Subtitle`, treeItem 13 -> `Font.Body`, secondary 13 and the badge 11 -> `Font.Caption`. No new token: FR-080's four sizes
   plus the existing display token cover them. `E8_EveryFontSizeIsARampToken` covers every axaml file (7 offenders red).
 - **G-R13:** `tabular` only sets `tnum`; the Errors header, the compile badge and the build state use the UI font.
+
+## G-F4c (T101 ticked)
+
+- **G-R10:** E7 also counts `+=` subscriptions, `AddHandler` calls (method group or lambda) and any `(object? sender, T e)`
+  handler (ADR-0007 Amendment 3). Red: `E7_FlagsSubscriptionsLambdasAndHandlersWithAnyEventType` (actual list empty), then 8
+  offenders in `GraphEditorView` and `EditorApp`. Migrated: the grid sync (`Editor.PropertyChanged`) is two `#Editor` bindings
+  on the grid. Listed with a reason: `desktop.Exit`, `desktop.ShutdownRequested`, `OnNodeRevealRequested`,
+  `PointerCaptureLostEvent`, `SearchPopup.Opened`, both `FallbackPositionRequested` lambdas. The list goes 16 -> 23 (7 newly
+  detected, none of the 16 grew).
+- **G-R15:** the "errors row" retry asserts `IsPointerOver` with the hit-test diagnostics, re-resolves the row on every
+  attempt and repeats a press that dropped the hover. Before: 3 failures in 8 runs of the pointer-state theory (the failing
+  step was `State.Pressed` in Light with the pointer no longer over a row that was not replaced); after: 14 of 14 passes.
+- **G-R16:** T092k says "zoom 1.0 and 0.5"; SC-007 and FR-090 say the scoped search can list `object` members and extension
+  methods from uncovered assemblies (R10, T094).
+- **G-R17:** reproduced (`TheNodeSearchPopupFadesInAgainOnEveryOpen`: `shown` stays after close). `popupFade` and the Loaded
+  trigger sit on the `NodeSearchView` root and a trigger on the canvas popup removes `shown` when `Search.IsOpen` turns false.
+  Two simpler shapes failed: a trigger or an `Unloaded` action inside the view (its behaviors detach with the popup child
+  before they can run) and a `Classes.shown` binding (the class would be set before the attach, so no fade). The headless test
+  checks the class, not the opacity ramp, which the headless clock does not show.
+- **Undoable class edits:** the class name and namespace go through `SetMemberProperty`, one undo step each, with redo and the
+  dirty flag; the inspector raises `Name`, `Title` and `FullName` on undo and redo so the tab titles follow. The boxes commit
+  on lost focus (like the method and variable name boxes), so a rename is one step instead of one per key; this ends
+  "updates as typed" and `TheClassInspectorRenamesTheClassOnCommitAndShowsItsGeneratedCode` presses Tab first. Constructors have
+  nothing else to edit: the name is read-only and they have no modifiers. `ClassInspectorViewModel` lost its `markDirty` callback.
+
+## G-F closed
+
+G-R1 to G-R18 are fixed or closed: G-R1 09affd10, G-R2 f393fd75, G-R3 119db4c2 and 0d6768ed, G-R4 05aeffbd, G-R5 6fbf4974,
+G-R6 bb14fb84, G-R7 7cfb939a, G-R8 fa4b9c96 and fdd7e927, G-R9 ab7f988c, G-R10 3bdef646, G-R11 91d80f3c and d567b5e6, G-R12
+96d5a9ff, G-R13 2c494b10, G-R14 d8308b6f and 59f8bf3a, G-R15 e23dbeb8, G-R16 20689a30, G-R17 e0c9c6a0, G-R18 43489a45. The owner
+calls G-R19 to G-R21 are applied in 36a35a2b; G-R22 (the product mark) is still pending the owner. Whole suite (Release) 3935
+tests, 0 failed, 31 skipped (E2E self-skips and `PanCursor`); desktop E2E 50/50 with `--fail-skips on`.
