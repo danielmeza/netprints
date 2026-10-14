@@ -4,8 +4,8 @@ using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
 using NetPrints.Core;
 using NetPrints.Editor.Hosting.Automation;
-using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.Icons;
+using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.UITests.Shell;
 using NetPrints.Graph;
 
