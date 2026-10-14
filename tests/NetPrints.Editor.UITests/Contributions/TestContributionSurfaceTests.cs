@@ -279,7 +279,7 @@ public class TestContributionSurfaceTests
         var palette = new CommandPaletteViewModel(rig.Registry, rig.Invoker);
         MenuBarViewModel menuBar = Assert.IsType<MenuBarViewModel>(rig.Shell.MenuBar);
 
-        string[] inMenus = [.. menuBar.Menus.SelectMany(menu => menu.Items).Where(entry => !entry.IsSeparator).Select(entry => entry.Id)];
+        string[] inMenus = [.. menuBar.Menus.SelectMany(menu => menu.Items).SelectMany(entry => entry.Items ?? [entry]).Where(entry => !entry.IsSeparator).Select(entry => entry.Id)];
         string[] inPalette = [.. palette.Items.Select(item => item.Command.Id)];
         string[] menuLess = [.. rig.Registry.Commands.Where(command => command.Menu is null).Select(command => command.Id[ContributionIds.CommandPrefix.Length..])];
 
