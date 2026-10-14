@@ -1038,7 +1038,7 @@ T094b before G5b's T093–T095, so the search safety net also guards T094.
   `ShowOverloads`). Headless `tests/NetPrints.Editor.UITests/Graph/OverloadFlyoutTests.cs`: the header button has
   an automation id and an accessible name; clicking it opens a `Flyout` anchored to the
   button, like the ComboBox drop-down it replaces (ADR-0004's pointer-anchored `CanvasPopup` is for canvas overlays
-  opened at the pointer); the flyout fits inside the window at zoom 1.0 and 2.0; the filter box has focus; Esc
+  opened at the pointer); the flyout fits inside the window at zoom 1.0 and 0.5 (the canvas clamps at `MaxViewportZoom="1"`); the filter box has focus; Esc
   closes it with no change. Then `src/NetPrints.Editor/Graph/Nodes/NodeView.axaml` (the 24-px `Overloads` ComboBox
   becomes a header `Button` with an `IconPresenter` and a `Flyout` that hosts `MethodPickerList`) and
   `NodeViewModel.cs` (`UpdateOverloads` fills the list view model); `MethodSpecifierConverter` is deleted once

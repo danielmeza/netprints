@@ -795,7 +795,9 @@ glyphs contributed by extensions are decided with the P3 contribution API.
 
 - **FR-090**: A search scoped to a type MUST take that type's members from the catalog that covers the type's
   assembly when one does (embedded or extension), hiding members the catalog omits and members marked
-  `[NetPrintsIgnore]`; for assemblies no catalog covers, it MUST use the live provider.
+  `[NetPrintsIgnore]`; for assemblies no catalog covers, it MUST use the live provider. Inherited members come from the
+  source that covers the base type's assembly, so `object` members and extension methods from uncovered assemblies can
+  appear in the list.
 - **FR-091**: When the covering catalog does not list the type, the scoped search MUST show no members of that type
   and a message naming the catalog. The message is a notice above the list that stays visible whatever other
   rows the search lists (a pin search always adds general rows); with no rows at all, the empty state carries it too.
@@ -932,7 +934,9 @@ glyphs contributed by extensions are decided with the P3 contribution API.
   checks job and each test-project job) takes at most 60% of that job's time in the last run before the split (CI run
   36819424717 on `master` at `3a6eafc`); the Windows CLI job passes with the UTF-8 test.
 - **SC-007**: In the project fixtures, a type-scoped search for a cataloged type lists 0 members outside its catalog
-  (0 unannotated, 0 `[NetPrintsIgnore]`), a type from an uncovered assembly lists the same members as before, and a
+  (0 unannotated, 0 `[NetPrintsIgnore]`), where "its catalog" means the catalogs that cover the type's assemblies: the
+  scoped search also lists inherited `object` members and extension methods from assemblies no catalog covers (research
+  R10, T094), and those are not counted. A type from an uncovered assembly lists the same members as before, and a
   graph that uses a hidden member builds and runs with unchanged output.
 - **SC-008**: Every colour token resolves to a value in both Dark and Light (a headless test enumerates them), no
   view contains a colour literal, no type name ends in `VM`, and every XAML hygiene allowlist is empty; the code-behind allowlist contains only
