@@ -2580,3 +2580,21 @@ correct, with no finding. Suggested fix batches for T101:
   and a handler may answer `IsChecked`; View › Theme is a submenu of radio items with the active theme marked, and the command
   ids are unchanged. The palette and go-to detail read "View › Theme". Red: `RegistrySurfaceTests` (menu layout and the submenu
   row) and `TheThemeMenuChecksTheActiveThemeAndFollowsTheChoice`. The E2E `ThemeSwitchTests` opens the submenu (3 of 3 runs green).
+
+## G-F3b (T101; T101 stays open)
+
+- **Const disabled** (owner decision, 2026-10-13): the variable inspector's Const checkbox is disabled with its reason shown
+  inline, unless Const is already set, so a loaded `.netpc` can still turn it off. The translator throws the new `NPT009`
+  (`ConstVariableUnsupported`) naming the variable, instead of emitting a `const` that fails with CS0145, CS0504, CS0106,
+  CS0133 or a syntax error; the editor build now reports a translation failure under its own code, not `NPT000`. FR-013 and
+  the diagnostics contract carry one line each. Covered: `ClassTranslator` (direct and whole class, four rows), the MSBuild
+  generator (`GraphCodeGenerator`, which the CLI build uses), `ProjectTranslation` (live analysis, `ProjectCheck`, reflection) and
+  the editor `CompileAsync`. The `inspector-variable` baseline shows the reason under the disabled checkbox. The inspector
+  test was written after the XAML.
+- **Undoable Visibility and Modifiers**: one `EditorCommands.SetMemberProperty` command now records the edits of variables
+  (a variable's visibility also restores the accessors that followed it), methods, constructors (visibility) and the class.
+  17 rows in `MemberPropertyUndoTests` were red (undo, redo, dirty and clean). Class name and namespace edits are still not undoable.
+- **ToMethodSpecifier**: passes the graph method's generic arguments and keeps its return types as they are. Red: a call dropped
+  from a generic method had no type pins, and a generic return threw `InvalidCastException`. Green: the pins, and a project
+  that drops the call, builds and runs (`42`).
+- **AGENTS.md and CONTRIBUTING.md** no longer tell agents to add attribution trailers or a footer.
