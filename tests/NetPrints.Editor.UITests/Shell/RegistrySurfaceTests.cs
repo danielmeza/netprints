@@ -27,6 +27,7 @@ public class RegistrySurfaceTests
 {
     private const string Prefix = ContributionIds.CommandPrefix;
     private const string Separator = "-";
+    private const string ThemeSubmenuId = "View.Theme";
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
@@ -84,7 +85,7 @@ public class RegistrySurfaceTests
         Assert.Equal(Ids("newProject", "openProject", "closeProject", Separator, "newClass", "addExistingClass", Separator, "save", "saveAll", Separator, "projectSettings", "references", Separator, "exit"), Layout(rig.Open("File")).Select(Strip(MenuId)));
         Assert.Equal(Ids("undo", "redo", Separator, "delete", "rename", "selectAll", Separator, "nodeSearch", Separator, "classSettings", "addMethod", "addConstructor", "addVariable", "addEventGraph", "overrideMethod"), Layout(rig.Open("Edit")).Select(Strip(MenuId)));
         Assert.Equal(
-            Ids("frameSelection", "fitAll", Separator, "showPanel.projectTree", "showPanel.inspector", "showPanel.variables", "showPanel.errors", "showPanel.output", "showPanel.csharp", Separator, "floatDocument", "dockDocument", "resetLayout", Separator, "theme.dark", "theme.light", "theme.system", Separator, "commandPalette"),
+            [.. Ids("frameSelection", "fitAll", Separator, "showPanel.projectTree", "showPanel.inspector", "showPanel.variables", "showPanel.errors", "showPanel.output", "showPanel.csharp", Separator, "floatDocument", "dockDocument", "resetLayout", Separator), ThemeSubmenuId, .. Ids(Separator, "commandPalette")],
             Layout(rig.Open("View")).Select(Strip(MenuId)));
         Assert.Equal(Ids("compile", Separator, "run", "stop"), Layout(rig.Open("Build")).Select(Strip(MenuId)));
         Assert.Equal(Ids("goToAnything", Separator, "navigateBack", "navigateForward", Separator, "nextTab", "previousTab", "closeTab", Separator, "goToSource", "goToTarget"), Layout(rig.Open("Go")).Select(Strip(MenuId)));
@@ -94,12 +95,28 @@ public class RegistrySurfaceTests
     private static Func<string, string> Strip(Func<string, string> prefixOf) => id => id == Separator ? id : id.StartsWith(prefixOf(""), StringComparison.Ordinal) ? id[prefixOf("").Length..] : id;
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void ViewThemeIsASubmenuOfRadioChoicesWithTheActiveOneChecked()
+    {
+        using var rig = SurfaceRig.Create();
+        MenuItem theme = Assert.Single(rig.Open("View"), item => AutomationProperties_Id(item) == AutomationIds.MenuPrefix + ThemeSubmenuId);
+        theme.IsSubMenuOpen = true;
+        HeadlessDriver.Pump();
+
+        MenuItem[] choices = [.. theme.GetLogicalChildren().OfType<MenuItem>()];
+
+        Assert.Equal(["Dark", "Light", "System"], choices.Select(choice => Assert.IsType<string>(Avalonia.Automation.AutomationProperties.GetName(choice))));
+        Assert.Equal(Ids("theme.dark", "theme.light", "theme.system").Select(MenuId), choices.Select(choice => AutomationProperties_Id(choice) ?? ""));
+        Assert.All(choices, choice => Assert.Equal(MenuItemToggleType.Radio, choice.ToggleType));
+        Assert.Equal([true, false, false], choices.Select(choice => choice.IsChecked));
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public void EveryCommandWithAMenuIsInTheMenuBarAndTheMenuLessOnesAreNot()
     {
         using var rig = SurfaceRig.Create();
 
         MenuBarViewModel menuBar = Assert.IsType<MenuBarViewModel>(rig.Shell.MenuBar);
-        string[] inMenus = [.. menuBar.Menus.SelectMany(menu => menu.Items).Where(entry => !entry.IsSeparator).Select(entry => entry.Id)];
+        string[] inMenus = [.. menuBar.Menus.SelectMany(menu => menu.Items).SelectMany(entry => entry.Items ?? [entry]).Where(entry => !entry.IsSeparator).Select(entry => entry.Id)];
         string[] withMenu = [.. rig.Registry.Commands.Where(command => command.Menu is not null).Select(command => command.Id)];
 
         Assert.Equal(withMenu.Order(StringComparer.Ordinal), inMenus.Order(StringComparer.Ordinal));

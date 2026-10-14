@@ -107,7 +107,7 @@ public sealed class ThemeSwitchTests(DesktopWorkerPool pool) : ProjectEditorTest
 
         using (Step("View, Theme, Light"))
         {
-            await Shell.Menu.InvokeAsync("View", ShellCommands.ThemeLight, token, scrollOverCommandId: ShellCommands.ResetLayout);
+            await Shell.Menu.InvokeAsync("View", "Theme", ShellCommands.ThemeLight, token, scrollOverCommandId: ShellCommands.ResetLayout);
             await UiWait.UntilAsync(Driver, async () => string.Equals(await CanvasBackgroundAsync(token), lightCanvas, StringComparison.OrdinalIgnoreCase), $"the canvas {lightCanvas}", token);
             await UiWait.UntilAsync(Driver, async () => await PaneLuminanceAsync(token) >= LuminanceMidpoint, "the pane light", token);
         }

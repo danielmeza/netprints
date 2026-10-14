@@ -54,6 +54,8 @@ internal sealed class NoProjectActions : IProjectActions
 
     public Task ShowCommandPaletteAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
 
+    public EditorTheme Theme => EditorTheme.Dark;
+
     public Task SetThemeAsync(EditorTheme theme, CancellationToken cancellationToken) => throw new NotSupportedException();
 
     public Task NewClassAsync(CancellationToken cancellationToken) => throw new NotSupportedException();

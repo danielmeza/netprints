@@ -44,15 +44,34 @@ public sealed class MenuBarViewModel : IDisposable
                 items.Add(CommandEntryViewModel.Separator);
             }
 
+            List<string> openedSubmenus = [];
             foreach (CommandDescriptor command in commands.Where(command => command.Menu?.Group == group).OrderBy(command => command.Menu?.Order))
             {
-                var entry = new CommandEntryViewModel(command, invoker, AutomationIds.MenuPrefix);
-                entries.Add(entry);
-                items.Add(entry);
+                if (command.Menu?.Submenu is not { } submenu)
+                {
+                    items.Add(Entry(command));
+                    continue;
+                }
+
+                if (openedSubmenus.Contains(submenu))
+                {
+                    continue;
+                }
+
+                openedSubmenus.Add(submenu);
+                CommandEntryViewModel[] children = [.. commands.Where(other => other.Menu?.Group == group && other.Menu.Submenu == submenu).OrderBy(other => other.Menu?.Order).Select(Entry)];
+                items.Add(CommandEntryViewModel.CreateSubmenu(submenu, AutomationIds.MenuPrefix + name + "." + submenu, children));
             }
         }
 
         return new MenuViewModel(name, items);
+    }
+
+    private CommandEntryViewModel Entry(CommandDescriptor command)
+    {
+        var entry = new CommandEntryViewModel(command, invoker, AutomationIds.MenuPrefix);
+        entries.Add(entry);
+        return entry;
     }
 
     private void OnCommandStatesChanged(object? sender, EventArgs e) => entries.ForEach(entry => entry.Refresh());

@@ -218,6 +218,9 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
         context.Dialogs.ShowKeyboardShortcutsAsync(new KeyboardShortcutsViewModel(shell.Registry));
 
     /// <inheritdoc/>
+    public EditorTheme Theme => context.Settings.Get(EditorSettings.Descriptor).Theme;
+
+    /// <inheritdoc/>
     public async Task SetThemeAsync(EditorTheme theme, CancellationToken cancellationToken)
     {
         if (global::Avalonia.Application.Current is EditorApp app)
@@ -226,6 +229,7 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
         }
 
         await context.Settings.SetAsync(EditorSettings.Descriptor, new EditorSettings { Theme = theme }, cancellationToken).ConfigureAwait(true);
+        shell.NotifyCommandStatesChanged();
     }
 
     /// <inheritdoc/>

@@ -33,6 +33,28 @@ public sealed partial class CommandEntryViewModel : ObservableObject
     /// <summary>Gets the divider between two groups of a menu.</summary>
     public static CommandEntryViewModel Separator { get; } = new() { IsSeparator = true };
 
+    /// <summary>Gets the entries of a submenu, or null for an entry that is not one.</summary>
+    public IReadOnlyList<CommandEntryViewModel>? Items { get; private init; }
+
+    /// <summary>Gets a value indicating whether this entry opens a submenu.</summary>
+    public bool IsSubmenu => Items is not null;
+
+    /// <summary>Creates an entry that opens a submenu.</summary>
+    /// <param name="name">The submenu's name, shown as its label.</param>
+    /// <param name="automationId">The submenu's automation id.</param>
+    /// <param name="items">The entries of the submenu, in order.</param>
+    /// <returns>The submenu entry.</returns>
+    internal static CommandEntryViewModel CreateSubmenu(string name, string automationId, IReadOnlyList<CommandEntryViewModel> items) =>
+        new() { Items = items, AutomationId = automationId, Label = name, StaticLabel = name, Tooltip = name };
+
+    /// <summary>Gets a value indicating whether the entry is one of a group of choices, so its menu item carries a mark.</summary>
+    [ObservableProperty]
+    public partial bool IsChoice { get; private set; }
+
+    /// <summary>Gets a value indicating whether the entry is the chosen one of its group (the active theme).</summary>
+    [ObservableProperty]
+    public partial bool IsChecked { get; private set; }
+
     /// <summary>Gets a value indicating whether this entry is a divider.</summary>
     public bool IsSeparator { get; private init; }
 
@@ -40,13 +62,13 @@ public sealed partial class CommandEntryViewModel : ObservableObject
     public string Id { get; } = "";
 
     /// <summary>Gets the automation id, derived from the command id.</summary>
-    public string AutomationId { get; } = "";
+    public string AutomationId { get; private init; } = "";
 
     /// <summary>Gets the Icon id (see IconIds), or null.</summary>
     public string? IconId { get; }
 
     /// <summary>Gets the descriptor's own label, which a command bar button shows however the handler's label reads.</summary>
-    public string StaticLabel { get; } = "";
+    public string StaticLabel { get; private init; } = "";
 
     /// <summary>Gets the first shortcut as written, or an empty string.</summary>
     public string FirstGesture { get; } = "";
@@ -90,6 +112,9 @@ public sealed partial class CommandEntryViewModel : ObservableObject
         Label = descriptor.Handler.DynamicLabel(context) ?? descriptor.Label;
         Tooltip = FirstGesture.Length > 0 ? $"{Label} ({FirstGesture})" : Label;
         IsEnabled = descriptor.Handler.CanExecute(context);
+        bool? chosen = descriptor.Handler.IsChecked(context);
+        IsChoice = chosen is not null;
+        IsChecked = chosen == true;
     }
 
     [RelayCommand(CanExecute = nameof(IsEnabled))]

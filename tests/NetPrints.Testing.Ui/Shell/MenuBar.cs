@@ -43,4 +43,22 @@ public sealed class MenuBar(IUiDriver driver, AutomationQuery window)
         double column = Math.Clamp((header.X + header.Width / 2 - bounds.X) / bounds.Width, 0.02, 0.98);
         await Driver.ClickAsync(await item.PointAsync(column, 0.5, cancellationToken), UiButton.Left, 1, cancellationToken);
     }
+
+    /// <summary>
+    /// Opens <paramref name="menu"/>, opens its <paramref name="submenu"/> (such as "Theme") and clicks the item of <paramref name="commandId"/>.
+    /// <paramref name="scrollOverCommandId"/> works as in <see cref="InvokeAsync(string, string, CancellationToken, string?)"/>.
+    /// </summary>
+    public async Task InvokeAsync(string menu, string submenu, string commandId, CancellationToken cancellationToken, string? scrollOverCommandId = null)
+    {
+        var entry = await OpenAsync(menu, menu + "." + submenu, cancellationToken);
+        if (scrollOverCommandId is not null)
+        {
+            await Driver.WheelAsync(await Item(scrollOverCommandId).CenterAsync(cancellationToken), -ScrollNotches, cancellationToken);
+        }
+
+        await entry.ClickAsync(cancellationToken);
+        var item = Item(commandId);
+        await item.WaitVisibleAsync(cancellationToken);
+        await item.ClickAsync(cancellationToken);
+    }
 }

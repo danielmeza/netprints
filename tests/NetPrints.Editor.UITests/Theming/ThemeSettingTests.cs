@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Headless.XUnit;
 using Avalonia.Styling;
+using NetPrints.Editor.Shell;
 using NetPrints.Editor.State;
 using NetPrints.Editor.UITests.Shell;
 using NetPrints.Extensibility.Settings;
@@ -29,6 +30,32 @@ public class ThemeSettingTests
             Assert.Equal(VariantOf(expected), App.RequestedThemeVariant);
             await UiWait.UntilAsync(app.Driver, () => Task.FromResult(app.Composition.Context.Settings.Get(EditorSettings.Descriptor).Theme == expected),
                 "theme stored", TestContext.Current.CancellationToken);
+        }
+        finally
+        {
+            App.ApplyTheme(EditorTheme.Dark);
+        }
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TheThemeMenuChecksTheActiveThemeAndFollowsTheChoice()
+    {
+        await using var app = ShellApp.Start();
+        try
+        {
+            CommandEntryViewModel[] choices = [.. Assert.IsType<MenuBarViewModel>(app.Shell.MenuBar).Menus.Single(menu => menu.Header == "View").Items.Single(entry => entry.IsSubmenu).Items ?? []];
+            Assert.Equal(["Dark", "Light", "System"], choices.Select(choice => choice.Label));
+            Assert.Equal([true, false, false], choices.Select(choice => choice.IsChecked));
+
+            Assert.True(app.Commands.TryRun(app.Command("theme.light")));
+            await UiWait.UntilAsync(app.Driver, () => Task.FromResult(choices[1].IsChecked), "Light checked", TestContext.Current.CancellationToken);
+
+            Assert.Equal([false, true, false], choices.Select(choice => choice.IsChecked));
+
+            Assert.True(app.Commands.TryRun(app.Command("theme.system")));
+            await UiWait.UntilAsync(app.Driver, () => Task.FromResult(choices[2].IsChecked), "System checked", TestContext.Current.CancellationToken);
+
+            Assert.Equal([false, false, true], choices.Select(choice => choice.IsChecked));
         }
         finally
         {

@@ -20,4 +20,9 @@ public interface ICommandHandler
     /// <param name="context">The invocation context.</param>
     /// <returns>The label, or null to keep the descriptor's.</returns>
     string? DynamicLabel(CommandContext context) => null;
+
+    /// <summary>Whether the command is the chosen one of a group of choices, such as the active theme.</summary>
+    /// <param name="context">The invocation context.</param>
+    /// <returns>Whether it is chosen, or null when the command is not a choice (its menu entry has no mark).</returns>
+    bool? IsChecked(CommandContext context) => null;
 }

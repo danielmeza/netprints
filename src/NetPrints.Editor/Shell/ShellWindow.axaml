@@ -28,6 +28,9 @@
         <Style Selector="Menu > MenuItem MenuItem" x:DataType="shell:CommandEntryViewModel">
           <Setter Property="Header" Value="{Binding}" />
           <Setter Property="Command" Value="{Binding RunCommand}" />
+          <Setter Property="ItemsSource" Value="{Binding Items}" />
+          <Setter Property="ToggleType" Value="{Binding IsChoice, Converter={x:Static shell:MenuToggleTypeConverter.Instance}}" />
+          <Setter Property="IsChecked" Value="{Binding IsChecked, Mode=OneWay}" />
           <Setter Property="Focusable" Value="{Binding !IsSeparator}" />
           <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
           <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />

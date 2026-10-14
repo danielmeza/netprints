@@ -31,7 +31,7 @@ public sealed partial class CommandPaletteViewModel : DialogViewModel<object>
                 command,
                 command.Label,
                 string.Join(", ", command.DefaultGestures ?? []),
-                command.Menu?.Path ?? "",
+                command.Menu?.Display ?? "",
                 invoker.CanRun(command))),
         ];
         Refresh();

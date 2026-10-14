@@ -86,9 +86,13 @@ public sealed class FakeProjectActions : IProjectActions
     }
 
     /// <inheritdoc/>
+    public EditorTheme Theme { get; private set; } = EditorTheme.Dark;
+
+    /// <inheritdoc/>
     public Task SetThemeAsync(EditorTheme theme, CancellationToken cancellationToken)
     {
         Calls.Add($"SetTheme:{theme}");
+        Theme = theme;
         return Task.CompletedTask;
     }
 

@@ -81,6 +81,9 @@ public interface IProjectActions
     /// <returns>A task that completes when the dialog is closed.</returns>
     Task ShowAboutAsync(CancellationToken cancellationToken);
 
+    /// <summary>Gets the theme the editor uses now.</summary>
+    EditorTheme Theme { get; }
+
     /// <summary>Switches the editor to a theme and keeps the choice in the settings file.</summary>
     /// <param name="theme">The theme to switch to.</param>
     /// <param name="cancellationToken">Cancels the write of the settings file.</param>

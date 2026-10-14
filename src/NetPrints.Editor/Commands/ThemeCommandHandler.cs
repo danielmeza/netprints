@@ -12,6 +12,9 @@ public sealed class ThemeCommandHandler(EditorTheme theme) : ICommandHandler
     public bool CanExecute(CommandContext context) => true;
 
     /// <inheritdoc/>
+    public bool? IsChecked(CommandContext context) => context.Shell.ProjectActions.Theme == theme;
+
+    /// <inheritdoc/>
     public Task ExecuteAsync(CommandContext context, CancellationToken cancellationToken) =>
         context.Shell.ProjectActions.SetThemeAsync(theme, cancellationToken);
 }

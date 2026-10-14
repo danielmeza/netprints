@@ -23,7 +23,7 @@ public sealed class CommandsGoToProvider(IContributionRegistry registry) : IGoTo
     private static string Detail(CommandDescriptor command)
     {
         string shortcuts = string.Join(", ", command.DefaultGestures ?? []);
-        string menu = command.Menu?.Path ?? "";
+        string menu = command.Menu?.Display ?? "";
         return menu.Length > 0 && shortcuts.Length > 0 ? menu + ", " + shortcuts : menu + shortcuts;
     }
 }

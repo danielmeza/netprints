@@ -12,6 +12,7 @@ public static class ViewContributions
     private const string ViewportGroup = "viewport";
     private const string LayoutGroup = "layout";
     private const string ThemeGroup = "theme";
+    private const string ThemeSubmenu = "Theme";
     private const string FindGroup = "find";
 
     /// <summary>Registers the View menu's commands.</summary>
@@ -87,7 +88,7 @@ public static class ViewContributions
                 ContributionIds.CommandPrefix + id,
                 label,
                 new ThemeCommandHandler(theme),
-                Menu: new MenuPlacement(MenuName, ThemeGroup, order)));
+                Menu: new MenuPlacement(MenuName, ThemeGroup, order, ThemeSubmenu)));
         }
 
         registry.AddCommand(new CommandDescriptor(
