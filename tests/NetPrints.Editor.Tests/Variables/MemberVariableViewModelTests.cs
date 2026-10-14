@@ -132,4 +132,39 @@ public class MemberVariableViewModelTests : IDisposable
         Assert.Contains(nameof(MemberVariableViewModel.Name), changed);
         Assert.Contains(nameof(MemberVariableViewModel.IsStatic), changed);
     }
+
+    [Fact]
+    public void ConstCannotBeTurnedOnAndGivesItsReason()
+    {
+        vm.CreateVariable();
+        var variable = vm.Variables.Single();
+
+        Assert.False(variable.CanChangeConst);
+        Assert.Contains("P3b", variable.ConstReason, StringComparison.Ordinal);
+
+        string? before = vm.UndoRedo.UndoName;
+
+        variable.IsConst = true;
+
+        Assert.False(variable.IsConst);
+        Assert.Equal(VariableModifiers.None, variable.Variable.Modifiers);
+        Assert.Equal(before, vm.UndoRedo.UndoName);
+    }
+
+    [Fact]
+    public void ConstSetInALoadedProjectCanBeTurnedOff()
+    {
+        vm.CreateVariable();
+        var variable = vm.Variables.Single();
+        variable.Variable.Modifiers = VariableModifiers.Const | VariableModifiers.Static;
+
+        Assert.True(variable.IsConst);
+        Assert.True(variable.CanChangeConst);
+
+        variable.IsConst = false;
+
+        Assert.Equal(VariableModifiers.Static, variable.Variable.Modifiers);
+        Assert.False(variable.IsConst);
+        Assert.False(variable.CanChangeConst);
+    }
 }

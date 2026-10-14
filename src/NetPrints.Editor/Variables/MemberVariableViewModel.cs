@@ -114,14 +114,33 @@ public sealed partial class MemberVariableViewModel : ObservableObject, IDisposa
     /// <summary>Whether <see cref="VariableModifiers.ReadOnly"/> is set.</summary>
     public bool IsReadOnly { get => Has(VariableModifiers.ReadOnly); set => Set(VariableModifiers.ReadOnly, value); }
 
-    /// <summary>Whether <see cref="VariableModifiers.Const"/> is set.</summary>
-    public bool IsConst { get => Has(VariableModifiers.Const); set => Set(VariableModifiers.Const, value); }
+    /// <summary>Whether <see cref="VariableModifiers.Const"/> is set. It can be turned off but not on until member defaults land (P3b).</summary>
+    public bool IsConst
+    {
+        get => Has(VariableModifiers.Const);
+        set
+        {
+            if (value)
+            {
+                OnPropertyChanged();
+                return;
+            }
+
+            Set(VariableModifiers.Const, false);
+        }
+    }
 
     /// <summary>Whether <see cref="VariableModifiers.Static"/> is set.</summary>
     public bool IsStatic { get => Has(VariableModifiers.Static); set => Set(VariableModifiers.Static, value); }
 
     /// <summary>Whether <see cref="VariableModifiers.New"/> is set.</summary>
     public bool IsNew { get => Has(VariableModifiers.New); set => Set(VariableModifiers.New, value); }
+
+    /// <summary>Whether the Const checkbox can be changed: only a Const already set can be turned off.</summary>
+    public bool CanChangeConst => IsConst;
+
+    /// <summary>Why Const cannot be turned on.</summary>
+    public string ConstReason => "Const is unsupported until member defaults land (P3b).";
 
     private bool Has(VariableModifiers flag) => Modifiers.HasFlag(flag);
 
@@ -155,6 +174,7 @@ public sealed partial class MemberVariableViewModel : ObservableObject, IDisposa
                 OnPropertyChanged(nameof(Modifiers));
                 OnPropertyChanged(nameof(IsReadOnly));
                 OnPropertyChanged(nameof(IsConst));
+                OnPropertyChanged(nameof(CanChangeConst));
                 OnPropertyChanged(nameof(IsStatic));
                 OnPropertyChanged(nameof(IsNew));
                 break;

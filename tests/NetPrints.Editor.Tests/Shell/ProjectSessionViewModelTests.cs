@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Hosting;
@@ -9,6 +10,7 @@ using NetPrints.Editor.UndoRedo;
 using NetPrints.Graph;
 using NetPrints.Projects;
 using NetPrints.Serialization;
+using NetPrints.Translator;
 
 namespace NetPrints.Editor.Tests.Shell;
 
@@ -154,6 +156,24 @@ public sealed class ProjectSessionViewModelTests : IAsyncDisposable
         Assert.Equal("Build failed with 1 error(s)", project.CompilationMessage);
         Assert.Equal(cls.FullName, project.LastDiagnostics.Single().ClassFullName);
         Assert.Empty(editor.Dialogs.Errors);
+    }
+
+    [Fact]
+    public async Task CompileReportsAConstVariableAsOneNetPrintsDiagnostic()
+    {
+        Project project = await LoadSampleAsync();
+        using var session = new ProjectSessionViewModel(project, editor.Context);
+        var cls = project.Classes.Single();
+        cls.Variables.Add(new Variable(cls, "Limit", TypeSpecifier.FromType<int>(), null, null, VariableModifiers.Const | VariableModifiers.Static));
+        cls.MarkDirty();
+
+        await session.CompileAsync();
+
+        Assert.False(project.LastCompilationSucceeded);
+        CodeDiagnostic diagnostic = Assert.Single(project.LastDiagnostics);
+        Assert.Equal(TranslationDiagnosticCodes.ConstVariableUnsupported, diagnostic.Id);
+        Assert.Contains("'Limit'", diagnostic.Message, StringComparison.Ordinal);
+        Assert.Equal(cls.FullName, diagnostic.ClassFullName);
     }
 
     [Fact]

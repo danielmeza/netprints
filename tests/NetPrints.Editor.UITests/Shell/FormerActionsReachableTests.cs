@@ -212,6 +212,27 @@ public class FormerActionsReachableTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TheVariableInspectorDisablesConstWithItsReasonUnlessAlreadySet()
+    {
+        await using ShellApp app = await StartWithEveryMemberAsync();
+        Variable variable = app.Session.Project.Classes[0].Variables[^1];
+        variable.Modifiers = VariableModifiers.None;
+        app.Shell.TreeSelection = variable;
+        HeadlessDriver.Pump();
+
+        CheckBox check = Assert.IsType<CheckBox>(app.Ui.Tree.FindControls(new AutomationQuery(AutomationIds.VariableInspectorConst)).Select(pair => pair.Control).First());
+        TextBlock reason = Assert.IsType<TextBlock>(app.Ui.Tree.FindControls(new AutomationQuery(AutomationIds.VariableInspectorConstReason)).Select(pair => pair.Control).First());
+        Assert.False(check.IsEffectivelyEnabled);
+        Assert.Contains("P3b", reason.Text, StringComparison.Ordinal);
+
+        variable.Modifiers = VariableModifiers.Const;
+        HeadlessDriver.Pump();
+
+        Assert.True(check.IsEffectivelyEnabled);
+        Assert.True(check.IsChecked);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task TheTreeCommandsAddAndRemoveMembersAndOpenTheirGraphs()
     {
         await using ShellApp app = await StartWithEveryMemberAsync();

@@ -582,7 +582,8 @@ its public members appear.
 - **FR-012**: Opening a graph MUST open it as a document tab or activate its existing tab; tabs MUST support
   reorder, close (button, middle-click, Ctrl+W), next and previous (Ctrl+Tab, Ctrl+Shift+Tab).
 - **FR-013**: The inspector MUST show the current selection of the active tree or graph: class, method,
-  constructor, variable or event entry.
+  constructor, variable or event entry. The variable inspector's Const checkbox is disabled, with its reason shown,
+  until member defaults land (P3b); a Const already set can be turned off, and a build reports it as `NPT009`.
 - **FR-014**: The Errors tab MUST list the compile diagnostics, and activating one MUST open its graph and select
   its node; the Output tab MUST show build output and the running program's output; the C# tab MUST show the
   generated C# of the active graph's class.

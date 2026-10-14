@@ -87,7 +87,8 @@ public sealed class ClassTranslator
 Translation codes: `NPT001` cross-entry data flow, `NPT002` duplicate method/entry name, `NPT003`
 graph contains nodes of a missing extension, `NPT004` local variable name conflict, `NPT005` emitter
 failure, `NPT006` no translator for node type, `NPT007` invalid emitter output, `NPT008` a required
-input pin has no connection, default or unconnected value (R1-01/R1-02).
+input pin has no connection, default or unconnected value (R1-01/R1-02), `NPT009` a variable is Const
+(unsupported until member defaults land, P3b).
 
 Invariant: `Translate(cls).Code` is byte-identical to the P0 `TranslateClass(cls)` for every class
 without events/locals/emitters (DF-T01) and identical whether or not the map is built (RC-T06). The file

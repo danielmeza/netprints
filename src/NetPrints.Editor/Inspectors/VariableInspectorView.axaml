@@ -18,7 +18,10 @@
     <TextBlock Grid.Row="3" Classes="inspectorLabel" Text="Read-only" />
     <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding IsReadOnly}" />
     <TextBlock Grid.Row="4" Classes="inspectorLabel" Text="Const" />
-    <CheckBox Grid.Row="4" Grid.Column="1" IsChecked="{Binding IsConst}" />
+    <StackPanel Grid.Row="4" Grid.Column="1">
+      <CheckBox IsChecked="{Binding IsConst}" IsEnabled="{Binding CanChangeConst}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableInspectorConst}" />
+      <TextBlock Classes="secondary" Text="{Binding ConstReason}" TextWrapping="Wrap" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableInspectorConstReason}" />
+    </StackPanel>
     <TextBlock Grid.Row="5" Classes="inspectorLabel" Text="Static" />
     <CheckBox Grid.Row="5" Grid.Column="1" IsChecked="{Binding IsStatic}" />
     <TextBlock Grid.Row="6" Classes="inspectorLabel" Text="New" />

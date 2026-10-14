@@ -229,6 +229,12 @@ namespace NetPrints.Translator
 
         private TranslatedMember TranslateVariableCore(Variable variable)
         {
+            if (variable.Modifiers.HasFlag(VariableModifiers.Const))
+            {
+                throw new TranslationException(TranslationDiagnosticCodes.ConstVariableUnsupported,
+                    $"Variable '{variable.Name}' is Const, which is unsupported until member defaults land (P3b). Turn Const off in the variable's inspector.");
+            }
+
             List<string> modifiers = new List<string>
             {
                 TranslatorUtil.VisibilityTokens[variable.Visibility],
@@ -247,11 +253,6 @@ namespace NetPrints.Translator
             if (variable.Modifiers.HasFlag(VariableModifiers.New))
             {
                 modifiers.Add(CSharpKeywords.New);
-            }
-
-            if (variable.Modifiers.HasFlag(VariableModifiers.Const))
-            {
-                modifiers.Add("const");
             }
 
             MemberEmitContext emitContext = EmitMember(variable.Class,

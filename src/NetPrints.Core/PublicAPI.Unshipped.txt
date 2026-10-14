@@ -1,5 +1,6 @@
 #nullable enable
 NetPrints.Core.ExperimentalApiIds
+const NetPrints.Translator.TranslationDiagnosticCodes.ConstVariableUnsupported = "NPT009" -> string!
 *REMOVED*NetPrints.Translator.IClassEmitter
 *REMOVED*NetPrints.Translator.IClassEmitter.EmitClass(NetPrints.Translator.ClassEmitContext! context) -> void
 *REMOVED*NetPrints.Translator.IClassEmitter.Id.get -> string!

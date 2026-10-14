@@ -392,7 +392,8 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         }
         catch (ClassTranslationFailure failure)
         {
-            var diagnostic = new CodeDiagnostic(CodeDiagnosticSeverity.Error, TranslationDiagnosticCodes.Unclassified,
+            string code = failure.InnerException is TranslationException coded ? coded.Code : TranslationDiagnosticCodes.Unclassified;
+            var diagnostic = new CodeDiagnostic(CodeDiagnosticSeverity.Error, code,
                 $"{failure.Class.FullName}: {failure.Message}", failure.Class.FullName, null, null, null, null);
             ReportBuild(false, SetBuildOutcome(project, [diagnostic], false, null));
             return false;

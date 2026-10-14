@@ -43,4 +43,8 @@ public static class TranslationDiagnosticCodes
     /// has no incoming connection, default value or unconnected value to emit: a graph left in a
     /// half-edited state.</summary>
     public const string UnsetRequiredInput = "NPT008";
+
+    /// <summary>A variable has the <c>Const</c> modifier, which cannot be emitted until member defaults land
+    /// (P3b): a <c>const</c> with no value is CS0145, and it also clashes with the other modifiers and accessors.</summary>
+    public const string ConstVariableUnsupported = "NPT009";
 }

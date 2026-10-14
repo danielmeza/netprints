@@ -37,6 +37,12 @@ public static class AutomationIds
     /// <summary>The refused-name message of the variable inspector.</summary>
     public const string VariableInspectorError = "Inspectors.Variable.Error";
 
+    /// <summary>The Const checkbox of the variable inspector.</summary>
+    public const string VariableInspectorConst = "Inspectors.Variable.Const";
+
+    /// <summary>The reason the Const checkbox of the variable inspector is disabled.</summary>
+    public const string VariableInspectorConstReason = "Inspectors.Variable.ConstReason";
+
     /// <summary>The event graph inspector pane.</summary>
     public const string EventGraphInspector = "Inspector.EventGraph";
 
