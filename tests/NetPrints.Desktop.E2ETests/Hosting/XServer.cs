@@ -31,8 +31,8 @@ public sealed class XServer : IAsyncLifetime
 
     public string DisplayName => ":" + Display.ToString(CultureInfo.InvariantCulture);
 
-    /// <summary>A private home for the editor and GTK (settings, recent files), deleted at the end.</summary>
-    public string Home { get; } = Directory.CreateTempSubdirectory("netprints-e2e-home-").FullName;
+    /// <summary>A private home for the editor and GTK (settings, recent files): created by <see cref="InitializeAsync"/> and deleted by <see cref="DisposeAsync"/>, so a server that is never started leaves no folder behind.</summary>
+    public string Home { get; } = Path.Combine(Path.GetTempPath(), "netprints-e2e-home-" + Guid.NewGuid().ToString("N"));
 
     /// <summary>
     /// The environment of every process on this display: the private DISPLAY, no D-Bus session
@@ -193,7 +193,7 @@ public sealed class XServer : IAsyncLifetime
         {
             Directory.Delete(Home, true);
         }
-        catch (IOException)
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
             // Best effort.
         }

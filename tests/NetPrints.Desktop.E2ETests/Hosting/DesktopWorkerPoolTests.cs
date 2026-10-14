@@ -9,6 +9,14 @@ namespace NetPrints.Desktop.E2ETests.Hosting;
 public sealed class DesktopWorkerPoolTests
 {
     [Fact]
+    public void AServerThatIsNeverStartedLeavesNoHomeFolder()
+    {
+        var server = new XServer();
+
+        Assert.False(Directory.Exists(server.Home));
+    }
+
+    [Fact]
     public async Task RentAsyncReturnsTheWorkerWhenStartingFails()
     {
         var pool = new DesktopWorkerPool();
