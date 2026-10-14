@@ -8,23 +8,19 @@ namespace NetPrints.Editor.Inspectors;
 /// <summary>The class inspector: the class's name, namespace, visibility and modifiers, and its generated code.</summary>
 public sealed class ClassInspectorViewModel : ObservableObject
 {
-    private readonly Action markDirty;
     private readonly UndoRedoStack undoRedo;
 
     /// <summary>Creates the inspector of a class.</summary>
     /// <param name="cls">The class.</param>
     /// <param name="codeView">The read-only C# code view of the class.</param>
-    /// <param name="markDirty">Called after an edit, to mark the class dirty.</param>
-    /// <param name="undoRedo">The class's undo stack, which records visibility and modifier edits.</param>
-    public ClassInspectorViewModel(ClassGraph cls, CodeViewViewModel codeView, Action markDirty, UndoRedoStack undoRedo)
+    /// <param name="undoRedo">The class's undo stack, which records name, namespace, visibility and modifier edits.</param>
+    public ClassInspectorViewModel(ClassGraph cls, CodeViewViewModel codeView, UndoRedoStack undoRedo)
     {
         ArgumentNullException.ThrowIfNull(cls);
         ArgumentNullException.ThrowIfNull(codeView);
-        ArgumentNullException.ThrowIfNull(markDirty);
         ArgumentNullException.ThrowIfNull(undoRedo);
         Class = cls;
         CodeView = codeView;
-        this.markDirty = markDirty;
         this.undoRedo = undoRedo;
     }
 
@@ -51,11 +47,13 @@ public sealed class ClassInspectorViewModel : ObservableObject
         {
             if (Class.Name != value)
             {
-                Class.Name = value;
-                markDirty();
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(Title));
-                OnPropertyChanged(nameof(FullName));
+                undoRedo.Do(EditorCommands.SetMemberProperty("Rename class", value, () => Class.Name, name =>
+                {
+                    Class.Name = name;
+                    OnPropertyChanged(nameof(Name));
+                    OnPropertyChanged(nameof(Title));
+                    OnPropertyChanged(nameof(FullName));
+                }));
             }
         }
     }
@@ -68,10 +66,12 @@ public sealed class ClassInspectorViewModel : ObservableObject
         {
             if (Class.Namespace != value)
             {
-                Class.Namespace = value;
-                markDirty();
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(FullName));
+                undoRedo.Do(EditorCommands.SetMemberProperty("Set namespace", value, () => Class.Namespace, space =>
+                {
+                    Class.Namespace = space;
+                    OnPropertyChanged(nameof(Namespace));
+                    OnPropertyChanged(nameof(FullName));
+                }));
             }
         }
     }

@@ -16,7 +16,7 @@ public class ShellEditingTests
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
-    public async Task TheClassInspectorRenamesTheClassAsTypedAndShowsItsGeneratedCode()
+    public async Task TheClassInspectorRenamesTheClassOnCommitAndShowsItsGeneratedCode()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var tree = session.Page.Tree;
@@ -27,7 +27,8 @@ public class ShellEditingTests
         await inspector.ClassName.ClickAsync(Token);
         await session.Driver.PressAsync("Ctrl+A", Token);
         await session.Driver.TypeAsync("Renamed", Token);
-        Assert.Equal("Renamed", session.Class.Name); // updates as typed
+        await session.Driver.PressAsync("Tab", Token); // commits on lost focus: one undo step per rename
+        Assert.Equal("Renamed", session.Class.Name);
 
         // The code view follows CodeAnalysisHost's real-time debounce in this composition: wait for it instead of a virtual clock.
         await inspector.ClassCodeView.WaitUntilAsync(e => (e.Text ?? "").Contains("class Renamed"), "generated code", Token);

@@ -1,4 +1,5 @@
 using NetPrints.Core;
+using NetPrints.Editor.Inspectors;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Editor.UndoRedo;
@@ -150,6 +151,27 @@ public sealed class MemberPropertyUndoTests : IDisposable
     public void AClassVisibilityEditIsOneUndoStep()
     {
         AssertUndoable(() => cls.Visibility, cls.Visibility, MemberVisibility.Public, () => context.ClassInspector.Visibility = MemberVisibility.Public);
+    }
+
+    [Fact]
+    public void AClassNameEditIsOneUndoStepAndRefreshesTheTitle()
+    {
+        List<string?> changed = [];
+        context.ClassInspector.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        AssertUndoable(() => cls.Name, "C", "Renamed", () => context.ClassInspector.Name = "Renamed");
+
+        Assert.Equal(4, changed.Count(name => name == nameof(ClassInspectorViewModel.Name)));
+        Assert.Equal(4, changed.Count(name => name == nameof(ClassInspectorViewModel.Title)));
+        Assert.Equal("C", context.ClassInspector.Title);
+    }
+
+    [Fact]
+    public void AClassNamespaceEditIsOneUndoStep()
+    {
+        AssertUndoable(() => cls.Namespace, "N", "Other.Space", () => context.ClassInspector.Namespace = "Other.Space");
+
+        Assert.Equal("N.C", context.ClassInspector.FullName);
     }
 
     [Theory]

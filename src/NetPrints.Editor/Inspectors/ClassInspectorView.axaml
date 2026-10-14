@@ -13,9 +13,9 @@
     </Grid.ColumnDefinitions>
     <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
     <TextBlock x:Name="NameLabel" Grid.Row="1" Text="Name" Classes="inspectorLabel" />
-    <TextBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassInspectorName}" AutomationProperties.LabeledBy="{Binding #NameLabel}" Grid.Row="1" Grid.Column="1" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+    <TextBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassInspectorName}" AutomationProperties.LabeledBy="{Binding #NameLabel}" Grid.Row="1" Grid.Column="1" Text="{Binding Name, UpdateSourceTrigger=LostFocus}" />
     <TextBlock x:Name="NamespaceLabel" Grid.Row="2" Text="Namespace" Classes="inspectorLabel" />
-    <TextBox AutomationProperties.LabeledBy="{Binding #NamespaceLabel}" Grid.Row="2" Grid.Column="1" Text="{Binding Namespace, UpdateSourceTrigger=PropertyChanged}" />
+    <TextBox AutomationProperties.LabeledBy="{Binding #NamespaceLabel}" Grid.Row="2" Grid.Column="1" Text="{Binding Namespace, UpdateSourceTrigger=LostFocus}" />
     <TextBlock x:Name="VisibilityLabel" Grid.Row="3" Text="Visibility" Classes="inspectorLabel" />
     <ComboBox AutomationProperties.LabeledBy="{Binding #VisibilityLabel}" Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding PossibleVisibilities}" SelectedItem="{Binding Visibility}" />
     <TextBlock x:Name="SealedLabel" Grid.Row="4" Text="Sealed" Classes="inspectorLabel" />
