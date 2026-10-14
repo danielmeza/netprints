@@ -122,6 +122,8 @@ public sealed class GuideScreenshotTests(DesktopWorkerPool pool) : ProjectEditor
             await AddAVariableAsync(token);
             await Shell.Tree.SelectAsync(Shell.Tree.Method(MethodName), token);
             await Shell.Inspector.MethodInspector.WaitVisibleAsync(token);
+            await Shell.WaitUntilAsync(e => e.Text?.Contains("HelloWorld*", StringComparison.Ordinal) == true, "the marker after the project name in the title", token);
+            Assert.Equal("Main* – HelloWorld* – NetPrints", await Shell.TitleAsync(token));
             await ShootAsync("unsaved-marker", token);
             var prompt = new UnsavedChangesDialogPage(Driver);
             await Shell.CloseWindowAsync(token);

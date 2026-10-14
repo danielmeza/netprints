@@ -1306,7 +1306,7 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
   `NETPRINTS_GUIDE_SHOTS=1`, skipped with a stated reason otherwise) drives a copy of the sample through each guide's
   states and writes PNGs to `website/static/img/guide/editor/`. `scripts/guide-screenshots.sh` builds, starts its own
   Xvfb display (never `:1`), runs the class and lists the files. Run it and commit the images.
-- [ ] T103 [P] `docs/guide/editor/_category_.json`, `shell.md` (layout, panels, docking, floating, Reset layout) and
+- [x] T103 [P] `docs/guide/editor/_category_.json`, `shell.md` (layout, panels, docking, floating, Reset layout) and
   `start-page.md` (recent projects, templates, samples, what's new), each with T102 screenshots and every claim checked
   against the running editor.
 - [ ] T104 [P] `docs/guide/editor/saving-and-recovery.md` (markers, the prompt, backups and where they live, recovery,
