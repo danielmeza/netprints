@@ -284,7 +284,7 @@ public class ContactSheetTests
             }
         }
 
-        return [new ContactSection("Panels (top-left 700x525, so each shows its empty state or content), documents and dialogs", grid), new ContactSection("Owner calls (graph, Dark 1.0) and the product mark", strip)];
+        return [new ContactSection("Panels (top-left 700x525, so each shows its empty state or content), documents and dialogs", grid), new ContactSection("The new defaults against Classic Dark (same graph, both Dark 1.0; Classic Dark is a test-only override until P3) and the product mark", strip)];
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
@@ -363,11 +363,11 @@ public class ContactSheetTests
             void Card(ResourceDictionary resources) => resources["Node.CardBackground"] = new SolidColorBrush(Color.Parse("#AA202020"));
             (string Label, Action<ResourceDictionary> Overrides)[] calls =
             [
-                ("As it ships", _ => { }),
-                ("Triangle type pins", Triangle),
-                ("Canvas #000", Canvas),
-                ("Card #AA202020", Card),
-                ("Triangle, canvas and card", resources => { Triangle(resources); Canvas(resources); Card(resources); }),
+                ("New defaults (Dark): diamond pins, canvas #262626, card #D9141414", _ => { }),
+                ("Classic Dark, pins only: triangle", Triangle),
+                ("Classic Dark, canvas only: #000", Canvas),
+                ("Classic Dark, card only: #AA202020", Card),
+                ("Classic Dark, all three: triangle, #000, #AA202020", resources => { Triangle(resources); Canvas(resources); Card(resources); }),
             ];
             List<ContactTile> strip = [];
             foreach ((string label, Action<ResourceDictionary> overrides) in calls)
