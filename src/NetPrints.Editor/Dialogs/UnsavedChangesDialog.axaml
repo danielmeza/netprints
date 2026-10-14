@@ -19,7 +19,7 @@
     <ctl:DialogShell.Actions>
       <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.UnsavedCancelButton}" Content="Cancel" Classes="dialogAction" IsCancel="True" Command="{Binding CancelCommand}" />
       <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.UnsavedDontSaveButton}" Content="Don't save" Classes="dialogAction" Command="{Binding DontSaveCommand}" />
-      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.UnsavedSaveAllButton}" Content="Save all" Classes="dialogAction accent" IsDefault="True" Command="{Binding SaveAllCommand}" />
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.UnsavedSaveAllButton}" Content="Save all" Classes="dialogAction Primary" Theme="{DynamicResource SolidButton}" IsDefault="True" Command="{Binding SaveAllCommand}" />
     </ctl:DialogShell.Actions>
     <StackPanel Spacing="{StaticResource Space.S.Size}">
       <TextBlock Text="These files have changes that are not saved:" TextWrapping="Wrap" />

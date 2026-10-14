@@ -41,7 +41,7 @@
                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NewProjectMessage}" />
     <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
       <Button Content="Cancel" MinWidth="80" IsCancel="True" Command="{Binding CancelCommand}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NewProjectCancel}" />
-      <Button Content="Create" MinWidth="80" Classes="accent" IsDefault="True" Command="{Binding CreateCommand}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NewProjectCreate}" />
+      <Button Content="Create" MinWidth="80" Classes="Primary" Theme="{DynamicResource SolidButton}" IsDefault="True" Command="{Binding CreateCommand}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NewProjectCreate}" />
     </StackPanel>
   </Grid>
 </Window>

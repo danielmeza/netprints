@@ -2,6 +2,8 @@ using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Media;
+using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Compilation;
@@ -75,6 +77,38 @@ public class DialogShellTests
         Assert.False(string.IsNullOrWhiteSpace(shell.Title));
         Assert.Equal(window.Title, shell.Title);
         Assert.Equal(row.IconId, shell.IconId);
+    }
+
+    public static TheoryData<string, string> MultiButtonNamesByVariant()
+    {
+        TheoryData<string, string> data = [];
+        foreach (Row row in Rows.Values.Where(row => row.CancelFirst.Length > 1))
+        {
+            data.Add(row.Name, "Dark");
+            data.Add(row.Name, "Light");
+        }
+
+        return data;
+    }
+
+    [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]
+    [MemberData(nameof(MultiButtonNamesByVariant))]
+    public void TheDefaultButtonLooksDifferentFromTheOthers(string name, string variant)
+    {
+        Row row = Rows[name];
+        using var ui = HeadlessUi.Create();
+        Window window = ui.Show(row.Create());
+        window.RequestedThemeVariant = variant == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light;
+        HeadlessDriverPump();
+
+        Button[] buttons = [.. ShellOf(window).SortedActions.OfType<Button>()];
+        Button defaultButton = Assert.Single(buttons, button => AutomationProperties.GetAutomationId(button) == row.DefaultId);
+        var defaultBackground = Assert.IsAssignableFrom<ISolidColorBrush>(defaultButton.Background);
+        foreach (Button other in buttons.Where(button => button != defaultButton))
+        {
+            var otherBackground = Assert.IsAssignableFrom<ISolidColorBrush>(other.Background);
+            Assert.NotEqual(otherBackground.Color, defaultBackground.Color);
+        }
     }
 
     [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]

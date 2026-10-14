@@ -19,7 +19,7 @@
     <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
       <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SampleTargetCancelButton}" Content="Cancel" MinWidth="80" IsCancel="True" Command="{Binding CancelCommand}" />
       <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SampleTargetChangeButton}" Content="Change…" MinWidth="80" Command="{Binding ChangeCommand}" />
-      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SampleTargetOpenButton}" Content="Copy and open" MinWidth="80" Classes="accent" IsDefault="True" Command="{Binding CopyAndOpenCommand}" />
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SampleTargetOpenButton}" Content="Copy and open" MinWidth="80" Classes="Primary" Theme="{DynamicResource SolidButton}" IsDefault="True" Command="{Binding CopyAndOpenCommand}" />
     </StackPanel>
   </Grid>
 </Window>

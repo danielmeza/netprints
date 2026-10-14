@@ -18,8 +18,8 @@
   <ctl:DialogShell Title="{Binding $parent[Window].Title}" IconId="{x:Static icons:IconIds.DialogTrust}">
     <ctl:DialogShell.Actions>
       <!-- Not loading is the default as well as the cancel: Enter never trusts a project by accident. -->
-      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustDontLoadButton}" Content="Don't load" Classes="dialogAction" IsDefault="True" IsCancel="True" Command="{Binding DontLoadCommand}" />
-      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustButton}" Content="Trust" Classes="dialogAction accent" Command="{Binding TrustCommand}" />
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustDontLoadButton}" Content="Don't load" Classes="dialogAction Primary" Theme="{DynamicResource SolidButton}" IsDefault="True" IsCancel="True" Command="{Binding DontLoadCommand}" />
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustButton}" Content="Trust" Classes="dialogAction" Command="{Binding TrustCommand}" />
     </ctl:DialogShell.Actions>
     <Grid RowDefinitions="Auto,Auto" RowSpacing="{StaticResource Space.M.Size}">
       <TextBlock x:Name="Prompt" TextWrapping="Wrap" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustPrompt}" Text="{Binding Prompt}" />
