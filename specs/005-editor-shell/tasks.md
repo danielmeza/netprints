@@ -1259,7 +1259,7 @@ re-baselines the snapshots it changes (open every PNG).
   on each review thread with the fixing commit or the reason for deferral, and attach a new contact sheet to the reply
   when a fix changes what it shows. The owner's three calls are applied here as token values (`Pin.TypeShape`,
   `Canvas.Background` in Dark, `Node.CardBackground`) with `PinContrastTests` and `CanvasPaletteTests` green, the
-  unchosen type-pin geometry is removed, and the canvas snapshots are re-baselined; whole suite plus the E2E run, commit; if the review had no findings, tick this
+  both type-pin geometries stay as `Pin.TypeShape` values (owner, 2026-10-13: themes pick either), and the canvas snapshots are re-baselined; whole suite plus the E2E run, commit; if the review had no findings, tick this
   task with "no findings". The next sub-phase starts only after this batch is green on CI.
 
 ---

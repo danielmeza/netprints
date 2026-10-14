@@ -2598,3 +2598,21 @@ correct, with no finding. Suggested fix batches for T101:
   from a generic method had no type pins, and a generic return threw `InvalidCastException`. Green: the pins, and a project
   that drops the call, builds and runs (`42`).
 - **AGENTS.md and CONTRIBUTING.md** no longer tell agents to add attribution trailers or a footer.
+
+## G-F4a (T101; T101 stays open)
+
+- **Palette defaults** (owner delegated, coordinator chose; both geometries stay as `Pin.TypeShape` values):
+  - type pins: `Pin.TypeShape` triangle -> diamond;
+  - Dark `Canvas.Background` #FF000000 -> #FF262626;
+  - Dark `Node.CardBackground` #AA202020 -> #D9141414 (card over canvas 1.185:1);
+  - Light `Node.CardBackground` #AAF0F0F0 -> #AAE4E4E4: the old Light card separated by 1.09:1, under the new 1.15:1 test;
+  - wire opacity: the literal 0.7 in `NetPrints.Connection` -> the shared `Wire.Opacity` token at 0.78.
+  - Red: the Dark Bool and Delegate wires on the canvas were 2.76 and 2.77 at #262626 and 0.7; the separation test read 1.051 (Dark) and 1.090 (Light).
+- **Canvas surface**: the Dock document surface (`DockSurfaceEditorBrush`) follows `Canvas.Background`, so no seam shows around
+  the canvas; `SystemRegionColor` is unchanged. `CanvasDetailTests`, `GridRenderTests` and `ShellAdapterTests` assert that;
+  `TargetPinSelfViewTests` composites the card over the canvas token. The T098b overrides keep the old values (triangle,
+  #000, #AA202020).
+- **G-R5** (CIEDE2000 >= 12 for every pair, computed in `PinDistinctnessTests`): Dark Generic #4DB6AC -> #7986CB, Light
+  Generic #006F62 -> #3949AB, Light Type #C62828 -> #6D4C41, Light Object #4A616B -> #566870 (it was 11.7 from Integer).
+  Red: Light Type/Bool 3.2, Light Integer/Generic 10.3, Light Integer/Object 11.7, Dark Integer/Generic 11.4. Closest pairs now:
+  Dark 16.0, Light 13.1.
