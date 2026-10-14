@@ -274,6 +274,7 @@ namespace NetPrints.Tests.Characterization
 
             foreach (ClassGraph cls in project.Classes)
             {
+                Register(cls);
                 RegisterNode(cls.ReturnNode);
 
                 foreach (Variable variable in cls.Variables)

@@ -23,6 +23,8 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
     private static readonly string ValueTaskName = TypeSpecifier.FromType<ValueTask>().Name;
 
     private readonly INotifyPropertyChanged nodeNotifier;
+
+    private readonly ClassGraph? ownerClass;
     private readonly ObservableViewModelCollection<NodePinViewModel, NodeInputExecPin> inputExecPins;
     private readonly ObservableViewModelCollection<NodePinViewModel, NodeInputDataPin> inputDataPins;
     private readonly ObservableViewModelCollection<NodePinViewModel, NodeInputTypePin> inputTypePins;
@@ -56,6 +58,12 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
         if (node.Graph is INotifyPropertyChanged graphNotifier)
         {
             graphNotifier.PropertyChanged += OnGraphPropertyChanged;
+        }
+
+        if (node is ConstructorEntryNode { ConstructorGraph.Class: { } owner })
+        {
+            ownerClass = owner;
+            owner.PropertyChanged += OnClassPropertyChanged;
         }
 
         UpdateOverloads();
@@ -546,6 +554,14 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
 
     private void OnInputTypeChanged(object? sender, EventArgs e) => OnPropertyChanged(nameof(Label));
 
+    private void OnClassPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ClassGraph.Name))
+        {
+            OnPropertyChanged(nameof(Label));
+        }
+    }
+
     private void OnGraphPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(MethodGraph.Name) && Node is MethodEntryNode)
@@ -602,6 +618,11 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
         if (Node.Graph is INotifyPropertyChanged graphNotifier)
         {
             graphNotifier.PropertyChanged -= OnGraphPropertyChanged;
+        }
+
+        if (ownerClass is not null)
+        {
+            ownerClass.PropertyChanged -= OnClassPropertyChanged;
         }
 
         foreach (var collection in new IDisposable[] { inputExecPins, inputDataPins, inputTypePins, outputExecPins, outputDataPins, outputTypePins })

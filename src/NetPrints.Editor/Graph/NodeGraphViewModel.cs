@@ -29,6 +29,8 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
     private readonly HashSet<NodeViewModel> subscribedNodes = [];
     private readonly Dictionary<(NodePin Source, NodePin Target), ConnectionViewModel> connectionsByPins = [];
 
+    private readonly ClassGraph? ownerClass;
+
     /// <summary>
     /// Wraps <paramref name="graph"/>: builds its node view models, subscribes to reflection reload,
     /// creates its search and Get/Set chooser view models, and builds the initial connections.
@@ -50,7 +52,13 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
             graphNotifier.PropertyChanged += OnGraphPropertyChanged;
         }
 
-        Search = new SuggestionListViewModel(this);
+        if (graph is ConstructorGraph { Class: { } owner })
+        {
+            ownerClass = owner;
+            owner.PropertyChanged += OnGraphPropertyChanged;
+        }
+
+        Search =new SuggestionListViewModel(this);
         GetSetChooser = new GetSetChooserViewModel(this);
 
         RebuildConnections();
@@ -131,7 +139,7 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
 
     private void OnGraphPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(MethodGraph.Name) or nameof(EventGraph.Name))
+        if (e.PropertyName is nameof(MethodGraph.Name) or nameof(EventGraph.Name) or nameof(ClassGraph.Name))
         {
             OnPropertyChanged(nameof(Name));
         }
@@ -560,6 +568,11 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
         if (Graph is INotifyPropertyChanged graphNotifier)
         {
             graphNotifier.PropertyChanged -= OnGraphPropertyChanged;
+        }
+
+        if (ownerClass is not null)
+        {
+            ownerClass.PropertyChanged -= OnGraphPropertyChanged;
         }
 
         Nodes.CollectionChanged -= OnNodesChanged;

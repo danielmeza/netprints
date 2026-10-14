@@ -1,4 +1,20 @@
 {
+  "NetPrints.Core.ClassGraph": {
+    "Class": [],
+    "Constructors": [],
+    "DeclaredGenericArguments": [],
+    "EventGraphs": [],
+    "Methods": [],
+    "Modifiers": [],
+    "Name": [
+      "Name"
+    ],
+    "Namespace": [],
+    "PreservedDocumentState": [],
+    "Project": [],
+    "Variables": [],
+    "Visibility": []
+  },
   "NetPrints.Core.ConstructorGraph": {
     "Class": [],
     "PreservedDocumentState": [],

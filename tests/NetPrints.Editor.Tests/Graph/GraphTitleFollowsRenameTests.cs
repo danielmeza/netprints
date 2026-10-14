@@ -70,4 +70,23 @@ public sealed class GraphTitleFollowsRenameTests : IDisposable
         Assert.Equal(oldName, graph.Name);
         Assert.Contains(nameof(NodeGraphViewModel.Name), raised);
     }
+
+    [Fact]
+    public void TheLabelOfAConstructorFollowsTheClassRename()
+    {
+        ConstructorGraph constructor = context.CreateConstructor();
+        using var graph = new NodeGraphViewModel(constructor, context.Services);
+        List<string?> raised = Watch(graph);
+
+        context.ClassInspector.Name = "Renamed";
+
+        Assert.Equal("Renamed", graph.Name);
+        Assert.Contains(nameof(NodeGraphViewModel.Name), raised);
+
+        raised.Clear();
+        context.UndoRedo.Undo();
+
+        Assert.Equal("C", graph.Name);
+        Assert.Contains(nameof(NodeGraphViewModel.Name), raised);
+    }
 }

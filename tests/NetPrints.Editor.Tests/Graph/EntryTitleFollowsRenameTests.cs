@@ -75,4 +75,24 @@ public sealed class EntryTitleFollowsRenameTests : IDisposable
         Assert.Equal(oldTitle, entryViewModel.Label);
         Assert.Contains(nameof(NodeViewModel.Label), raised);
     }
+
+    [Fact]
+    public void TheTitleOfAConstructorEntryFollowsTheClassName()
+    {
+        ConstructorGraph constructor = context.CreateConstructor();
+        using var graph = new NodeGraphViewModel(constructor, context.Services);
+        NodeViewModel entryViewModel = graph.Nodes.Single(n => n.Node == constructor.EntryNode);
+        List<string?> raised = Watch(entryViewModel);
+
+        context.ClassInspector.Name = "Renamed";
+
+        Assert.Equal("Renamed Constructor Entry", entryViewModel.Label);
+        Assert.Contains(nameof(NodeViewModel.Label), raised);
+
+        raised.Clear();
+        context.UndoRedo.Undo();
+
+        Assert.Equal("C Constructor Entry", entryViewModel.Label);
+        Assert.Contains(nameof(NodeViewModel.Label), raised);
+    }
 }

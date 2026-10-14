@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Graph;
 
 namespace NetPrints.Core
@@ -86,6 +87,7 @@ namespace NetPrints.Core
     /// Class graph type. Contains methods, attributes and other common things usually associated
     /// with classes.
     /// </summary>
+    [INotifyPropertyChanged]
     public partial class ClassGraph : NodeGraph, ITypeDeclaration
     {
         /// <summary>
@@ -144,7 +146,8 @@ namespace NetPrints.Core
         /// <summary>
         /// Name of the class without namespace.
         /// </summary>
-        public string Name { get; set; } = string.Empty;
+        [ObservableProperty]
+        public partial string Name { get; set; }
 
         /// <summary>
         /// Name of the class with namespace if any.
@@ -183,6 +186,7 @@ namespace NetPrints.Core
         /// </summary>
         public ClassGraph()
         {
+            Name = string.Empty;
             _ = new ClassReturnNode(this);
         }
 
