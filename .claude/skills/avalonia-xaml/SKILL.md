@@ -161,9 +161,14 @@ from a VM, as `SelectTypeDialogViewModel.ResolveSelection` does; the view doesn'
   the row `Background="Transparent"` (E2 allows it for this reason).
 - Headless tests have no window manager, real cursor or OS drag and drop (see `UiCapabilities`). A test that needs
   them belongs in the Desktop E2E project.
+- In the Desktop E2E project, the items of a popup menu stay in the automation tree after the menu closes, so wait
+  for the next state (a settle), not for the items to be hidden. A click on a node search row can be lost while the
+  status bar shows the reference reload: wait for `AutomationIds.ShellBusy` to be hidden first, and confirm with Enter.
 
 ## Before you finish a XAML change
 
 1. `dotnet build -v q -tl:off --nologo`. Compiled bindings report broken paths here.
 2. `dotnet build tests/NetPrints.Core.Tests -v q -tl:off --nologo`, then `tests/NetPrints.Core.Tests/bin/Debug/net10.0/NetPrints.Core.Tests -class '*XamlHygieneTests'` and the VM tests for any command you added; fix and re-run until green.
-3. The PR lists each Default rule you deviated from, and why.
+3. A view the editor guides show (`docs/guide/editor`) changes the screenshots: run `scripts/guide-screenshots.sh`, read every
+   image that changed and correct the guide text that no longer matches.
+4. The PR lists each Default rule you deviated from, and why.

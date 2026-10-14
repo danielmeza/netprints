@@ -2,9 +2,10 @@
 
 ## Status
 
-Accepted (2026-10-01, P3a spec `specs/005-editor-shell/`, research R2). Spike gate passed on 2026-10-01 (batch C1, T030-T032): all five
-checks pass, so the shell is built on Dock.Avalonia 12.1.0.6. Check 2 needed a workaround (below); results and evidence are in
-`specs/005-editor-shell/implementation-notes.md`, "Spike".
+Accepted (2026-10-01, P3a spec `specs/005-editor-shell/`, research R2) and implemented in P3a. Spike gate passed on 2026-10-01 (batch C1,
+T030-T032): all five checks pass, so the shell is built on Dock.Avalonia 12.1.0.6. Check 2 needed a workaround (below); results and
+evidence are in `specs/005-editor-shell/implementation-notes.md`, "Spike". What a user sees of the decision, floating tabs and panels,
+Dock tab and Reset layout, is in [the editor window guide](../guide/editor/shell.md).
 
 Spike outcome, amendments to the decisions below (the first one decided in batch C2):
 

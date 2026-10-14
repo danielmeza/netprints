@@ -7,7 +7,7 @@
 | `NetPrints.Core.Tests` | The model, serialization, translation and the repository rules (`SourceHygieneTests`, golden fixtures). |
 | `NetPrints.Catalog.Tests` | The type catalog and its annotations. |
 | `NetPrints.Cli.Tests` | The `netprints` command line, in process (`CliTestHost`); some tests run the real tool or the real project system as child processes. |
-| `NetPrints.Editor.Tests` | Editor view models and hosting services, over fakes (no window). |
+| `NetPrints.Editor.Tests` | Editor view models and hosting services, over fakes (no window), and the checks of the editor guides ([below](#documentation-checks-and-guide-screenshots)). |
 | `NetPrints.Editor.UITests` | The editor's views, headless (Avalonia headless platform), through page objects and `AutomationIds`. |
 | `NetPrints.Desktop.E2ETests` | The real desktop editor on a private X11 display (Linux only). |
 | `NetPrints.Testing`, `NetPrints.Testing.Ui` | Shared fixtures, the driver abstraction, page objects and the Screenplay layer; not tests themselves. |
@@ -84,6 +84,39 @@ The step names are the `using (Step("..."))` blocks of the scenarios. The step i
 one that records a checkpoint (`start`, `open project`, `edit graph`, `run`, `create project`, `add references`). `compile` and the nested
 `wait for worker` (timed inside `start`) have none, and forcing a step that was never held fails the scenario loudly. The variable is for manual runs only: set for a whole
 run, it would hold that step in every test.
+
+## Documentation checks and guide screenshots
+
+The editor guides live in `docs/guide/editor/` and their screenshots in `website/static/img/guide/editor/`. Two tests in
+`NetPrints.Editor.Tests` keep them honest:
+
+- `ShortcutGuideTests` generates the shortcut table (menu, command, shortcut and where it works) from the command
+  registry and compares it with the table between the `shortcuts:begin` and `shortcuts:end` markers of
+  `docs/guide/editor/commands-and-shortcuts.md`. After a command or a shortcut changes, rewrite the table instead of
+  editing it by hand:
+
+  ```bash
+  NETPRINTS_UPDATE_SNAPSHOTS=1 dotnet test --project tests/NetPrints.Editor.Tests -c Release --no-build --no-progress --no-ansi -- --filter-class '*ShortcutGuideTests'
+  ```
+
+- `GuidePagesTests` checks that each of the six guide pages exists, shows at least one screenshot, and that every PNG a
+  page references is in the images folder.
+
+The screenshots come from `GuideScreenshotTests`, a scenario of the Desktop E2E project that drives the real editor on a
+private X11 display with the HelloWorld sample copied to a neutral folder under the system temporary folder, so no
+screenshot shows your own paths. It is an explicit test (`[Fact(Explicit = true)]`): a normal run, and CI's
+`--fail-skips on` run, neither run it nor fail for it. Regenerate the images with the script, which builds the project,
+picks a free display from `:100` up and lists the files it wrote:
+
+```bash
+scripts/guide-screenshots.sh
+```
+
+It needs Xvfb, openbox, xdotool and ImageMagick like the other desktop tests. Look at every image that changed before you
+commit it: a guide may only describe what the screenshot run showed. Add a capture to the class, not a hand-made image.
+
+`scripts/build-docs.sh` builds the whole site (the pages, the DocFX API reference at `/api/` and the JSON Schemas) into
+`website/build`; the `Docs` workflow runs the same script, and a broken link fails the build.
 
 ## Continuous integration
 

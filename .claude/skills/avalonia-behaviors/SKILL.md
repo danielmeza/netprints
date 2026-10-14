@@ -108,6 +108,8 @@ writing a new one, and delete the E7 entry of any handler you migrate.
 2. A VM unit test covers each command the behavior calls; a headless test (`[AvaloniaFact]`) covers the wiring when
    it is more than one line (a trigger with several actions, a custom behavior, a tunnel-routed key).
 3. Build the test project and run `tests/NetPrints.Core.Tests/bin/Debug/net10.0/NetPrints.Core.Tests -class '*XamlHygieneTests'`: E3 fails on a command-shaped handler left in XAML. Fix and re-run until green.
+4. A new or changed shortcut or command changes the shortcut table of the commands guide. Rewrite it from the registry with
+   `NETPRINTS_UPDATE_SNAPSHOTS=1` and `ShortcutGuideTests` (see `docs/contributing/testing.md`), never by hand.
 
 ## Reference files and scripts
 

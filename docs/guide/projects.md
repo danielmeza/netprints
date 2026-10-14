@@ -90,6 +90,39 @@ Panes dock to any side, tab together and float into their own window; a graph ta
 there. Closing a pane hides it, and the View menu lists every panel to show it again; **View › Reset layout**
 restores the default. Opening or creating another project unloads the current one first.
 
+The editor guides cover each part with screenshots: [the editor window](editor/shell.md),
+[the start page](editor/start-page.md), [saving and recovery](editor/saving-and-recovery.md),
+[commands and shortcuts](editor/commands-and-shortcuts.md), [navigation](editor/navigation.md) and
+[event graphs](editor/event-graphs.md).
+
+## Running a project
+
+**Build › Run** (F5, or the Run button) and `netprints run` start your program with
+`dotnet run --project <project>.csproj --no-build` in the project's folder. That is the ordinary `dotnet run`, so it
+reads `Properties/launchSettings.json` when the project has one. NetPrints does not create or edit that file: write it
+by hand, the way you would for any .NET project. A profile can give the program command-line arguments
+(`commandLineArgs`) and environment variables (`environmentVariables`):
+
+```json
+{
+  "profiles": {
+    "MyApp": {
+      "commandName": "Project",
+      "commandLineArgs": "--name one \"two words\"",
+      "environmentVariables": {
+        "MYAPP_MODE": "debug"
+      }
+    }
+  }
+}
+```
+
+With this file the program gets the two arguments `--name`, `one` and `two words`, and `MYAPP_MODE` is set to `debug` in
+its environment. The editor and `netprints run` never choose a profile, so `dotnet run` uses the **first** profile of the
+file: put the one you want first, with `commandName` set to `Project`. Arguments you give `netprints run` after `--`
+replace the profile's `commandLineArgs`, and the profile's environment variables still apply. What the program prints
+appears in the Output panel of the editor, or in the terminal for `netprints run`.
+
 ## Generated code (`.netpc.g.cs`)
 
 Building the project runs the NetPrints generator before compilation. For each graph file

@@ -2,9 +2,10 @@
 
 ## Status
 
-Accepted (2026-10-01, P3a spec `specs/005-editor-shell/`, research R5). Amended 2026-10-01 after batches B1 to B4; see
-"Changes made in implementation". Amended 2026-10-06 by ADR-0021: descriptors name icons by icon id (`IconId`), not
-by icon-kind name.
+Accepted (2026-10-01, P3a spec `specs/005-editor-shell/`, research R5) and implemented in P3a. Amended 2026-10-01 after batches
+B1 to B4; see "Changes made in implementation". Amended 2026-10-06 by ADR-0021: descriptors name icons by icon id (`IconId`), not
+by icon-kind name. The registry is also the source of the shortcut table in [the commands guide](../guide/editor/commands-and-shortcuts.md),
+which a test compares with the registry.
 
 ## Context
 

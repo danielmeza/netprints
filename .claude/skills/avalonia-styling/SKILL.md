@@ -105,3 +105,5 @@ add a class there (D8) when none fits, and name it for its role, not its look (`
    the `contact-sheet` artifact) and read it: panels, start page, graph, dialogs and pickers in Dark and Light at 1.0 and 2.0. Its
    owner-call strip overrides `Pin.TypeShape`, `Canvas.Background` and `Node.CardBackground` on one tile only; the product carries
    no option for them, so don't add one.
+5. The editor guides show the default Dark theme in their screenshots (`docs/guide/editor`). A change that alters the look of a
+   surface they show means `scripts/guide-screenshots.sh` and a look at every image that changed.

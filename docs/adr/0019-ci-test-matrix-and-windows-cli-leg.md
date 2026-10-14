@@ -2,9 +2,14 @@
 
 ## Status
 
-Accepted (2026-10-01, P3a spec `specs/005-editor-shell/`, research R3). Amends the job layout of
+Accepted (2026-10-01, P3a spec `specs/005-editor-shell/`, research R3) and implemented in P3a. Amends the job layout of
 `specs/001-modernize-build/contracts/ci-workflow.md`. The new layout is
 `specs/005-editor-shell/contracts/ci.md`.
+
+One change was made during implementation: the Editor UI (headless) leg runs as two shards, `Test (Editor UI (headless) 1/2)` and
+`2/2`, split by test namespace, because the single leg took about 23 minutes. The aggregate `Build and test (Linux)` is unchanged,
+and a test checks that every test namespace is in exactly one shard. The current jobs are listed in
+[Testing](../contributing/testing.md#continuous-integration).
 
 ## Context
 
