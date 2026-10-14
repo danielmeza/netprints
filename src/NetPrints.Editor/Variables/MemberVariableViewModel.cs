@@ -158,7 +158,7 @@ public sealed partial class MemberVariableViewModel : ObservableObject, IDisposa
     public bool CanChangeConst => IsConst;
 
     /// <summary>Why Const cannot be turned on.</summary>
-    public string ConstReason => "Const is unsupported until member defaults land (P3b).";
+    public string ConstReason => "Const needs a default value, which variables can't have yet.";
 
     private bool Has(VariableModifiers flag) => Modifiers.HasFlag(flag);
 

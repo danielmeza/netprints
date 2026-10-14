@@ -140,7 +140,7 @@ public class MemberVariableViewModelTests : IDisposable
         var variable = vm.Variables.Single();
 
         Assert.False(variable.CanChangeConst);
-        Assert.Contains("P3b", variable.ConstReason, StringComparison.Ordinal);
+        Assert.Equal("Const needs a default value, which variables can't have yet.", variable.ConstReason);
 
         string? before = vm.UndoRedo.UndoName;
 

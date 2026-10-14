@@ -232,7 +232,7 @@ namespace NetPrints.Translator
             if (variable.Modifiers.HasFlag(VariableModifiers.Const))
             {
                 throw new TranslationException(TranslationDiagnosticCodes.ConstVariableUnsupported,
-                    $"Variable '{variable.Name}' is Const, which is unsupported until member defaults land (P3b). Turn Const off in the variable's inspector.");
+                    $"Variable '{variable.Name}' is Const. Const needs a default value, which variables can't have yet. Turn Const off in the variable's inspector.");
             }
 
             List<string> modifiers = new List<string>

@@ -223,7 +223,7 @@ public class FormerActionsReachableTests
         CheckBox check = Assert.IsType<CheckBox>(app.Ui.Tree.FindControls(new AutomationQuery(AutomationIds.VariableInspectorConst)).Select(pair => pair.Control).First());
         TextBlock reason = Assert.IsType<TextBlock>(app.Ui.Tree.FindControls(new AutomationQuery(AutomationIds.VariableInspectorConstReason)).Select(pair => pair.Control).First());
         Assert.False(check.IsEffectivelyEnabled);
-        Assert.Contains("P3b", reason.Text, StringComparison.Ordinal);
+        Assert.Equal("Const needs a default value, which variables can't have yet.", reason.Text);
 
         variable.Modifiers = VariableModifiers.Const;
         HeadlessDriver.Pump();

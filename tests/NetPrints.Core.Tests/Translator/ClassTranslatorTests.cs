@@ -202,7 +202,7 @@ namespace NetPrints.Tests
             {
                 Assert.Equal(TranslationDiagnosticCodes.ConstVariableUnsupported, ex.Code);
                 Assert.Contains("'Limit'", ex.Message, StringComparison.Ordinal);
-                Assert.Contains("P3b", ex.Message, StringComparison.Ordinal);
+                Assert.Contains("Const needs a default value, which variables can't have yet.", ex.Message, StringComparison.Ordinal);
             });
         }
     }
