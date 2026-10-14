@@ -1323,7 +1323,7 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
 
 ### Batch H2 — model: sonnet — T105–T107 — 5 units
 
-- [ ] T105 `docs/guide/editor/navigation.md` (go to anything, the palette, connection jumps, history, tooltips,
+- [x] T105 `docs/guide/editor/navigation.md` (go to anything, the palette, connection jumps, history, tooltips,
   breadcrumbs) and `event-graphs.md` (renames, the entry inspector, arguments, overrides), each with screenshots.
 - [ ] T106 Docs tests (2 units). `tests/NetPrints.Editor.Tests/Docs/ShortcutGuideTests.cs`: the table between the markers
   of `docs/guide/editor/commands-and-shortcuts.md` equals the table generated from the registry, and

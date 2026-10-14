@@ -29,6 +29,12 @@ public sealed class GuideScreenshotTests(DesktopWorkerPool pool) : ProjectEditor
     private const int ImageMaxWidth = 1600;
     private const int ImageMaxHeight = 1000;
     private const double ScrollNotches = -15;
+    private const double BreadcrumbWidth = 420;
+    private const double CtrlClickFraction = 0.3;
+    private const double NewEntryX = 60;
+    private const double OverrideEntryX = 380;
+    private const double NewEntryY = 60;
+    private const string ClassName = "Program";
 
     private static readonly DocumentId MainDocument = DocumentId.Graph("HelloWorld.Program.netpc.json", DocumentId.MethodKeyPrefix + "m000000001gs20");
 
@@ -73,6 +79,43 @@ public sealed class GuideScreenshotTests(DesktopWorkerPool pool) : ProjectEditor
         {
             await Shell.OpenMethodAsync(MethodName, token);
             await Shell.Bottom.ShowAsync(PanelContributions.ErrorsId, token);
+        }
+
+        using (Step("a connection: tooltip, menu, jump and back"))
+        {
+            var graph = Shell.Graph;
+            string cable = (await graph.ConnectionNamesAsync(token)).First(name => name.StartsWith("MethodEntryNode.", StringComparison.Ordinal));
+            await Driver.MoveAsync(await Shell.StatusMessage.CenterAsync(token), token);
+            var midpoint = await graph.Connection(cable).MidpointAsync(token);
+            await Driver.MoveAsync(midpoint, token);
+            await graph.Connection(cable).WaitUntilAsync(e => e[AutomationPropertyNames.ToolTipIsOpen] == bool.TrueString, "the tooltip open", token);
+            await ShootAsync("connection-tooltip", token, parkPointer: false);
+            var viewport = await graph.ViewportAsync(token);
+            await graph.Connection(cable).CtrlClickAtAsync(CtrlClickFraction, token);
+            await graph.Node("CallMethodNode").WaitUntilAsync(e => e[AutomationPropertyNames.IsSelected] == bool.TrueString, "the far end selected", token);
+            await Shell.Menu.OpenAsync("Go", ContributionIds.CommandPrefix + "navigateBack", token);
+            await ShootAsync("menu-go", token, parkPointer: false);
+            await Driver.PressAsync("Escape", token);
+            await Driver.SettleAsync(token);
+            await Driver.PressAsync("Alt+Left", token);
+            await graph.WaitForViewportAsync(viewport, token);
+            await graph.Node("CallMethodNode").WaitUntilAsync(e => e[AutomationPropertyNames.IsSelected] != bool.TrueString, "back at the first view", token);
+            await Driver.PressAsync("Alt+Right", token);
+            await graph.Node("CallMethodNode").WaitUntilAsync(e => e[AutomationPropertyNames.IsSelected] == bool.TrueString, "forward at the far end", token);
+            await Driver.PressAsync("Alt+Left", token);
+            await graph.WaitForViewportAsync(viewport, token);
+            await Driver.ClickAsync(midpoint, UiButton.Right, 1, token);
+            await Driver.SettleAsync(token);
+            await ShootAsync("connection-menu", token, parkPointer: false);
+            await Driver.PressAsync("Escape", token);
+            await Driver.SettleAsync(token);
+        }
+
+        using (Step("the whole graph in view"))
+        {
+            await Shell.Graph.ClickEmptyAsync(token);
+            await Driver.PressAsync("Home", token);
+            await Shell.Graph.WaitRenderedAsync(token);
             await ShootAsync("shell-layout", token);
         }
 
@@ -114,6 +157,30 @@ public sealed class GuideScreenshotTests(DesktopWorkerPool pool) : ProjectEditor
             await ShootAsync("keyboard-shortcuts", token);
             await sheet.CloseButton.ClickAsync(token);
             await sheet.WaitHiddenAsync(token);
+        }
+
+        using (Step("go to anything"))
+        {
+            var goTo = new GoToAnythingPage(Driver);
+            await Driver.PressAsync("Ctrl+P", token);
+            await goTo.WaitVisibleAsync(token);
+            await Driver.TypeAsync("main", token);
+            await goTo.WaitForRowContainingAsync("Main", token);
+            await ShootAsync("go-to-anything", token, parkPointer: false);
+            await Driver.PressAsync("Ctrl+A", token);
+            await Driver.TypeAsync(">comp", token);
+            await goTo.WaitForRowContainingAsync("Compile", token);
+            await ShootAsync("go-to-commands", token, parkPointer: false);
+            await Driver.PressAsync("Escape", token);
+            await goTo.WaitHiddenAsync(token);
+        }
+
+        using (Step("breadcrumbs reveal the class in the tree"))
+        {
+            await ShootBreadcrumbsAsync("breadcrumbs", token);
+            await new UiElement(Driver, new AutomationQuery(AutomationIds.BreadcrumbSegment) { Name = ClassName }).ClickAsync(token);
+            await Shell.Inspector.ClassInspector.WaitVisibleAsync(token);
+            await ShootAsync("breadcrumbs-reveal", token);
         }
 
         string saved;
@@ -192,6 +259,116 @@ public sealed class GuideScreenshotTests(DesktopWorkerPool pool) : ProjectEditor
             await Driver.SettleAsync(token);
             await ShootAsync("start-page-whats-new", token);
         }
+
+        using (Step("an event graph: rename in the tree, add a custom event and an override"))
+        {
+            await Driver.WheelAsync(await start.CenterAsync(token), -ScrollNotches, token);
+            await start.Recent("HelloWorld").Open.ClickAsync(token);
+            await WaitForProjectAsync(token);
+            await WaitNotBusyAsync(token);
+
+            var tree = Shell.Tree;
+            var graph = Shell.Graph;
+            var inspector = Shell.Inspector;
+            var palette = new CommandPalettePage(Driver);
+            await tree.SelectAsync(tree.Class(ClassName), token);
+            await Driver.PressAsync("Ctrl+Shift+P", token);
+            await palette.WaitVisibleAsync(token);
+            await Driver.TypeAsync("add event graph", token);
+            await palette.Row("Add event graph").WaitVisibleAsync(token);
+            await Driver.PressAsync("Enter", token);
+            await palette.WaitHiddenAsync(token);
+            await graph.Watermark.WaitUntilAsync(e => e.Text == "EventGraph", "the event graph shown", token);
+            await tree.SelectAsync(await tree.RevealAsync(tree.Item(AutomationIds.TreeKindEventGraph, "EventGraph"), ProjectTreePage.EventGraphsGroup, token), token);
+            await Driver.PressAsync("F2", token);
+            await tree.RenameBox(AutomationIds.TreeKindEventGraph, "EventGraph").WaitVisibleAsync(token);
+            await Driver.TypeAsync("Gameplay", token);
+            await ShootAsync("event-graph-rename", token, parkPointer: false);
+            await Driver.PressAsync("Enter", token);
+            await tree.Item(AutomationIds.TreeKindEventGraph, "Gameplay").WaitVisibleAsync(token);
+            await new UiElement(Driver, new AutomationQuery(AutomationIds.BreadcrumbSegment) { Name = "Gameplay" }).WaitVisibleAsync(token);
+
+            var search = await (await graph.RightClickAtAsync(NewEntryX, NewEntryY, token)).WaitOpenAsync(token);
+            await ShootAsync("event-graph-search", token, parkPointer: false);
+            await search.FilterAsync("Custom Event", "Custom Event", token);
+            await search.PressEnterAsync(token);
+            await UiWait.UntilAsync(Driver, async () => await graph.NodeCountAsync(token) == 1, "the entry added", token);
+            await WaitNotBusyAsync(token);
+            await graph.WaitRenderedAsync(token);
+            await graph.Node((await graph.NodeNamesAsync(token))[0]).SelectAsync(token);
+            await inspector.EventEntryInspector.WaitVisibleAsync(token);
+            await inspector.EventEntryName.ClickAsync(token);
+            await Driver.PressAsync("Ctrl+A", token);
+            await Driver.TypeAsync("Main", token);
+            await Driver.PressAsync("Tab", token);
+            await inspector.EventEntryError.WaitVisibleAsync(token);
+            await ShootAsync("event-entry-refused", token);
+            await inspector.EventEntryName.ClickAsync(token);
+            await Driver.PressAsync("Ctrl+A", token);
+            await Driver.TypeAsync("OnHit", token);
+            await Driver.PressAsync("Tab", token);
+            await inspector.EventEntryName.WaitUntilAsync(e => e.Text == "OnHit", "the new name kept", token);
+            await inspector.EventEntryError.WaitHiddenAsync(token);
+            await Driver.SettleAsync(token);
+            await inspector.EventEntryAddArgument.ClickAsync(token);
+            await UiWait.UntilAsync(Driver, async () => await inspector.EventEntryArgumentCountAsync(token) == 1, "one argument", token);
+            await inspector.EventEntryAddArgument.ClickAsync(token);
+            await UiWait.UntilAsync(Driver, async () => await inspector.EventEntryArgumentCountAsync(token) == 2, "two arguments", token);
+            await ShootAsync("event-entry-inspector", token);
+
+            var typeDialog = new SelectTypeDialogPage(Driver);
+            await new UiElement(Driver, new AutomationQuery(AutomationIds.EventEntryInspectorArgumentType) { Within = inspector.Query, Index = 0 }).ClickAsync(token);
+            await typeDialog.WaitVisibleAsync(token);
+            await ShootAsync("event-argument-type", token, parkPointer: false);
+            await new UiElement(Driver, new AutomationQuery(AutomationIds.SelectTypeButton)).ClickAsync(token);
+            await typeDialog.WaitHiddenAsync(token);
+
+            await Driver.PressAsync("F7", token);
+            await Shell.StatusMessage.WaitUntilAsync(e => e.Text == "Build succeeded", "Build succeeded", token, TimeSpan.FromSeconds(120));
+            await Shell.Bottom.ShowAsync(PanelContributions.CSharpId, token);
+            await Shell.Bottom.CSharpCode.WaitUntilAsync(e => e.Text?.Contains("OnHit(", StringComparison.Ordinal) == true, "the event method in the C#", token);
+            Assert.DoesNotContain("Gameplay", await Shell.Bottom.CSharpCode.TextAsync(token) ?? "", StringComparison.Ordinal);
+
+            await WaitNotBusyAsync(token);
+            search = await (await graph.RightClickAtAsync(OverrideEntryX, NewEntryY, token)).WaitOpenAsync(token);
+            await search.FilterAsync("Override ToString", "Override ToString", token);
+            await search.PressEnterAsync(token);
+            await UiWait.UntilAsync(Driver, async () => await graph.NodeCountAsync(token) == 2, "the override entry added", token);
+            await tree.SelectAsync(tree.Class(ClassName), token);
+            await tree.SelectAsync(tree.Item(AutomationIds.TreeKindEventGraph, "Gameplay"), token);
+            await inspector.EventGraphInspector.WaitVisibleAsync(token);
+            await ShootAsync("event-graph-inspector", token);
+            await new UiElement(Driver, new AutomationQuery(AutomationIds.EventGraphInspectorSelectEntry) { Name = "Select ToString" }).ClickAsync(token);
+            await inspector.EventEntryBaseSignature.WaitVisibleAsync(token);
+            await inspector.EventEntryAddArgument.WaitHiddenAsync(token);
+            await ShootAsync("event-override-inspector", token);
+            await inspector.EventEntryName.ClickAsync(token);
+            await Driver.PressAsync("Ctrl+A", token);
+            await Driver.TypeAsync("Other", token);
+            await Driver.PressAsync("Tab", token);
+            Assert.Equal("ToString", await inspector.EventEntryName.TextAsync(token));
+
+            await tree.SelectAsync(tree.Class(ClassName), token);
+            await tree.SelectAsync(tree.Item(AutomationIds.TreeKindEventGraph, "Gameplay"), token);
+            await inspector.EventGraphInspector.WaitVisibleAsync(token);
+            await inspector.EventGraphName.ClickAsync(token);
+            await Driver.PressAsync("Ctrl+A", token);
+            await Driver.TypeAsync("Combat", token);
+            await Driver.PressAsync("Tab", token);
+            await tree.Item(AutomationIds.TreeKindEventGraph, "Combat").WaitVisibleAsync(token);
+            await Shell.Menu.InvokeAsync("Edit", ShellCommands.Undo, token);
+            await tree.Item(AutomationIds.TreeKindEventGraph, "Gameplay").WaitVisibleAsync(token);
+
+            await tree.SelectAsync(tree.Class(ClassName), token);
+            await Shell.Menu.InvokeAsync("Edit", ShellCommands.OverrideMethod, token, scrollOverCommandId: ShellCommands.AddVariable);
+            var dialog = new SelectMethodDialogPage(Driver);
+            await dialog.WaitVisibleAsync(token);
+            await dialog.Picker.Row("string ToString()").WaitVisibleAsync(token);
+            await ShootAsync("override-dialog", token, parkPointer: false);
+            await Driver.PressAsync("Escape", token);
+            await dialog.WaitHiddenAsync(token);
+        }
+
     });
 
     /// <summary>Saves the shell window's area of the screen (its menus, dialogs and floated windows included) as a guide image.</summary>
@@ -207,6 +384,16 @@ public sealed class GuideScreenshotTests(DesktopWorkerPool pool) : ProjectEditor
         var bounds = (await Shell.GetAsync(cancellationToken)).ScreenBounds;
         var bar = (await Shell.Commands.GetAsync(cancellationToken)).ScreenBounds;
         await SaveAsync(name, bounds.X, bounds.Y, bounds.Width, bar.Y + bar.Height - bounds.Y, parkPointer: true, cancellationToken);
+    }
+
+    private Task WaitNotBusyAsync(CancellationToken cancellationToken) =>
+        new UiElement(Driver, new AutomationQuery(AutomationIds.ShellBusy)).WaitHiddenAsync(cancellationToken);
+
+    /// <summary>Saves the breadcrumb bar above the graph, cut to its first segments.</summary>
+    private async Task ShootBreadcrumbsAsync(string name, CancellationToken cancellationToken)
+    {
+        var bar = (await new UiElement(Driver, new AutomationQuery(AutomationIds.Breadcrumbs)).GetAsync(cancellationToken)).ScreenBounds;
+        await SaveAsync(name, bar.X, bar.Y, Math.Min(bar.Width, BreadcrumbWidth), bar.Height, parkPointer: true, cancellationToken);
     }
 
     private async Task SaveAsync(string name, double x, double y, double width, double height, bool parkPointer, CancellationToken cancellationToken)

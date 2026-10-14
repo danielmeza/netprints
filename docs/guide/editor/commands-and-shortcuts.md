@@ -43,7 +43,8 @@ is listed too, and Enter does nothing for it. **Esc** closes the palette without
 
 ![The command palette filtered with the text comp, showing Compile](../../../website/static/img/guide/editor/command-palette.png)
 
-To find a graph, a node or a type instead of a command, use **Go › Go to anything…** (Ctrl+P).
+To find a graph, a node, a variable or a method instead of a command, use **Go › Go to anything…** (Ctrl+P); see
+[Navigation](./navigation.md).
 
 ## Keyboard shortcuts
 
