@@ -7,6 +7,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Microsoft.Extensions.Logging.Abstractions;
+using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.Commands.KeyboardShortcuts;
 using NetPrints.Editor.Contributions;
@@ -14,13 +15,16 @@ using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Controls;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Graph;
+using NetPrints.Editor.Graph.Nodes;
 using NetPrints.Editor.Graph.Pins;
 using NetPrints.Editor.Lifecycle;
 using NetPrints.Editor.Output;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.UITests.Hosting;
 using NetPrints.Editor.UITests.Shell;
+using NetPrints.Extensibility.Loading;
 using NetPrints.Graph;
+using NetPrints.Reflection;
 using NetPrints.Testing.Ui.Driving;
 using NetPrints.Testing.Ui.Snapshots;
 
@@ -67,9 +71,14 @@ public class ContactSheetTests
         return registry;
     }
 
-    private static MethodSpecifier Method(Type declaring, string name, int parameters = 0) =>
-        new(name, [.. Enumerable.Range(0, parameters).Select(i => new MethodParameter($"p{i}", TypeSpecifier.FromType<int>(), MethodParameterPassType.Default, false, null))],
-            [TypeSpecifier.FromType<string>()], MethodModifiers.Virtual, MemberVisibility.Public, TypeSpecifier.FromType(declaring), []);
+    internal static IReadOnlyList<CodeDiagnostic> Issues() =>
+    [
+        new(CodeDiagnosticSeverity.Error, ExtensionDiagnosticCodes.AssemblyLoadFailed, "Could not load the assembly of the extension 'Acme.Nodes'.", null, null, null, null, null),
+        new(CodeDiagnosticSeverity.Warning, ExtensionDiagnosticCodes.ApiVersion, "The extension 'Acme.Tools' targets API 2.0; this editor offers 1.0.", null, null, null, null, null),
+    ];
+
+    internal static IReadOnlyList<MethodSpecifier> OverrideCandidates(IReflectionProvider provider) =>
+        [.. provider.GetOverridableMethodsForType(TypeSpecifier.FromType<Exception>())];
 
     private static UiImage Frame(Window window)
     {
@@ -129,12 +138,104 @@ public class ContactSheetTests
         var call = graph.Nodes.Single(node => node.Node is CallMethodNode);
         var typeNode = Assert.IsType<TypeNode>(graph.AddNode<TypeNode>(new GraphPoint(28, 280), null, TypeSpecifier.FromType<string>()));
         var ternary = Assert.IsType<TernaryNode>(graph.AddNode<TernaryNode>(new GraphPoint(300, 280)));
-        var literal = Assert.IsType<LiteralNode>(graph.AddNode<LiteralNode>(new GraphPoint(28, 420), null, TypeSpecifier.FromType<string>()));
+        var literal = Assert.IsType<LiteralNode>(graph.AddNode<LiteralNode>(new GraphPoint(28, 520), null, TypeSpecifier.FromType<string>()));
+        literal.InputValuePin.UnconnectedValue = "Hello from a literal";
         await session.WaitForRenderedAsync(Token);
         NodePinViewModel PinOf(NodePin pin) => graph.Nodes.SelectMany(node => node.AllPins).Single(p => p.Pin == pin);
         Assert.True(graph.Connect(PinOf(typeNode.OutputTypePins[0]), PinOf(ternary.TypePin)));
         Assert.True(graph.Connect(PinOf(literal.ValuePin), call.InputDataPins.Single()));
         await session.WaitForRenderedAsync(Token);
+    }
+
+    /// <summary>The scene of every graph tile: the typed wires, then the viewport fitted to all nodes.</summary>
+    private static async Task BuildSceneAsync(EditorSession session)
+    {
+        await AddTypedWiresAsync(session);
+        var before = await session.Graph.ViewportAsync(Token);
+        await session.RunAsync("fitAll", Token);
+        await UiWait.UntilAsync(session.Driver, async () => await session.Graph.ViewportAsync(Token) != before, "the viewport fitted", Token);
+        HeadlessDriver.Pump();
+    }
+
+    /// <summary>Shows the C# panel and returns the code generated for the open class; empty when it never translates.</summary>
+    private static async Task<string> GeneratedCodeAsync(EditorSession session)
+    {
+        await session.Page.Bottom.ShowAsync(PanelContributions.CSharpId, Token);
+        session.App.Composition.Context.CodeAnalysis.RequestAnalysis(session.App.Session.Project);
+        var panel = Assert.IsType<NetPrints.Editor.CodeView.CSharpPanelViewModel>(session.App.Shell.FindPanel(PanelContributions.CSharpId)?.Content);
+        try
+        {
+            await UiWait.UntilAsync(session.Driver, () => Task.FromResult(panel.Current?.Code.Contains("class Program", StringComparison.Ordinal) == true),
+                "the generated code", Token, TimeSpan.FromSeconds(10));
+        }
+        catch (UiWaitTimeoutException)
+        {
+        }
+
+        return panel.Current?.Code ?? "";
+    }
+
+    private static IReadOnlyList<Rect> NodeBounds(EditorSession session)
+    {
+        var view = session.Window.GetVisualDescendants().OfType<GraphEditorView>().First();
+        return [.. view.GetVisualDescendants().OfType<NodeView>().Select(node => new Rect(node.TranslatePoint(default, view) ?? default, node.TranslatePoint(new Point(node.Bounds.Width, node.Bounds.Height), view) ?? default))];
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TheSceneShowsEveryNodeWholeAndApart()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await BuildSceneAsync(session);
+
+        var view = session.Window.GetVisualDescendants().OfType<GraphEditorView>().First();
+        var bounds = NodeBounds(session);
+        Assert.Equal(session.GraphViewModel.Nodes.Count, bounds.Count);
+        var canvas = new Rect(view.Bounds.Size);
+        Assert.All(bounds, rect => Assert.True(canvas.Contains(rect.TopLeft) && canvas.Contains(rect.BottomRight), $"{rect} is cut by the canvas {canvas}"));
+        for (int i = 0; i < bounds.Count; i++)
+        {
+            for (int j = i + 1; j < bounds.Count; j++)
+            {
+                Assert.False(bounds[i].Intersects(bounds[j]), $"{bounds[i]} overlaps {bounds[j]}");
+            }
+        }
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TheSceneTranslatesSoTheCSharpTilesShowCode()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await BuildSceneAsync(session);
+
+        string code = await GeneratedCodeAsync(session);
+
+        Assert.Contains("class Program", code, StringComparison.Ordinal);
+        Assert.Contains("WriteLine", code, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheIssuesTileListsRealDiagnostics()
+    {
+        var issues = Issues();
+
+        Assert.NotEmpty(issues);
+        Assert.All(issues, issue => Assert.StartsWith("NPX", issue.Id, StringComparison.Ordinal));
+        Assert.Equal(issues.Count, new IssuesDialogViewModel(issues).Issues.Count);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TheOverrideTileListsTheRealOverridableMembersOfItsBaseType()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var provider = session.App.Composition.Context.Reflection.Provider;
+        string Signature(MethodSpecifier method) =>
+            $"{method.DeclaringType.ShortName}.{method.Name}({string.Join(",", method.Parameters.Select(parameter => parameter.Value))})";
+        var real = provider.GetOverridableMethodsForType(TypeSpecifier.FromType<Exception>()).Select(Signature).ToHashSet(StringComparer.Ordinal);
+
+        var candidates = OverrideCandidates(provider);
+
+        Assert.Contains(candidates, method => method.Name == "ToString");
+        Assert.All(candidates, method => Assert.Contains(Signature(method), real));
     }
 
     /// <summary>The canvas and the open overloads flyout, which may reach past the canvas edge.</summary>
@@ -190,7 +291,7 @@ public class ContactSheetTests
     public async Task EveryPanelDocumentAndDialogInBothThemesAtBothScalesThenTheOwnerCalls()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        await AddTypedWiresAsync(session);
+        await BuildSceneAsync(session);
         var output = Assert.IsType<OutputPanelViewModel>(session.App.Shell.FindPanel(PanelContributions.OutputId)?.Content);
         output.Lines.Add(new OutputLineViewModel(OutputLineKind.Build, "Build started."));
         output.Lines.Add(new OutputLineViewModel(OutputLineKind.Build, "Build succeeded"));
@@ -206,17 +307,11 @@ public class ContactSheetTests
             ("Confirm", () => new ConfirmDialog("Delete it", "This cannot be undone.", "Delete")),
             ("Keyboard shortcuts", () => new KeyboardShortcutsDialog(new KeyboardShortcutsViewModel(registry))),
             ("Trust", () => new TrustDialog("/p/P.csproj", ["/p/ext"])),
-            ("Issues", () => new IssuesDialog("Extension issues", [])),
+            ("Issues", () => new IssuesDialog("Extension issues", Issues())),
             ("Recover", () => new RecoverDialog([new RecoveryFile("/p/Program.netpc.json", new DateTime(2026, 10, 6, 12, 0, 0, DateTimeKind.Utc), true)])),
             ("About", () => new AboutDialog(new AboutViewModel("1.2.3"))),
             ("Error", () => new ErrorDialog("Failed to run", "The program stopped.")),
-            ("Override method", () => new SelectMethodDialog(
-            [
-                Method(typeof(Exception), "ToString"),
-                Method(typeof(Exception), "GetBaseException"),
-                Method(typeof(object), "Equals", 1),
-                Method(typeof(object), "Finalize"),
-            ], new HashSet<string>(["ToString"], StringComparer.Ordinal))),
+            ("Override method", () => new SelectMethodDialog(OverrideCandidates(session.App.Composition.Context.Reflection.Provider), new HashSet<string>(["ToString"], StringComparer.Ordinal))),
         ];
         Window[] dialogWindows = [.. dialogs.Select(dialog => dialogUi.Show(dialog.Create()))];
         Window mark = markUi.Show(MarkWindow());
