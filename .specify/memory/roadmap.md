@@ -320,6 +320,8 @@ packages for extension authors. No performance work here (owner decision 2026-09
   - **CLI trust**: project-declared extensions load in the CLI without a trust check, the same as analyzers and build tasks; the guide and the ADR say so.
   - **M4 trimming ratchet**: a non-blocking CI step (`eng/trim-warnings.txt`) counts the IL2xxx/IL3xxx warnings of `NetPrints.Editor`; the count may only go down. Prepares P5.
   - Planned ADRs (0024–0027 above): 0028 (node search providers and node creation), 0029 (node capabilities as role interfaces, including `IMemberReferencingNode`), 0030 (Extensibility Stairway split and the editor facet), 0031 (editor composition and DI; written 2026-10-08), 0032 (graph rules). Also written, with unreserved numbers: 0033 (logging and per-user folders), 0034 (smart enums and generic math). Planned amendments: ADR-0020 (typed descriptor contexts, per-session contribution groups, `AppliesTo`, new contribution kinds), ADR-0021 (extension icon ids), ADR-0026 (`PrepareFromSearchAsync`, offers from typed pins), ADR-0010 (conformance checks for providers, rules and contributions).
+  - **Editor themes** ([ADR-0035](../../docs/adr/0035-editor-themes-are-data.md), owner 2026-10-13): every visual element is a token a theme can set; themes are data and never run code. **B0** (about 4-5 units): the token catalogue in product code with the contrast math, a per-variant overlay in `Application.Resources.ThemeDictionaries[Dark|Light]`, `darkPreset`/`lightPreset` string settings, embedded presets (NetPrints Dark, NetPrints Light, Classic Dark, High contrast on Semi's own HC variants), wire opacity and thickness tokens, a theme settings page, the reserved manifest `themes` field before the publish gate, and a test of the overlay precedence. **B1** (about 9 more): user `*.nptheme.json` files, validation messages, Reload and Duplicate. **C** (themes declared by ordinary extensions, via B17). B1 and C go in P3 if capacity allows, otherwise P6. Contrast: warn and apply; the built-in presets are gated by tests. Semi keys are passed through and validated at runtime, never curated.
+  - **Value-editor contract** ([ADR-0036](../../docs/adr/0036-member-defaults-and-editor-metadata.md)): R6's `PinEditorDescriptor` widens into a value-editor contract shared by pins, variable and parameter defaults and grid rows (no extra cost while experimental). The model-driven grid with plugin-contributed editors (c, about 13-15 units) lands at the P3 tail if it fits, otherwise in P3b.
 Done when: also docs updated (guides, API reference, ADRs as applicable).
 
 ### P3b — Declarations and code style (owner-approved 2026-09-26)
@@ -377,6 +379,14 @@ profiles and P3 extensions use, so custom emitters need no core changes.
 - **Custom kinds from libraries.** Example and P3 sample extension: an Ardalis **SmartEnum** kind, edited like
   an enum's member list and emitted as `sealed class X : SmartEnum<X>` with `static readonly` fields.
   UnrealSharp's `[UStruct]`/`[UEnum]`/`[UInterface]` (U2) build on the built-in kinds.
+- **Member defaults and editor metadata** ([ADR-0036](../../docs/adr/0036-member-defaults-and-editor-metadata.md), owner 2026-10-13).
+  - (a) **Variable defaults** (about 10-11 units, with the constructor-assignment style and the undo work): `default` on the
+    variable (an `init` member, schema v1 stays additive), `= literal` on fields, a constructor assignment style for `partial`
+    members, and a "set member property" undo command first (Visibility and Modifiers are not undoable today).
+  - **Const comes back** (disabled in P3a, NPT009) once defaults exist; it covers Static, ReadOnly, non-constant defaults and accessors.
+  - (b) **Editor metadata** (about 8-9 units): category, tooltip (Summary), display name, range, edit scope, advanced and a raw
+    pass-through list; a per-member extension data bag that survives a save; an opt-in `global::System.ComponentModel.*` emission style.
+  - (c) the model-driven grid with plugin-contributed editors, if it did not land in P3.
 - **P1 guard:** P1's translation seams and class/member emitters (sub-phase F, T065) must not assume every
   declaration is a class. The P1 Opus review checks this; nothing of this phase is built in P1.
 - **Designer-authored comments as XML docs** (owner idea, 2026-09-27; ADR-0002, widened same day). A designer
@@ -478,6 +488,12 @@ through a `NetPrints.Sdk` PackageReference, so UnrealSharp's own generators see 
 async/await, delegates, components, containers. U3: `UnrealSharpNetPrints` C++ plugin
 launcher, Unreal `IHostChannel` pipe, `unreal` project profile, upstream PR implementing
 `CSAssetTypeAction_CSBlueprint::OpenAssetEditor` as an external-editor hook.
+Member defaults and flags ([ADR-0036](../../docs/adr/0036-member-defaults-and-editor-metadata.md)): U1 maps the P3b metadata to
+`PropertyFlags` and MetaTags (`[UiMin]`/`[UiMax]`; `ClampMin`, `ClampMax` and `ExposeOnSpawn` take strings; raw `UMetaData` passes
+through) and adds a CDO smoke test (hot reload, Blueprint children, inherited properties; the constructor-assignment evidence is
+settled), with the Unreal flags section (Instance Editable, Expose on Spawn, Replicated, SaveGame) stored per member in an extension
+bag (about 3 units); U2 adds the FVector, FRotator and FLinearColor defaults and editors (about 3 units). Assets and components stay
+in Unreal's Details panel.
 Done when (each of U1, U2, U3): also docs updated (guides, API reference, ADRs as applicable).
 
 ### P6 — Usability (Blueprint-level ease of use)
@@ -708,6 +724,11 @@ for those who want to learn it.
   22 node titles) and takes the XAML literal ratchet to 0, together with the accessibility items; **S7** (node kinds by
   convention) starts here if it did not fit late in P3; **L3** (first translation, pseudo-locale snapshot run, RTL check,
   translator docs) comes when a language is chosen.
+- **Theme fallback** ([ADR-0035](../../docs/adr/0035-editor-themes-are-data.md)): B1 (user `*.nptheme.json`, Reload, Duplicate) and C
+  (themes declared by extensions) if they did not fit in P3; new look tokens (wire thickness, density, exec wire style) enter the
+  catalogue with a value in every preset.
+- **Live instance inspection** (d, [ADR-0036](../../docs/adr/0036-member-defaults-and-editor-metadata.md)): a read-only grid over the
+  watches, through `IHostChannel` (about 2 units on top of the instrumentation).
 - **Done when:** also docs updated (guides, API reference, ADRs as applicable).
 
 ### P7 — Structured code generation
@@ -753,6 +774,8 @@ Block-scoped local variables (owner idea, 2026-09-25): variables owned by for/fo
 Done when: also docs updated (guides, API reference, ADRs as applicable).
 
 ### Candidates (unscheduled)
+- **Product mark redesign** (owner, 2026-10-13: "por ahora usa ese logo, pero vamos a rediseñarlo después"). The current mark is
+  approved for now (G-R22); a redesign is wanted later, with no phase yet. It touches `assets/brand/`, the app icon and the docs site.
 - Parameter modifiers and C# syntax variants: moved into **P3b** (2026-09-26).
 - **Visual graph diff** (2026-09-25): compare two versions of a graph (from git) with added nodes and
   connections in green, removed in red and moved in grey. The stable ids of P1 make it feasible; it serves
