@@ -791,6 +791,13 @@ fit and a reduce-motion setting, canvas focus (M18), canvas empty-state hints (M
 dialogs other than Override method (M13), compact operator nodes and a Self node in node search (FR-096) go to P6;
 glyphs contributed by extensions are decided with the P3 contribution API.
 
+Deferred by the owner decisions of 2026-10-13: themes beyond the tokens P3a ships (presets as data, user theme files,
+themes declared by extensions, and every other visual element becoming a theme token) go to P3, with B1 and C in P6 if
+P3 has no room ([ADR-0035](../../docs/adr/0035-editor-themes-are-data.md)); variable default values, editor metadata and
+the model-driven property grid go to P3b, with the value-editor contract widened in P3 and live inspection in P6
+([ADR-0036](../../docs/adr/0036-member-defaults-and-editor-metadata.md)). The Const modifier stays disabled until P3b
+brings defaults.
+
 **Type-scoped search (US10)**
 
 - **FR-090**: A search scoped to a type MUST take that type's members from the catalog that covers the type's
