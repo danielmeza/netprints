@@ -58,7 +58,7 @@ Select the entry node of a custom event, or press **Select** for it in the list 
 **Add argument** adds an argument called `arg` (then `arg2` and so on) of type `Object`. In each row:
 
 - the text box renames the argument;
-- the type button opens the **Select Type** window, where you choose another type and press **Select**;
+- the type button opens the **Select Type** window, where you choose another type and press **Select** (**Cancel** or Esc closes it and keeps the current type);
 - the arrow buttons move the argument up or down, and the minus button removes it.
 
 ![The Select Type window opened from the type button of an argument](../../../website/static/img/guide/editor/event-argument-type.png)

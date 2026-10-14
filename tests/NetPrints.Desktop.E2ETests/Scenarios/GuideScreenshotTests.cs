@@ -344,6 +344,7 @@ public sealed class GuideScreenshotTests(DesktopWorkerPool pool) : ProjectEditor
             await tree.SelectAsync(tree.Class(ClassName), token);
             await tree.SelectAsync(tree.Item(AutomationIds.TreeKindEventGraph, "Gameplay"), token);
             await inspector.EventGraphInspector.WaitVisibleAsync(token);
+            await WaitNotBusyAsync(token);
             await ShootAsync("event-graph-inspector", token);
             await new UiElement(Driver, new AutomationQuery(AutomationIds.EventGraphInspectorSelectEntry) { Name = "Select ToString" }).ClickAsync(token);
             await inspector.EventEntryBaseSignature.WaitVisibleAsync(token);
