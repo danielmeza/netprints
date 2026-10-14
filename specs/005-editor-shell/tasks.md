@@ -1309,7 +1309,7 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
 - [x] T103 [P] `docs/guide/editor/_category_.json`, `shell.md` (layout, panels, docking, floating, Reset layout) and
   `start-page.md` (recent projects, templates, samples, what's new), each with T102 screenshots and every claim checked
   against the running editor.
-- [ ] T104 [P] `docs/guide/editor/saving-and-recovery.md` (markers, the prompt, backups and where they live, recovery,
+- [x] T104 [P] `docs/guide/editor/saving-and-recovery.md` (markers, the prompt, backups and where they live, recovery,
   nothing written into the project) and `commands-and-shortcuts.md` (menus, the command bar, the palette, and the
   shortcut table between marker comments), each with screenshots.
 - [x] T104a [P] Agent rules pointer (0.5 unit, FR-100; owner decision 2026-10-09). Another agent tool also works in
