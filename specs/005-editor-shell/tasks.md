@@ -1325,7 +1325,7 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
 
 - [x] T105 `docs/guide/editor/navigation.md` (go to anything, the palette, connection jumps, history, tooltips,
   breadcrumbs) and `event-graphs.md` (renames, the entry inspector, arguments, overrides), each with screenshots.
-- [ ] T106 Docs tests (2 units). `tests/NetPrints.Editor.Tests/Docs/ShortcutGuideTests.cs`: the table between the markers
+- [x] T106 Docs tests (2 units). `tests/NetPrints.Editor.Tests/Docs/ShortcutGuideTests.cs`: the table between the markers
   of `docs/guide/editor/commands-and-shortcuts.md` equals the table generated from the registry, and
   `NETPRINTS_UPDATE_SNAPSHOTS=1` rewrites it (red first against a deliberately stale row). `GuidePagesTests`: each of
   the six pages exists and references at least one PNG that exists under `website/static/img/guide/editor/` (SC-010).
