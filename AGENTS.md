@@ -213,6 +213,9 @@ agents" below. Guard entry points with `ArgumentNullException.ThrowIfNull`,
   load `avalonia-xaml` and `avalonia-styling` (and `avalonia-behaviors` for interaction) with the Skill tool. A
   PreToolUse hook (`.claude/hooks/skill-paths.py`) denies the first matching edit of each agent and names the skills;
   load them and retry. New views follow the "Layout and look" section of `avalonia-styling`.
+- **Edit repo files with the Edit/Write tools, never through the shell** (`sed -i`, `perl -i`, python writes, `tee`,
+  `>`/`>>`, `truncate`, `dd of=`). A Bash PreToolUse hook (`.claude/hooks/no-shell-edits.py`, tested in `tests/hooks`)
+  denies such commands; writes to `/tmp`, `/dev/null`, `bin/`, `obj/` and `TestResults/` and `git` are allowed.
 
 ## Batch rules for implementer agents
 A batch prompt names the task range and pastes the task text; everything below applies to every batch.

@@ -6,6 +6,12 @@
         "hooks": [
           { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/skill-paths.py" }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/no-shell-edits.py" }
+        ]
       }
     ]
   }
