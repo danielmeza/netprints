@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 using NetPrints.Editor.CodeView;
+using NetPrints.Editor.UndoRedo;
 
 namespace NetPrints.Editor.Inspectors;
 
@@ -8,19 +9,23 @@ namespace NetPrints.Editor.Inspectors;
 public sealed class ClassInspectorViewModel : ObservableObject
 {
     private readonly Action markDirty;
+    private readonly UndoRedoStack undoRedo;
 
     /// <summary>Creates the inspector of a class.</summary>
     /// <param name="cls">The class.</param>
     /// <param name="codeView">The read-only C# code view of the class.</param>
     /// <param name="markDirty">Called after an edit, to mark the class dirty.</param>
-    public ClassInspectorViewModel(ClassGraph cls, CodeViewViewModel codeView, Action markDirty)
+    /// <param name="undoRedo">The class's undo stack, which records visibility and modifier edits.</param>
+    public ClassInspectorViewModel(ClassGraph cls, CodeViewViewModel codeView, Action markDirty, UndoRedoStack undoRedo)
     {
         ArgumentNullException.ThrowIfNull(cls);
         ArgumentNullException.ThrowIfNull(codeView);
         ArgumentNullException.ThrowIfNull(markDirty);
+        ArgumentNullException.ThrowIfNull(undoRedo);
         Class = cls;
         CodeView = codeView;
         this.markDirty = markDirty;
+        this.undoRedo = undoRedo;
     }
 
     /// <summary>Gets the class.</summary>
@@ -79,9 +84,11 @@ public sealed class ClassInspectorViewModel : ObservableObject
         {
             if (Class.Visibility != value)
             {
-                Class.Visibility = value;
-                markDirty();
-                OnPropertyChanged();
+                undoRedo.Do(EditorCommands.SetMemberProperty("Set visibility", value, () => Class.Visibility, visibility =>
+                {
+                    Class.Visibility = visibility;
+                    OnPropertyChanged(nameof(Visibility));
+                }));
             }
         }
     }
@@ -94,13 +101,15 @@ public sealed class ClassInspectorViewModel : ObservableObject
         {
             if (Class.Modifiers != value)
             {
-                Class.Modifiers = value;
-                markDirty();
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(IsSealed));
-                OnPropertyChanged(nameof(IsAbstract));
-                OnPropertyChanged(nameof(IsStatic));
-                OnPropertyChanged(nameof(IsPartial));
+                undoRedo.Do(EditorCommands.SetMemberProperty("Set modifiers", value, () => Class.Modifiers, modifiers =>
+                {
+                    Class.Modifiers = modifiers;
+                    OnPropertyChanged(nameof(Modifiers));
+                    OnPropertyChanged(nameof(IsSealed));
+                    OnPropertyChanged(nameof(IsAbstract));
+                    OnPropertyChanged(nameof(IsStatic));
+                    OnPropertyChanged(nameof(IsPartial));
+                }));
             }
         }
     }

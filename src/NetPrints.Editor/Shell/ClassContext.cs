@@ -53,13 +53,13 @@ public sealed class ClassContext : IDisposable
         Messenger = context.CreateMessenger();
         Services = new ClassEditorServices(context, undoRedo, Messenger, this.projectClasses);
 
-        Methods = new ObservableViewModelCollection<MethodViewModel, MethodGraph>(cls.Methods, m => new MethodViewModel(m, RenameMethod), m => m.Dispose());
-        Constructors = new ObservableViewModelCollection<MethodViewModel, ConstructorGraph>(cls.Constructors, c => new MethodViewModel(c), m => m.Dispose());
+        Methods = new ObservableViewModelCollection<MethodViewModel, MethodGraph>(cls.Methods, m => new MethodViewModel(m, RenameMethod, undoRedo), m => m.Dispose());
+        Constructors = new ObservableViewModelCollection<MethodViewModel, ConstructorGraph>(cls.Constructors, c => new MethodViewModel(c, undoRedo: undoRedo), m => m.Dispose());
         Variables = new ObservableViewModelCollection<MemberVariableViewModel, Variable>(cls.Variables,
             v => new MemberVariableViewModel(v, Services, RenameVariable), v => v.Dispose());
         EventGraphs = new ObservableViewModelCollection<EventGraphViewModel, EventGraph>(cls.EventGraphs, g => new EventGraphViewModel(g, cls, RenameEventGraph, undoRedo, entry => Messenger.Send(new SelectEventEntryMessage(entry))), g => g.Dispose());
         CodeView = new CodeViewViewModel(cls, context.CodeAnalysis);
-        ClassInspector = new ClassInspectorViewModel(cls, CodeView, MarkDirty);
+        ClassInspector = new ClassInspectorViewModel(cls, CodeView, MarkDirty, undoRedo);
 
         cls.Variables.CollectionChanged += OnMembersChanged;
         cls.Methods.CollectionChanged += OnMembersChanged;

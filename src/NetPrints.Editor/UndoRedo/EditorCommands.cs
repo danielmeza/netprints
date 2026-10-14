@@ -13,6 +13,29 @@ public static class EditorCommands
     /// <summary>Message of the <see cref="InvalidOperationException"/> thrown when a command's undo runs before its own <see cref="IUndoableCommand.Execute"/>.</summary>
     private const string NoDoActionMessage = "Undo called before the command's Do action.";
 
+    /// <summary>
+    /// Sets a member property (visibility or modifiers) to <paramref name="newValue"/>; undo restores the value
+    /// <paramref name="get"/> read when the command ran.
+    /// </summary>
+    /// <typeparam name="T">The property's value, or a snapshot of everything the edit changes.</typeparam>
+    /// <param name="name">The command's name.</param>
+    /// <param name="newValue">The value to set.</param>
+    /// <param name="get">Reads the current value.</param>
+    /// <param name="set">Writes a value.</param>
+    public static IUndoableCommand SetMemberProperty<T>(string name, T newValue, Func<T> get, Action<T> set)
+    {
+        Captured<T>? oldValue = null;
+        return new DelegateUndoableCommand(name,
+            () =>
+            {
+                oldValue = new Captured<T>(get());
+                set(newValue);
+            },
+            () => set((oldValue ?? throw new InvalidOperationException(NoDoActionMessage)).Value));
+    }
+
+    private sealed record Captured<T>(T Value);
+
     /// <summary>Adds a variable of type <c>object</c>; undo removes it.</summary>
     public static IUndoableCommand AddVariable(ClassGraph cls, string name)
     {

@@ -87,19 +87,31 @@ public sealed partial class MemberVariableViewModel : ObservableObject, IDisposa
             }
 
             // Accessors that had the variable's visibility follow the new visibility.
-            if (Variable.GetterMethod != null && Variable.GetterMethod.Visibility == Variable.Visibility)
-            {
-                Variable.GetterMethod.Visibility = value;
-            }
-
-            if (Variable.SetterMethod != null && Variable.SetterMethod.Visibility == Variable.Visibility)
-            {
-                Variable.SetterMethod.Visibility = value;
-            }
-
-            Variable.Visibility = value;
+            var next = new VisibilityState(value,
+                Variable.GetterMethod is { } getter && getter.Visibility == Variable.Visibility ? value : Variable.GetterMethod?.Visibility,
+                Variable.SetterMethod is { } setter && setter.Visibility == Variable.Visibility ? value : Variable.SetterMethod?.Visibility);
+            services.UndoRedo.Do(EditorCommands.SetMemberProperty("Set visibility", next, ReadVisibility, WriteVisibility));
         }
     }
+
+    private VisibilityState ReadVisibility() => new(Variable.Visibility, Variable.GetterMethod?.Visibility, Variable.SetterMethod?.Visibility);
+
+    private void WriteVisibility(VisibilityState state)
+    {
+        if (Variable.GetterMethod is { } getter && state.Getter is { } getterVisibility)
+        {
+            getter.Visibility = getterVisibility;
+        }
+
+        if (Variable.SetterMethod is { } setter && state.Setter is { } setterVisibility)
+        {
+            setter.Visibility = setterVisibility;
+        }
+
+        Variable.Visibility = state.Variable;
+    }
+
+    private readonly record struct VisibilityState(MemberVisibility Variable, MemberVisibility? Getter, MemberVisibility? Setter);
 
     /// <summary>The visibility values offered by the visibility chooser.</summary>
     public IReadOnlyList<MemberVisibility> PossibleVisibilities => VisibilityChoices.All;
@@ -108,7 +120,13 @@ public sealed partial class MemberVariableViewModel : ObservableObject, IDisposa
     public VariableModifiers Modifiers
     {
         get => Variable.Modifiers;
-        set => Variable.Modifiers = value;
+        set
+        {
+            if (Variable.Modifiers != value)
+            {
+                services.UndoRedo.Do(EditorCommands.SetMemberProperty("Set modifiers", value, () => Variable.Modifiers, modifiers => Variable.Modifiers = modifiers));
+            }
+        }
     }
 
     /// <summary>Whether <see cref="VariableModifiers.ReadOnly"/> is set.</summary>

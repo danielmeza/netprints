@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 using NetPrints.Editor.Events;
 using NetPrints.Editor.Inspectors;
+using NetPrints.Editor.UndoRedo;
 
 namespace NetPrints.Editor.ClassEditor;
 
@@ -16,16 +17,19 @@ namespace NetPrints.Editor.ClassEditor;
 public sealed partial class MethodViewModel : ObservableObject, IDisposable
 {
     private readonly Action<MethodGraph, string>? rename;
+    private readonly UndoRedoStack? undoRedo;
 
     /// <summary>
     /// Wraps <paramref name="graph"/> and subscribes to its property-changed event.
     /// </summary>
     /// <param name="graph">Method or constructor graph to wrap.</param>
     /// <param name="rename">Renames a method together with the calls to it; without it the name is set on the graph alone.</param>
-    public MethodViewModel(ExecutionGraph graph, Action<MethodGraph, string>? rename = null)
+    /// <param name="undoRedo">Records visibility and modifier edits; without it they are set on the graph alone.</param>
+    public MethodViewModel(ExecutionGraph graph, Action<MethodGraph, string>? rename = null, UndoRedoStack? undoRedo = null)
     {
         Graph = graph;
         this.rename = rename;
+        this.undoRedo = undoRedo;
         ((INotifyPropertyChanged)graph).PropertyChanged += OnGraphPropertyChanged;
     }
 
@@ -77,7 +81,25 @@ public sealed partial class MethodViewModel : ObservableObject, IDisposable
     public MemberVisibility Visibility
     {
         get => Graph.Visibility;
-        set => Graph.Visibility = value;
+        set
+        {
+            if (Graph.Visibility != value)
+            {
+                Edit("Set visibility", value, () => Graph.Visibility, visibility => Graph.Visibility = visibility);
+            }
+        }
+    }
+
+    private void Edit<T>(string name, T value, Func<T> get, Action<T> set)
+    {
+        if (undoRedo is null)
+        {
+            set(value);
+        }
+        else
+        {
+            undoRedo.Do(EditorCommands.SetMemberProperty(name, value, get, set));
+        }
     }
 
     /// <summary>The visibility values offered by the method's visibility chooser.</summary>
@@ -89,9 +111,9 @@ public sealed partial class MethodViewModel : ObservableObject, IDisposable
         get => Graph is MethodGraph method ? method.Modifiers : MethodModifiers.None;
         set
         {
-            if (Graph is MethodGraph method)
+            if (Graph is MethodGraph method && method.Modifiers != value)
             {
-                method.Modifiers = value;
+                Edit("Set modifiers", value, () => method.Modifiers, modifiers => method.Modifiers = modifiers);
             }
         }
     }
