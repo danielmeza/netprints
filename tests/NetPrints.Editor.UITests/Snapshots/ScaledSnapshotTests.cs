@@ -93,6 +93,7 @@ public class ScaledSnapshotTests
     public async Task TheShellTheInspectorAndTheCanvasAtEveryScaleAndTheme()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await session.WaitStatusIdleAsync(Token);
         var window = session.Window;
         var status = new UiElement(session.Driver, new AutomationQuery(AutomationIds.ShellStatusBar)); // "Loaded project" fades after 5 s
 

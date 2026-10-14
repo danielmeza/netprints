@@ -47,6 +47,7 @@ public class SnapshotTests
     public async Task ShellWithTheSampleGraph()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await session.WaitStatusIdleAsync(Token);
 
         var status = await MaskOfAsync(new UiElement(session.Driver, new AutomationQuery(AutomationIds.ShellStatusBar))); // "Loaded project" fades after 5 s
         await MatchWindowAsync(session.Driver, session.Page, "editor-shell-main", new SnapshotOptions { Masks = [status] });

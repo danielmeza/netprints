@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using NetPrints.Core;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Graph;
+using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.UITests.Hosting;
@@ -78,6 +79,16 @@ internal sealed class EditorSession : IAsyncDisposable
     {
         App.Api.OpenDocument(CommandTargets.GraphDocumentOf(App.Session, Class) ?? throw new InvalidOperationException("The class has no document."));
         await Graph.Watermark.WaitUntilAsync(e => e.Text == Class.Name, "the class graph shown", cancellationToken);
+    }
+
+    /// <summary>Waits until the status bar is idle: no busy bar (the reference reload is done) and the "Loaded project" message has faded.</summary>
+    /// <param name="cancellationToken">Cancels the wait.</param>
+    /// <returns>A task that completes when the status bar shows nothing.</returns>
+    public async Task WaitStatusIdleAsync(CancellationToken cancellationToken)
+    {
+        await new UiElement(Driver, new AutomationQuery(AutomationIds.ShellBusy)).WaitHiddenAsync(cancellationToken);
+        await new UiElement(Driver, new AutomationQuery(AutomationIds.ShellStatusMessage))
+            .WaitUntilAsync(element => string.IsNullOrEmpty(element.Text), "the status message cleared", cancellationToken);
     }
 
     /// <summary>Runs the Add variable command on the active class.</summary>
