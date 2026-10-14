@@ -354,7 +354,8 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
 
         if (deletable.Count > 0)
         {
-            Services.UndoRedo.Do(EditorCommands.RemoveNodes(deletable));
+            IUndoableCommand remove = EditorCommands.RemoveNodes(deletable);
+            Services.UndoRedo.Do(Graph is MethodGraph method ? EditorCommands.RetargetCallersAfter(Services.ProjectClasses(), method, remove) : remove);
         }
 
         DeselectNodes();
@@ -465,15 +466,34 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
     private Task OpenSearchAsync(GraphPoint position) => OpenSearchAsync(position, suggestionPin: null);
 
     /// <summary>
-    /// Runs an edit of a method's parameters (the entry node's +/- buttons and type-pin connections) as one undo step that also moves the
-    /// calls to the method in the project onto the new signature.
+    /// Runs an edit of the open method's signature (the +/- buttons of the entry and return nodes, type-pin connections) as one undo step that
+    /// also moves the calls to the method in the project onto the new signature. In a graph that is not a method it just runs the edit.
     /// </summary>
-    /// <param name="entry">The method's entry node.</param>
     /// <param name="label">The name of the step.</param>
-    /// <param name="edit">Changes the parameters.</param>
+    /// <param name="edit">Changes the signature.</param>
     /// <param name="sourceIndexes">For each new parameter, the index it had before, or -1 for a new one; null when the parameters keep their positions.</param>
-    internal void EditMethodSignature(MethodEntryNode entry, string label, Action edit, IReadOnlyList<int>? sourceIndexes = null) =>
-        Services.UndoRedo.Do(EditorCommands.EditMethodSignature(Services.ProjectClasses(), entry, label, edit, sourceIndexes ?? [.. Enumerable.Range(0, entry.OutputDataPins.Count)]));
+    /// <param name="recordOnlyWhenChanged">Whether the step is recorded only when the edit changed the signature (a connection that may or may not reach the entry or return nodes).</param>
+    internal void EditMethodSignature(string label, Action edit, IReadOnlyList<int>? sourceIndexes = null, bool recordOnlyWhenChanged = false)
+    {
+        if (Graph is not MethodGraph method)
+        {
+            edit();
+            return;
+        }
+
+        var command = EditorCommands.EditMethodSignature(Services.ProjectClasses(), method, label, edit, sourceIndexes);
+        if (!recordOnlyWhenChanged)
+        {
+            Services.UndoRedo.Do(command);
+            return;
+        }
+
+        Services.UndoRedo.RunApplying(command.Execute);
+        if (command.Changed)
+        {
+            Services.UndoRedo.Record(command);
+        }
+    }
 
     /// <summary>Changes the overload of a node through the undo stack (PAR-40).</summary>
     public void ChangeOverload(NodeViewModel node, object overload) => Services.UndoRedo.Do(EditorCommands.ChangeOverload(node.Node, overload));

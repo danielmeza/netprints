@@ -431,36 +431,35 @@ public sealed partial class NodePinViewModel : ObservableObject, IDisposable
             return false;
         }
 
-        MethodEntryNode? entry = ParameterTypeEntry(Pin) ?? ParameterTypeEntry(other.Pin);
-        if (entry is not null)
-        {
-            Node.Graph.EditMethodSignature(entry, ParameterTypeStep, () => GraphUtil.ConnectNodePins(Pin, other.Pin));
-        }
-        else
-        {
-            GraphUtil.ConnectNodePins(Pin, other.Pin);
-        }
-
+        ChangeTypeConnection(() => GraphUtil.ConnectNodePins(Pin, other.Pin), Pin, other.Pin);
         return true;
     }
 
-    private const string ParameterTypeStep = "Change parameter type";
+    private const string SignatureTypeStep = "Change type";
 
-    private static MethodEntryNode? ParameterTypeEntry(NodePin pin) => pin is NodeInputTypePin { Node: MethodEntryNode entry } ? entry : null;
+    private static bool IsSignatureTypePin(NodePin pin) => pin is NodeInputTypePin { Node: MethodEntryNode or ReturnNode };
+
+    private static bool IsTypePin(NodePin pin) => pin is NodeInputTypePin or NodeOutputTypePin;
+
+    /// <summary>
+    /// Runs a connection change. A type connection in a method can retype a parameter or a return value, so it goes through the signature
+    /// edit: one undo step that moves the calls. The step is always recorded for the entry's and return nodes' own type pins, and only when
+    /// the signature changed for any other type pin.
+    /// </summary>
+    private void ChangeTypeConnection(Action change, params NodePin[] pins)
+    {
+        if (!pins.Any(IsTypePin))
+        {
+            change();
+            return;
+        }
+
+        Node.Graph.EditMethodSignature(SignatureTypeStep, change, recordOnlyWhenChanged: !pins.Any(IsSignatureTypePin));
+    }
 
     /// <summary>Disconnects all connections of this pin (middle click, PAR-48).</summary>
     [RelayCommand]
-    public void DisconnectAll()
-    {
-        if (ParameterTypeEntry(Pin) is { } entry)
-        {
-            Node.Graph.EditMethodSignature(entry, ParameterTypeStep, () => GraphUtil.DisconnectPin(Pin));
-        }
-        else
-        {
-            GraphUtil.DisconnectPin(Pin);
-        }
-    }
+    public void DisconnectAll() => ChangeTypeConnection(() => GraphUtil.DisconnectPin(Pin), Pin);
 
     /// <summary>Toggles the faint state of the cables of this pin (mouse back button, PAR-48).</summary>
     [RelayCommand]

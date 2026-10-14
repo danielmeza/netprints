@@ -22,7 +22,27 @@ public static class SignatureChange
     /// <param name="newParameters">The member's parameters after the change.</param>
     /// <param name="sourceIndexes">For each new parameter, the index it had before, or -1 for a new one.</param>
     /// <returns>The action that puts the original nodes and their connections back.</returns>
-    public static Action RetargetCallers(IEnumerable<ClassGraph> classes, MemberKey oldKey, IReadOnlyList<Named<BaseType>> newParameters, IReadOnlyList<int> sourceIndexes)
+    public static Action RetargetCallers(IEnumerable<ClassGraph> classes, MemberKey oldKey, IReadOnlyList<Named<BaseType>> newParameters, IReadOnlyList<int> sourceIndexes) =>
+        RetargetCallers(classes, oldKey, newParameters, sourceIndexes, null, null);
+
+    /// <summary>
+    /// Like <see cref="RetargetCallers(IEnumerable{ClassGraph}, MemberKey, IReadOnlyList{Named{BaseType}}, IReadOnlyList{int})"/>, and the rebuilt
+    /// nodes also take the method's return types and generic arguments. A return value keeps its wires while it keeps its position and type.
+    /// </summary>
+    /// <param name="classes">The classes whose graphs may use the member (the whole project).</param>
+    /// <param name="oldKey">The member's identity before the change.</param>
+    /// <param name="newParameters">The member's parameters after the change.</param>
+    /// <param name="sourceIndexes">For each new parameter, the index it had before, or -1 for a new one.</param>
+    /// <param name="newReturnTypes">The member's return types after the change; null keeps each node's own.</param>
+    /// <param name="newGenericArguments">The member's generic arguments after the change; null keeps each node's own.</param>
+    /// <returns>The action that puts the original nodes and their connections back.</returns>
+    public static Action RetargetCallers(
+        IEnumerable<ClassGraph> classes,
+        MemberKey oldKey,
+        IReadOnlyList<Named<BaseType>> newParameters,
+        IReadOnlyList<int> sourceIndexes,
+        IReadOnlyList<BaseType>? newReturnTypes,
+        IReadOnlyList<BaseType>? newGenericArguments)
     {
         ArgumentNullException.ThrowIfNull(classes);
         ArgumentNullException.ThrowIfNull(newParameters);
@@ -36,8 +56,8 @@ public static class SignatureChange
         {
             undos.Add(node switch
             {
-                CallMethodNode call => Replace(call, new CallMethodNode(call.Graph, WithParameters(call.MethodSpecifier, newParameters)), newParameters, sourceIndexes),
-                MakeDelegateNode makeDelegate => Replace(makeDelegate, new MakeDelegateNode(makeDelegate.Graph, WithParameters(makeDelegate.MethodSpecifier, newParameters)), newParameters, sourceIndexes),
+                CallMethodNode call => Replace(call, new CallMethodNode(call.Graph, WithSignature(call.MethodSpecifier, newParameters, newReturnTypes, newGenericArguments)), newParameters, sourceIndexes),
+                MakeDelegateNode makeDelegate => Replace(makeDelegate, new MakeDelegateNode(makeDelegate.Graph, WithSignature(makeDelegate.MethodSpecifier, newParameters, newReturnTypes, newGenericArguments)), newParameters, sourceIndexes),
                 _ => () => { }
                 ,
             });
@@ -52,10 +72,14 @@ public static class SignatureChange
         };
     }
 
-    private static MethodSpecifier WithParameters(MethodSpecifier specifier, IReadOnlyList<Named<BaseType>> parameters) =>
+    private static MethodSpecifier WithSignature(
+        MethodSpecifier specifier,
+        IReadOnlyList<Named<BaseType>> parameters,
+        IReadOnlyList<BaseType>? returnTypes,
+        IReadOnlyList<BaseType>? genericArguments) =>
         new(specifier.Name,
             parameters.Select(parameter => new MethodParameter(parameter.Name, parameter.Value, MethodParameterPassType.Default, false, null)),
-            specifier.ReturnTypes, specifier.Modifiers, specifier.Visibility, specifier.DeclaringType, specifier.GenericArguments);
+            (IEnumerable<BaseType>?)returnTypes ?? specifier.ReturnTypes, specifier.Modifiers, specifier.Visibility, specifier.DeclaringType, [.. (IEnumerable<BaseType>?)genericArguments ?? specifier.GenericArguments]);
 
     private static Action Replace(Node old, Node replacement, IReadOnlyList<Named<BaseType>> newParameters, IReadOnlyList<int> sourceIndexes)
     {
@@ -141,9 +165,20 @@ public static class SignatureChange
             }
         }
 
+        if (old is CallMethodNode oldCall && replacement is CallMethodNode newCall)
+        {
+            for (int i = 0; i < Math.Min(oldCall.InputTypePins.Count, newCall.InputTypePins.Count); i++)
+            {
+                if (oldCall.InputTypePins[i].IncomingPin is { } typeSource)
+                {
+                    GraphUtil.ConnectTypePins(typeSource, newCall.InputTypePins[i]);
+                }
+            }
+        }
+
         foreach (NodeOutputDataPin oldPin in old.OutputDataPins)
         {
-            NodeOutputDataPin? newPin = replacement.OutputDataPins.FirstOrDefault(pin => pin.Name == oldPin.Name && Equals(pin.PinType.Value, oldPin.PinType.Value));
+            NodeOutputDataPin? newPin = MatchOutput(old, replacement, oldPin);
             if (newPin is null)
             {
                 continue;
@@ -154,6 +189,17 @@ public static class SignatureChange
                 GraphUtil.ConnectDataPins(newPin, target);
             }
         }
+    }
+
+    private static NodeOutputDataPin? MatchOutput(Node old, Node replacement, NodeOutputDataPin oldPin)
+    {
+        if (old is CallMethodNode oldCall && replacement is CallMethodNode newCall && oldCall.ReturnValuePins.IndexOf(oldPin) is >= 0 and int index)
+        {
+            IList<NodeOutputDataPin> returns = newCall.ReturnValuePins;
+            return index < returns.Count && Equals(returns[index].PinType.Value, oldPin.PinType.Value) ? returns[index] : null;
+        }
+
+        return replacement.OutputDataPins.FirstOrDefault(pin => pin.Name == oldPin.Name && Equals(pin.PinType.Value, oldPin.PinType.Value));
     }
 
     private static object? DefaultLiteral(NodeInputDataPin pin)

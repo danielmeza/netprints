@@ -357,10 +357,10 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
                 EditPins(LeftPlusToolTip, makeArrayNode.AddElementPin);
                 break;
             case MethodEntryNode entryNode:
-                Graph.EditMethodSignature(entryNode, LeftPlusToolTip, entryNode.AddArgument, [.. Enumerable.Range(0, entryNode.OutputDataPins.Count), -1]);
+                Graph.EditMethodSignature(LeftPlusToolTip, entryNode.AddArgument, [.. Enumerable.Range(0, entryNode.OutputDataPins.Count), -1]);
                 break;
             case ReturnNode returnNode:
-                EditPins(LeftPlusToolTip, returnNode.AddReturnType);
+                Graph.EditMethodSignature(LeftPlusToolTip, returnNode.AddReturnType);
                 break;
             case ClassReturnNode classReturnNode:
                 EditPins(LeftPlusToolTip, classReturnNode.AddInterfacePin);
@@ -377,10 +377,10 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
                 EditPins(LeftMinusToolTip, () => makeArrayNode.RemoveElementPin());
                 break;
             case MethodEntryNode { OutputDataPins.Count: > 0 } entryNode:
-                Graph.EditMethodSignature(entryNode, LeftMinusToolTip, entryNode.RemoveArgument, [.. Enumerable.Range(0, entryNode.OutputDataPins.Count - 1)]);
+                Graph.EditMethodSignature(LeftMinusToolTip, entryNode.RemoveArgument, [.. Enumerable.Range(0, entryNode.OutputDataPins.Count - 1)]);
                 break;
             case ReturnNode { InputDataPins.Count: > 0 } returnNode:
-                EditPins(LeftMinusToolTip, returnNode.RemoveReturnType);
+                Graph.EditMethodSignature(LeftMinusToolTip, returnNode.RemoveReturnType);
                 break;
             case ClassReturnNode classReturnNode when classReturnNode.InterfacePins.Any():
                 EditPins(LeftMinusToolTip, classReturnNode.RemoveInterfacePin);
@@ -393,7 +393,7 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
     {
         if (Node is MethodEntryNode entryNode)
         {
-            EditPins(RightPlusToolTip, entryNode.AddGenericArgument);
+            Graph.EditMethodSignature(RightPlusToolTip, entryNode.AddGenericArgument);
         }
     }
 
@@ -402,7 +402,7 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
     {
         if (Node is MethodEntryNode { OutputTypePins.Count: > 0 } entryNode)
         {
-            EditPins(RightMinusToolTip, entryNode.RemoveGenericArgument);
+            Graph.EditMethodSignature(RightMinusToolTip, entryNode.RemoveGenericArgument);
         }
     }
 

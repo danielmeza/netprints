@@ -91,6 +91,7 @@ static NetPrints.Graph.EventArgument.operator !=(NetPrints.Graph.EventArgument? 
 static NetPrints.Graph.EventArgument.operator ==(NetPrints.Graph.EventArgument? left, NetPrints.Graph.EventArgument? right) -> bool
 NetPrints.Core.SignatureChange
 static NetPrints.Core.SignatureChange.RetargetCallers(System.Collections.Generic.IEnumerable<NetPrints.Core.ClassGraph!>! classes, NetPrints.Graph.MemberKey oldKey, System.Collections.Generic.IReadOnlyList<NetPrints.Core.Named<NetPrints.Core.BaseType!>!>! newParameters, System.Collections.Generic.IReadOnlyList<int>! sourceIndexes) -> System.Action!
+static NetPrints.Core.SignatureChange.RetargetCallers(System.Collections.Generic.IEnumerable<NetPrints.Core.ClassGraph!>! classes, NetPrints.Graph.MemberKey oldKey, System.Collections.Generic.IReadOnlyList<NetPrints.Core.Named<NetPrints.Core.BaseType!>!>! newParameters, System.Collections.Generic.IReadOnlyList<int>! sourceIndexes, System.Collections.Generic.IReadOnlyList<NetPrints.Core.BaseType!>? newReturnTypes, System.Collections.Generic.IReadOnlyList<NetPrints.Core.BaseType!>? newGenericArguments) -> System.Action!
 NetPrints.Core.MemberNameKind
 NetPrints.Core.MemberNameKind.Event = 1 -> NetPrints.Core.MemberNameKind
 NetPrints.Core.MemberNameKind.Method = 0 -> NetPrints.Core.MemberNameKind

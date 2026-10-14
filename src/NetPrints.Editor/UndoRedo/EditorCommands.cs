@@ -209,40 +209,180 @@ public static class EditorCommands
     }
 
     /// <summary>
-    /// Changes the parameters of the method that owns <paramref name="entry"/> (its +/- buttons and its type-pin connections) as one step:
-    /// <see cref="EditPins"/> for the entry's pins, and <see cref="SignatureChange.RetargetCallers"/> so the calls to the method in
-    /// <paramref name="classes"/> move to the new parameter list in the same step. Undo reverses both.
+    /// Changes a method's signature (the entry and return nodes' +/- buttons, the connections of their type pins and of the type nodes
+    /// feeding them) as one step: the edit and its undo cover the pin lists of the entry and return nodes and every connection of the
+    /// graph, and <see cref="SignatureChange.RetargetCallers(IEnumerable{ClassGraph}, MemberKey, IReadOnlyList{Named{BaseType}}, IReadOnlyList{int}, IReadOnlyList{BaseType}?, IReadOnlyList{BaseType}?)"/>
+    /// moves the calls to the method in <paramref name="classes"/> to the new signature in the same step. Undo reverses both.
     /// </summary>
     /// <param name="classes">The classes whose graphs may call the method (the whole project).</param>
-    /// <param name="entry">The method's entry node.</param>
+    /// <param name="method">The method.</param>
     /// <param name="label">The name of the step.</param>
-    /// <param name="edit">Changes the parameters.</param>
-    /// <param name="sourceIndexes">For each new parameter, the index it had before, or -1 for a new one.</param>
+    /// <param name="edit">Changes the signature.</param>
+    /// <param name="sourceIndexes">For each new parameter, the index it had before, or -1 for a new one; null when the parameters keep their positions.</param>
     /// <returns>The command.</returns>
-    public static IUndoableCommand EditMethodSignature(IReadOnlyList<ClassGraph> classes, MethodEntryNode entry, string label, Action edit, IReadOnlyList<int> sourceIndexes)
+    public static MethodSignatureEdit EditMethodSignature(IReadOnlyList<ClassGraph> classes, MethodGraph method, string label, Action edit, IReadOnlyList<int>? sourceIndexes)
     {
-        ArgumentNullException.ThrowIfNull(classes);
-        ArgumentNullException.ThrowIfNull(entry);
-        ArgumentNullException.ThrowIfNull(sourceIndexes);
-        IUndoableCommand pins = EditPins(entry, label, edit);
-        Action undoCallers = () => { };
+        ArgumentNullException.ThrowIfNull(method);
+        ArgumentNullException.ThrowIfNull(label);
+        ArgumentNullException.ThrowIfNull(edit);
+        return new MethodSignatureEdit(classes, method, EditGraph(method, [method.MethodEntryNode, .. method.ReturnNodes], label, edit), sourceIndexes);
+    }
+
+    /// <summary>
+    /// Wraps a command that may change the signature of <paramref name="method"/> (deleting the type node that feeds a parameter) so the
+    /// calls to the method move with it, in the same step.
+    /// </summary>
+    /// <param name="classes">The classes whose graphs may call the method (the whole project).</param>
+    /// <param name="method">The method the command edits.</param>
+    /// <param name="command">The command.</param>
+    /// <returns>The command, which retargets the calls when the signature changed.</returns>
+    public static MethodSignatureEdit RetargetCallersAfter(IReadOnlyList<ClassGraph> classes, MethodGraph method, IUndoableCommand command) =>
+        new(classes, method, command, null);
+
+    /// <summary>
+    /// A command that may change a method's signature: after it runs, the calls to the method in the project are rebuilt on the new
+    /// signature, and undo puts them back before undoing the command.
+    /// </summary>
+    public sealed class MethodSignatureEdit : IUndoableCommand
+    {
+        private readonly IReadOnlyList<ClassGraph> classes;
+        private readonly MethodGraph method;
+        private readonly IUndoableCommand command;
+        private readonly IReadOnlyList<int>? sourceIndexes;
+        private Action undoCallers = () => { };
+
+        internal MethodSignatureEdit(IReadOnlyList<ClassGraph> classes, MethodGraph method, IUndoableCommand command, IReadOnlyList<int>? sourceIndexes)
+        {
+            ArgumentNullException.ThrowIfNull(classes);
+            ArgumentNullException.ThrowIfNull(method);
+            ArgumentNullException.ThrowIfNull(command);
+            this.classes = classes;
+            this.method = method;
+            this.command = command;
+            this.sourceIndexes = sourceIndexes;
+        }
+
+        /// <summary>Gets a value indicating whether the last <see cref="Execute"/> changed the method's signature.</summary>
+        public bool Changed { get; private set; }
+
+        /// <inheritdoc/>
+        public string Name => command.Name;
+
+        /// <inheritdoc/>
+        public void Execute()
+        {
+            SignatureShape before = SignatureShape.Of(method);
+            command.Execute();
+            SignatureShape after = SignatureShape.Of(method);
+            Changed = !before.Matches(after);
+            undoCallers = Changed && method.Class is { } cls
+                ? SignatureChange.RetargetCallers(
+                    classes,
+                    new MemberKey(MemberKind.Method, cls.Type, method.Name, [.. before.Parameters.Select(parameter => parameter.Value)]),
+                    after.Parameters,
+                    sourceIndexes ?? [.. Enumerable.Range(0, after.Parameters.Count)],
+                    after.ReturnTypes,
+                    after.GenericArguments)
+                : () => { };
+        }
+
+        /// <inheritdoc/>
+        public void Undo()
+        {
+            undoCallers();
+            undoCallers = () => { };
+            command.Undo();
+        }
+    }
+
+    private sealed class SignatureShape
+    {
+        private SignatureShape(IReadOnlyList<Named<BaseType>> parameters, IReadOnlyList<BaseType> returnTypes, IReadOnlyList<BaseType> genericArguments)
+        {
+            Parameters = parameters;
+            ReturnTypes = returnTypes;
+            GenericArguments = genericArguments;
+        }
+
+        public IReadOnlyList<Named<BaseType>> Parameters { get; }
+
+        public IReadOnlyList<BaseType> ReturnTypes { get; }
+
+        public IReadOnlyList<BaseType> GenericArguments { get; }
+
+        public static SignatureShape Of(MethodGraph method) =>
+            new([.. method.MethodEntryNode.OutputDataPins.Select(pin => new Named<BaseType>(pin.Name, pin.PinType.RequireValue()))], [.. method.ReturnTypes], [.. method.GenericArgumentTypes]);
+
+        public bool Matches(SignatureShape other) =>
+            Parameters.SequenceEqual(other.Parameters)
+            && ReturnTypes.SequenceEqual(other.ReturnTypes)
+            && GenericArguments.SequenceEqual(other.GenericArguments);
+    }
+
+    private sealed record GraphEditState(IReadOnlyList<PinListState> Nodes, IReadOnlyList<Link> OtherLinks);
+
+    private static DelegateUndoableCommand EditGraph(NodeGraph graph, IReadOnlyList<Node> pinNodes, string label, Action edit)
+    {
+        NodeHandle[] handles = [.. pinNodes.Select(HandleOf)];
+        GraphEditState? before = null;
+        GraphEditState? after = null;
 
         return new DelegateUndoableCommand(label,
             () =>
             {
-                MemberKey? oldKey = entry.MethodGraph is { Class: { } cls } method
-                    ? new MemberKey(MemberKind.Method, cls.Type, method.Name, method.ArgumentTypes.ToList())
-                    : null;
-                pins.Execute();
-                undoCallers = oldKey is { } key
-                    ? SignatureChange.RetargetCallers(classes, key, [.. entry.OutputDataPins.Select(pin => new Named<BaseType>(pin.Name, pin.PinType.RequireValue()))], sourceIndexes)
-                    : () => { };
+                if (after is null)
+                {
+                    before = CaptureGraphEdit(graph, handles);
+                    edit();
+                    after = CaptureGraphEdit(graph, handles);
+                }
+                else
+                {
+                    ApplyGraphEdit(graph, handles, after);
+                }
             },
-            () =>
-            {
-                undoCallers();
-                pins.Undo();
-            });
+            () => ApplyGraphEdit(graph, handles, before ?? throw new InvalidOperationException(NoDoActionMessage)));
+    }
+
+    private static List<Link> OtherLinks(NodeGraph graph, NodeHandle[] handles) =>
+        [.. CaptureLinks(graph).Links.Where(link => !handles.Contains(link.From.Handle) && !handles.Contains(link.To.Handle))];
+
+    private static GraphEditState CaptureGraphEdit(NodeGraph graph, NodeHandle[] handles) =>
+        new([.. handles.Select(CapturePins)], OtherLinks(graph, handles));
+
+    private static void ApplyGraphEdit(NodeGraph graph, NodeHandle[] handles, GraphEditState state)
+    {
+        List<Link> current = OtherLinks(graph, handles);
+        foreach (Link link in current.Except(state.OtherLinks))
+        {
+            Disconnect(link);
+        }
+
+        for (int i = 0; i < handles.Length; i++)
+        {
+            SetPinLists(handles[i].Node, state.Nodes[i]);
+        }
+
+        foreach (Link link in state.Nodes.SelectMany(pins => pins.Links).Distinct().Concat(state.OtherLinks.Except(current)))
+        {
+            Reconnect(link);
+        }
+    }
+
+    private static void Disconnect(Link link)
+    {
+        switch (link.Kind)
+        {
+            case LinkKind.Exec:
+                GraphUtil.DisconnectOutputExecPin(link.From.Handle.Node.OutputExecPins[link.From.Index]);
+                break;
+            case LinkKind.Data:
+                GraphUtil.DisconnectInputDataPin(link.To.Handle.Node.InputDataPins[link.To.Index]);
+                break;
+            case LinkKind.Type:
+                GraphUtil.DisconnectInputTypePin(link.To.Handle.Node.InputTypePins[link.To.Index]);
+                break;
+        }
     }
 
     private sealed record PinListState(
@@ -264,7 +404,15 @@ public static class EditorCommands
 
     private static void ApplyPins(NodeHandle handle, PinListState state)
     {
-        Node node = handle.Node;
+        SetPinLists(handle.Node, state);
+        foreach (Link link in state.Links)
+        {
+            Reconnect(link);
+        }
+    }
+
+    private static void SetPinLists(Node node, PinListState state)
+    {
         GraphUtil.DisconnectNodePins(node);
         SetList(node.InputExecPins, state.InputExec);
         SetList(node.OutputExecPins, state.OutputExec);
@@ -272,10 +420,6 @@ public static class EditorCommands
         SetList(node.OutputDataPins, state.OutputData);
         SetList(node.InputTypePins, state.InputType);
         SetList(node.OutputTypePins, state.OutputType);
-        foreach (Link link in state.Links)
-        {
-            Reconnect(link);
-        }
     }
 
     private static void SetList<TPin>(ObservableRangeCollection<TPin> list, IReadOnlyList<TPin> target)
