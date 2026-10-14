@@ -1,4 +1,6 @@
+using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Media;
 using NetPrints.Core;
 using NetPrints.Editor.Graph.Nodes;
 using NetPrints.Editor.Hosting.Automation;
@@ -134,6 +136,30 @@ public class EventInspectorTests
         await session.Page.Inspector.EventGraphError.WaitUntilAsync(
             e => (e.Text ?? "") == $"An event graph named '{session.Class.EventGraphs[0].Name}' already exists", "the refusal shown", Token);
         Assert.NotEqual(session.Class.EventGraphs[0].Name, second.Name);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task AnOverrideEntrysSignatureNoteWrapsWithinTheInspector()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await session.RunAsync("addEventGraph", Token);
+        await session.Graph.Watermark.WaitUntilAsync(e => !string.IsNullOrEmpty(e.Text), "graph shown", Token);
+        var search = await (await session.Graph.RightClickEmptyAsync(Token)).WaitOpenAsync(Token);
+        await search.FilterAsync("Override ToString", "Override ToString", Token);
+        await search.ChooseAsync("Override ToString", Token);
+        await session.WaitForRenderedAsync(Token);
+        var entry = ((EventGraph)session.GraphViewModel.Graph).Nodes.OfType<EventEntryNode>().Single(e => e.OverriddenMethod is not null);
+
+        foreach (NodeViewModel node in session.GraphViewModel.Nodes)
+        {
+            node.IsSelected = ReferenceEquals(node.Node, entry);
+        }
+
+        await session.Page.Inspector.EventEntryBaseSignature.WaitVisibleAsync(Token);
+        TextBlock note = Assert.IsType<TextBlock>(session.App.Ui.Tree.FindControls(new AutomationQuery(AutomationIds.EventEntryInspectorBaseSignature)).Select(pair => pair.Control).First());
+
+        Assert.Equal(TextWrapping.Wrap, note.TextWrapping);
+        Assert.True(note.DesiredSize.Width <= note.Bounds.Width + 0.5, $"The note wants {note.DesiredSize.Width} but gets {note.Bounds.Width}.");
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

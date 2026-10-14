@@ -23,7 +23,7 @@
     </TextBox>
     <TextBlock Grid.Row="3" Grid.Column="1" Classes="fieldError" Text="{Binding Error}" IsVisible="{Binding HasError}"
                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorError}" />
-    <TextBlock Grid.Row="4" Grid.Column="1" Classes="secondary" Text="{Binding BaseSignatureNote}" IsVisible="{Binding IsOverride}"
+    <TextBlock Grid.Row="4" Grid.Column="1" Classes="secondary" Text="{Binding BaseSignatureNote}" TextWrapping="Wrap" IsVisible="{Binding IsOverride}"
                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorBaseSignature}" />
     <TextBlock Grid.Row="5" Classes="inspectorLabel" Text="Arguments" />
     <Button Grid.Row="5" Grid.Column="1" Classes="flat" Content="Add argument" Command="{Binding AddArgumentCommand}"
