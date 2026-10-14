@@ -63,6 +63,7 @@ public sealed class HostChannelBridgeTests : IDisposable
 
         await host.SendAsync(new HostMessage(HostMessageTypes.TypesChanged, NoPayload), TestContext.Current.CancellationToken);
 
+        await reflection.WhenReloadsReach(before + 1).WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
         Assert.Equal(before + 1, reflection.Reloads);
     }
 
@@ -154,7 +155,26 @@ public sealed class HostChannelBridgeTests : IDisposable
     /// <summary>Counts reloads without doing them; every other member is the loaded shared host's.</summary>
     private sealed class SpyReflectionHost(IReflectionHost inner) : IReflectionHost
     {
+        private readonly object gate = new();
+        private readonly List<(int Count, TaskCompletionSource Done)> waiters = [];
+
         public int Reloads { get; private set; }
+
+        /// <summary>Completes once the provider has been reloaded <paramref name="count"/> times in all: a reload waits for the one it cancels, so it does not run before the message handler returns.</summary>
+        public Task WhenReloadsReach(int count)
+        {
+            lock (gate)
+            {
+                if (Reloads >= count)
+                {
+                    return Task.CompletedTask;
+                }
+
+                var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                waiters.Add((count, done));
+                return done.Task;
+            }
+        }
 
         public bool IsLoaded => inner.IsLoaded;
 
@@ -176,7 +196,21 @@ public sealed class HostChannelBridgeTests : IDisposable
 
         public Task ReloadAsync(Project project, CancellationToken cancellationToken = default)
         {
-            Reloads++;
+            lock (gate)
+            {
+                Reloads++;
+                waiters.RemoveAll(waiter =>
+                {
+                    bool reached = Reloads >= waiter.Count;
+                    if (reached)
+                    {
+                        waiter.Done.TrySetResult();
+                    }
+
+                    return reached;
+                });
+            }
+
             return Task.CompletedTask;
         }
     }
