@@ -28,9 +28,11 @@ public sealed class GuideScreenshotTests(DesktopWorkerPool pool) : ProjectEditor
     private const int ShortBackupDelay = 300;
     private const int ImageMaxWidth = 1600;
     private const int ImageMaxHeight = 1000;
-    private const double ScrollNotches = -15;
+    private const int MaxScrollNotches = 40;
+    private const double NotesTop = 230;
     private const double BreadcrumbWidth = 420;
     private const double CtrlClickFraction = 0.3;
+    private const int AddArgumentAttempts = 3;
     private const double NewEntryX = 60;
     private const double OverrideEntryX = 380;
     private const double NewEntryY = 60;
@@ -39,6 +41,8 @@ public sealed class GuideScreenshotTests(DesktopWorkerPool pool) : ProjectEditor
     private static readonly DocumentId MainDocument = DocumentId.Graph("HelloWorld.Program.netpc.json", DocumentId.MethodKeyPrefix + "m000000001gs20");
 
     protected override int? BackupDelayMilliseconds => ShortBackupDelay;
+
+    private static readonly TimeSpan ArgumentWait = TimeSpan.FromSeconds(5);
 
     private static string ImagesDirectory => Path.Combine(LocalSdkLayout.FindRepositoryRoot(), ImagesFolder);
 
@@ -252,17 +256,23 @@ public sealed class GuideScreenshotTests(DesktopWorkerPool pool) : ProjectEditor
 
         using (Step("the what's new notes"))
         {
-            await new UiElement(Driver, new AutomationQuery(AutomationIds.StartPageWhatsNewToggle)).ClickAsync(token);
+            var toggle = new UiElement(Driver, new AutomationQuery(AutomationIds.StartPageWhatsNewToggle));
+            await toggle.ClickAsync(token);
             var notes = new UiElement(Driver, new AutomationQuery(AutomationIds.StartPageWhatsNew));
             await notes.WaitVisibleAsync(token);
-            await Driver.WheelAsync(await start.CenterAsync(token), ScrollNotches, token);
+            double top = (await Shell.GetAsync(token)).ScreenBounds.Y;
+            for (int notch = 0; notch < MaxScrollNotches && (await toggle.GetAsync(token)).ScreenBounds.Y - top > NotesTop; notch++)
+            {
+                await Driver.WheelAsync(await start.CenterAsync(token), -1, token);
+            }
+
             await Driver.SettleAsync(token);
             await ShootAsync("start-page-whats-new", token);
         }
 
         using (Step("an event graph: rename in the tree, add a custom event and an override"))
         {
-            await Driver.WheelAsync(await start.CenterAsync(token), -ScrollNotches, token);
+            await Driver.WheelAsync(await start.CenterAsync(token), MaxScrollNotches, token);
             await start.Recent("HelloWorld").Open.ClickAsync(token);
             await WaitForProjectAsync(token);
             await WaitNotBusyAsync(token);
@@ -309,11 +319,8 @@ public sealed class GuideScreenshotTests(DesktopWorkerPool pool) : ProjectEditor
             await Driver.PressAsync("Tab", token);
             await inspector.EventEntryName.WaitUntilAsync(e => e.Text == "OnHit", "the new name kept", token);
             await inspector.EventEntryError.WaitHiddenAsync(token);
-            await Driver.SettleAsync(token);
-            await inspector.EventEntryAddArgument.ClickAsync(token);
-            await UiWait.UntilAsync(Driver, async () => await inspector.EventEntryArgumentCountAsync(token) == 1, "one argument", token);
-            await inspector.EventEntryAddArgument.ClickAsync(token);
-            await UiWait.UntilAsync(Driver, async () => await inspector.EventEntryArgumentCountAsync(token) == 2, "two arguments", token);
+            await AddArgumentAsync(inspector, 1, token);
+            await AddArgumentAsync(inspector, 2, token);
             await ShootAsync("event-entry-inspector", token);
 
             var typeDialog = new SelectTypeDialogPage(Driver);
@@ -384,6 +391,25 @@ public sealed class GuideScreenshotTests(DesktopWorkerPool pool) : ProjectEditor
         var bounds = (await Shell.GetAsync(cancellationToken)).ScreenBounds;
         var bar = (await Shell.Commands.GetAsync(cancellationToken)).ScreenBounds;
         await SaveAsync(name, bounds.X, bounds.Y, bounds.Width, bar.Y + bar.Height - bounds.Y, parkPointer: true, cancellationToken);
+    }
+
+    /// <summary>Presses Add argument until the entry has <paramref name="expected"/> arguments; the button moves when the message above it goes, and a press can land beside it.</summary>
+    private async Task AddArgumentAsync(InspectorPage inspector, int expected, CancellationToken cancellationToken)
+    {
+        for (int attempt = 1; ; attempt++)
+        {
+            await Driver.SettleAsync(cancellationToken);
+            await inspector.EventEntryAddArgument.ClickAsync(cancellationToken);
+            try
+            {
+                await UiWait.UntilAsync(Driver, async () => await inspector.EventEntryArgumentCountAsync(cancellationToken) == expected, $"{expected} arguments", cancellationToken, ArgumentWait);
+                return;
+            }
+            catch (UiWaitTimeoutException) when (attempt < AddArgumentAttempts)
+            {
+                // The press missed the button; the count did not change, so it is safe to press again.
+            }
+        }
     }
 
     private Task WaitNotBusyAsync(CancellationToken cancellationToken) =>

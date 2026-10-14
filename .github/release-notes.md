@@ -34,6 +34,10 @@
 
 **Added:** each recent project on the start page has an icon tile. Setting Pure on a call can be undone and redone. A search scoped to a type follows the catalogs: it lists the members of the catalog that covers the type's assembly, hides the members that catalog omits, and says which catalog does not list the type when it has no entry for it; graphs that already use a hidden member still load, build and run.
 
+**Added:** logs and per-user folders. Each run of the editor writes a log file (the last 20 runs are kept), and an exception that ends the editor is logged before it exits. **Help › Open logs folder** opens the folder. The editor's own files and your backups now live in one folder per user: `%LOCALAPPDATA%\NetPrints` on Windows, `$XDG_STATE_HOME/NetPrints` or `~/.local/state/NetPrints` on Linux and `~/Library/Application Support/NetPrints` on macOS, with the logs in a `logs` folder beside them (`~/Library/Logs/NetPrints` on macOS). The first start moves the files from the old folder; if the move fails the old folder stays and the reason is in the log. `NETPRINTS_STATE_DIR` and `NETPRINTS_LOG_DIR` choose other folders.
+
+**Added:** guides for the editor, with screenshots: [the editor window](https://danielmeza.github.io/netprints/guide/editor/shell), [the start page](https://danielmeza.github.io/netprints/guide/editor/start-page), [saving and recovery](https://danielmeza.github.io/netprints/guide/editor/saving-and-recovery), [commands and shortcuts](https://danielmeza.github.io/netprints/guide/editor/commands-and-shortcuts), [navigation](https://danielmeza.github.io/netprints/guide/editor/navigation) and [event graphs](https://danielmeza.github.io/netprints/guide/editor/event-graphs). The [projects guide](https://danielmeza.github.io/netprints/guide/projects) now explains how a `Properties/launchSettings.json` gives **Run** (F5) and `netprints run` arguments and environment variables.
+
 ## Downloads
 
 | Platform | File |

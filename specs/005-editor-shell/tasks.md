@@ -1329,7 +1329,7 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
   of `docs/guide/editor/commands-and-shortcuts.md` equals the table generated from the registry, and
   `NETPRINTS_UPDATE_SNAPSHOTS=1` rewrites it (red first against a deliberately stale row). `GuidePagesTests`: each of
   the six pages exists and references at least one PNG that exists under `website/static/img/guide/editor/` (SC-010).
-- [ ] T107 Docs pass (2 units): `docs/guide/projects.md`; `docs/contributing/testing.md` (final); `README.md` (editor
+- [x] T107 Docs pass (2 units): `docs/guide/projects.md`; `docs/contributing/testing.md` (final); `README.md` (editor
   features and a screenshot); the Status of ADR-0018 (with the spike outcome), ADR-0019 and ADR-0020, and the
   `docs/adr/README.md` index; the `avalonia-*` skills; `src/NetPrints.Editor/StartPage/WhatsNew.md` and
   `.github/release-notes.md` "Unreleased" (every user-visible P3a change, the schema note, links to the new guides);
