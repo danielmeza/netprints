@@ -736,13 +736,11 @@
     <Setter Property="VerticalContentAlignment" Value="Top" />
   </Style>
 
-  <!-- Monospace font with tabular (fixed-width) numerals. -->
+  <!-- Tabular (fixed-width) numerals in the UI font; code and identifiers take Font.Mono through codeBlock. -->
   <Style Selector="TextBlock.tabular">
-    <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
     <Setter Property="FontFeatures" Value="tnum" />
   </Style>
   <Style Selector="TextBox.tabular">
-    <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
     <Setter Property="FontFeatures" Value="tnum" />
   </Style>
 

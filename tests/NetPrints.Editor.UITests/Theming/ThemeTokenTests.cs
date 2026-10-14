@@ -96,6 +96,27 @@ public class ThemeTokenTests
         Assert.Equal(new FontFamily("avares://NetPrints.Editor/Assets/Fonts#Cascadia Mono"), mono);
     }
 
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void TabularKeepsTheUiFontAndSwitchesOnTabularFigures()
+    {
+        FontFamily mono = Assert.IsType<FontFamily>(Resolve("Font.Mono", ThemeVariant.Default));
+        var text = new TextBlock { Text = "Errors (1) · Warnings (0)", Classes = { "tabular" } };
+        var box = new TextBox { Text = "12", Classes = { "tabular" } };
+        var window = new Window { Content = new StackPanel { Children = { text, box } } };
+        try
+        {
+            window.Show();
+            Assert.NotEqual(mono, text.FontFamily);
+            Assert.NotEqual(mono, box.FontFamily);
+            Assert.Contains(text.FontFeatures ?? [], feature => feature.Tag == FontFeature.Parse("tnum").Tag);
+            Assert.Contains(box.FontFeatures ?? [], feature => feature.Tag == FontFeature.Parse("tnum").Tag);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
     [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]
     [InlineData("XS", 4.0)]
     [InlineData("S", 8.0)]

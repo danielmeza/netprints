@@ -464,7 +464,7 @@ namespace NetPrints.Tests.Core
             [.. file.Document.Descendants().Where(e => e.Name.LocalName == "Style" && e.Attribute("Selector")?.Value == selector).Elements()];
 
         [Fact]
-        public void TheTabularStyleSetsMonoAndTnum()
+        public void TheTabularStyleSetsTnumAndLeavesTheFontFamilyAlone()
         {
             AxamlFile styles = LoadAxaml("src/NetPrints.Editor/EditorStyles.axaml");
 
@@ -472,7 +472,7 @@ namespace NetPrints.Tests.Core
             {
                 XElement[] setters = StyleSetters(styles, selector);
                 Assert.Contains(setters, s => s.Attribute("Property")?.Value == "FontFeatures" && s.Attribute("Value")?.Value == "tnum");
-                Assert.Contains(setters, s => s.Attribute("Property")?.Value == "FontFamily" && s.Attribute("Value")?.Value == "{StaticResource Font.Mono}");
+                Assert.DoesNotContain(setters, s => s.Attribute("Property")?.Value == "FontFamily");
             }
         }
 
