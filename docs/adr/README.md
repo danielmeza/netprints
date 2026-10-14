@@ -37,6 +37,8 @@ instead.
 - [0031: The editor composes with MS.DI and our own registration generator](0031-editor-composition-and-di.md)
 - [0033: Logging goes through NLog 6 behind `ILogger`, and per-user files live in per-OS folders](0033-logging-and-per-user-folders.md)
 - [0034: Smart enums keep behaviour in each member; generic math builds the primitive table](0034-smart-enums-and-generic-math.md)
+- [0035: Editor themes are data](0035-editor-themes-are-data.md)
+- [0036: Member defaults and editor metadata](0036-member-defaults-and-editor-metadata.md)
 
 Numbers 0024-0030 and 0032 are reserved by the roadmap for ADRs not yet written (analyzer and generator
 infrastructure, declarative pins, node kinds, localization, node search, node capabilities, the Extensibility
