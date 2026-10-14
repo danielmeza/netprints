@@ -492,7 +492,7 @@
     <Setter Property="Height" Value="100" />
     <Setter Property="CornerRadius" Value="50" />
     <Setter Property="Margin" Value="4" />
-    <Setter Property="FontSize" Value="16" />
+    <Setter Property="FontSize" Value="{StaticResource Font.Subtitle}" />
     <Setter Property="FontWeight" Value="Bold" />
     <!-- Little padding, so the longest label ("References") fits the 100-px circle. -->
     <Setter Property="Padding" Value="2" />
@@ -649,7 +649,7 @@
   </Style>
   <Style Selector="Border.badge > TextBlock">
     <Setter Property="Foreground" Value="{DynamicResource CommandBar.BadgeForeground}" />
-    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontSize" Value="{StaticResource Font.Caption}" />
     <Setter Property="HorizontalAlignment" Value="Center" />
   </Style>
 
@@ -658,26 +658,26 @@
   </Style>
   <!-- Type ramp for text roles: a view picks a class and never sets FontSize (rule E8). -->
   <Style Selector="TextBlock.title">
-    <Setter Property="FontSize" Value="42" />
+    <Setter Property="FontSize" Value="{StaticResource Font.Watermark}" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="LetterSpacing" Value="-0.5" />
     <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
   </Style>
   <Style Selector="TextBlock.section">
-    <Setter Property="FontSize" Value="22" />
+    <Setter Property="FontSize" Value="{StaticResource Font.Title}" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
   </Style>
   <Style Selector="TextBlock.secondary">
-    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontSize" Value="{StaticResource Font.Caption}" />
     <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
     <Setter Property="Opacity" Value="0.75" />
   </Style>
   <Style Selector="TextBlock.treeItem">
-    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontSize" Value="{StaticResource Font.Body}" />
   </Style>
   <Style Selector="TextBlock.nodeTitle">
-    <Setter Property="FontSize" Value="18" />
+    <Setter Property="FontSize" Value="{StaticResource Font.Subtitle}" />
     <Setter Property="FontWeight" Value="Bold" />
   </Style>
   <Style Selector="TextBlock.pinLabel">

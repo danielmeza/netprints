@@ -199,7 +199,7 @@ public class SnapshotTests
         };
         for (int i = 0; i < add.Count; i++)
         {
-            add[i](new GraphPoint(28 + i % 4 * 336, 280 + i / 4 * 224));
+            add[i](new GraphPoint(28 + i % 4 * 400, 280 + i / 4 * 260));
         }
 
         await session.WaitForRenderedAsync(Token);

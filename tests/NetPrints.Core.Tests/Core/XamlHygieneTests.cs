@@ -433,6 +433,30 @@ namespace NetPrints.Tests.Core
             AssertAllowlistHasNoStaleEntries(E8Allowlist.Keys, seen);
         }
 
+        private static readonly string[] FontRampKeys = ["Font.Caption", "Font.Body", "Font.Subtitle", "Font.Title", "Font.Watermark"];
+
+        /// <summary>FR-080: every <c>FontSize</c> in any axaml file, styles and resources included, resolves to a <c>Font.*</c> ramp token.</summary>
+        [Fact]
+        public void E8_EveryFontSizeIsARampToken()
+        {
+            var offenders = new List<string>();
+            foreach (AxamlFile file in LoadAxamlFiles())
+            {
+                foreach (XElement element in file.Document.Descendants())
+                {
+                    string? value = element.Name.LocalName == "Setter" && element.Attribute("Property")?.Value == "FontSize"
+                        ? element.Attribute("Value")?.Value
+                        : element.Attributes().FirstOrDefault(a => a.Name.LocalName == "FontSize")?.Value;
+                    if (value is not null && !FontRampKeys.Any(key => value.Trim() == $"{{StaticResource {key}}}" || value.Trim() == $"{{DynamicResource {key}}}"))
+                    {
+                        offenders.Add($"{file.RelativePath}: FontSize {value}");
+                    }
+                }
+            }
+
+            Assert.True(offenders.Count == 0, "FontSize must be a Font.* ramp token (FR-080): " + string.Join(", ", offenders));
+        }
+
         private static AxamlFile LoadAxaml(string relativePath) =>
             LoadAxamlFiles().Single(file => file.RelativePath == relativePath);
 
