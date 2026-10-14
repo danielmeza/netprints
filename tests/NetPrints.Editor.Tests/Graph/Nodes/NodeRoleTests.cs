@@ -33,7 +33,7 @@ public class NodeRoleTests(TestEditor editor) : GraphTestBase(editor)
         (NodeVisualKind.MakeArray, true, "Pure"),
         (NodeVisualKind.Throw, false, "Throw"),
         (NodeVisualKind.Throw, true, "Throw"),
-        (NodeVisualKind.Ternary, false, "Pure"),
+        (NodeVisualKind.Ternary, false, "Flow"),
         (NodeVisualKind.Ternary, true, "Pure"),
         (NodeVisualKind.IfElse, false, "Flow"),
         (NodeVisualKind.IfElse, true, "Pure"),
@@ -122,7 +122,7 @@ public class NodeRoleTests(TestEditor editor) : GraphTestBase(editor)
         Assert.Equal("Async", VmOf(new CallMethodNode(Method, genericTask)).Role.Name);
         Assert.Equal("Async", VmOf(new CallMethodNode(Method, valueTask)).Role.Name);
         Assert.Equal("Variable", VmOf(new VariableGetterNode(Method, variable)).Role.Name);
-        Assert.Equal("Pure", VmOf(new TernaryNode(Method)).Role.Name);
+        Assert.Equal("Flow", VmOf(new TernaryNode(Method)).Role.Name);
         Assert.Equal("Flow", VmOf(new IfElseNode(Method)).Role.Name);
         Assert.Equal("Throw", VmOf(new ThrowNode(Method)).Role.Name);
     }
@@ -141,6 +141,28 @@ public class NodeRoleTests(TestEditor editor) : GraphTestBase(editor)
         Assert.Contains(nameof(NodeViewModel.Role), changed);
         viewModel.IsPure = false;
         Assert.Equal("Call", viewModel.Role.Name);
+    }
+
+    [Fact]
+    public void ATernaryFollowsItsPurityThroughTheToggleAndUndo()
+    {
+        var viewModel = VmOf(new TernaryNode(Method));
+        Assert.False(viewModel.IsPure);
+        Assert.Equal("Flow", viewModel.Role.Name);
+
+        viewModel.IsPure = true;
+        Assert.Equal("Pure", viewModel.Role.Name);
+
+        viewModel.IsPure = false;
+        Assert.Equal("Flow", viewModel.Role.Name);
+
+        ClassContext.UndoRedo.Undo();
+        Assert.True(viewModel.IsPure);
+        Assert.Equal("Pure", viewModel.Role.Name);
+
+        ClassContext.UndoRedo.Undo();
+        Assert.False(viewModel.IsPure);
+        Assert.Equal("Flow", viewModel.Role.Name);
     }
 
     [Fact]

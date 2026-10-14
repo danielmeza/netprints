@@ -52,7 +52,6 @@ public sealed class NodeRole
         [NodeVisualKind.MakeDelegate] = Pure,
         [NodeVisualKind.Type] = Pure,
         [NodeVisualKind.MakeArray] = Pure,
-        [NodeVisualKind.Ternary] = Pure,
     }.ToFrozenDictionary();
 
     /// <summary>The role's name, which is also the suffix of its <c>Node.Header.&lt;Name&gt;</c> token.</summary>
