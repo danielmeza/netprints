@@ -200,8 +200,8 @@ agents" below. Guard entry points with `ArgumentNullException.ThrowIfNull`,
   report.
 
 ## Commits and tests
-- End commit messages with the attribution line(s) your session is configured with; PR bodies
-  end with the "Generated with Claude Code" footer when produced by Claude Code.
+- Commit messages, PR bodies and comments carry no tool or model attribution: no `Co-Authored-By` or
+  session trailers, no "Generated with" footers.
 - Reproduce a bug with a test that fails before fixing it. Tests use xUnit v3 and always pass
   `TestContext.Current.CancellationToken`. UI tests go through page objects and `AutomationIds`,
   with no sleeps.
