@@ -86,11 +86,16 @@ public class InteractionStateTests
             "document tab" => await UnselectedTabAsync(session),
             "command-bar button" => window.GetVisualDescendants().OfType<Button>().First(button => button.Classes.Contains("command-bar")),
             "menu item" => window.GetVisualDescendants().OfType<MenuItem>().First(),
-            "errors row" => window.GetVisualDescendants().OfType<ListBoxItem>().First(item => AutomationProperties.GetAutomationId(item) == AutomationIds.ErrorsRow),
+            "errors row" => ErrorsRow(session),
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
         };
         return (session, control);
     }
+
+    private static ListBoxItem ErrorsRow(EditorSession session) =>
+        session.Window.GetVisualDescendants().OfType<ListBoxItem>().First(item => AutomationProperties.GetAutomationId(item) == AutomationIds.ErrorsRow);
+
+    private static Control Current(string kind, EditorSession session, Control found) => kind == "errors row" ? ErrorsRow(session) : found;
 
     private static Task<Control> UnselectedTabAsync(EditorSession session)
     {
@@ -178,9 +183,10 @@ public class InteractionStateTests
                     App.RequestedThemeVariant = variant;
                     try
                     {
-                        if (control is DocumentTabStripItem { IsSelected: true })
+                        Control target = Current(kind, session, control);
+                        if (target is DocumentTabStripItem { IsSelected: true })
                         {
-                            session.Window.GetVisualDescendants().OfType<DocumentTabStripItem>().First(item => !ReferenceEquals(item, control)).IsSelected = true;
+                            session.Window.GetVisualDescendants().OfType<DocumentTabStripItem>().First(item => !ReferenceEquals(item, target)).IsSelected = true;
                             HeadlessDriver.Pump();
                             session.Window.UpdateLayout();
                         }
@@ -188,30 +194,61 @@ public class InteractionStateTests
                         HeadlessDriver.Pump();
                         var window = session.Window;
                         double apart = variant == ThemeVariant.Light ? 12 : 0;
-                        Point inside = control.TranslatePoint(new Point(control.Bounds.Width / 2 + apart, Math.Min(control.Bounds.Height / 2, 10)), window)
+                        Point inside = target.TranslatePoint(new Point(target.Bounds.Width / 2 + apart, Math.Min(target.Bounds.Height / 2, 10)), window)
                             ?? throw new InvalidOperationException("The control is not in the window.");
                         window.UpdateLayout();
                         window.MouseMove(inside);
                         HeadlessDriver.Pump();
-                        for (int attempt = 0; attempt < PointerOverAttempts && !control.IsPointerOver; attempt++)
+                        for (int attempt = 0; attempt < PointerOverAttempts && !target.IsPointerOver; attempt++)
                         {
+                            // The live analysis can land late and rebuild the errors rows: start each attempt from the current row.
+                            target = Current(kind, session, control);
+                            inside = target.TranslatePoint(new Point(target.Bounds.Width / 2 + apart, Math.Min(target.Bounds.Height / 2, 10)), window) ?? inside;
                             window.UpdateLayout();
                             window.MouseMove(new Point(inside.X + 1, inside.Y));
                             window.MouseMove(inside);
                             HeadlessDriver.Pump();
                         }
 
-                        if (pressed)
-                        {
-                            window.MouseDown(inside, MouseButton.Left);
-                            HeadlessDriver.Pump();
-                        }
-
-                        string token = pressed ? "State.Pressed" : "State.Hover";
                         var hit = window.InputHitTest(inside) as Visual;
                         Assert.True(
-                            PaintsWith(control, ColourOf(token, variant)),
-                            $"{kind} {token} in {variant} (pointer over: {control.IsPointerOver}, attached {control.IsAttachedToVisualTree()}, hit {hit?.GetType().Name} inside the control {hit is not null && (ReferenceEquals(hit, control) || control.IsVisualAncestorOf(hit))}, bounds {control.Bounds}, inside {inside}, window {window.Bounds})");
+                            target.IsPointerOver,
+                            $"{kind} is not under the pointer after {PointerOverAttempts} attempts (attached {target.IsAttachedToVisualTree()}, hit {hit?.GetType().Name} inside the control {hit is not null && (ReferenceEquals(hit, target) || target.IsVisualAncestorOf(hit))}, bounds {target.Bounds}, inside {inside}, window {window.Bounds})");
+
+                        string token = pressed ? "State.Pressed" : "State.Hover";
+                        if (pressed)
+                        {
+                            // A late rebuild of the errors rows between the move and the press leaves the press on a replaced row: repeat from the current row.
+                            for (int attempt = 0; attempt < PointerOverAttempts; attempt++)
+                            {
+                                window.MouseDown(inside, MouseButton.Left);
+                                HeadlessDriver.Pump();
+                                if (ReferenceEquals(target, Current(kind, session, control)))
+                                {
+                                    if (!target.IsPointerOver)
+                                    {
+                                        // The press can re-layout the window and drop the hover: hit-test again under the held button.
+                                        window.MouseMove(new Point(inside.X + 1, inside.Y));
+                                        window.MouseMove(inside);
+                                        HeadlessDriver.Pump();
+                                    }
+
+                                    if (target.IsPointerOver)
+                                    {
+                                        break;
+                                    }
+                                }
+
+                                window.MouseUp(inside, MouseButton.Left);
+                                target = Current(kind, session, control);
+                                inside = target.TranslatePoint(new Point(target.Bounds.Width / 2 + apart, Math.Min(target.Bounds.Height / 2, 10)), window) ?? inside;
+                                window.MouseMove(new Point(inside.X + 1, inside.Y));
+                                window.MouseMove(inside);
+                                HeadlessDriver.Pump();
+                            }
+                        }
+
+                        Assert.True(PaintsWith(target, ColourOf(token, variant)), $"{kind} {token} in {variant} (row replaced: {!ReferenceEquals(target, Current(kind, session, control))}, pointer over: {target.IsPointerOver})");
                         if (pressed)
                         {
                             window.MouseUp(inside, MouseButton.Left);
