@@ -94,10 +94,18 @@ public sealed partial class SuggestionListViewModel : ObservableObject, IDisposa
     /// <summary>Gets the id of the catalog that hides the type of the pin the search was opened from, or null when none does (FR-091).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(EmptyMessage))]
+    [NotifyPropertyChangedFor(nameof(HidingNotice))]
+    [NotifyPropertyChangedFor(nameof(HasHidingNotice))]
     public partial string? HidingCatalogId { get; set; }
 
     /// <summary>Gets the sentence the empty state shows: the default, or the catalog that hides the pin's type.</summary>
     public string EmptyMessage => HidingCatalogId is { } id ? $"No members: this type is hidden by catalog {id}." : DefaultEmptyMessage;
+
+    /// <summary>Gets the notice shown above the list, whatever rows it holds, while a catalog hides the pin's type (FR-091); empty otherwise.</summary>
+    public string HidingNotice => HidingCatalogId is { } id ? $"Members of this type are hidden by catalog {id}." : "";
+
+    /// <summary>Gets a value indicating whether <see cref="HidingNotice"/> is shown.</summary>
+    public bool HasHidingNotice => HidingCatalogId is not null;
 
     /// <summary>Where the chosen node is created (graph coordinates).</summary>
     [ObservableProperty]

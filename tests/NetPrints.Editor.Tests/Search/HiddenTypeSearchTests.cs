@@ -63,6 +63,28 @@ public sealed class HiddenTypeSearchTests : GraphTestBase, IAsyncDisposable
     }
 
     [Fact(Timeout = 120000)]
+    public async Task ThePinOfAHiddenTypeShowsTheNoticeWhileOtherRowsRemain()
+    {
+        var upper = new CallMethodNode(Method, new MethodSpecifier("ToUpperInvariant", [], [StringType], MethodModifiers.None, MemberVisibility.Public, StringType, []));
+        var output = upper.OutputDataPins.First(pin => pin.Name != "Exception");
+
+        await Graph.OpenSearchAsync(new GraphPoint(10, 10), output, TestContext.Current.CancellationToken);
+
+        Assert.False(Graph.Search.IsEmpty);
+        Assert.True(Graph.Search.HasHidingNotice);
+        Assert.Contains(CatalogId, Graph.Search.HidingNotice, StringComparison.Ordinal);
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task ASearchWithNoPinHasNoNotice()
+    {
+        await Graph.OpenSearchAsync(new GraphPoint(10, 10), null, TestContext.Current.CancellationToken);
+
+        Assert.False(Graph.Search.HasHidingNotice);
+        Assert.Equal("", Graph.Search.HidingNotice);
+    }
+
+    [Fact(Timeout = 120000)]
     public async Task ASearchWithNoPinKeepsTheDefaultEmptyMessage()
     {
         await Graph.OpenSearchAsync(new GraphPoint(10, 10), null, TestContext.Current.CancellationToken);

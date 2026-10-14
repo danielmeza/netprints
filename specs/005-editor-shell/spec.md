@@ -512,7 +512,8 @@ its public members appear.
 2. **Given** a type whose assembly no catalog covers, **When** the user opens search from its pin, **Then** its
    public members appear as today.
 3. **Given** a covered assembly whose catalog does not list the type, **When** the user opens search from its pin,
-   **Then** no members appear and the search says which catalog hides them.
+   **Then** no members of the type appear and a notice above the list says which catalog hides them, even when other
+   rows are listed.
 4. **Given** a graph that already uses a member the catalog hides, **When** it is opened, built and run, **Then** it
    behaves as before.
 
@@ -794,8 +795,9 @@ glyphs contributed by extensions are decided with the P3 contribution API.
 - **FR-090**: A search scoped to a type MUST take that type's members from the catalog that covers the type's
   assembly when one does (embedded or extension), hiding members the catalog omits and members marked
   `[NetPrintsIgnore]`; for assemblies no catalog covers, it MUST use the live provider.
-- **FR-091**: When the covering catalog does not list the type, the scoped search MUST show no members and a
-  message naming the catalog.
+- **FR-091**: When the covering catalog does not list the type, the scoped search MUST show no members of that type
+  and a message naming the catalog. The message is a notice above the list that stays visible whatever other
+  rows the search lists (a pin search always adds general rows); with no rows at all, the empty state carries it too.
 - **FR-092**: Resolving members of existing nodes MUST be unchanged, so graphs that use hidden members still load,
   build and run.
 

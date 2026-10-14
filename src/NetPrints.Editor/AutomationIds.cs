@@ -688,6 +688,10 @@ public static class AutomationIds
     /// </summary>
     public const string SearchEmpty = "Search.Empty";
     /// <summary>
+    /// Automation id for the node search popup's notice naming the catalog that hides the pin's type.
+    /// </summary>
+    public const string SearchHiddenNotice = "Search.HiddenNotice";
+    /// <summary>
     /// Automation id for the Output panel's list of lines.
     /// </summary>
     public const string OutputLines = "Output.Lines";

@@ -1,6 +1,10 @@
+using Avalonia.Automation;
+using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.VisualTree;
 using NetPrints.Core;
 using NetPrints.Editor.Hosting.Automation;
+using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.Icons;
 using NetPrints.Editor.UITests.Shell;
 using NetPrints.Graph;
@@ -33,6 +37,32 @@ public class NodeSearchTests
         await session.WaitForRenderedAsync(Token);
         Assert.Equal(4, await session.Graph.NodeCountAsync(Token));
     }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task ACatalogHidingThePinTypeShowsANoticeWhileOtherRowsRemain()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await (await session.Graph.RightClickEmptyAsync(Token)).WaitOpenAsync(Token);
+        Assert.Empty(ShownNotices(session));
+
+        session.GraphViewModel.Search.HidingCatalogId = "acme";
+        HeadlessDriver.Pump();
+
+        Assert.NotEmpty(session.GraphViewModel.Search.Items);
+        var notice = Assert.Single(ShownNotices(session));
+        Assert.Contains("acme", notice.Text, StringComparison.Ordinal);
+        Assert.False(notice.Focusable);
+        Assert.Equal(AccessibilityView.Content, AutomationProperties.GetAccessibilityView(notice));
+
+        session.GraphViewModel.Search.HidingCatalogId = null;
+        HeadlessDriver.Pump();
+
+        Assert.Empty(ShownNotices(session));
+    }
+
+    private static List<TextBlock> ShownNotices(EditorSession session) =>
+        [.. session.Window.GetVisualDescendants().OfType<TextBlock>()
+            .Where(block => block.IsEffectivelyVisible && AutomationProperties.GetAutomationId(block) == AutomationIds.SearchHiddenNotice)];
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task ReleasingPinDragOnCanvasOpensFilteredSearch()
