@@ -464,8 +464,8 @@ namespace NetPrints.Reflection
             string lookupName = specifier.Name;
 
             // Find array ranks and remove them from the lookup name.
-            // Example: int[][,] -> arrayRanks: { 1, 2 }, lookupName: int
-            Stack<int> arrayRanks = new Stack<int>();
+            // Example: int[][,] -> arrayRanks: { 2, 1 } (innermost first), lookupName: int
+            Queue<int> arrayRanks = new Queue<int>();
             while (lookupName.EndsWith("]", StringComparison.Ordinal))
             {
                 lookupName = lookupName.Remove(lookupName.Length - 1);
@@ -475,7 +475,7 @@ namespace NetPrints.Reflection
                     arrayRank++;
                     lookupName = lookupName.Remove(lookupName.Length - 1);
                 }
-                arrayRanks.Push(arrayRank);
+                arrayRanks.Enqueue(arrayRank);
 
                 if (lookupName.Last() != '[')
                 {
@@ -517,10 +517,9 @@ namespace NetPrints.Reflection
             if (foundType != null)
             {
                 // Make array
-                //while (arrayRanks.TryPop(out int arrayRank))
                 while (arrayRanks.Count > 0)
                 {
-                    int arrayRank = arrayRanks.Pop();
+                    int arrayRank = arrayRanks.Dequeue();
                     foundType = compilation.CreateArrayTypeSymbol(foundType, arrayRank);
                 }
             }

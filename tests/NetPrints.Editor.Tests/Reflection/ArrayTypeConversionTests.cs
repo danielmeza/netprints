@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.Search;
 using NetPrints.Reflection;
@@ -92,6 +93,33 @@ public class ArrayTypeConversionTests(RuntimeReflectionFixture fixture) : IClass
     public void ACodeNamePutsTheArraySuffixAfterTheGenericArguments() =>
         Assert.Equal("System.Collections.Generic.List<System.Int32>[][,]",
             new TypeSpecifier("System.Collections.Generic.List[][,]", false, false, [TypeSpecifier.FromType<int>()]).FullCodeName);
+
+    private const string JaggedSource = """
+        public class Jagged
+        {
+            public void JaggedGrid(int[][,] value) { }
+
+            public void GridOfArrays(int[,][] value) { }
+
+            public void Names(string[][][] value) { }
+        }
+        """;
+
+    [Theory]
+    [InlineData("JaggedGrid", "System.Int32[][,]")]
+    [InlineData("GridOfArrays", "System.Int32[,][]")]
+    [InlineData("Names", "System.String[][][]")]
+    public void AMixedJaggedSpecifierResolvesToTheTypeItWasConvertedFrom(string method, string specifier)
+    {
+        var provider = new ReflectionProvider(fixture.Assemblies, [new SourceFile("jagged.cs", JaggedSource)], new HashSet<string>());
+        var jagged = new TypeSpecifier("Jagged");
+        MethodSpecifier declared = Assert.Single(provider.GetMethods(new ReflectionProviderMethodQuery().WithType(jagged)), m => m.Name == method);
+        Assert.Equal(specifier, Assert.IsType<TypeSpecifier>(Assert.Single(declared.ArgumentTypes)).Name);
+
+        Assert.Equal(
+            [method],
+            provider.GetMethods(new ReflectionProviderMethodQuery().WithType(jagged).WithArgumentType(new TypeSpecifier(specifier))).Select(m => m.Name));
+    }
 
     [Fact]
     public void AnArrayOfATypeParameterStaysAnArray()
