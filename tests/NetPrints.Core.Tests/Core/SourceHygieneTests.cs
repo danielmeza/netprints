@@ -831,5 +831,27 @@ namespace NetPrints.Tests.Core
 
             Assert.True(pngFiles.Length == 0, $"Raster PNG files must be replaced with vector icons from IconIds (T092b): {string.Join("; ", pngFiles.Select(p => Path.GetRelativePath(src, p)))}");
         }
+
+        /// <summary>FR-100: the other agent tool's XAML rule is a short pointer to AGENTS.md and the three skills, never a second copy of them.</summary>
+        [Fact]
+        public void AgentRulesPointToTheSkills()
+        {
+            string root = SampleProjectFactory.FindRepositoryRoot();
+            string rule = Path.Combine(root, ".agents", "rules", "xaml.md");
+            Assert.True(File.Exists(rule), "Expected .agents/rules/xaml.md.");
+
+            string[] lines = File.ReadAllLines(rule);
+            string text = string.Join('\n', lines);
+            Assert.True(lines.Length <= 15, $".agents/rules/xaml.md has {lines.Length} lines; at most 15.");
+            Assert.Contains("AGENTS.md", text, StringComparison.Ordinal);
+            foreach (string skill in new[] { "avalonia-xaml", "avalonia-styling", "avalonia-behaviors" })
+            {
+                string path = $".claude/skills/{skill}/SKILL.md";
+                Assert.Contains(path, text, StringComparison.Ordinal);
+                Assert.True(File.Exists(Path.Combine(root, path)), $"{path} does not exist.");
+            }
+
+            Assert.False(Directory.Exists(Path.Combine(root, ".agents", "skills")), ".agents/skills must not exist: no forked copy of a skill.");
+        }
     }
 }

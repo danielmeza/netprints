@@ -1312,7 +1312,7 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
 - [ ] T104 [P] `docs/guide/editor/saving-and-recovery.md` (markers, the prompt, backups and where they live, recovery,
   nothing written into the project) and `commands-and-shortcuts.md` (menus, the command bar, the palette, and the
   shortcut table between marker comments), each with screenshots.
-- [ ] T104a [P] Agent rules pointer (0.5 unit, FR-100; owner decision 2026-10-09). Another agent tool also works in
+- [x] T104a [P] Agent rules pointer (0.5 unit, FR-100; owner decision 2026-10-09). Another agent tool also works in
   this repository and reads `.agents/rules/`; it must follow the same XAML rules without a second copy of them.
   Test first: `AgentRulesPointToTheSkills` in `tests/NetPrints.Core.Tests/Core/SourceHygieneTests.cs`:
   `.agents/rules/xaml.md` exists and has at most 15 lines; it names `AGENTS.md` and the `avalonia-xaml`,
