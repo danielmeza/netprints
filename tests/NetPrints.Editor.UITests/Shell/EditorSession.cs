@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using NetPrints.Core;
 using NetPrints.Editor.Contributions;
+using NetPrints.Editor.Diagnostics;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.Shell;
@@ -89,6 +90,20 @@ internal sealed class EditorSession : IAsyncDisposable
         await new UiElement(Driver, new AutomationQuery(AutomationIds.ShellBusy)).WaitHiddenAsync(cancellationToken);
         await new UiElement(Driver, new AutomationQuery(AutomationIds.ShellStatusMessage))
             .WaitUntilAsync(element => string.IsNullOrEmpty(element.Text), "the status message cleared", cancellationToken);
+    }
+
+    /// <summary>
+    /// Waits for the live analysis the project load starts: once the reference reload is done its first snapshot replaces
+    /// the error rows, which would otherwise happen under a test that already holds a row.
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the wait.</param>
+    /// <returns>A task that completes when a snapshot has landed.</returns>
+    public async Task WaitLiveAnalysisAsync(CancellationToken cancellationToken)
+    {
+        await new UiElement(Driver, new AutomationQuery(AutomationIds.ShellBusy)).WaitHiddenAsync(cancellationToken);
+        bool landed = false;
+        using IDisposable subscription = App.Composition.Context.CodeAnalysis.Snapshots.Subscribe(snapshot => landed |= !ReferenceEquals(snapshot, CodeAnalysisSnapshot.Empty));
+        await UiWait.UntilAsync(Driver, () => Task.FromResult(landed), "the live analysis snapshot", cancellationToken);
     }
 
     /// <summary>Runs the Add variable command on the active class.</summary>

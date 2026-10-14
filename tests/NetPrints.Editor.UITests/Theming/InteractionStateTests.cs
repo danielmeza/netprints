@@ -28,6 +28,7 @@ using NetPrints.Editor.UITests.Hosting;
 using NetPrints.Editor.UITests.Shell;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Projects;
+using NetPrints.Testing.Ui.Driving;
 using DocumentId = NetPrints.Editor.Shell.DocumentId;
 using ShellWindow = NetPrints.Editor.Shell.ShellWindow;
 
@@ -36,8 +37,6 @@ namespace NetPrints.Editor.UITests.Theming;
 /// <summary>Focus ring, hover and pressed states and the density tokens on the themed controls (FR-087).</summary>
 public class InteractionStateTests
 {
-    private const int PointerOverAttempts = 5;
-
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
     private sealed class Probe : ICommandHandler
@@ -74,6 +73,7 @@ public class InteractionStateTests
         EditorSession session = await EditorSession.OpenSampleMainAsync(Token);
         if (kind == "errors row")
         {
+            await session.WaitLiveAnalysisAsync(Token);
             var project = session.App.Session.Project;
             ClassGraph cls = project.Classes.Single();
             project.LastDiagnostics = new ObservableRangeCollection<CodeDiagnostic>(
@@ -201,56 +201,15 @@ public class InteractionStateTests
                         window.UpdateLayout();
                         window.MouseMove(inside);
                         HeadlessDriver.Pump();
-                        for (int attempt = 0; attempt < PointerOverAttempts && !target.IsPointerOver; attempt++)
-                        {
-                            // The live analysis can land late and rebuild the errors rows: start each attempt from the current row.
-                            target = Current(kind, session, control);
-                            inside = target.TranslatePoint(new Point(target.Bounds.Width / 2 + apart, Math.Min(target.Bounds.Height / 2, 10)), window) ?? inside;
-                            window.UpdateLayout();
-                            window.MouseMove(new Point(inside.X + 1, inside.Y));
-                            window.MouseMove(inside);
-                            HeadlessDriver.Pump();
-                        }
-
-                        var hit = window.InputHitTest(inside) as Visual;
-                        Assert.True(
-                            target.IsPointerOver,
-                            $"{kind} is not under the pointer after {PointerOverAttempts} attempts (attached {target.IsAttachedToVisualTree()}, hit {hit?.GetType().Name} inside the control {hit is not null && (ReferenceEquals(hit, target) || target.IsVisualAncestorOf(hit))}, bounds {target.Bounds}, inside {inside}, window {window.Bounds})");
+                        await UiWait.UntilAsync(session.Driver, () => Task.FromResult(target.IsPointerOver), $"{kind} under the pointer in {variant}", Token);
 
                         string token = pressed ? "State.Pressed" : "State.Hover";
                         if (pressed)
                         {
-                            // A late rebuild of the errors rows between the move and the press leaves the press on a replaced row: repeat from the current row.
-                            for (int attempt = 0; attempt < PointerOverAttempts; attempt++)
-                            {
-                                window.MouseDown(inside, MouseButton.Left);
-                                HeadlessDriver.Pump();
-                                if (ReferenceEquals(target, Current(kind, session, control)))
-                                {
-                                    if (!target.IsPointerOver)
-                                    {
-                                        // The press can re-layout the window and drop the hover: hit-test again under the held button.
-                                        window.MouseMove(new Point(inside.X + 1, inside.Y));
-                                        window.MouseMove(inside);
-                                        HeadlessDriver.Pump();
-                                    }
-
-                                    if (target.IsPointerOver)
-                                    {
-                                        break;
-                                    }
-                                }
-
-                                window.MouseUp(inside, MouseButton.Left);
-                                target = Current(kind, session, control);
-                                inside = target.TranslatePoint(new Point(target.Bounds.Width / 2 + apart, Math.Min(target.Bounds.Height / 2, 10)), window) ?? inside;
-                                window.MouseMove(new Point(inside.X + 1, inside.Y));
-                                window.MouseMove(inside);
-                                HeadlessDriver.Pump();
-                            }
+                            window.MouseDown(inside, MouseButton.Left);
                         }
 
-                        Assert.True(PaintsWith(target, ColourOf(token, variant)), $"{kind} {token} in {variant} (row replaced: {!ReferenceEquals(target, Current(kind, session, control))}, pointer over: {target.IsPointerOver})");
+                        await UiWait.UntilAsync(session.Driver, () => Task.FromResult(target.IsPointerOver && PaintsWith(target, ColourOf(token, variant))), $"{kind} paints {token} in {variant}", Token);
                         if (pressed)
                         {
                             window.MouseUp(inside, MouseButton.Left);
