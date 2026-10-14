@@ -104,6 +104,11 @@
     <!-- Node search (PAR-52). CanvasPopup anchors itself at the pointer (ADR-0004). -->
     <edcontrols:CanvasPopup x:Name="SearchPopup" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphSearchPopup}" IsOpen="{Binding Search.IsOpen, Mode=TwoWay}"
            PlacementTarget="{Binding #Editor}">
+      <Interaction.Behaviors>
+        <DataTriggerBehavior Binding="{Binding Search.IsOpen}" Value="{x:False}">
+          <RemoveClassAction StyledElement="{Binding #SearchView}" ClassName="shown" />
+        </DataTriggerBehavior>
+      </Interaction.Behaviors>
       <edsearch:NodeSearchView x:Name="SearchView" DataContext="{Binding Search}" />
     </edcontrols:CanvasPopup>
 

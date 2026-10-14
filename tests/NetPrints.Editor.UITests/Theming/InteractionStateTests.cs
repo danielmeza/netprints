@@ -8,6 +8,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
@@ -19,6 +20,7 @@ using NetPrints.Editor.Commands.CommandPalette;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Dialogs;
+using NetPrints.Editor.Search;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.UITests.Commands;
 using NetPrints.Editor.UITests.Driving;
@@ -407,6 +409,25 @@ public class InteractionStateTests
         {
             App.DisableTransitions();
         }
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TheNodeSearchPopupFadesInAgainOnEveryOpen()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+
+        await (await session.Graph.RightClickEmptyAsync(Token)).WaitOpenAsync(Token);
+        NodeSearchView root = session.Window.GetVisualDescendants().OfType<NodeSearchView>().Single();
+        Assert.Contains("shown", root.Classes);
+
+        session.GraphViewModel.Search.IsOpen = false;
+        await session.Graph.Search.WaitClosedAsync(Token);
+        HeadlessDriver.Pump();
+        Assert.DoesNotContain("shown", root.Classes);
+        Assert.Equal(0, root.Opacity);
+
+        await (await session.Graph.RightClickEmptyAsync(Token)).WaitOpenAsync(Token);
+        Assert.Contains("shown", root.Classes);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

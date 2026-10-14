@@ -6,15 +6,15 @@
              xmlns:edsearch="clr-namespace:NetPrints.Editor.Search"
              x:Class="NetPrints.Editor.Search.NodeSearchView"
              x:DataType="edsearch:SuggestionListViewModel"
-             Width="700" Height="300" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeSearch}">
-  <!-- Node search popup (PAR-52): search box, virtualized grouped list with 16-px icons. -->
-  <Border Classes="popupFade" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+             Classes="popupFade" Width="700" Height="300" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeSearch}">
+  <!-- Node search popup (PAR-52): search box, virtualized grouped list with 16-px icons. The popup removes .shown on close (GraphEditorView), so each open fades in. -->
+  <Interaction.Behaviors>
+    <LoadedTrigger>
+      <AddClassAction ClassName="shown" />
+    </LoadedTrigger>
+  </Interaction.Behaviors>
+  <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
           BorderThickness="1" BoxShadow="{DynamicResource Popup.Shadow}">
-    <Interaction.Behaviors>
-      <LoadedTrigger>
-        <AddClassAction ClassName="shown" />
-      </LoadedTrigger>
-    </Interaction.Behaviors>
     <Grid RowDefinitions="Auto,Auto,*">
       <TextBox x:Name="SearchBox" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SearchBox}" Text="{Binding SearchText}" PlaceholderText="Search" Classes="searchInput">
         <Interaction.Behaviors>
