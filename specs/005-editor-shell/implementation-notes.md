@@ -2616,3 +2616,17 @@ correct, with no finding. Suggested fix batches for T101:
   Generic #006F62 -> #3949AB, Light Type #C62828 -> #6D4C41, Light Object #4A616B -> #566870 (it was 11.7 from Integer).
   Red: Light Type/Bool 3.2, Light Integer/Generic 10.3, Light Integer/Object 11.7, Dark Integer/Generic 11.4. Closest pairs now:
   Dark 16.0, Light 13.1.
+
+## G-F4b (T101; T101 stays open)
+
+- **G-R14, contact sheet:** the scene runs Fit all and puts the added Literal clear of the Ternary; the Literal has a value, so
+  the class translates and the C# tiles show code (Light highlighting included); Issues lists two extension diagnostics; Override
+  method lists the real overridable members of Exception from the reflection provider. Red: node bounds cut by the canvas, the
+  generated code empty, an empty Issues list, and `Equals(Int32)` and `Finalize()` not among the real members.
+  `EveryNodeKind` spaced its rows and columns (400 x 260) so the wider nodes no longer touch.
+- **Strip:** labelled "New defaults" against "Classic Dark" (pins only, canvas only, card only, all three); labels only, the overrides are
+  unchanged and Classic Dark stays test-only until the P3 preset (ADR-0035).
+- **G-R9:** title 42 -> `Font.Watermark` (32), section 22 -> `Font.Title` (20), nodeTitle 18 and the round button 16 ->
+  `Font.Subtitle`, treeItem 13 -> `Font.Body`, secondary 13 and the badge 11 -> `Font.Caption`. No new token: FR-080's four sizes
+  plus the existing display token cover them. `E8_EveryFontSizeIsARampToken` covers every axaml file (7 offenders red).
+- **G-R13:** `tabular` only sets `tnum`; the Errors header, the compile badge and the build state use the UI font.
