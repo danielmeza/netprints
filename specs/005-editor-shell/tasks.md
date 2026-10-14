@@ -1242,7 +1242,7 @@ re-baselines the snapshots it changes (open every PNG).
 
 ### Batch G-R — model: opus — T100 (sub-phase review)
 
-- [ ] T100 [US9] [US10] Review sub-phase G: an Opus reviewer who did not implement it reviews the whole diff of batches
+- [x] T100 [US9] [US10] Review sub-phase G: an Opus reviewer who did not implement it reviews the whole diff of batches
   G1–G7 (from the commit before the first batch to HEAD): US9, US10 and FR-100 end to end against spec.md
   (FR-080–FR-099, FR-100, FR-107–FR-110), research R10–R12 and R17, ADR-0007, ADR-0021 (with Amendment 1), ADR-0023
   and the `avalonia-*` skills, the constitution and plan.md's standing constraints. It runs the independent test of

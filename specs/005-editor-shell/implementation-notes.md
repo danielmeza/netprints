@@ -2662,3 +2662,18 @@ G-R6 bb14fb84, G-R7 7cfb939a, G-R8 fa4b9c96 and fdd7e927, G-R9 ab7f988c, G-R10 3
 96d5a9ff, G-R13 2c494b10, G-R14 d8308b6f and 59f8bf3a, G-R15 e23dbeb8, G-R16 20689a30, G-R17 e0c9c6a0, G-R18 43489a45. The owner
 calls G-R19 to G-R21 are applied in 36a35a2b; G-R22 (the product mark) is still pending the owner. Whole suite (Release) 3935
 tests, 0 failed, 31 skipped (E2E self-skips and `PanCursor`); desktop E2E 50/50 with `--fail-skips on`.
+
+## D-T (docs batch after G-F; T100 ticked)
+
+- **T100** is ticked: the review ran at `10d54abc` and every finding is fixed (see "G-F closed"). Tasks: 137 of 152 ticked.
+- **G-R22 (product mark):** the owner approved the mark for now and wants it redesigned later (2026-10-13); the roadmap has a
+  "Product mark redesign" candidate.
+- **ADR-0035, editor themes are data:** every visual element is a theme token; B0 (catalogue, per-variant overlay, presets NetPrints
+  Dark, NetPrints Light, Classic Dark and High contrast) in P3, B1 and C in P3 if capacity allows, otherwise P6; contrast is warn and
+  apply; Semi keys are passed through and validated at runtime, never curated. The test-only Classic Dark overrides become the preset.
+- **ADR-0036, member defaults and editor metadata:** Const stays disabled until P3b; variable defaults and editor metadata in P3b;
+  P3 widens R6 into a value-editor contract; the model-driven grid in the P3 tail or P3b; live inspection in P6; Unreal simple
+  defaults in P3b, FVector, FRotator and FLinearColor in U2, Unreal-only flags in an Unreal extension section.
+- **Contradiction recorded:** the details-panel research asked for a schema cut before the publish gate; its audit and the owner's
+  decision keep schema v1 additive (`init` members), so ADR-0036 records no cut.
+- **Spec and roadmap:** the 005 spec's deferred list names both ADRs; the roadmap has entries in P3, P3b, U1-U3, P6 and the candidates.
