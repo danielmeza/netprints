@@ -1,0 +1,80 @@
+{
+  "$schema": "https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json",
+  "schemaVersion": 1,
+  "namespace": "AnnotatedHiddenCall",
+  "name": "Program",
+  "visibility": "Public",
+  "classGraph": {
+    "nodes": [
+      { "$kind": "classReturn", "id": "n0000000hd1200" }
+    ]
+  },
+  "methods": [
+    {
+      "id": "m0000000hd1200",
+      "name": "Main",
+      "visibility": "Public",
+      "modifiers": "Static",
+      "graph": {
+        "nodes": [
+          { "$kind": "methodEntry", "id": "n0000000hd1201" },
+          { "$kind": "return", "id": "n0000000hd1202" },
+          {
+            "$kind": "constructor",
+            "id": "n0000000hd1203",
+            "constructor": {
+              "declaringType": { "name": "AnnotatedFixture.Greeter" },
+              "parameters": []
+            }
+          },
+          {
+            "$kind": "callMethod",
+            "id": "n0000000hd1204",
+            "method": {
+              "name": "Undeclared",
+              "declaringType": { "name": "AnnotatedFixture.Greeter" },
+              "parameters": [],
+              "returnTypes": [
+                { "name": "System.String" }
+              ],
+              "visibility": "Public"
+            }
+          },
+          {
+            "$kind": "callMethod",
+            "id": "n0000000hd1205",
+            "method": {
+              "name": "WriteLine",
+              "declaringType": { "name": "System.Console" },
+              "parameters": [
+                { "name": "value", "type": { "name": "System.String" } }
+              ],
+              "modifiers": "Static",
+              "visibility": "Public"
+            }
+          }
+        ],
+        "connections": [
+          { "from": "n0000000hd1201/out.exec.Exec", "to": "n0000000hd1203/in.exec.Exec" },
+          { "from": "n0000000hd1203/out.data.Greeter", "to": "n0000000hd1204/in.data.Target" },
+          { "from": "n0000000hd1203/out.exec.Exec", "to": "n0000000hd1204/in.exec.Exec" },
+          { "from": "n0000000hd1204/out.data.String", "to": "n0000000hd1205/in.data.value" },
+          { "from": "n0000000hd1204/out.exec.Exec", "to": "n0000000hd1205/in.exec.Exec" },
+          { "from": "n0000000hd1205/out.exec.Exec", "to": "n0000000hd1202/in.exec.Exec" }
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "class": {
+      "n0000000hd1200": [112, 112]
+    },
+    "m0000000hd1200": {
+      "n0000000hd1201": [112, 112],
+      "n0000000hd1202": [1400, 112],
+      "n0000000hd1203": [420, 112],
+      "n0000000hd1204": [740, 112],
+      "n0000000hd1205": [1060, 112]
+    }
+  }
+}
