@@ -2539,3 +2539,26 @@ correct, with no finding. Suggested fix batches for T101:
   the only enabled accessor; the chooser stays when both are possible. One undo step.
 - Known gap: the provider's name-to-type lookup builds mixed jagged ranks in the reverse order (`int[][,]` resolves as
   `int[,][]`). It matters only for a method that takes such a type.
+
+## G-F2 (T101, second of four batches; T101 stays open)
+
+- **G-R18 fixed** (43489a45): the `PreToolUse` hook `.claude/hooks/no-shell-edits.py` (matcher `Bash`, registered in
+  `.claude/settings.json`) denies `sed -i`, `perl -i`, python writes, `tee`, `>`/`>>`, `truncate` and `dd of=` into the repo
+  working tree. `git`, `/tmp`, `/dev/null`, paths outside the repo and `bin/`, `obj/`, `TestResults/` stay allowed; a command it
+  cannot resolve is allowed. Its table (30 allow and 30 deny commands) runs in `tests/hooks`, which CI already runs. The workspace
+  settings file outside the repo still needs the entry (owner call).
+- **G-R4 fixed** (05aeffbd): every signature edit of a method is one `EditorCommands.EditMethodSignature` step that rebuilds
+  the calls on the new parameters, return types and generic arguments (`SignatureChange.RetargetCallers` has an overload
+  for the last two). It covers the return node's +/-, the entry's generic +/-, any type connection or disconnection in a
+  method graph (recorded only when the signature changed, unless the pin is the entry's or a return node's own type pin) and
+  deleting nodes. The edit's undo covers the pin lists of the entry and return nodes and every other connection of the graph.
+  Six new rows in `MethodParameterEditTests` were red (pins, wires, the saved graph, undo and redo).
+  Decision: deleting the wired type node resets the parameter to `object`, as disconnecting its pin does; the spec is silent,
+  and a typed parameter with an empty type pin is not a valid state.
+- **G-R12 fixed** (96d5a9ff, test only): `AGraphCallingAMemberTheCatalogHidesBuildsAndRunsUnchanged` builds and runs a graph that
+  calls `Greeter.Undeclared` (`[NetPrintsIgnore]`, absent from the embedded catalog). Its output equals the method called
+  directly with no catalog.
+- **Jagged ranks fixed** (dff8b15f): the lookup wrapped mixed ranks outermost first. `AMixedJaggedSpecifierResolvesToTheTypeItWasConvertedFrom`
+  was red for `int[][,]` and `int[,][]`. The goldens are unchanged.
+- Not fixed: `MethodViewModel.ToMethodSpecifier` gives a call to a generic graph method no generic arguments and casts the
+  return types to `TypeSpecifier`, so dragging such a method fails or loses its type pins.
