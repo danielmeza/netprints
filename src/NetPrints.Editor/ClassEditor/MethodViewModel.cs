@@ -169,9 +169,9 @@ public sealed partial class MethodViewModel : ObservableObject, IDisposable
         var method = (MethodGraph)Graph;
         return new MethodSpecifier(method.Name,
             method.NamedArgumentTypes.Select(nt => new MethodParameter(nt.Name, nt.Value, MethodParameterPassType.Default, false, null)),
-            method.ReturnTypes.Cast<TypeSpecifier>(),
+            method.ReturnTypes,
             method.Modifiers, method.Visibility,
-            declaringType, Array.Empty<BaseType>());
+            declaringType, [.. method.GenericArgumentTypes]);
     }
 
     /// <summary>Specifier used to construct the class with this constructor (drag &amp; drop, PAR-56).</summary>
