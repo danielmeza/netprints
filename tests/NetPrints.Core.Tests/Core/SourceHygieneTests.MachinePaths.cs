@@ -24,7 +24,7 @@ namespace NetPrints.Tests.Core
             "/" + "Users/",
             "/" + "mnt/",
             "C:" + "\\Users\\",
-            "C:" + "/Users/",
+            "C:" + "/" + "Users/",
             "scratch" + "pad",
         ];
 
