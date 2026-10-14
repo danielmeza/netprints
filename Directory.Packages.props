@@ -7,6 +7,8 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     <!-- Shared by the PackageVersion below and NetPrints.Core.Tests' PackageDownload (PublicApiTrackingTests loads the analyzer from the package folder). -->
     <PublicApiAnalyzersVersion>5.6.0</PublicApiAnalyzersVersion>
+    <!-- Shared by the PackageVersion below and NetPrints.Editor.Tests' PackageDownload (BannedSymbolsTests runs the analyzer over samples). -->
+    <BannedApiAnalyzersVersion>5.6.0</BannedApiAnalyzersVersion>
   </PropertyGroup>
 
   <ItemGroup Label="Versioning">
@@ -31,7 +33,7 @@
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.7.23" />
     <!-- RS0030 (ADR-0003 follow-up): bans sync-over-async and DateTime.Now/Thread.Sleep APIs no
          CA/VSTHRD/Sonar rule targets. src/Directory.Build.props only, so tests/ is unaffected. -->
-    <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.6.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="$(BannedApiAnalyzersVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="$(PublicApiAnalyzersVersion)" />
   </ItemGroup>
 
