@@ -326,5 +326,49 @@ namespace NetPrints.Tests.Projects
                 Directory.Delete(directory, recursive: true);
             }
         }
+
+        // T107: the run command applies the first profile of Properties/launchSettings.json: its arguments and its
+        // environment variables reach the program (F5 and `netprints run` both start GetRunCommand's request).
+        [Fact]
+        public async Task GetRunCommandAppliesTheLaunchProfileArgumentsAndEnvironmentVariables()
+        {
+            string directory = Directory.CreateTempSubdirectory("netprints-mbps-launch-").FullName;
+            try
+            {
+                string csprojPath = Path.Combine(directory, "Echo.csproj");
+                WriteAppProject(csprojPath, "Echo");
+                await File.WriteAllTextAsync(Path.Combine(directory, "Program.cs"), """
+                    System.Console.WriteLine("args=" + string.Join("|", args));
+                    System.Console.WriteLine("env=" + System.Environment.GetEnvironmentVariable("NETPRINTS_ECHO"));
+                    """, TestContext.Current.CancellationToken);
+                Directory.CreateDirectory(Path.Combine(directory, "Properties"));
+                await File.WriteAllTextAsync(Path.Combine(directory, "Properties", "launchSettings.json"), """
+                    {
+                      "profiles": {
+                        "Echo": {
+                          "commandName": "Project",
+                          "commandLineArgs": "--name one \"two words\"",
+                          "environmentVariables": { "NETPRINTS_ECHO": "from-profile" }
+                        }
+                      }
+                    }
+                    """, TestContext.Current.CancellationToken);
+
+                var runner = new ProcessRunner();
+                MsBuildProjectSystem system = new(new ProjectSystemOptions([], "9.9.9-test"), runner, NullLogger<MsBuildProjectSystem>.Instance);
+                BuildResult buildResult = await system.BuildAsync(csprojPath, TestContext.Current.CancellationToken);
+                Assert.True(buildResult.Success, buildResult.Log);
+
+                ProcessResult runResult = await runner.RunAsync(system.GetRunCommand(csprojPath), TestContext.Current.CancellationToken);
+
+                Assert.Equal(0, runResult.ExitCode);
+                Assert.Contains("args=--name|one|two words", runResult.StandardOutput, StringComparison.Ordinal);
+                Assert.Contains("env=from-profile", runResult.StandardOutput, StringComparison.Ordinal);
+            }
+            finally
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
     }
 }
