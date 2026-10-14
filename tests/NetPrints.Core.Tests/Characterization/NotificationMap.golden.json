@@ -7,6 +7,14 @@
       "Visibility"
     ]
   },
+  "NetPrints.Core.EventGraph": {
+    "Class": [],
+    "Name": [
+      "Name"
+    ],
+    "PreservedDocumentState": [],
+    "Project": []
+  },
   "NetPrints.Core.LocalVariable": {
     "Name": [
       "Name"
