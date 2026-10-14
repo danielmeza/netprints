@@ -94,10 +94,17 @@ public sealed class DialogShell : ContentControl
             return;
         }
 
-        Control? target = this.GetVisualDescendants().OfType<TextBox>().FirstOrDefault(box => !box.IsReadOnly && box.Focusable && box.IsEffectivelyVisible);
-        target ??= SortedActions.OfType<Button>().FirstOrDefault(button => button.IsDefault)
-            ?? SortedActions.OfType<Button>().FirstOrDefault();
-        target?.Focus(NavigationMethod.Tab);
+        TextBox? input = this.GetVisualDescendants().OfType<TextBox>().FirstOrDefault(box => !box.IsReadOnly && box.Focusable && box.IsEffectivelyVisible);
+        if (input is not null)
+        {
+            input.Focus();
+        }
+        else
+        {
+            Button? button = SortedActions.OfType<Button>().FirstOrDefault(action => action.IsDefault) ?? SortedActions.OfType<Button>().FirstOrDefault();
+            button?.Focus(NavigationMethod.Tab);
+        }
+
         if (TopLevel.GetTopLevel(this) is Window { IsActive: false } window)
         {
             window.Activate();
