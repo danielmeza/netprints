@@ -88,7 +88,7 @@ public sealed class EditorProcess : ICapturedEditor, IAsyncDisposable
     public static async Task<EditorProcess> StartAsync(XServer server, string workDirectory, EditorStart start, CancellationToken cancellationToken)
     {
         string? project = start.Project;
-        // Short and outside workDirectory (whose scratchpad-derived path can itself run long): a
+        // Short and outside workDirectory (whose session-derived path can itself run long): a
         // long-TMPDIR workDirectory pushed this over the 108-character Unix socket limit before.
         string pipe = Path.Combine(Path.GetTempPath(), $"np-e2e-{Guid.NewGuid():N}.sock");
         if (Encoding.UTF8.GetByteCount(pipe) >= UnixSocketPathLimit)
