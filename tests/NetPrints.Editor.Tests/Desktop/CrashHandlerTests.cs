@@ -82,6 +82,6 @@ public sealed class CrashHandlerTests : IDisposable
 
     private sealed class StalledTarget(ManualResetEventSlim gate) : TargetWithLayout
     {
-        protected override void Write(LogEventInfo logEvent) => gate.Wait(TimeSpan.FromSeconds(30));
+        protected override void Write(LogEventInfo logEvent) => gate.WaitHandle.WaitOne(TimeSpan.FromSeconds(30));
     }
 }
