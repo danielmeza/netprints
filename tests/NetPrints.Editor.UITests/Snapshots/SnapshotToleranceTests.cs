@@ -10,7 +10,7 @@ public class SnapshotToleranceTests
     [Theory]
     [InlineData("checkbox", 1066, 56, 340, 26)]
     [InlineData("releaseNotesButton", 1133, 505, 112, 30)]
-    [InlineData("newProjectCardText", 1005, 136, 330, 34)]
+    [InlineData("newProjectCardText", 775, 148, 330, 34)]
     public void AMissingStartPageElementFailsTheDefaultComparison(string what, int x, int y, int width, int height)
     {
         byte[] png = File.ReadAllBytes(Path.Combine(UiArtifacts.Snapshots.BaselineDirectory, "start-page-wide-recent.png"));
