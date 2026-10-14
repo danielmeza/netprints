@@ -1271,7 +1271,7 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
 
 ### Batch H0 — model: sonnet — T102a — 5 units
 
-- [ ] T102a Logging and per-OS user folders (5 units; FR-106, ADR-0033; owner decisions 2026-10-08). Runs before
+- [x] T102a Logging and per-OS user folders (5 units; FR-106, ADR-0033; owner decisions 2026-10-08). Runs before
   T102 so the guides name the final folders. Packages: `NLog` and `NLog.Extensions.Logging` 6.2.1 in
   `Directory.Packages.props`, referenced by `NetPrints.Desktop` only. Test first (each red before its code):
   - `EditorDataPathsTests` (resolver, pure, no I/O): the state root and the log folder for each OS and variable
