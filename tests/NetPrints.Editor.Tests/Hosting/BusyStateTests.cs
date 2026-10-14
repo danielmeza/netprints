@@ -98,6 +98,42 @@ public sealed class BusyStateTests : IDisposable
     }
 
     [Fact]
+    public async Task ClosingTheProjectWhileReferencesLoadClearsTheBusyState()
+    {
+        string path = TestPaths.CopyHelloWorldSample();
+        cleanup.Add(path);
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var host = new GatedReloadHost(testEditor.Context.Reflection, gate.Task, reloadInner: false);
+        ProjectRig rig = NewRig(testEditor.Context with { Reflection = host });
+        await rig.LoadProjectAsync(path);
+        await host.ReloadStarted.WaitAsync(Token);
+        time.Advance(StatusBarViewModel.BusyIndicatorDelay);
+        Assert.Equal("Loading references…", rig.Shell.StatusBar.BusyText);
+
+        await rig.Actions.CloseProjectAsync(Token);
+
+        await Task.WhenAny(WaitUntilAsync(rig.Shell.StatusBar, () => !rig.Shell.StatusBar.IsBusy), Task.Delay(TimeSpan.FromSeconds(2), Token));
+        Assert.Null(rig.Session);
+        Assert.False(rig.Shell.StatusBar.IsBusy);
+        Assert.Null(rig.Shell.StatusBar.BusyText);
+    }
+
+    [Fact]
+    public async Task ClosingAnIdleProjectLeavesNoBusyState()
+    {
+        string path = TestPaths.CopyHelloWorldSample();
+        cleanup.Add(path);
+        ProjectRig rig = NewRig(testEditor.Context);
+        await rig.LoadProjectAsync(path);
+
+        await rig.Actions.CloseProjectAsync(Token);
+        time.Advance(StatusBarViewModel.BusyIndicatorDelay);
+
+        Assert.False(rig.Shell.StatusBar.IsBusy);
+        Assert.Null(rig.Shell.StatusBar.BusyText);
+    }
+
+    [Fact]
     public async Task AReloadWarmsTheOverloadsOfTheOpenProjectsGraphs()
     {
         string path = TestPaths.CopyHelloWorldSample();
@@ -178,7 +214,7 @@ public sealed class BusyStateTests : IDisposable
         public async Task ReloadAsync(Project project, CancellationToken cancellationToken = default)
         {
             reloadStarted.TrySetResult();
-            await gate;
+            await gate.WaitAsync(cancellationToken);
             if (reloadInner)
             {
                 await inner.ReloadAsync(project, cancellationToken);

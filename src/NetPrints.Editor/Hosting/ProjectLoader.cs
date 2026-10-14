@@ -77,15 +77,10 @@ internal sealed class ProjectLoader : IDisposable
 
         try
         {
-            using (shell.StatusBar.BeginBusy("Loading references…"))
-            {
-                await context.Reflection.ReloadAsync(project, reloadToken).ConfigureAwait(true);
-            }
-
-            using (shell.StatusBar.BeginBusy("Preparing graphs…"))
-            {
-                await OverloadWarmUp.WarmAsync(context.Reflection, project, reloadToken).ConfigureAwait(true);
-            }
+            await RunBusyUntilCancelledAsync("Loading references…",
+                () => context.Reflection.ReloadAsync(project, reloadToken), reloadToken).ConfigureAwait(true);
+            await RunBusyUntilCancelledAsync("Preparing graphs…",
+                () => OverloadWarmUp.WarmAsync(context.Reflection, project, reloadToken), reloadToken).ConfigureAwait(true);
         }
         catch (OperationCanceledException) when (reloadToken.IsCancellationRequested)
         {
@@ -484,11 +479,24 @@ internal sealed class ProjectLoader : IDisposable
     public void Dispose()
     {
         Unsubscribe();
+        CancelReload();
+        CloseBackups();
+        session?.Dispose();
+    }
+
+    // The busy state ends at once when the reload is cancelled (project closed), not when the cancelled work unwinds.
+    private async Task RunBusyUntilCancelledAsync(string text, Func<Task> work, CancellationToken cancellationToken)
+    {
+        using IDisposable scope = shell.StatusBar.BeginBusy(text);
+        using CancellationTokenRegistration registration = cancellationToken.Register(scope.Dispose);
+        await work().ConfigureAwait(true);
+    }
+
+    private void CancelReload()
+    {
         reload?.Cancel();
         reload?.Dispose();
         reload = null;
-        CloseBackups();
-        session?.Dispose();
     }
 
     /// <summary>
@@ -547,7 +555,11 @@ internal sealed class ProjectLoader : IDisposable
         shell.Session = session;
         previous?.Dispose();
 
-        if (project is not null)
+        if (project is null)
+        {
+            CancelReload();
+        }
+        else
         {
             subscribedProject = project;
             ((INotifyPropertyChanged)project).PropertyChanged += OnProjectPropertyChanged;
