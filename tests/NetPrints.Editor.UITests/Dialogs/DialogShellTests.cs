@@ -7,6 +7,8 @@ using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Compilation;
+using NetPrints.Core;
+using NetPrints.Editor.References;
 using NetPrints.Editor.Commands.KeyboardShortcuts;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
@@ -192,6 +194,37 @@ public class DialogShellTests
         await ui.Driver.PressAsync("Escape", Cancel);
 
         Assert.True(closed, $"{name}: Esc closes through the cancel button");
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task EscapeCancelsSelectTypeWithNoResult()
+    {
+        using var ui = HeadlessUi.Create();
+        var dialog = new SelectTypeDialog([TypeSpecifier.FromType<object>(), TypeSpecifier.FromType<string>()], TypeSpecifier.FromType<object>());
+        ui.Show(dialog);
+        bool closed = false;
+        dialog.Closed += (_, _) => closed = true;
+
+        await ui.Driver.PressAsync("Escape", Cancel);
+
+        Assert.True(closed, "Esc closes the Select Type window");
+        Assert.Null(dialog.Result);
+        Assert.Contains(ShellOf(dialog).SortedActions.OfType<Button>(), button => button.IsCancel);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task EscapeClosesTheReferencesDialog()
+    {
+        using var rig = new ReferencesRig();
+        using var ui = HeadlessUi.Create();
+        Window dialog = ui.Show(new ReferencesDialog { DataContext = rig.References });
+        bool closed = false;
+        dialog.Closed += (_, _) => closed = true;
+
+        await ui.Driver.PressAsync("Escape", Cancel);
+
+        Assert.True(closed, "Esc closes the References window");
+        Assert.Contains(ShellOf(dialog).SortedActions.OfType<Button>(), button => button.IsCancel);
     }
 
     [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]

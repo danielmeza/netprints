@@ -449,6 +449,10 @@ public static class AutomationIds
     /// </summary>
     public const string SelectTypeButton = "Dialogs.SelectType.Select";
     /// <summary>
+    /// Automation id for the select-type dialog's cancel button.
+    /// </summary>
+    public const string SelectTypeCancelButton = "Dialogs.SelectType.Cancel";
+    /// <summary>
     /// Automation id for the select-method dialog's select button.
     /// </summary>
     public const string SelectMethodButton = "Dialogs.SelectMethod.Select";

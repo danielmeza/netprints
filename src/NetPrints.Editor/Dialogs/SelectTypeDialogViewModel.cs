@@ -50,4 +50,8 @@ public sealed partial class SelectTypeDialogViewModel : DialogViewModel<TypeSpec
     /// <summary>Closes the dialog with the resolved type.</summary>
     [RelayCommand]
     private void Select() => RequestClose(ResolveSelection());
+
+    /// <summary>Closes the dialog with no type.</summary>
+    [RelayCommand]
+    private void Cancel() => RequestClose(null);
 }
