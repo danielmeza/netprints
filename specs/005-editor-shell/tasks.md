@@ -1302,7 +1302,7 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
 
 ### Batch H1 — model: sonnet — T102–T104a — 4.5 units
 
-- [ ] T102 Guide screenshots (2 units): `tests/NetPrints.Desktop.E2ETests/Scenarios/GuideScreenshotTests.cs` (opt-in with
+- [x] T102 Guide screenshots (2 units): `tests/NetPrints.Desktop.E2ETests/Scenarios/GuideScreenshotTests.cs` (opt-in with
   `NETPRINTS_GUIDE_SHOTS=1`, skipped with a stated reason otherwise) drives a copy of the sample through each guide's
   states and writes PNGs to `website/static/img/guide/editor/`. `scripts/guide-screenshots.sh` builds, starts its own
   Xvfb display (never `:1`), runs the class and lists the files. Run it and commit the images.
