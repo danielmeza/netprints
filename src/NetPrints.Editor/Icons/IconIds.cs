@@ -54,6 +54,9 @@ public static class IconIds
     /// <summary>Help &gt; Start page.</summary>
     public const string Home = "netprints.icon.home";
 
+    /// <summary>Help &gt; Open logs folder.</summary>
+    public const string OpenLogsFolder = "netprints.icon.openLogsFolder";
+
     /// <summary>Help &gt; About.</summary>
     public const string About = "netprints.icon.about";
 

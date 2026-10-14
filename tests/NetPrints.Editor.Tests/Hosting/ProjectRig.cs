@@ -6,6 +6,7 @@ using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Shell;
+using NetPrints.Editor.StartPage;
 
 namespace NetPrints.Editor.Tests.Hosting;
 
@@ -17,13 +18,13 @@ internal sealed class ProjectRig : IDisposable
         public object? GetService(Type serviceType) => null;
     }
 
-    public ProjectRig(EditorContext context, TimeProvider? time = null)
+    public ProjectRig(EditorContext context, TimeProvider? time = null, IFolderLauncher? folders = null)
     {
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         BuiltInContributions.Register(registry);
         registry.Freeze();
         Shell = new ShellViewModel(registry, new NoServices(), time ?? new FakeTimeProvider(), new InlineDispatcher());
-        Actions = new ShellProjectActions(context, Shell);
+        Actions = new ShellProjectActions(context, Shell, folders);
     }
 
     public ShellViewModel Shell { get; }

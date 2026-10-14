@@ -31,6 +31,14 @@ public static class HelpContributions
             Menu: new MenuPlacement(MenuName, "help", 1)));
 
         registry.AddCommand(new CommandDescriptor(
+            ContributionIds.CommandPrefix + "help.openLogsFolder",
+            "Open logs folder",
+            new OpenLogsFolderCommandHandler(),
+            IconId: IconIds.OpenLogsFolder,
+            Scope: CommandScope.Global,
+            Menu: new MenuPlacement(MenuName, "help", 2)));
+
+        registry.AddCommand(new CommandDescriptor(
             ContributionIds.CommandPrefix + "about",
             "About NetPrints",
             new AboutCommandHandler(),

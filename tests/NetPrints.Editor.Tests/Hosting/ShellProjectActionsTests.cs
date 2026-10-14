@@ -1,6 +1,9 @@
 using NetPrints.Core;
 using NetPrints.Editor.Dialogs;
+using NetPrints.Editor.Lifecycle;
 using NetPrints.Editor.Shell;
+using NetPrints.Editor.StartPage;
+using NetPrints.Editor.State;
 using NetPrints.Editor.Tests.Shell;
 using NetPrints.Editor.Variables;
 
@@ -48,6 +51,41 @@ public sealed class ShellProjectActionsTests : IDisposable
         disposables.Add(session);
         rig.Shell.Session = session;
         return rig;
+    }
+
+    private sealed class RecordingFolders : IFolderLauncher
+    {
+        public List<string> Revealed { get; } = [];
+
+        public void Reveal(string path) => Revealed.Add(path);
+    }
+
+    [Fact]
+    public void OpenLogsFolderRevealsTheLogFolderOfTheDataPaths()
+    {
+        string root = TestPaths.CreateTempDirectory();
+        cleanup.Add(root);
+        var paths = new EditorDataPaths(root);
+        var backups = new BackupOptions(paths, new RealEditorFileSystem(), TimeProvider.System, TimeSpan.FromSeconds(1));
+        var folders = new RecordingFolders();
+        var rig = new ProjectRig(testEditor.Context with { Backups = backups }, folders: folders);
+        disposables.Add(rig);
+
+        rig.Actions.OpenLogsFolder();
+
+        Assert.Equal([paths.LogDirectory], folders.Revealed);
+    }
+
+    [Fact]
+    public void OpenLogsFolderDoesNothingWhenTheEditorKeepsNoDataPaths()
+    {
+        var folders = new RecordingFolders();
+        var rig = new ProjectRig(testEditor.Context, folders: folders);
+        disposables.Add(rig);
+
+        rig.Actions.OpenLogsFolder();
+
+        Assert.Empty(folders.Revealed);
     }
 
     [Fact]

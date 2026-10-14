@@ -77,6 +77,7 @@ public class BuiltInCommandTableTests
         new("stop", "Stop", "Build", "run", ["Shift+F5"], Everywhere, 3, typeof(StopCommandHandler)),
         new("keyboardShortcuts", "Keyboard shortcuts", "Help", "help", [], Everywhere, null, typeof(KeyboardShortcutsCommandHandler)),
         new("startPage", "Start page", "Help", "help", [], Everywhere, null, typeof(StartPageCommandHandler)),
+        new("help.openLogsFolder", "Open logs folder", "Help", "help", [], Everywhere, null, typeof(OpenLogsFolderCommandHandler)),
         new("about", "About NetPrints", "Help", "about", [], Everywhere, null, typeof(AboutCommandHandler)),
     ];
 

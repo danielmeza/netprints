@@ -111,6 +111,9 @@ public sealed class FakeProjectActions : IProjectActions
     }
 
     /// <inheritdoc/>
+    public void OpenLogsFolder() => Calls.Add("OpenLogsFolder");
+
+    /// <inheritdoc/>
     public Task ShowAboutAsync(CancellationToken cancellationToken)
     {
         Calls.Add("ShowAbout");

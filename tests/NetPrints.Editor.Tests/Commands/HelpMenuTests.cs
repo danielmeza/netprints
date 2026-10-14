@@ -96,4 +96,17 @@ public class HelpMenuTests
 
         Assert.Equal(["ShowKeyboardShortcuts", "ShowAbout"], shell.Project.Calls);
     }
+
+    [Fact]
+    public async Task OpenLogsFolderIsAlwaysEnabledAndOpensTheLogFolder()
+    {
+        var shell = new FakeShell();
+        CommandContext context = shell.Context();
+        var handler = new OpenLogsFolderCommandHandler();
+
+        Assert.True(handler.CanExecute(context));
+        await handler.ExecuteAsync(context, TestContext.Current.CancellationToken);
+
+        Assert.Equal(["OpenLogsFolder"], shell.Project.Calls);
+    }
 }

@@ -50,6 +50,8 @@ internal sealed class NoProjectActions : IProjectActions
 
     public Task ShowAboutAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
 
+    public void OpenLogsFolder() => throw new NotSupportedException();
+
     public Task ShowGoToAnythingAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
 
     public Task ShowCommandPaletteAsync(CancellationToken cancellationToken) => throw new NotSupportedException();

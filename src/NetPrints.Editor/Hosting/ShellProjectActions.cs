@@ -10,6 +10,7 @@ using NetPrints.Editor.Graph;
 using NetPrints.Editor.Navigation;
 using NetPrints.Editor.References;
 using NetPrints.Editor.Shell;
+using NetPrints.Editor.StartPage;
 using NetPrints.Editor.State;
 using NetPrints.Reflection;
 
@@ -33,6 +34,7 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
 
     private readonly EditorContext context;
     private readonly ShellViewModel shell;
+    private readonly IFolderLauncher folders;
     private readonly HostChannelBridge hostChannelBridge;
     private ProjectSessionViewModel? followedSession;
     private Task<bool>? exitConfirmation;
@@ -41,10 +43,12 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
     /// <summary>Creates the actions and starts listening to the host channel.</summary>
     /// <param name="context">Host services shared across the editor.</param>
     /// <param name="shell">The shell state.</param>
-    public ShellProjectActions(EditorContext context, ShellViewModel shell)
+    /// <param name="folders">Shows a folder in the file manager; the operating system's when null.</param>
+    public ShellProjectActions(EditorContext context, ShellViewModel shell, IFolderLauncher? folders = null)
     {
         this.context = context;
         this.shell = shell;
+        this.folders = folders ?? new ShellFolderLauncher();
         Loader = new ProjectLoader(context, shell);
         hostChannelBridge = new HostChannelBridge(context.HostChannel, context.Dispatcher, Loader.ReloadReflectionAsync, FocusDocument,
             context.LoggerFactory.CreateLogger<HostChannelBridge>());
@@ -251,6 +255,15 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
             api.Navigation.NavigateTo,
             id => shell.Registry.Commands.FirstOrDefault(command => command.Id == id) is { } command && invoker.TryRun(command));
         return context.Dialogs.ShowGoToAnythingAsync(goTo);
+    }
+
+    /// <inheritdoc/>
+    public void OpenLogsFolder()
+    {
+        if (context.Backups?.Paths.LogDirectory is { } directory)
+        {
+            folders.Reveal(directory);
+        }
     }
 
     /// <inheritdoc/>

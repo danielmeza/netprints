@@ -66,6 +66,9 @@ public interface IProjectActions
     /// <returns>A task that completes when the dialog is closed.</returns>
     Task ShowKeyboardShortcutsAsync(CancellationToken cancellationToken);
 
+    /// <summary>Shows the folder of the session logs in the operating system's file manager; does nothing when the editor keeps no logs there.</summary>
+    void OpenLogsFolder();
+
     /// <summary>Shows the command palette: every registered command, filtered as the user types; the chosen enabled command runs.</summary>
     /// <param name="cancellationToken">Cancels the flow.</param>
     /// <returns>A task that completes when the palette is closed.</returns>
