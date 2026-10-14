@@ -12,8 +12,10 @@ using Avalonia;
 using Avalonia.Logging;
 using Avalonia.Media;
 using Microsoft.Extensions.Logging;
+using NetPrints.Desktop.Logging;
 using NetPrints.Editor;
 using NetPrints.Editor.Hosting;
+using NetPrints.Editor.State;
 using NetPrints.Extensibility;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
@@ -38,8 +40,17 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
-        var (factory, explicitLogLevel) = CreateLoggerFactory();
+        using SessionLog? session = args is [CheckProjectArgument, ..]
+            ? null
+            : SessionLog.Start(EditorDataPaths.Resolve().LogDirectory, TimeProvider.System, Environment.ProcessId, SessionLog.DefaultRetainedSessions);
+        var (factory, explicitLogLevel) = CreateLoggerFactory(session);
         using ILoggerFactory loggerFactory = factory;
+        if (session is not null)
+        {
+            AppDomain.CurrentDomain.UnhandledException +=
+                new CrashHandler(loggerFactory.CreateLogger<CrashHandler>(), session, CrashHandler.DefaultFlushTimeout).Handle;
+        }
+
         Logger.Sink = new AvaloniaLogSink(loggerFactory, explicitLogLevel);
 
         // Must run before any Microsoft.Build-namespace type is loaded (project-system.md §4).
@@ -168,7 +179,7 @@ internal static class Program
     /// <see cref="AvaloniaLogSink"/> knows whether to floor its own chatty areas to
     /// <see cref="LogLevel.Warning"/>.
     /// </summary>
-    private static (ILoggerFactory Factory, LogLevel? ExplicitMinimumLevel) CreateLoggerFactory()
+    private static (ILoggerFactory Factory, LogLevel? ExplicitMinimumLevel) CreateLoggerFactory(SessionLog? session)
     {
         LogLevel minimumLevel = LogLevel.Information;
         string? levelName = Environment.GetEnvironmentVariable("NETPRINTS_LOG_LEVEL");
@@ -179,7 +190,9 @@ internal static class Program
             explicitLevel = overridden;
         }
 
-        ILoggerFactory factory = LoggerFactory.Create(builder => builder.AddSimpleConsole().SetMinimumLevel(minimumLevel));
+        ILoggerFactory factory = session is null
+            ? LoggerFactory.Create(builder => builder.AddSimpleConsole().SetMinimumLevel(minimumLevel))
+            : session.CreateLoggerFactory(minimumLevel, builder => builder.AddSimpleConsole());
         return (factory, explicitLevel);
     }
 
