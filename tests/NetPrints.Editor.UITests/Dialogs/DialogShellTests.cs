@@ -8,7 +8,6 @@ using Avalonia.VisualTree;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Compilation;
 using NetPrints.Core;
-using NetPrints.Editor.References;
 using NetPrints.Editor.Commands.KeyboardShortcuts;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
@@ -17,6 +16,7 @@ using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.Icons;
 using NetPrints.Editor.Lifecycle;
+using NetPrints.Editor.References;
 using NetPrints.Editor.UITests.Hosting;
 
 namespace NetPrints.Editor.UITests.Dialogs;
