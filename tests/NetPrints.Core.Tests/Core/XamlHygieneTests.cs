@@ -766,6 +766,13 @@ namespace NetPrints.Tests.Core
             Editor("Graph/GraphEditorView.axaml.cs", "OnDragOver", Gesture, "Accepts a variable dragged from the panels onto the canvas."),
             Editor("Graph/GraphEditorView.axaml.cs", "OnDrop", Gesture, "Drops a dragged variable at a canvas position, converting screen to graph coordinates."),
             Editor("Graph/GraphEditorView.axaml.cs", "OnDataContextChanged", ViewportMath, "Resets the Nodify viewport zoom and location when a new graph opens."),
+            Editor("EditorApp.axaml.cs", "desktop.Exit", EditorInterop, "Disposes the exception handler and automation agent when the desktop lifetime exits."),
+            Editor("EditorApp.axaml.cs", "desktop.ShutdownRequested", EditorInterop, "Hands the lifetime's shutdown request to the shutdown coordinator."),
+            Editor("Graph/GraphEditorView.axaml.cs", "OnNodeRevealRequested", ViewportMath, "Centers the Nodify viewport on a node the graph asks to reveal."),
+            Editor("Graph/GraphEditorView.axaml.cs", "PointerCaptureLostEvent", Gesture, "Clears the pan cursor when the editor loses the pointer capture."),
+            Editor("Graph/GraphEditorView.axaml.cs", "SearchPopup.Opened", FocusPlumbing, "Focuses the search box when the canvas popup opens."),
+            Editor("Graph/GraphEditorView.axaml.cs", "SearchPopup.FallbackPositionRequested", ViewportMath, "Supplies the selected node or canvas centre as the popup position."),
+            Editor("Graph/GraphEditorView.axaml.cs", "GetSetPopup.FallbackPositionRequested", ViewportMath, "Supplies the selected node or canvas centre as the popup position."),
         ];
 
         private static string[] FindCodeBehindHandlers(string relativePath, string source)
@@ -773,8 +780,14 @@ namespace NetPrints.Tests.Core
             IEnumerable<string> bySignature = EventHandlerSignaturePattern.Matches(source).Select(m => m.Groups["name"].Value);
             IEnumerable<string> byOverride = OnOverridePattern.Matches(source).Select(m => m.Groups["name"].Value);
 
-            return [.. bySignature.Concat(byOverride).Distinct(StringComparer.Ordinal).Select(name => $"{relativePath}:{name}")];
+            IEnumerable<string> bySubscription = SubscriptionPattern.Matches(source).Select(NameOrMethod);
+            IEnumerable<string> byAddHandler = AddHandlerPattern.Matches(source).Select(NameOrMethod);
+
+            return [.. bySignature.Concat(byOverride).Concat(bySubscription).Concat(byAddHandler).Distinct(StringComparer.Ordinal).Select(name => $"{relativePath}:{name}")];
         }
+
+        private static string NameOrMethod(Match match) =>
+            match.Groups["method"].Success ? match.Groups["method"].Value : match.Groups["name"].Value;
 
         private static (List<string> Offenders, HashSet<string> Seen) ScanCodeBehind(IEnumerable<(string Path, string Source)> files)
         {
@@ -841,12 +854,57 @@ namespace NetPrints.Tests.Core
             Assert.Equal(["src/X/V.axaml.cs:OnFoo", "src/X/V.axaml.cs:OnBar"], offenders);
         }
 
+        [Fact]
+        public void E7_FlagsSubscriptionsLambdasAndHandlersWithAnyEventType()
+        {
+            const string source = """
+                class V
+                {
+                    V()
+                    {
+                        Editor.PropertyChanged += (_, e) => Sync();
+                        Popup.Opened += (_, _) => Focus();
+                        Panel.Shown += OnShown;
+                        Editor.AddHandler(PointerCaptureLostEvent, (_, _) => Reset(), Bubble, true);
+                        Editor.AddHandler(PointerPressedEvent, OnPressed, Tunnel, true);
+                        total += 1;
+                        count += other;
+                    }
+
+                    void OnNode(object? sender, NodeViewModel node) {}
+                }
+                """;
+
+            (List<string> offenders, _) = ScanCodeBehind([("src/X/V.axaml.cs", source)]);
+
+            Assert.Equal(
+                [
+                    "src/X/V.axaml.cs:OnNode",
+                    "src/X/V.axaml.cs:Editor.PropertyChanged",
+                    "src/X/V.axaml.cs:Popup.Opened",
+                    "src/X/V.axaml.cs:OnShown",
+                    "src/X/V.axaml.cs:PointerCaptureLostEvent",
+                    "src/X/V.axaml.cs:OnPressed",
+                ],
+                offenders);
+        }
+
         private static readonly Regex EventHandlerSignaturePattern = EventHandlerSignatureRegex();
 
         private static readonly Regex OnOverridePattern = OnOverrideRegex();
 
-        [GeneratedRegex(@"\b(?<name>\w+)\s*\(\s*object\??\s+\w+\s*,\s*[\w.]*EventArgs\s+\w+\s*\)")]
+        private static readonly Regex SubscriptionPattern = SubscriptionRegex();
+
+        private static readonly Regex AddHandlerPattern = AddHandlerRegex();
+
+        [GeneratedRegex(@"\b(?<name>\w+)\s*\(\s*object\??\s+\w+\s*,\s*[\w.<>?]+\s+\w+\s*\)")]
         private static partial Regex EventHandlerSignatureRegex();
+
+        [GeneratedRegex(@"(?<name>[\w.]+)\s*\+=\s*(?:(?:\([^)]*\)|\w+)\s*=>|async\b|delegate\b|(?<method>[A-Z]\w*)\s*;)")]
+        private static partial Regex SubscriptionRegex();
+
+        [GeneratedRegex(@"\bAddHandler\s*\(\s*(?<name>[\w.]+)\s*,\s*(?:(?:\([^)]*\)|\w+)\s*=>|(?<method>\w+))")]
+        private static partial Regex AddHandlerRegex();
 
         [GeneratedRegex(@"\boverride\s+[\w.<>?\[\]]+\s+(?<name>On\w+)\s*\(")]
         private static partial Regex OnOverrideRegex();

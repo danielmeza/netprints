@@ -27,7 +27,8 @@
 
   <Panel>
     <!-- The grid paints the canvas background behind a transparent editor (spec 002). -->
-    <edgraph:GridBackground x:Name="Grid" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphGrid}" IsHitTestVisible="False"
+    <edgraph:GridBackground AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphGrid}" IsHitTestVisible="False"
+                            ViewportLocation="{Binding #Editor.ViewportLocation, Mode=OneWay}" ViewportZoom="{Binding #Editor.ViewportZoom, Mode=OneWay}"
                             BackgroundColor="{DynamicResource Canvas.Background}" MinorColor="{DynamicResource GraphGrid.MinorColor}" MajorColor="{DynamicResource GraphGrid.MajorColor}" />
     <nodify:NodifyEditor x:Name="Editor" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphEditor}"
                          Theme="{StaticResource NetPrints.NodifyEditor}"

@@ -39,15 +39,6 @@ public partial class GraphEditorView : UserControl
     {
         InitializeComponent();
 
-        SyncGrid();
-        Editor.PropertyChanged += (_, e) =>
-        {
-            if (e.Property == Nodify.Avalonia.NodifyEditor.ViewportLocationProperty || e.Property == Nodify.Avalonia.NodifyEditor.ViewportZoomProperty)
-            {
-                SyncGrid();
-            }
-        };
-
         Editor.AddHandler(PointerPressedEvent, OnEditorPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
         Editor.AddHandler(PointerReleasedEvent, OnEditorPointerReleased, RoutingStrategies.Tunnel, handledEventsToo: true);
         Editor.AddHandler(PointerMovedEvent, OnEditorPointerMoved, RoutingStrategies.Tunnel, handledEventsToo: true);
@@ -142,12 +133,6 @@ public partial class GraphEditorView : UserControl
         var center = CanvasCenterPoint;
         double zoom = Editor.ViewportZoom;
         Editor.ViewportLocation = new Point(node.Location.X - center.X / zoom, node.Location.Y - center.Y / zoom);
-    }
-
-    private void SyncGrid()
-    {
-        Grid.ViewportLocation = Editor.ViewportLocation;
-        Grid.ViewportZoom = Editor.ViewportZoom;
     }
 
     private static T? FindContext<T>(object? source) where T : class

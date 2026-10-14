@@ -157,3 +157,10 @@ and the `EditorApp` entry point) and 2 viewport math (`GraphEditorView.CenterWhe
 in P3a has a handler. At Checkpoint G every other allowlist (E1, E2, E3, E5, E8, E9 and the dialog-sizing list) is empty, E4 and E6
 have none, and the literal ratchet holds 0 `FontSize` literals and 52 `Margin` literals, which may not rise. The list stays
 shrink-only; a new handler is a failing test until it is migrated or justified with a category and a reason.
+
+## Amendment 3: E7 covers subscriptions and lambdas (G-R10)
+
+E7 now also counts `+=` event subscriptions and `AddHandler` calls (method groups and lambdas) and any `(object? sender, T e)`
+handler, not only `EventArgs` signatures and `On*` overrides. A lambda is keyed by its event (`SearchPopup.Opened`), a method group
+by its method. The grid sync in `GraphEditorView` became a `#Editor` binding; the seven newly found handlers (two in `EditorApp`,
+five in `GraphEditorView`) are listed with a reason, so the list is 23. It stays shrink-only for the handlers E7 already knew.
