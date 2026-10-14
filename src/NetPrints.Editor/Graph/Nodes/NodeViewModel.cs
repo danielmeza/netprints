@@ -548,6 +548,11 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
 
     private void OnGraphPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(MethodGraph.Name) && Node is MethodEntryNode)
+        {
+            OnPropertyChanged(nameof(Label));
+        }
+
         if (e.PropertyName == nameof(MethodGraph.Modifiers))
         {
             foreach (var pin in AllPins)
@@ -563,6 +568,9 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
         {
             case nameof(Node.Name):
                 OnPropertyChanged(nameof(Name));
+                break;
+            case nameof(EventEntryNode.EventName):
+                OnPropertyChanged(nameof(Label));
                 break;
             // Derived node constructors set these after the base constructor added the node to the
             // graph (and created this view model), so dependent values are refreshed here.
