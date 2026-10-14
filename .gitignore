@@ -275,3 +275,6 @@ docs/api/reference/
 
 # Publish output from `dotnet publish ... -o out/`
 out/
+
+# Python bytecode of the hook scripts
+__pycache__/

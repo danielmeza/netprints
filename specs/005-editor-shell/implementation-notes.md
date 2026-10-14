@@ -2562,3 +2562,21 @@ correct, with no finding. Suggested fix batches for T101:
   was red for `int[][,]` and `int[,][]`. The goldens are unchanged.
 - Not fixed: `MethodViewModel.ToMethodSpecifier` gives a call to a generic graph method no generic arguments and casts the
   return types to `TypeSpecifier`, so dragging such a method fails or loses its type pins.
+
+## G-F3a (T101, third of four batches; T101 stays open)
+
+- **G-R1 fixed** (09affd10): a pin search shows a notice naming the hiding catalog above the list, whatever rows it holds
+  (`HidingNotice`, a secondary text block outside the list, so keyboard navigation skips it and screen readers read it). The empty
+  state keeps its sentence for the truly empty case. Red: the headless `NodeSearchTests` row found no notice. FR-091 and
+  scenario 3 of US10 are amended: the message is a notice that stays visible next to other rows.
+- **G-R6 fixed** (bb14fb84): the ternary is no longer a fixed role; an impure one is Flow, a pure one Pure. Red: the
+  `NodeRoleTests` table row, the view model row and a new toggle-and-undo test. The seven `canvas-every-node-kind` baselines
+  changed (the ternary header is grey).
+- **G-R7 fixed** (7cfb939a): `accent` has no style under Semi, so the default dialog buttons now use Semi's `SolidButton` theme
+  with the `Primary` class; Trust no longer marks Trust but its default, Don't load. Red: `TheDefaultButtonLooksDifferentFromTheOthers`
+  (8 rows, equal backgrounds). Baselines changed: `dialog-select-method` and the six `dialog-unsaved-changes` ones, which show a
+  solid blue default button in Dark and Light.
+- **G-R8 fixed** (fa4b9c96): `MenuPlacement` has an optional `Submenu`, the menu bar builds submenu entries from the registry,
+  and a handler may answer `IsChecked`; View › Theme is a submenu of radio items with the active theme marked, and the command
+  ids are unchanged. The palette and go-to detail read "View › Theme". Red: `RegistrySurfaceTests` (menu layout and the submenu
+  row) and `TheThemeMenuChecksTheActiveThemeAndFollowsTheChoice`. The E2E `ThemeSwitchTests` opens the submenu (3 of 3 runs green).
