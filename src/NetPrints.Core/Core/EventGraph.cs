@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Graph;
 
 namespace NetPrints.Core
@@ -13,7 +14,8 @@ namespace NetPrints.Core
     /// starts empty, and several independent entries (custom events, base method overrides) can share
     /// one visual graph.
     /// </summary>
-    public sealed class EventGraph : NodeGraph
+    [INotifyPropertyChanged]
+    public sealed partial class EventGraph : NodeGraph
     {
         /// <summary>Prefix of a new event graph's generated unique name (EventGraph, EventGraph1, ...).</summary>
         public const string DefaultNamePrefix = "EventGraph";
@@ -29,7 +31,8 @@ namespace NetPrints.Core
         /// Name of this event graph. A label for the graph itself, not a generated member: each
         /// <see cref="EventEntryNode.EventName"/> names its own generated method.
         /// </summary>
-        public string Name { get; set; }
+        [ObservableProperty]
+        public partial string Name { get; set; }
 
         /// <summary>
         /// This event graph's entries, in node order (<see cref="NodeGraph.Nodes"/>). Each is

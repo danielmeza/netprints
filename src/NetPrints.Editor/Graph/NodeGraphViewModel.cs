@@ -45,6 +45,10 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
         SyncNodeSubscriptions();
 
         Context.Reflection.Reloaded += OnReflectionReloaded;
+        if (graph is INotifyPropertyChanged graphNotifier)
+        {
+            graphNotifier.PropertyChanged += OnGraphPropertyChanged;
+        }
 
         Search = new SuggestionListViewModel(this);
         GetSetChooser = new GetSetChooserViewModel(this);
@@ -123,6 +127,14 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
         }
 
         SelectionChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnGraphPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(MethodGraph.Name) or nameof(EventGraph.Name))
+        {
+            OnPropertyChanged(nameof(Name));
+        }
     }
 
     private void OnNodePropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -545,6 +557,11 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         Context.Reflection.Reloaded -= OnReflectionReloaded;
+        if (Graph is INotifyPropertyChanged graphNotifier)
+        {
+            graphNotifier.PropertyChanged -= OnGraphPropertyChanged;
+        }
+
         Nodes.CollectionChanged -= OnNodesChanged;
         foreach (var node in subscribedNodes)
         {
