@@ -2860,19 +2860,19 @@ Head `ef474cd2` plus this batch's notes. Docs updated in this checkpoint: none; 
 | SC-005 restart | pass | layout, tabs, zoom, bounds: E2E `RestoreSessionTests`, `DockLayoutRoundTripTests`, `SessionStateTests`, `WindowPlacementTests`; theme: `ThemeSettingTests`, E2E `ThemeSwitchTests`; corrupt or newer state: E2E `CorruptLayoutTests`, `JsonEditorStateStoreTests` |
 | SC-006 diagnostics, timing, Windows | met (timing after H-R4) | diagnostics: `E2EDiagnosticsTests` Passed in both runs, files uploaded as `e2e-results` (Checkpoint A, run 36867229176); Windows: `CLI (Windows)` 38676060404 green, `ShowTextconvEncodingTests` in the Cli tests; timing: was 67% (T110); after the four UI shards the longest leg is 488 s, 49% of 995 s (CI run 38682732163, H-R4) |
 | SC-007 type-scoped search | pass, one deviation | `CompositeReflectionProviderTests`, E2E `TypeScopedSearchTests`; the deviation is the Checkpoint G one (unchanged output pinned by resolution and the byte-identical goldens) |
-| SC-008 tokens, no VM, hygiene | pass | `ThemeTokenTests` (49 tokens in both variants), `SourceHygieneTests.NoTypeNameEndsInVM`, `XamlHygieneTests`; allowlists empty, E7 holds 16 justified entries (Checkpoint G table); all three classes pass in the full suite above |
+| SC-008 tokens, no VM, hygiene | pass | `ThemeTokenTests` (50 tokens in both variants), `SourceHygieneTests.NoTypeNameEndsInVM`, `XamlHygieneTests`; allowlists empty, E7 holds 23 justified entries (9 gesture, 8 editor interop, 5 viewport math, 1 focus plumbing; the Checkpoint G table's 16 predates the H work); all three classes pass in the full suite above |
 | SC-009 custom event | pass | E2E `EventEntryInspectorTests`; `SetEventArgumentsCommandTests`, golden `EventArguments.Combat.cs` |
 | SC-010 docs site | pass | T108: 0 broken links (the build throws on one), six guides with images, ADR-0018 to ADR-0021 and ADR-0037 to ADR-0039, the engine research pages; CI `Docs` run 38676060401 green |
 
-Roadmap P3a coverage, row by row: every row is met by its tasks (T001 to T108 are ticked and the table's task lists match `tasks.md`) or by its recorded deferral. The one open point inside a met row is the 60% timing goal of "CI and test infrastructure" (SC-006). Work that stays out of P3a is unchanged: user-defined shortcuts, autosave of the original files, the L1 title bar, the status-bar contribution kind, the undo history list, "show all members", mouse back and forward, argument modifiers and the P2 carry-overs.
+Roadmap P3a coverage, row by row: every row is met by its tasks (T001 to T108 are ticked and the table's task lists match `tasks.md`) or by its recorded deferral. No point inside a met row is open: the 60% timing goal of "CI and test infrastructure" (SC-006) was met after H-R4 (488 s, 49% of the baseline). Work that stays out of P3a is unchanged: user-defined shortcuts, autosave of the original files, the L1 title bar, the status-bar contribution kind, the undo history list, "show all members", mouse back and forward, argument modifiers and the P2 carry-overs.
 
 Deferrals decided this week: the shared warmed provider left P3a; the two-DPI check on Windows is the owner's manual check; the start page PNGs carry the build version and are regenerated before release; the Windows session log is unverified; mid-cable hover misses at fit zoom.
 
-Governance proposals (for the coordinator, not applied):
-1. SC-006: restate the timing criterion against the sharded legs, for example "each Linux test leg takes at most 75% of the 995 s baseline", or accept 67% explicitly and move the shared warmed provider to P3. As written, P3a's own test growth makes it unmeetable.
-2. AGENTS.md batch rules: `dotnet format analyzers --severity info --verify-no-changes` over the changed files did not honour `--include` here (4464 lines solution-wide); say how to scope it, or drop the instruction.
-3. roadmap.md: after the merge, mark P3a complete and move the shared warmed provider, the `format analyzers` triage and the SC-006 decision to P3.
-4. T110/T108 text says "ADR-0018 to ADR-0020" while spec SC-010 says "ADR-0018 to ADR-0021"; the site has all four, so the task text can follow the spec.
+Governance proposals (for the coordinator; status after H-R4 in brackets):
+1. [moot after H-R4: the timing is met at 49%, so no restatement is needed] SC-006: restate the timing criterion against the sharded legs, for example "each Linux test leg takes at most 75% of the 995 s baseline", or accept 67% explicitly and move the shared warmed provider to P3. As written, P3a's own test growth makes it unmeetable.
+2. [applied in `d5f5002c`] AGENTS.md batch rules: `dotnet format analyzers --severity info --verify-no-changes` over the changed files did not honour `--include` here (4464 lines solution-wide); say how to scope it, or drop the instruction.
+3. [not applied; stays with the coordinator after the merge] roadmap.md: after the merge, mark P3a complete and move the shared warmed provider, the `format analyzers` triage and the SC-006 decision to P3.
+4. [applied in `8137378f`] T110/T108 text says "ADR-0018 to ADR-0020" while spec SC-010 says "ADR-0018 to ADR-0021"; the site has all four, so the task text can follow the spec.
 
 ## Final review (T112)
 
