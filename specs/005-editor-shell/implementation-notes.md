@@ -2873,3 +2873,63 @@ Governance proposals (for the coordinator, not applied):
 2. AGENTS.md batch rules: `dotnet format analyzers --severity info --verify-no-changes` over the changed files did not honour `--include` here (4464 lines solution-wide); say how to scope it, or drop the instruction.
 3. roadmap.md: after the merge, mark P3a complete and move the shared warmed provider, the `format analyzers` triage and the SC-006 decision to P3.
 4. T110/T108 text says "ADR-0018 to ADR-0020" while spec SC-010 says "ADR-0018 to ADR-0021"; the site has all four, so the task text can follow the spec.
+
+## Final review (T112)
+
+Head `0abb65a7`, diff `3a6eafca..0abb65a7`. The review covers how the sub-phases fit together, checked against
+AGENTS.md, `.agents/rules`, the ADRs, spec.md, plan.md, contracts/, the constitution and the roadmap's P3a section.
+Of 43 documents, 36 apply and 32 were checked against the diff. PR comment:
+https://github.com/danielmeza/netprints/pull/12#issuecomment-6185156954.
+
+**Verdict: approve after T113. 0 majors, 5 minors, 4 nits.** Nothing blocks the merge on correctness. Each minor
+leaves a contract or an ADR saying something the code no longer does.
+
+**Evidence:**
+
+- **CI runs.** Every run the SC table and H-R4 cite exists, ran on the commit it names, and succeeded. Run
+  38676060429 succeeded on attempt 2 after attempt 1 failed. Baseline 36819424717 is 995 s.
+- **SC-006 timings.** Recomputed from the job timestamps of run 38682732163, the longest job is UI 3/4 at 488 s
+  (49.0%). On head, run 38683989362, the longest is 491 s.
+- **SC table tests.** All 39 named tests exist.
+- **Standing rules over the diff.** No added suppression, no added `!` in `src/`, no `*VM` type, no inline
+  attribute, no attribution trailer and no machine path. The test allowlist entries for null-forgiving `!` that look
+  new predate this branch: the allowlist was re-keyed by line text in `73f037d4`.
+- **Not run.** No suite was run for this review.
+
+| Id | Sev | Summary | Where | Batch |
+|---|---|---|---|---|
+| T112-1 | minor | "Open folder or project…" cannot open a folder. It is a `.csproj` file picker, and a folder parameter is refused. Folders resolve only through drop and the command-line argument, while FR-040 and the start page guide promise both. | `Hosting/ProjectLoader.cs:223-230,346-353` (`:180-193`); `Contributions/BuiltIn/FileContributions.cs:33`; `docs/guide/editor/start-page.md:38`; `spec.md:653` | E |
+| T112-2 | minor | Context-menu items with the `Canvas`, `Node` or `Pin` target are accepted but never rendered. commands.md §2 promises a Canvas menu, but a right-click on the canvas opens node search. | `Contributions/ContextMenuTarget.cs:7,10,16`; `Graph/Pins/ConnectionViewModel.cs:99`; `ProjectTree/ProjectTreePanelViewModel.cs:129-131,335`; `Graph/GraphEditorView.axaml.cs:242-247`; `contracts/commands.md:79` | B, F |
+| T112-3 | minor | ADR-0033 decision 8 was superseded without an amendment. The agent start failure now goes through the MEL console logger, which writes to stdout because `LogToStandardErrorThreshold` is not set. | `EditorApp.axaml.cs:176-184`; `NetPrints.Desktop/Program.cs:193-195`; `docs/adr/0033-logging-and-per-user-folders.md:48-50` | H-R3a |
+| T112-4 | minor | contracts/state-files.md §1, data-model.md, quickstart.md and the `EditorDataPaths` comments were not amended for ADR-0033. They put state and backups in the wrong folders and say `NETPRINTS_STATE_DIR` isolates `settings.json`. | `contracts/state-files.md:8-22,27`; `data-model.md:25`; `quickstart.md:5-6`; `State/EditorDataPaths.cs:6,9` | H0a |
+| T112-5 | minor | The budget gate is blind to `ProjectOpenPerformanceTests`: the assertion comes before the first `Stopwatch` token. Removing that file's Performance trait or its relaxed bound leaves the gate green. | `tests/NetPrints.Core.Tests/Core/CiWorkflowTests.cs:235-264`; `tests/NetPrints.Editor.Tests/Hosting/ProjectOpenPerformanceTests.cs:47,84-87,95` | H-R3b |
+| T112-6 | nit | The Checkpoint H report is stale after H-R4: SC-008 lists 49 tokens and 16 E7 entries where there are 50 and 23. It still names "the one open point… 60% timing", and governance proposals 1, 2 and 4 have since been applied or made moot. | this file, the Checkpoint H section (SC-008 row, coverage paragraph, governance list) | H3, H-R4 |
+| T112-7 | nit | contracts/commands.md §1 has no `help.openLogsFolder` row, yet `BuiltInCommandTableTests` has one. | `contracts/commands.md:55-57`; `tests/NetPrints.Editor.Tests/Contributions/BuiltInCommandTableTests.cs:9,80` | H0b |
+| T112-8 | nit | testing.md says the `perf` job runs Editor.Tests only, but it runs four projects. contracts/ci.md §1 lists neither `perf` nor `trim-readiness`. | `docs/contributing/testing.md:149-155`; `.github/workflows/ci.yml:253-286,299`; `contracts/ci.md:9-17` | H-R3b |
+| T112-9 | nit | Two comments say `ApplicationData` is `~/.config` on macOS; since .NET 8 it is `~/Library/Application Support`. | `State/UserFolders.cs:5`; `NetPrints.Extensibility/Settings/JsonFileSettingsStore.cs:65-66` | H0a |
+
+Paths are relative to `src/NetPrints.Editor/` unless they name another folder, and contracts are under
+`specs/005-editor-shell/`.
+
+**Fixes, in brief:**
+
+- **T112-1:** resolve paths through `ResolveProjectFile` in `OpenProjectAsync`. Then either offer a folder route, or
+  rename the label and correct FR-040 and the guide. Test first: a folder with one `.csproj` opens.
+- **T112-2:** drop the Canvas row from commands.md §2. Make the registry report targets that have no surface, or
+  remove those targets until P3.
+- **T112-3:** set `LogToStandardErrorThreshold` on the Desktop console provider, or amend decision 8 and the comment.
+- **T112-4:** amend state-files.md §1 in place, then fix data-model.md and the comments, and add `XDG_CONFIG_HOME`
+  (or `HOME`) to the quickstart.
+- **T112-5:** select budget files by two independent checks (the file mentions `Stopwatch`, and it has a
+  `<` assertion). Test first: the regex matches `ProjectOpenPerformanceTests.cs`.
+- **T112-6 to T112-9:** correct the text.
+
+**Refuted on re-check:**
+
+- The log folder is not user-only. FR-052 covers only the state and backup files.
+- The null-forgiving allowlist looked like it grew. It was re-keyed, not grown.
+- ADR-0019 has a status-line amendment. That is the house style, as in ADR-0021.
+- Floating graph windows are not restored after a restart. FR-050 does not ask for it.
+
+**Not determined:** how the migration and the session log behave on Windows and macOS. T112-3 was not reproduced: the
+editor was not run with a pipe that cannot be bound.

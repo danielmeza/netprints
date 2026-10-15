@@ -1355,7 +1355,7 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
 
 ### Batch H-R — model: opus — T112 (final PR review)
 
-- [ ] T112 Final, lighter Opus review of the whole PR before merge, by a reviewer who did not implement it. It covers
+- [x] T112 Final, lighter Opus review of the whole PR before merge, by a reviewer who did not implement it. It covers
   integration across sub-phases, not each sub-phase again: the registry ↔ every surface (menus, bar, keys, palette,
   sheet, context menus, tooltips, go-to, start page, templates); `IShell` ↔ the Dock adapter ↔ layout persistence ↔
   sessions; the lifecycle ↔ the five unload paths ↔ backups ↔ the state directory; the schema's optional property ↔
