@@ -1,7 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Headless.XUnit;
 using Avalonia.Data;
+using Avalonia.Headless.XUnit;
 using Avalonia.Logging;
 using Avalonia.Media;
 using Avalonia.Styling;
