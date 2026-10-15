@@ -239,14 +239,7 @@ namespace NetPrints.Tests.Core
             string perfScript = string.Join('\n', Items(Get(Get(Jobs(), "perf"), "steps")).Select(step => Text(Get(step, "run"))));
             char[] separators = [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar];
 
-            string[] budgetFiles =
-            [
-                .. Directory.EnumerateFiles(testsRoot, "*.cs", SearchOption.AllDirectories)
-                    .Where(path => !path.Split(separators).Any(part => part is "bin" or "obj"))
-                    .Where(path => Path.GetFileName(path) != nameof(CiWorkflowTests) + ".cs")
-                    .Where(path => !HangGuardFiles.Contains(Path.GetFileName(path)))
-                    .Where(path => BudgetAssertion().IsMatch(File.ReadAllText(path))),
-            ];
+            string[] budgetFiles = BudgetFiles(testsRoot);
 
             Assert.NotEmpty(budgetFiles);
             foreach (string path in budgetFiles)
@@ -260,7 +253,35 @@ namespace NetPrints.Tests.Core
             }
         }
 
-        [GeneratedRegex(@"Stopwatch[\s\S]*Assert\.True\([^;]*\s<\s[^;]*;")]
+        private static string[] BudgetFiles(string testsRoot)
+        {
+            char[] separators = [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar];
+            return
+            [
+                .. Directory.EnumerateFiles(testsRoot, "*.cs", SearchOption.AllDirectories)
+                    .Where(path => !path.Split(separators).Any(part => part is "bin" or "obj"))
+                    .Where(path => Path.GetFileName(path) != nameof(CiWorkflowTests) + ".cs")
+                    .Where(path => !HangGuardFiles.Contains(Path.GetFileName(path)))
+                    .Where(path => IsBudgetFile(File.ReadAllText(path))),
+            ];
+        }
+
+        [Fact]
+        public void TheBudgetGateSelectsEveryWallClockBudgetFile()
+        {
+            string testsRoot = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "tests");
+
+            string[] names = [.. BudgetFiles(testsRoot).Select(path => Path.GetFileName(path)).Order(StringComparer.Ordinal)];
+
+            Assert.Equal(
+                ["CatalogPerformanceTests.cs", "OpenMethodPerformanceTests.cs", "ProjectOpenPerformanceTests.cs", "ScaleTests.cs", "SearchPerformanceTests.cs"],
+                names);
+        }
+
+        private static bool IsBudgetFile(string text) =>
+            text.Contains("Stopwatch", StringComparison.Ordinal) && BudgetAssertion().IsMatch(text);
+
+        [GeneratedRegex(@"Assert\.True\([^;]*\s<\s[^;]*;")]
         private static partial Regex BudgetAssertion();
 
         [Fact]
