@@ -1,11 +1,11 @@
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
-using Nodify.Avalonia.Connections;
 using NetPrints.Core;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Graph.Pins;
 using NetPrints.Editor.UITests.Shell;
 using NetPrints.Graph;
+using Nodify.Avalonia.Connections;
 
 namespace NetPrints.Editor.UITests.Graph;
 
