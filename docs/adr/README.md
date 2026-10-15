@@ -42,4 +42,5 @@ instead.
 
 Numbers 0024-0030 and 0032 are reserved by the roadmap for ADRs not yet written (analyzer and generator
 infrastructure, declarative pins, node kinds, localization, node search, node capabilities, the Extensibility
-Stairway split, graph rules); 0031 and later were written first.
+Stairway split, graph rules); 0031 and later were written first. Numbers 0037-0039 are reserved as well: 0037 is run
+profile kinds, 0038 is the C# target and feature requirements, and 0039 is user attributes and their editor extension model.
