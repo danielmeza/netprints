@@ -2992,3 +2992,15 @@ editor was not run with a pipe that cannot be bound.
   operation has finished, so a pane in transit is already in its new dock; the two overrides and `WithoutHoming` are gone. Test:
   `ToolRedockTests.FloatedPanesDroppedAnywhereAppearOnceWhereTheyWereDropped` (a theory over move into the group, swap with a tab, split left/right/top/bottom and the
   global target, with Output and Errors both floating; red for all seven without any suppression, green now). `AFloatedPaneClosedWithTheOsCloseButtonDocksBackToItsDefaultPlace` still pins the user close.
+- **OF-3, document tabs look like buttons.** Cause: Dock's tab body is a filled accent pill with a 4 px radius on all corners, with a 2 px accent line
+  (`PART_DocumentSeperator`) and a 1 px frame (`PART_Border`) between the strip and the document, so the selected tab never reached the document. Fix, all in
+  `DockStyles.axaml` and tokens in `EditorStyles.axaml`: `DockDocumentTabStripSeparatorVisible` false and `DockDocumentContentBorderThickness` 0 (Dock's own
+  resource keys), the selected tab body takes `DockSurfaceEditorBrush` (the `Canvas.Background` token, the document surface) with a `Tab.SelectedAccent` top edge
+  (`Tab.AccentThickness`), `Radius.Tab` is 4,4,0,0, inactive tabs fade to `Tab.InactiveOpacity` and return to full opacity with the `State.Hover` background on
+  hover; the close button is untouched. New tokens: `Radius.Tab`, `Tab.AccentThickness`, `Tab.InactiveOpacity` (shared) and `Tab.SelectedAccent` (Dark `#4FC3F7`,
+  Light `#0277BD`, the focus ring colours); Classic and High contrast will override them as data once ADR-0035's presets exist (only Dark and Light ship today).
+  The tool-pane strips (Errors, C#, Output) are flat text with no pill, so they do not share the problem and are unchanged. Test:
+  `DocumentTabStyleTests.TheSelectedTabIsTheDocumentSurfaceWithSquareBottomCornersAndNothingUnderIt` (Dark and Light; red before: bottom radius 4).
+  `InteractionStateTests.KeyboardFocusShowsTheRingWithTheControlsCornerRadius` now expects `Radius.Tab` for the document tab. Baselines regenerated (the removed frame
+  makes the document area 2 px wider and shifts the content by 1 px, and the tab changes): `editor-shell-main` (+ `-dark|light-1.0|1.5|2.0`), `editor-shell-no-project`,
+  `canvas-every-node-kind` (+ the six scaled), `canvas-preview-cable` and `search-popup`; the start page baselines are untouched.

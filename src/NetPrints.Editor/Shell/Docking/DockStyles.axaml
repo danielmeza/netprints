@@ -17,6 +17,9 @@
       <sys:Double x:Key="DockChromeButtonWidth">24</sys:Double>
       <sys:Double x:Key="DockChromeButtonHeight">24</sys:Double>
       <Thickness x:Key="DockToolChromeMenuIconMargin">0</Thickness>
+      <!-- Document tabs: no line under the strip and no frame around the document, so the selected tab joins it. -->
+      <x:Boolean x:Key="DockDocumentTabStripSeparatorVisible">False</x:Boolean>
+      <Thickness x:Key="DockDocumentContentBorderThickness">0</Thickness>
       <!-- Dock's glyph geometry keys, answered by the shared icon set. -->
       <StaticResource x:Key="DockIconMenuGeometry" ResourceKey="Icon.ChevronDown" />
       <StaticResource x:Key="DockIconPinGeometry" ResourceKey="Icon.Pin" />
@@ -46,17 +49,31 @@
   <!-- Document tabs (FR-087): the shared focus ring, and the state tokens on the tabs that are not selected. -->
   <Style Selector="DocumentTabStripItem">
     <Setter Property="FocusAdorner" Value="{DynamicResource NetPrints.FocusAdorner}" />
-    <Setter Property="CornerRadius" Value="{DynamicResource Radius.Control}" />
+    <Setter Property="CornerRadius" Value="{DynamicResource Radius.Tab}" />
+  </Style>
+  <!-- The selected tab is the document's surface with an accent edge on top; no separator or border sits between it and the document. -->
+  <Style Selector="DocumentTabStripItem:selected">
+    <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
   </Style>
   <Style Selector="DocumentTabStripItem /template/ Border#PART_TabBody">
+    <Setter Property="CornerRadius" Value="{DynamicResource Radius.Tab}" />
     <Setter Property="Transitions">
       <Transitions>
         <BrushTransition Property="Background" Duration="{DynamicResource Motion.Fast}" Easing="{DynamicResource Motion.Easing}" />
       </Transitions>
     </Setter>
   </Style>
+  <Style Selector="DocumentTabStripItem:not(:selected) /template/ Border#PART_TabBody">
+    <Setter Property="Opacity" Value="{DynamicResource Tab.InactiveOpacity}" />
+  </Style>
+  <Style Selector="DocumentTabStripItem:selected /template/ Border#PART_TabBody">
+    <Setter Property="Background" Value="{DynamicResource DockSurfaceEditorBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Tab.SelectedAccent}" />
+    <Setter Property="BorderThickness" Value="{DynamicResource Tab.AccentThickness}" />
+  </Style>
   <Style Selector="DocumentTabStripItem:pointerover:not(:selected) /template/ Border#PART_TabBody">
     <Setter Property="Background" Value="{DynamicResource State.Hover}" />
+    <Setter Property="Opacity" Value="1" />
   </Style>
   <Style Selector="DocumentTabStripItem:pressed /template/ Border#PART_TabBody">
     <Setter Property="Background" Value="{DynamicResource State.Pressed}" />

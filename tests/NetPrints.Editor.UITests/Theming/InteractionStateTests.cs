@@ -141,7 +141,8 @@ public class InteractionStateTests
             AssertRing(RingOf(control), ThemeVariant.Dark);
             if (control is TemplatedControl { CornerRadius: var radius })
             {
-                Assert.Equal(Assert.IsType<CornerRadius>(Resolve("Radius.Control", ThemeVariant.Dark)), radius);
+                string token = kind == "document tab" ? "Radius.Tab" : "Radius.Control";
+                Assert.Equal(Assert.IsType<CornerRadius>(Resolve(token, ThemeVariant.Dark)), radius);
             }
         }
     }
