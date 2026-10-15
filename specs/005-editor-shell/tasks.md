@@ -1342,13 +1342,13 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
 ### Batch H3 — model: sonnet — T108–T111 — 5 units
 
 - [x] T108 `scripts/build-docs.sh` with 0 broken links; the site shows the six guides with their screenshots and
-  ADR-0018 to ADR-0020 (SC-010).
+  ADR-0018 to ADR-0021 (SC-010).
 - [x] T109 Run `specs/005-editor-shell/quickstart.md` end to end on your own Xvfb display with `NETPRINTS_STATE_DIR` in a
   temporary folder (2 units); record the outcome of each section in implementation-notes; `git status samples/` is
   clean.
 - [x] T110 Whole suite in Release plus the Desktop E2E run (AGENTS.md two-run split); `dotnet build -c Release` with 0
   warnings; `dotnet format NetPrints.slnx --verify-no-changes`; `dotnet format analyzers --severity info
-  --verify-no-changes` over the changed files; SC-006 checked again on the latest CI run.
+  --verify-no-changes --include <the batch's changed files>` (AGENTS.md gives the exact command); SC-006 checked again on the latest CI run.
 - [x] T111 **Checkpoint H**: the SC-001…SC-010 table with evidence in implementation-notes; the "Roadmap P3a coverage"
   table below checked row by row; the governance proposals; the PR description updated; the PR is ready for the final
   review (T112).
