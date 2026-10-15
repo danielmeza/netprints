@@ -2769,3 +2769,11 @@ tests, 0 failed, 31 skipped (E2E self-skips and `PanCursor`); desktop E2E 50/50 
 - **C# target and user attributes:** a P3 pre-gate bullet (language version only, computed from MSBuild, passed in the generate request), the P3b emission styles, user attributes (16-18 units), plugin-owned attributes and declaration-only partial members. The audit's pre-gate line mentions a "three-writer byte-identity test" and the report's `Requires` on search entries; both kept.
 - **ADR numbers:** 0037 (run profile kinds), 0038 (C# target) and 0039 (user attributes and their editor extension model) are reserved in `docs/adr/README.md`. ADR-0039 resolves the conflict with ADR-0036 decision 8 (Unreal flags are views over `[UProperty]` in the model).
 - Contradiction noted: the audit's run-profile replacement lines assumed text the roadmap never had; nothing else disagreed.
+
+## D-RP2 (docs batch: ADR-0037, ADR-0038, ADR-0039)
+
+- Docs only; no code. Three ADRs, one commit each, with the index and the roadmap links; the "reserved" sentence in `docs/adr/README.md` no longer names 0037-0039. All three are Accepted before implementation, as 0035 and 0036 were.
+- **ADR-0037 (run profile kinds):** the research proposed a public `IRunProfileKind` and a trust prompt; the audit and the owner replaced them with an internal kind table and no prompt, so the ADR follows the audit (rejected alternatives record both). The roadmap already agreed.
+- **ADR-0038 (C# target):** the language version alone decides emission; capabilities only gate. The audit advised deferring `ICSharpTargetProvider` until NetPrintsUnity is scheduled; the batch decision lists it, so the ADR lists it and marks its shape as open.
+- **ADR-0039 (user attributes):** the roadmap check list was missing CS8423 and CS0658 and the `global::` rule for CS1614; the roadmap line now matches the ADR.
+- **ADR-0036 amendment:** the roadmap and the batch said "decision 8", but the Unreal flags in the extension bag are decision 6 (decision 8 holds the raw `UMetaData` pass-through). Both decisions carry an "Amended by ADR-0039" line and the status line says so; the U1 roadmap line now says the flags move into the model and the bag stays for raw `UMetaData`.
