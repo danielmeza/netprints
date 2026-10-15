@@ -76,7 +76,10 @@ Rules:
 | Tree: method, constructor, event graph | open, `rename` (event graphs and methods), `delete` |
 | Tree: variable | `rename`, `delete` |
 | Connection | `goToSource`, `goToTarget` |
-| Canvas | `nodeSearch`, `selectAll`, `fitAll` |
+
+Right-click on the empty canvas opens node search (`nodeSearch`); there is no canvas menu. The `Node`, `Pin` and
+`Canvas` targets exist in `ContextMenuTarget` for the P3 surfaces, and the registry reports an item for one of them
+as an `InvalidDescriptor` issue until a view renders it (`ContextMenuTargets.HasSurface`).
 
 The tree's open item is the command `openGraph` (label "Open", `Enter` in the `ProjectTree` scope, no menu): it opens
 the graph of the selected class, method, constructor or event graph. An item is shown only when its command can run for

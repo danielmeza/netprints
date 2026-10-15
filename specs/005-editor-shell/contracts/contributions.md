@@ -39,7 +39,7 @@ public interface IContributionRegistry
   the gesture. `Global` overlaps every scope, and two scope sets overlap when they share a scope.
 - An invalid descriptor is recorded as `InvalidDescriptor` and ignored. Examples: a bad id, a blank label (command),
   title (panel, tile) or display name (template), a missing handler or view model factory, a blank template profile
-  id, an invalid `CommandId` or a null group in a context-menu item, an unparseable gesture (including an unknown key name), or a single-key or Shift-only
+  id, an invalid `CommandId` or a null group in a context-menu item, a context-menu item whose target has no surface yet (`Node`, `Pin`, `Canvas`), an unparseable gesture (including an unknown key name), or a single-key or Shift-only
   gesture in `Global` scope (function keys F1 to F24 are exempt by design, as F5, F7 and Shift+F5 are Global, so a
   function-key command that acts on a selection must be scoped). Key names are canonical (`Escape`, `Delete`, `Enter`,
   `PageUp`, `Back`, letters, digits, `F1` to `F24`, arrows, `Home`, `End`, `Tab`, `Space`, `Insert`); aliases such as

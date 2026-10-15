@@ -14,7 +14,7 @@ internal static class InvalidDescriptors
     public static DashboardTileDescriptor TileWithoutFactory() => Uninitialized<DashboardTileDescriptor>() with { Id = "netprints.tile.recent", Title = "Recent" };
 
     public static ContextMenuItemDescriptor MenuItemWithoutGroup() =>
-        Uninitialized<ContextMenuItemDescriptor>() with { Id = "netprints.menu.save", Target = ContextMenuTarget.Node, CommandId = "netprints.command.save" };
+        Uninitialized<ContextMenuItemDescriptor>() with { Id = "netprints.menu.save", Target = ContextMenuTarget.Connection, CommandId = "netprints.command.save" };
 
     private static T Uninitialized<T>()
         where T : class => (T)RuntimeHelpers.GetUninitializedObject(typeof(T));

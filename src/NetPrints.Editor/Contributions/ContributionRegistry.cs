@@ -132,7 +132,11 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
     {
         ArgumentNullException.ThrowIfNull(item);
         ThrowIfFrozen();
-        if (TryAccept(item.Id, ContributionIds.IsValid(item.CommandId) && item.Group is not null, "a valid command id and a group", menuItems.Select(m => m.Id)))
+        if (!ContextMenuTargets.HasSurface(item.Target))
+        {
+            Report(ContributionIssueKind.InvalidDescriptor, item.Id, $"No view opens a {item.Target} context menu yet, so the item would never be shown.");
+        }
+        else if (TryAccept(item.Id, ContributionIds.IsValid(item.CommandId) && item.Group is not null, "a valid command id and a group", menuItems.Select(m => m.Id)))
         {
             menuItems.Add(item);
         }

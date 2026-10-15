@@ -28,7 +28,7 @@ public class ContributionRegistryTests
 
     private static ProjectTemplateDescriptor Template(string id) => new(id, "Template", "Description", "profile", ProjectOutputType.Console);
 
-    private static ContextMenuItemDescriptor MenuItem(string id) => new(id, ContextMenuTarget.Node, "netprints.command.save", "group", 0);
+    private static ContextMenuItemDescriptor MenuItem(string id) => new(id, ContextMenuTarget.Connection, "netprints.command.save", "group", 0);
 
     private sealed class Tooltips : ITooltipProvider
     {
@@ -409,7 +409,57 @@ public class ContributionRegistryTests
 
     [Fact]
     public void AMenuItemWithAnInvalidCommandIdIsInvalid() =>
-        AssertInvalid(registry => registry.AddContextMenuItem(new ContextMenuItemDescriptor("netprints.menu.save", ContextMenuTarget.Node, "not a command", "group", 0)));
+        AssertInvalid(registry => registry.AddContextMenuItem(new ContextMenuItemDescriptor("netprints.menu.save", ContextMenuTarget.Connection, "not a command", "group", 0)));
+
+    [Theory]
+    [InlineData(ContextMenuTarget.Node)]
+    [InlineData(ContextMenuTarget.Pin)]
+    [InlineData(ContextMenuTarget.Canvas)]
+    public void AMenuItemForATargetWithoutASurfaceIsReported(ContextMenuTarget target) =>
+        AssertInvalid(registry => registry.AddContextMenuItem(new ContextMenuItemDescriptor("testext.menu.hello", target, "netprints.command.save", "group", 0)));
+
+    [Theory]
+    [InlineData(ContextMenuTarget.Connection)]
+    [InlineData(ContextMenuTarget.TreeClass)]
+    [InlineData(ContextMenuTarget.TreeMember)]
+    [InlineData(ContextMenuTarget.TreeEventGraph)]
+    public void AMenuItemForATargetWithASurfaceIsAccepted(ContextMenuTarget target)
+    {
+        var registry = NewRegistry();
+
+        registry.AddContextMenuItem(new ContextMenuItemDescriptor("testext.menu.hello", target, "netprints.command.save", "group", 0));
+
+        Assert.Empty(registry.Issues);
+        Assert.Single(registry.ContextMenuItems);
+    }
+
+    [Fact]
+    public void EveryTargetTheRegistryAcceptsIsConsumedByAView()
+    {
+        string source = Path.Combine(FindRepositoryRoot(), "src", "NetPrints.Editor");
+        string consumers = string.Concat(Directory.EnumerateFiles(source, "*.cs", SearchOption.AllDirectories)
+            .Where(path => !path.Contains(Path.DirectorySeparatorChar + "Contributions" + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+            .Where(path => !path.Contains(Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+            .Select(path => File.ReadAllText(path)));
+
+        foreach (ContextMenuTarget target in Enum.GetValues<ContextMenuTarget>().Where(ContextMenuTargets.HasSurface))
+        {
+            Assert.Contains("ContextMenuTarget." + target, consumers, StringComparison.Ordinal);
+        }
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "NetPrints.slnx")))
+            {
+                return directory.FullName;
+            }
+        }
+
+        throw new InvalidOperationException("The repository root was not found.");
+    }
 
     [Fact]
     public void AMenuItemWithANullGroupIsInvalid() => AssertInvalid(registry => registry.AddContextMenuItem(InvalidDescriptors.MenuItemWithoutGroup()));
