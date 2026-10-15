@@ -3,7 +3,9 @@
 This runs every story's main flow against a local build. The behaviour is in the [spec](./spec.md), the surfaces
 are in [contracts/](./contracts/), and the formats are in [data-model.md](./data-model.md). Never use the owner's
 display (`DISPLAY=:1`). For manual checks, start your own Xvfb (see AGENTS.md "Displays") and set
-`NETPRINTS_STATE_DIR` to a temporary folder, so your runs never touch real per-user state.
+`NETPRINTS_STATE_DIR` to a temporary folder, so your runs never touch real per-user state. That variable moves the
+state, backups and logs but not `settings.json`, so also set `XDG_CONFIG_HOME` (Linux) or `HOME` (macOS) to a
+temporary folder.
 
 ## 0. Build and test
 
@@ -76,7 +78,8 @@ on its own. An override entry's signature is read-only.
 
 ## 9. Look (US9)
 
-Use View › Theme › Light, then System, then Dark: every pane and the canvas follow. Then run
+Use View › Theme › Light, then System, then Dark (this writes `settings.json` in the config folder, so keep
+`XDG_CONFIG_HOME` or `HOME` on a temporary folder): every pane and the canvas follow. Then run
 `tests/NetPrints.Core.Tests/bin/Debug/net10.0/NetPrints.Core.Tests -class '*XamlHygieneTests'`: it is green, with
 all allowlists empty and the E7 code-behind allowlist justified.
 

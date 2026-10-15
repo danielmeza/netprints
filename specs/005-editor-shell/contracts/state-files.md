@@ -5,27 +5,43 @@ They are still versioned, and the editor never fails to start because of them.
 
 ## 1. Locations
 
-`<AppData>` is `Environment.SpecialFolder.ApplicationData`. That is `$XDG_CONFIG_HOME` or `~/.config` on Linux,
-`~/Library/Application Support` on macOS (as .NET resolves it), and `%APPDATA%` on Windows. `<project-key>` is the
-first 16 lowercase hex characters of SHA-256 over the project file's full path in UTF-8. On Windows and macOS the path is
-case-folded first.
+Two roots, per ADR-0033. `<StateRoot>` holds state, backups and logs. `<Config>` holds `settings.json`.
+
+| OS | `<StateRoot>` | Logs | `<Config>` (`Environment.SpecialFolder.ApplicationData` plus `NetPrints`) |
+|---|---|---|---|
+| Windows | `%LOCALAPPDATA%\NetPrints` | `<StateRoot>\logs` | `%APPDATA%\NetPrints` (roaming) |
+| Linux | `$XDG_STATE_HOME/NetPrints` (only when absolute), else `~/.local/state/NetPrints` | `<StateRoot>/logs` | `$XDG_CONFIG_HOME/NetPrints`, else `~/.config/NetPrints` |
+| macOS | `~/Library/Application Support/NetPrints` | `~/Library/Logs/NetPrints` | `~/Library/Application Support/NetPrints` (as .NET 8 and later resolve it) |
+
+`<project-key>` is the first 16 lowercase hex characters of SHA-256 over the project file's full path in UTF-8. On
+Windows and macOS the path is case-folded first.
 
 | File | Content |
 |---|---|
-| `<AppData>/NetPrints/settings.json` | existing P1 settings store; the editor adds `netprints.editor` → `{ "theme": "dark" \| "light" \| "system" }` |
-| `<AppData>/NetPrints/state/window.json` | window bounds and maximized state |
-| `<AppData>/NetPrints/state/layout.json` | panel and document layout (envelope below) |
-| `<AppData>/NetPrints/state/recent.json` | recent projects |
-| `<AppData>/NetPrints/state/start.json` | start page memory: the version whose release notes were shown, the last new project location and the startup behaviour |
-| `<AppData>/NetPrints/state/sessions/<project-key>.json` | open tabs, active tab, viewports |
-| `<AppData>/NetPrints/backups/<project-key>/manifest.json` | backup manifest |
-| `<AppData>/NetPrints/backups/<project-key>/<relative-path>.bak.json` | backed-up content of one file |
+| `<Config>/settings.json` | existing P1 settings store; the editor adds `netprints.editor` → `{ "theme": "dark" \| "light" \| "system" }` |
+| `<StateRoot>/state/window.json` | window bounds and maximized state |
+| `<StateRoot>/state/layout.json` | panel and document layout (envelope below) |
+| `<StateRoot>/state/recent.json` | recent projects |
+| `<StateRoot>/state/start.json` | start page memory: the version whose release notes were shown, the last new project location and the startup behaviour |
+| `<StateRoot>/state/sessions/<project-key>.json` | open tabs, active tab, viewports |
+| `<StateRoot>/backups/<project-key>/manifest.json` | backup manifest |
+| `<StateRoot>/backups/<project-key>/<relative-path>.bak.json` | backed-up content of one file |
+| `<StateRoot>/logs/netprints-*.log` | session logs (ADR-0033) |
 
 - **Permissions:** on Linux and macOS, folders are created `0700` and files `0600`.
 - **Writes:** every write goes to a uniquely named temporary file (`<file>.<random>.tmp`) in the same folder and is then
   renamed over the target, so two editors never share a temporary file. Temporary files older than a day are deleted.
-- **Override:** `NETPRINTS_STATE_DIR` replaces `<AppData>/NetPrints` for tests and E2E workers, so parallel workers
-  never share state.
+- **Environment variables:**
+  - `NETPRINTS_STATE_DIR` replaces `<StateRoot>`, so it moves `state/`, `backups/` and, unless `NETPRINTS_LOG_DIR` is
+    set, `logs/`. It does not move `settings.json`, which stays in `<Config>`. Tests and E2E workers set it per lease,
+    so parallel workers never share state.
+  - `NETPRINTS_LOG_DIR` replaces the log folder only. It beats `$NETPRINTS_STATE_DIR/logs`, which beats the platform default.
+  - To keep a manual run away from the real `settings.json`, also point the config folder elsewhere: `XDG_CONFIG_HOME`
+    on Linux, `HOME` on macOS, `APPDATA` on Windows.
+- **Migration (ADR-0033, FR-106):** on start, when `<StateRoot>/state` or `<StateRoot>/backups` is missing and the same
+  folder exists under `<Config>`, it is moved (copy and verify when the volumes differ) and nothing is left behind. A
+  folder already at the new root wins and the old one is left alone. A failed move is logged and never prevents
+  start-up (FR-051). It does not run when `NETPRINTS_STATE_DIR` is set.
 
 ## 2. Formats
 

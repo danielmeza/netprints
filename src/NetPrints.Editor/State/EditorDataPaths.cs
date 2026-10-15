@@ -6,7 +6,7 @@ namespace NetPrints.Editor.State;
 /// <summary>Where the editor keeps its per-user files (state-files.md §1).</summary>
 public sealed class EditorDataPaths
 {
-    /// <summary>The environment variable that replaces <c>&lt;ApplicationData&gt;/NetPrints</c>, for tests and E2E workers.</summary>
+    /// <summary>The environment variable that replaces the per-OS state root (not <c>settings.json</c>), for tests and E2E workers.</summary>
     public const string StateDirectoryVariable = "NETPRINTS_STATE_DIR";
 
     private const string RootFolderName = "NetPrints";
