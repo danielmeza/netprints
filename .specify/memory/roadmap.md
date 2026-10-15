@@ -224,18 +224,59 @@ packages for extension authors. No performance work here (owner decision 2026-09
 - **Carried over from P2** (final review findings FU-1, FU-2, FU-5, FU-6): NPX008 should check host-provided and transitive references; the live `ReflectionProvider` should skip unreadable references and log them; info-level analyzer backlog cleanup; decide on editor `ProjectCheck` generation-skip behavior; two Windows defects found in P3a Review A (R13): `catalog --check` compares bytes, so a `.npcat.json` checked out with CRLF (`core.autocrlf=true`, no `.gitattributes` rule) always reads as stale, and `git-install --command` with backslash paths is written verbatim and `sh` drops the backslashes. (The three CI items FU-3, FU-4 and FU-7 moved to P3a.)
 - **Extension testing — author conformance kit (may start in P2; the internal `ExtensionHarness` lands in P2, ADR-0010).** Ship `NetPrints.Extensibility.Testing` (NuGet package) with `ExtensionTest<TExtension>` (declarative `TestState`, `RunAsync`), an `ExtensionHarness` for real or folder-based testing, and a conformance suite with 12 checks (manifest, packaging, type identity, pure/repeatable registration, no issues, node round-trip, translation compilation, deterministic emitters, settings, host channel lifecycle, coexistence with built-ins and a "noisy neighbour", disposal). Optional xUnit adapter. `NetPrints.TestExtension` is tested only through this kit. See research.
 - **Before the first NetPrintsUnreal release:** a `netprints-verify` tool (modelled on IntelliJ Plugin Verifier), a reusable author CI workflow, a nightly job co-loading published extensions, and a `dotnet new netprints-extension` template.
-- **Run profiles, first batch (gap research 2026-10-06)** (size M, about 5 days). Needs P3a's command bar and sub-phase E state.
+- **Run profiles, first batch (gap research 2026-10-06; run kinds research 2026-10-14)** (size M, about 7 days). Needs P3a's
+  command bar and sub-phase E state. No engine-specific code in the core: an engine is started from data (an `Executable`
+  profile).
   - Profiles live in `Properties/launchSettings.json` (shared with `dotnet run`, VS and Rider); the selected profile
     name is stored per user in the P3a state store (`sessions/<project-key>.json`).
-  - NetPrints applies the profile itself: `dotnet run --project <csproj> --no-build --no-launch-profile -- <args>`, with
-    an explicit argv, environment and working directory on the process request. Same behaviour in the editor and the CLI.
+  - NetPrints applies the profile itself, with an explicit argv and working directory on the process request, so the result
+    does not depend on the SDK band (`dotnet run` runs `Executable` profiles only from SDK 10.0.200). The environment (plus
+    `DOTNET_LAUNCH_PROFILE`) goes to the program only: `dotnet run -e NAME=VALUE` for `Project` (SDK 9.0.200 or later), the
+    process request for `Executable`. Same behaviour in the editor and the CLI.
+  - Two built-in kinds. `Project` runs `dotnet run --project <csproj> --no-build --no-launch-profile -- <args>`. `Executable`
+    starts `executablePath` after the build, for any output type (Godot and UnrealSharp script projects are libraries).
+    `%NAME%` is expanded from the environment and `$(Name)` from captured project properties (`ProjectDir`, `TargetDir`,
+    `TargetPath`, `OutDir`, `Configuration`, `TargetFramework`, plus `AddProjectProperty` names), then the result is split.
+    Relative paths follow Visual Studio: `workingDirectory` from the project folder, an `executablePath` with a separator
+    from the working directory, a bare name from `PATH`; an absent `workingDirectory` is the project folder (the `dotnet run`
+    default). NetPrints passes the OS an absolute executable path (`PATH` with `.exe` and `.com` on Windows; a macOS `.app`
+    folder resolves to `Contents/MacOS` or is reported). The Run section and `netprints run --help` warn that `dotnet run`
+    resolves a relative `workingDirectory` from `Properties/`.
+  - An unset `%NAME%` in `executablePath` or `workingDirectory`, an uncaptured property or a missing executable is reported
+    before anything starts; in arguments and env it is a warning and stays literal. A desktop launcher may not pass shell
+    variables: the message says the variable is not set; a per-user run environment is a later follow-up (owner 2026-10-14).
   - The argument string is split with the Windows `CommandLineToArgvW` rules on every OS and passed through
-    `ArgumentList`; a join/split round-trip test pins it. Unknown profile kinds are delegated to `dotnet run`.
-  - Project settings gets a **Run** section (profile list, arguments with an argv preview, working directory,
-    environment variables). The command bar gets a profile split button next to Run and Stop (Executable projects only;
-    commands `run.selectProfile` and `run.editProfiles`). Run profile kinds are one contribution point (U3 adds a launch kind).
-  - CLI: `netprints run` uses the first Project profile, plus `-lp|--launch-profile <name>` and `--no-launch-profile`;
-    `-- <args>` replace the profile's args (env and cwd still apply); an unknown profile exits 2.
+    `ArgumentList`; a join/split round-trip test pins it. A `.cmd` or `.bat` target on Windows is rejected or warned about,
+    because it runs through `cmd.exe`. `-- <args>` replace the profile's args (the project's `RunArguments`, if any, still
+    apply).
+  - The default profile is the first one in file order whose kind NetPrints can run (the `dotnet run` rule; `commandName` is
+    case-sensitive, profile names are not, and names that differ only by case are an error). Other kinds (`IISExpress`,
+    `Docker`, `WSL2`, ...) are listed but disabled with the reason, and never delegated to `dotnet run`. `<name>.run.json` and
+    VB's `My Project/` are ignored.
+  - Kinds are an internal table in P3 (`Project`, `Executable`). A public, experimental `AddRunProfileKind` (a new `NPXE` id)
+    is added when U3 or NetPrintsUnity needs it, shaped then (build or no build, handled without a process, process
+    lifetime). Planned ADR-0037.
+  - Trust (owner 2026-10-14): no new prompt (building already trusts the project); the first run of an `Executable` profile
+    prints the resolved command line in Output.
+  - Stop asks the program to close (close the main window or SIGTERM) and kills the process tree after a timeout; unloading a
+    project with an `Executable` run still alive asks whether to leave it running.
+  - Project settings gets a **Run** section (profile list, kind, executable path, arguments with an argv preview, working
+    directory, environment variables; other kinds read-only with "Open file"). The command bar gets a profile split button
+    next to Run and Stop when the project has profiles or is an executable (commands `run.selectProfile` and
+    `run.editProfiles`). Run is enabled when the selected profile's kind can run the project, not only for `OutputType` Exe.
+  - CLI: `netprints run` uses the default profile, plus `-lp|--launch-profile <name>` and `--no-launch-profile`; `-- <args>`
+    replace the profile's args (env and cwd still apply); an unknown profile or a kind NetPrints cannot run exits 2, a profile
+    that cannot be resolved exits 1.
+  - Engines: Godot needs no code. The sample non-Unreal extension ships a Godot project template (with N3) whose
+    `launchSettings.json` holds `Executable` profiles for the game and the editor (`%GODOT4%`, as the Godot C# docs do). The
+    editor binary loads `.godot/mono/temp/bin/Debug`, so a Release build selected with B23 runs a stale assembly; the profile
+    says so. U3 reuses UnrealSharp's generated `Executable` profiles (Windows and Mac upstream, Mac path to check against the
+    `.app` bundle; Linux needs the fork's `feature/linux-support` change, because upstream writes an empty `executablePath`).
+    The `Debug` profile starts DebugGame with no debugger attached, and is labelled that way.
+  - Known limits: `MSBUILD_EXE_PATH`, `MSBuildSDKsPath` and `MSBuildExtensionsPath`, set by MSBuildLocator in NetPrints'
+    process, leak into engines that run their own `dotnet build` (`ProcessStartRequest` cannot unset a variable; to fix);
+    a GUI-subsystem program such as `UnrealEditor.exe` has no stdout, so a "don't capture output" option is offered.
+  - Design and prior art: `.agent-archive/2026-10-14-run-profile-kinds/` (outside this repo).
 - **Interactive stdin / external terminal (gap research 2026-10-06)** (B5): an input line in Output and a "Run in external terminal"
   profile option; today stdin is not redirected, so `Console.ReadLine()` sees EOF.
 - **NuGet package manager (gap research 2026-10-06)** (B7, size M, about 6 days after the shared package service of about 5 days).
