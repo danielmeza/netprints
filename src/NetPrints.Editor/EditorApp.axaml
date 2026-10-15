@@ -46,7 +46,7 @@
           <edbehaviors:CommandKeyBindingsBehavior Invoker="{Binding Invoker}" />
           <edbehaviors:GraphViewportBehavior Document="{Binding}" />
         </Interaction.Behaviors>
-        <ItemsControl Grid.Row="0" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Breadcrumbs}" AutomationProperties.Name="Breadcrumbs"
+        <ItemsControl Grid.Row="0" Classes="breadcrumbBar" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Breadcrumbs}" AutomationProperties.Name="Breadcrumbs"
                       ItemsSource="{Binding Breadcrumbs.Segments}">
           <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate>

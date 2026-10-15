@@ -77,6 +77,9 @@
       <CornerRadius x:Key="Radius.Control">4</CornerRadius>
       <!-- Document tabs: top corners only, so the selected tab joins the document under it. -->
       <CornerRadius x:Key="Radius.Tab">4,4,0,0</CornerRadius>
+      <Thickness x:Key="Tab.SelectedBorderThickness">1,0,1,0</Thickness>
+      <Thickness x:Key="Tab.StripOverlap">0,0,0,-1</Thickness>
+      <Thickness x:Key="Tab.InactiveInset">0,0,0,1</Thickness>
       <Thickness x:Key="Tab.AccentThickness">0,2,0,0</Thickness>
       <x:Double x:Key="Tab.InactiveOpacity">0.7</x:Double>
       <x:Double x:Key="Density.RowHeight">24</x:Double>
@@ -184,6 +187,7 @@
           <SolidColorBrush x:Key="State.Hover">#26FFFFFF</SolidColorBrush>
           <SolidColorBrush x:Key="State.Pressed">#3DFFFFFF</SolidColorBrush>
           <SolidColorBrush x:Key="Row.Separator">#1AFFFFFF</SolidColorBrush>
+          <Color x:Key="Tab.StripBorder">#FF3C3C42</Color>
           <SolidColorBrush x:Key="Tab.SelectedAccent">#4FC3F7</SolidColorBrush>
           <Color x:Key="GraphGrid.MinorColor">#14FFFFFF</Color>
           <Color x:Key="GraphGrid.MajorColor">#2EFFFFFF</Color>
@@ -250,6 +254,7 @@
           <SolidColorBrush x:Key="State.Hover">#14000000</SolidColorBrush>
           <SolidColorBrush x:Key="State.Pressed">#26000000</SolidColorBrush>
           <SolidColorBrush x:Key="Row.Separator">#1A000000</SolidColorBrush>
+          <Color x:Key="Tab.StripBorder">#FFD0D3DA</Color>
           <SolidColorBrush x:Key="Tab.SelectedAccent">#0277BD</SolidColorBrush>
           <Color x:Key="GraphGrid.MinorColor">#14000000</Color>
           <Color x:Key="GraphGrid.MajorColor">#2E000000</Color>

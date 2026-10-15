@@ -3058,3 +3058,14 @@ editor was not run with a pipe that cannot be bound.
 - **Focus after the rename box, and double click.** Fix: `FocusRowOnEditEndBehavior` on the rename box gives the focus to the row's list item after Enter or Escape once the box is
   hidden (a refused name keeps it in the box). Tests: `LocalVariablePanelTests.EnterAndEscapeInTheRenameBoxGiveTheKeyboardBackToTheRow` (red without the behavior: F2 after Enter did nothing)
   and `DoubleClickingTheNameRenamesInPlaceAndStartsNoDrag` (already green; checks the rename box opens, no get/set chooser opens and no node is added).
+- **OF-3b, the open document still does not stand out.** Cause: the selected tab and the canvas share `Canvas.Background`, but the breadcrumb bar between them had no
+  background and showed the strip colour, and nothing outlined the tab into its document. Fix: the document surface stays the `Canvas.Background` token (through
+  `DockSurfaceEditorBrush`) for the selected tab, the breadcrumb bar (`ItemsControl.breadcrumbBar`) and the canvas, which are now one colour. New token `Tab.StripBorder`
+  (Color; Dark `#3C3C42`, Light `#D0D3DA`) is the 1 px line under the strip, drawn by Dock's `PART_DocumentSeperator` (visible again, 1 px through
+  `DockDocumentTabStripSeparatorSize`, recoloured by scoping `DockTabActiveIndicatorBrush` to `DocumentControl`; a style cannot override it because the template sets the
+  value) and as the selected tab's side borders (`Tab.SelectedBorderThickness`). The strip overlaps the line by 1 px (`Tab.StripOverlap`, strip above it) so the selected tab
+  covers it, while inactive tabs stop 1 px short (`Tab.InactiveInset`) and leave it visible. The 2 px accent moved to the tab's outer `PART_TabGutter` border
+  (`Tab.AccentThickness`, `Tab.SelectedAccent`) because one border cannot hold a different colour on its top and its sides (an inset box shadow did not render). Tool strips are
+  unchanged. Test: `DocumentTabStyleTests.TheSelectedTabOpensIntoItsDocumentThroughAStripBorderThatSkipsIt` (Dark and Light, now over the real sample shell; red before: the
+  breadcrumb bar had no background). Baselines regenerated: `editor-shell-main` (+ `-dark|light-1.0|1.5|2.0`), `editor-shell-no-project`, `canvas-every-node-kind`
+  (+ the six scaled), `canvas-preview-cable`, `search-popup` and the four start-page ones, all from the tab strip and the breadcrumb bar.
