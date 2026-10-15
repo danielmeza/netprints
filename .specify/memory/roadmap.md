@@ -932,8 +932,9 @@ Done when: also docs updated (guides, API reference, ADRs as applicable).
   doesn't compile through a csproj, so `NetPrints.Sdk` doesn't apply); a `unity` catalog profile over
   `UnityEngine.dll` and `Library/ScriptAssemblies`; emitters for MonoBehaviour, ScriptableObject,
   `[SerializeField]` and `[RequireComponent]`; entry points Awake/Start/Update/OnCollision*;
-  latent nodes as coroutines or Unity 6 `Awaitable`; a C# language-version profile in the
-  translator. P1 extension points and project profiles should keep this case in mind.
+  latent nodes as coroutines or Unity 6 `Awaitable`; an `ICSharpTargetProvider` for the C# target
+  (ADR-0038), because Unity has no MSBuild evaluation: C# 9, no `IsExternalInit` unless the project defines one, no covariant
+  returns. P1 extension points and project profiles should keep this case in mind.
 - **Multi-project (solution) workspace (gap research 2026-10-06)** (B25, tier 2 size L, about 25 days; candidate after P5). FR-018
   holds one project per window by design, because compilation, catalogs and extensions are per project. Most of the value comes
   from tier 1 (P6 "Referenced graph projects"); a full solution workspace waits for demand and for proven per-project extension
