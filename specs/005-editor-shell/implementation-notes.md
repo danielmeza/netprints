@@ -3040,3 +3040,21 @@ editor was not run with a pipe that cannot be bound.
   the variable rows, the argument rows (move up and down are its `Actions`) and the reference rows. Argument and reference rows looked aligned before and look the same now, apart
   from the references rows being 24 px tall instead of 32 (button `Margin` 2 and `MinHeight` 32 are cleared for `Button.rowRemove`). No new test beyond OF-4's: the existing
   event argument and reference tests keep their AutomationIds and pass.
+- **R19-1, the row showed the Inspector's refusal.** Fix: `VariableRowViewModel.RenameError`/`HasRenameError` is the row's own message, set only by a refused commit in the row and cleared by
+  begin, cancel or a successful commit; the row binds it, and the shared `Error` (the inspectors') is restored after a refused row commit and untouched by begin and cancel. Test:
+  `VariableRowTests.ARefusalFromTheInspectorDoesNotShowInTheRowAndTheRowRenameDoesNotEraseIt` (both directions; red as a compile error before the property existed).
+- **R19-2, Delete and F2 were hand-written `ListBox.KeyBindings`.** Fix: new `CommandScope.VariablesPanel`; `delete` and `rename` list it, and their handlers act on the selected row passed as
+  the command parameter (`ScopedCommandKeysBehavior.Parameter`, bound to the list's selected row, `VariablesPanelViewModel.Invoker`). The four `RemoveSelected…`/`RenameSelected…`
+  commands and the view key bindings are gone; the shortcuts sheet, the generated table in `commands-and-shortcuts.md` and the conflict check now cover the scope. Tests:
+  `VariableRowTests.TheScopedDeleteAndRenameCommandsActOnTheRowPassedAsTheParameter`, `BuiltInCommandTableTests`, `ShortcutGuideTests`, and the existing `LocalVariablePanelTests` key tests.
+- **R19-3, a removed selected row stayed selected.** Fix: `VariablesPanelViewModel` clears `SelectedClassVariable`/`SelectedLocalVariable` when the selected row leaves its
+  collection (removal or undo), which clears the shell selection and so the Inspector with no ListBox in play. Tests: `VariableRowTests.RemovingTheSelectedLocalVariableEmptiesTheInspector`
+  (no longer clears the selection itself; red before: the selection and the Inspector kept the removed local), `UndoingTheAddOfTheSelectedLocalVariableEmptiesTheInspector` (red before) and
+  `RemovingTheSelectedMemberVariableClearsTheSelection` (already green, pins the member path).
+- **R19-4 and R19-5, the header "+" and the literal margins.** Fix: the section header grid has the same right margin as the rows (`SectionHeader.Margin`, 8 px) and a
+  `Row.RemoveColumnWidth` column with the button centred, so the "+" sits over the "−" column and its hover background is no longer cut at the panel edge; the four literal margins
+  are the tokens `Row.ChipMargin`, `Row.TypeMargin`, `SectionHeader.Margin` and `SectionHeader.SpacedMargin`, next to `Row.Padding` (spacing is theme independent, so they sit in the shared
+  dictionary like it and `Space.*`, not in Dark and Light). Baselines `variables-panel-dark|light` changed only by the "+" moving about 8 px left and its column width (headers only).
+- **Focus after the rename box, and double click.** Fix: `FocusRowOnEditEndBehavior` on the rename box gives the focus to the row's list item after Enter or Escape once the box is
+  hidden (a refused name keeps it in the box). Tests: `LocalVariablePanelTests.EnterAndEscapeInTheRenameBoxGiveTheKeyboardBackToTheRow` (red without the behavior: F2 after Enter did nothing)
+  and `DoubleClickingTheNameRenamesInPlaceAndStartsNoDrag` (already green; checks the rename box opens, no get/set chooser opens and no node is added).

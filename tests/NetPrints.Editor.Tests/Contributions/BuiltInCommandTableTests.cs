@@ -21,6 +21,7 @@ public class BuiltInCommandTableTests
 
     private const CommandScope Tree = CommandScope.ProjectTree;
     private const CommandScope Canvas = CommandScope.Graph;
+    private const CommandScope Variables = CommandScope.VariablesPanel;
     private const CommandScope Everywhere = CommandScope.Global;
 
     private static readonly Row[] Table =
@@ -38,8 +39,8 @@ public class BuiltInCommandTableTests
         new("exit", "Exit", "File", "exit", [], Everywhere, null, typeof(ExitCommandHandler)),
         new("undo", "Undo", "Edit", "history", ["Ctrl+Z"], Everywhere, 4, typeof(UndoCommandHandler)),
         new("redo", "Redo", "Edit", "history", ["Ctrl+Y", "Ctrl+Shift+Z"], Everywhere, 5, typeof(RedoCommandHandler)),
-        new("delete", "Delete", "Edit", "selection", ["Delete"], Canvas | Tree, null, typeof(DeleteCommandHandler)),
-        new("rename", "Rename", "Edit", "selection", ["F2"], Canvas | Tree, null, typeof(RenameCommandHandler)),
+        new("delete", "Delete", "Edit", "selection", ["Delete"], Canvas | Tree | Variables, null, typeof(DeleteCommandHandler)),
+        new("rename", "Rename", "Edit", "selection", ["F2"], Canvas | Tree | Variables, null, typeof(RenameCommandHandler)),
         new("openGraph", "Open", null, null, ["Enter"], Tree, null, typeof(OpenGraphCommandHandler)),
         new("selectAll", "Select all", "Edit", "selection", ["Ctrl+A"], Canvas, null, typeof(SelectAllCommandHandler)),
         new("cancel", "Cancel", null, null, ["Esc"], Canvas, null, typeof(CancelCommandHandler)),

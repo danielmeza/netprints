@@ -46,7 +46,7 @@ public static class EditContributions
             new DeleteCommandHandler(),
             IconId: IconIds.Delete,
             DefaultGestures: ["Delete"],
-            Scope: CommandScope.Graph | CommandScope.ProjectTree,
+            Scope: CommandScope.Graph | CommandScope.ProjectTree | CommandScope.VariablesPanel,
             Menu: new MenuPlacement(MenuName, SelectionGroup, 0),
             CommandBarOrder: null));
 
@@ -56,7 +56,7 @@ public static class EditContributions
             new RenameCommandHandler(),
             IconId: IconIds.Rename,
             DefaultGestures: ["F2"],
-            Scope: CommandScope.Graph | CommandScope.ProjectTree,
+            Scope: CommandScope.Graph | CommandScope.ProjectTree | CommandScope.VariablesPanel,
             Menu: new MenuPlacement(MenuName, SelectionGroup, 1),
             CommandBarOrder: null));
 

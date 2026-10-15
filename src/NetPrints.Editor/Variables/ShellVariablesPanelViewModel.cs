@@ -18,7 +18,7 @@ public sealed class ShellVariablesPanelViewModel : ActiveClassPanelViewModel<Var
         ProjectSessionViewModel session = context.Shell.Session
             ?? throw new InvalidOperationException("A variables panel item is created only while a project is open.");
         ClassContext classContext = session.ContextFor(cls);
-        return new VariablesPanelViewModel(classContext.Services, classContext.Variables, () => context.Commands.TryRun(EditContributions.AddVariableName), variable => context.Shell.TreeSelection = variable, local => SelectLocal(context, local));
+        return new VariablesPanelViewModel(classContext.Services, classContext.Variables, () => context.Commands.TryRun(EditContributions.AddVariableName), variable => context.Shell.TreeSelection = variable, local => SelectLocal(context, local), context.Commands);
     }
 
     private static void SelectLocal(PanelContext context, LocalVariableViewModel? local)

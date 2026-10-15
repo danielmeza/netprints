@@ -33,13 +33,21 @@ public abstract partial class VariableRowViewModel : ObservableObject
     /// <summary>The style class of the type's colour family, which colours the row's chip.</summary>
     public string FamilyClass => PinTypeFamily.Of(PinKind.Data, Type, rowServices.Context.Reflection.IsLoaded ? rowServices.Context.Reflection.Provider : null).StyleClass;
 
-    /// <summary>Gets the reason the last name was refused, or null when it was accepted.</summary>
+    /// <summary>Gets the reason the last name set through <see cref="Name"/> was refused, or null when it was accepted; the inspectors show it.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasError))]
     public partial string? Error { get; protected set; }
 
     /// <summary>Gets a value indicating whether the last name was refused.</summary>
     public bool HasError => Error is not null;
+
+    /// <summary>Gets the reason the name typed into the row was refused, or null; separate from <see cref="Error"/>, which the inspectors show.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasRenameError))]
+    public partial string? RenameError { get; private set; }
+
+    /// <summary>Gets a value indicating whether the name typed into the row was refused.</summary>
+    public bool HasRenameError => RenameError is not null;
 
     /// <summary>Gets a value indicating whether the row shows the name in a text box.</summary>
     [ObservableProperty]
@@ -75,13 +83,13 @@ public abstract partial class VariableRowViewModel : ObservableObject
     private void BeginRename()
     {
         EditText = Name;
-        Error = null;
+        RenameError = null;
         IsEditing = true;
     }
 
     /// <summary>
     /// Renames the variable to <see cref="EditText"/> (one undo step) and leaves edit mode. A refused name keeps the row in edit
-    /// mode and sets <see cref="Error"/>; an unchanged name just leaves edit mode.
+    /// mode and sets <see cref="RenameError"/>, leaving the inspectors' <see cref="Error"/> as it was; an unchanged name just leaves edit mode.
     /// </summary>
     [RelayCommand]
     private void CommitEdit()
@@ -92,16 +100,19 @@ public abstract partial class VariableRowViewModel : ObservableObject
         }
 
         string text = EditText.Trim();
+        RenameError = null;
         if (text != Name)
         {
+            string? inspectorError = Error;
             Name = text;
-        }
-        else
-        {
-            Error = null;
+            if (Error is not null)
+            {
+                RenameError = Error;
+                Error = inspectorError;
+            }
         }
 
-        if (Error is null)
+        if (RenameError is null)
         {
             IsEditing = false;
         }
@@ -112,6 +123,6 @@ public abstract partial class VariableRowViewModel : ObservableObject
     private void CancelEdit()
     {
         IsEditing = false;
-        Error = null;
+        RenameError = null;
     }
 }

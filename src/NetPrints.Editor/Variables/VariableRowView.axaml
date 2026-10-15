@@ -30,9 +30,10 @@
             <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding CommitEditCommand}" />
             <ExecuteCommandOnKeyDownBehavior Key="Escape" Command="{Binding CancelEditCommand}" />
             <ExecuteCommandOnLostFocusBehavior Command="{Binding CancelEditCommand}" />
+            <edbehaviors:FocusRowOnEditEndBehavior />
           </Interaction.Behaviors>
         </TextBox>
-        <TextBlock Classes="fieldError" Text="{Binding Error}" IsVisible="{Binding HasError}"
+        <TextBlock Classes="fieldError" Text="{Binding RenameError}" IsVisible="{Binding HasRenameError}"
                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableRenameError}" />
       </StackPanel>
       <TextBlock Grid.Column="2" Classes="secondary rowType" Text="{Binding TypeName}" />

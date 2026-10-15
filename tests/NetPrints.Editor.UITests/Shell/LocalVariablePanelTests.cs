@@ -91,6 +91,51 @@ public class LocalVariablePanelTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task DoubleClickingTheNameRenamesInPlaceAndStartsNoDrag()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var method = (ExecutionGraph)session.GraphViewModel.Graph;
+        session.App.Api.ShowPanel(PanelContributions.VariablesId);
+        string name = await session.Page.Variables.AddLocalAsync(Token);
+        int nodes = method.Nodes.Count;
+
+        await session.Page.Variables.LocalVariableName(name).DoubleClickAsync(Token);
+        await session.Page.Variables.LocalVariableRenameBox(name).WaitVisibleAsync(Token);
+        Assert.False(await session.Graph.GetSet.IsOpenAsync(Token));
+        Assert.Equal(nodes, method.Nodes.Count);
+
+        await session.Driver.PressAsync("Ctrl+A", Token);
+        await session.Driver.TypeAsync("Count", Token);
+        await session.Driver.PressAsync("Enter", Token);
+        Assert.Equal("Count", method.LocalVariables.Single().Name);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task EnterAndEscapeInTheRenameBoxGiveTheKeyboardBackToTheRow()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var method = (ExecutionGraph)session.GraphViewModel.Graph;
+        session.App.Api.ShowPanel(PanelContributions.VariablesId);
+        string name = await session.Page.Variables.AddLocalAsync(Token);
+
+        await session.Page.Variables.LocalVariableName(name).ClickAsync(Token);
+        await session.Driver.PressAsync("F2", Token);
+        await session.Page.Variables.LocalVariableRenameBox(name).WaitVisibleAsync(Token);
+        await session.Driver.PressAsync("Ctrl+A", Token);
+        await session.Driver.TypeAsync("Count", Token);
+        await session.Driver.PressAsync("Enter", Token);
+        await session.Page.Variables.LocalVariableRenameBox("Count").WaitHiddenAsync(Token);
+
+        await session.Driver.PressAsync("F2", Token);
+        await session.Page.Variables.LocalVariableRenameBox("Count").WaitVisibleAsync(Token);
+        await session.Driver.PressAsync("Escape", Token);
+        await session.Page.Variables.LocalVariableRenameBox("Count").WaitHiddenAsync(Token);
+
+        await session.Driver.PressAsync("Delete", Token);
+        Assert.Empty(method.LocalVariables);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task EscapeLeavesTheRenameBoxWithoutRenaming()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);

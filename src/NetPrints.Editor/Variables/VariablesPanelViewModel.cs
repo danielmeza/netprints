@@ -1,9 +1,12 @@
+using System.Collections.Specialized;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Contributions;
 using NetPrints.Editor.ModelSync;
+using NetPrints.Editor.Shell;
 using NetPrints.Editor.UndoRedo;
 
 namespace NetPrints.Editor.Variables;
@@ -31,22 +34,29 @@ public sealed partial class VariablesPanelViewModel : ObservableObject, IDisposa
     /// <param name="createVariable">Adds a variable to the class; run by <see cref="CreateVariableCommand"/>.</param>
     /// <param name="selectVariable">Called when a variable row asks for its inspector; <see langword="null"/> ignores the request.</param>
     /// <param name="selectLocal">Called with the local variable row that was selected, or <see langword="null"/> when none is; <see langword="null"/> ignores it.</param>
+    /// <param name="invoker">Runs the registry commands of the <see cref="CommandScope.VariablesPanel"/> scope (Delete, F2); <see langword="null"/> leaves the keys unbound.</param>
     public VariablesPanelViewModel(
         ClassEditorServices services,
         ObservableViewModelCollection<MemberVariableViewModel, Variable> classVariables,
         Action createVariable,
         Action<Variable>? selectVariable = null,
-        Action<LocalVariableViewModel?>? selectLocal = null)
+        Action<LocalVariableViewModel?>? selectLocal = null,
+        CommandInvoker? invoker = null)
     {
+        Invoker = invoker;
         ArgumentNullException.ThrowIfNull(createVariable);
         this.services = services;
         this.createVariable = createVariable;
         this.selectVariable = selectVariable;
         this.selectLocal = selectLocal;
         ClassVariables = classVariables;
+        classVariables.CollectionChanged += OnClassVariablesChanged;
         services.Messenger.Register<SelectInspectorMessage>(this);
         RebuildMethodGroup();
     }
+
+    /// <summary>Gets the invoker that runs the panel's scoped keys, or <see langword="null"/> when there is none.</summary>
+    public CommandInvoker? Invoker { get; }
 
     /// <summary>The class's member variables (the "Class" group).</summary>
     public ObservableViewModelCollection<MemberVariableViewModel, Variable> ClassVariables { get; }
@@ -101,27 +111,19 @@ public sealed partial class VariablesPanelViewModel : ObservableObject, IDisposa
         selectLocal?.Invoke(value);
     }
 
-    /// <summary>Removes the selected member variable row (Delete), unless there is none or its name is being edited.</summary>
-    [RelayCommand]
-    private void RemoveSelectedClassVariable() => RunOn(SelectedClassVariable?.RemoveCommand);
-
-    /// <summary>Renames the selected member variable row in place (F2).</summary>
-    [RelayCommand]
-    private void RenameSelectedClassVariable() => RunOn(SelectedClassVariable?.BeginRenameCommand);
-
-    /// <summary>Removes the selected local variable row (Delete), unless there is none or its name is being edited.</summary>
-    [RelayCommand]
-    private void RemoveSelectedLocalVariable() => RunOn(SelectedLocalVariable?.RemoveCommand);
-
-    /// <summary>Renames the selected local variable row in place (F2).</summary>
-    [RelayCommand]
-    private void RenameSelectedLocalVariable() => RunOn(SelectedLocalVariable?.BeginRenameCommand);
-
-    private static void RunOn(IRelayCommand? command)
+    private void OnClassVariablesChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        if (command?.CanExecute(null) == true)
+        if (SelectedClassVariable is { } selected && !ClassVariables.Contains(selected))
         {
-            command.Execute(null);
+            SelectedClassVariable = null;
+        }
+    }
+
+    private void OnMethodVariablesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (SelectedLocalVariable is { } selected && MethodVariables?.Contains(selected) != true)
+        {
+            SelectedLocalVariable = null;
         }
     }
 
@@ -147,12 +149,18 @@ public sealed partial class VariablesPanelViewModel : ObservableObject, IDisposa
 
     private void RebuildMethodGroup()
     {
+        MethodVariables?.CollectionChanged -= OnMethodVariablesChanged;
         MethodVariables?.Dispose();
+
         var graph = openedGraph;
         MethodVariables = graph is null
             ? null
             : new ObservableViewModelCollection<LocalVariableViewModel, LocalVariable>(graph.LocalVariables,
                 l => new LocalVariableViewModel(l, graph, services), l => l.Dispose());
+        if (MethodVariables is not null)
+        {
+            MethodVariables.CollectionChanged += OnMethodVariablesChanged;
+        }
 
         OnPropertyChanged(nameof(MethodVariables));
         OnPropertyChanged(nameof(HasMethodGroup));
@@ -184,6 +192,8 @@ public sealed partial class VariablesPanelViewModel : ObservableObject, IDisposa
     public void Dispose()
     {
         services.Messenger.UnregisterAll(this);
+        ClassVariables.CollectionChanged -= OnClassVariablesChanged;
+        MethodVariables?.CollectionChanged -= OnMethodVariablesChanged;
         MethodVariables?.Dispose();
     }
 }

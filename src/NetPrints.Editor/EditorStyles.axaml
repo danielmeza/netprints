@@ -108,6 +108,10 @@
       <!-- Editable list row: content, optional actions and a remove button in one fixed right-aligned column. -->
       <GridLength x:Key="Row.RemoveColumnWidth">28</GridLength>
       <Thickness x:Key="Row.Padding">8,0</Thickness>
+      <Thickness x:Key="Row.ChipMargin">0,0,8,0</Thickness>
+      <Thickness x:Key="Row.TypeMargin">8,0,0,0</Thickness>
+      <Thickness x:Key="SectionHeader.Margin">8,0</Thickness>
+      <Thickness x:Key="SectionHeader.SpacedMargin">8,8,8,0</Thickness>
       <x:Double x:Key="VariableChip.Size">10</x:Double>
       <ControlTheme x:Key="{x:Type ctl:ListRow}" TargetType="ctl:ListRow">
         <Setter Property="Focusable" Value="False" />
@@ -648,16 +652,16 @@
     <Setter Property="Width" Value="{StaticResource VariableChip.Size}" />
     <Setter Property="Height" Value="{StaticResource VariableChip.Size}" />
     <Setter Property="VerticalAlignment" Value="Center" />
-    <Setter Property="Margin" Value="0,0,8,0" />
+    <Setter Property="Margin" Value="{StaticResource Row.ChipMargin}" />
   </Style>
   <Style Selector="Grid.sectionHeaderRow">
-    <Setter Property="Margin" Value="8,0,0,0" />
+    <Setter Property="Margin" Value="{StaticResource SectionHeader.Margin}" />
   </Style>
   <Style Selector="Grid.sectionHeaderRow.spaced">
-    <Setter Property="Margin" Value="8,8,0,0" />
+    <Setter Property="Margin" Value="{StaticResource SectionHeader.SpacedMargin}" />
   </Style>
   <Style Selector="TextBlock.rowType">
-    <Setter Property="Margin" Value="8,0,0,0" />
+    <Setter Property="Margin" Value="{StaticResource Row.TypeMargin}" />
     <Setter Property="VerticalAlignment" Value="Center" />
     <Setter Property="TextTrimming" Value="CharacterEllipsis" />
   </Style>

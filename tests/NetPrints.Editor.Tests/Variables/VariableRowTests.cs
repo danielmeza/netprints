@@ -1,4 +1,5 @@
 using NetPrints.Core;
+using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.ProjectTree;
 using NetPrints.Editor.Tests.Shell;
@@ -68,10 +69,57 @@ public sealed class VariableRowTests : IAsyncDisposable
         panel.SelectedLocalVariable = local;
 
         local.RemoveCommand.Execute(null);
-        panel.SelectedLocalVariable = null;
 
         Assert.Empty(method.LocalVariables);
+        Assert.Null(panel.SelectedLocalVariable);
         Assert.True(rig.Inspector.IsEmpty);
+    }
+
+    [Fact]
+    public async Task UndoingTheAddOfTheSelectedLocalVariableEmptiesTheInspector()
+    {
+        (ProjectSessionViewModel session, ClassGraph cls, MethodGraph method, VariablesPanelViewModel panel) = await OpenMethodAsync();
+        LocalVariableViewModel local = AddLocal(panel);
+        panel.SelectedLocalVariable = local;
+
+        session.UndoStackFor(cls).Undo();
+
+        Assert.Empty(method.LocalVariables);
+        Assert.Null(panel.SelectedLocalVariable);
+        Assert.True(rig.Inspector.IsEmpty);
+    }
+
+    [Fact]
+    public async Task RemovingTheSelectedMemberVariableClearsTheSelection()
+    {
+        (ProjectSessionViewModel session, ClassGraph cls, _, VariablesPanelViewModel panel) = await OpenMethodAsync();
+        session.ContextFor(cls).CreateVariable();
+        MemberVariableViewModel member = panel.ClassVariables[^1];
+        panel.SelectedClassVariable = member;
+
+        member.RemoveCommand.Execute(null);
+
+        Assert.Null(panel.SelectedClassVariable);
+        Assert.True(rig.Inspector.IsEmpty);
+    }
+
+    [Fact]
+    public async Task TheScopedDeleteAndRenameCommandsActOnTheRowPassedAsTheParameter()
+    {
+        (_, _, MethodGraph method, VariablesPanelViewModel panel) = await OpenMethodAsync();
+        LocalVariableViewModel local = AddLocal(panel);
+
+        Assert.False(rig.Invoker.TryRun("delete", CommandScope.VariablesPanel));
+        Assert.True(rig.Invoker.TryRun("rename", CommandScope.VariablesPanel, local));
+        await Task.Yield();
+        Assert.True(local.IsEditing);
+        Assert.False(rig.Invoker.TryRun("rename", CommandScope.VariablesPanel, local));
+        Assert.False(rig.Invoker.TryRun("delete", CommandScope.VariablesPanel, local));
+
+        local.CancelEditCommand.Execute(null);
+        Assert.True(rig.Invoker.TryRun("delete", CommandScope.VariablesPanel, local));
+        await Task.Yield();
+        Assert.Empty(method.LocalVariables);
     }
 
     [Fact]
@@ -122,13 +170,36 @@ public sealed class VariableRowTests : IAsyncDisposable
         second.CommitEditCommand.Execute(null);
 
         Assert.True(second.IsEditing);
-        Assert.True(second.HasError);
+        Assert.True(second.HasRenameError);
+        Assert.False(second.HasError);
         Assert.Equal(["Local", "Local2"], method.LocalVariables.Select(l => l.Name).ToArray());
 
         second.CancelEditCommand.Execute(null);
         Assert.False(second.IsEditing);
-        Assert.False(second.HasError);
+        Assert.False(second.HasRenameError);
         Assert.Equal("Local2", second.Name);
+    }
+
+    [Fact]
+    public async Task ARefusalFromTheInspectorDoesNotShowInTheRowAndTheRowRenameDoesNotEraseIt()
+    {
+        (_, _, _, VariablesPanelViewModel panel) = await OpenMethodAsync();
+        AddLocal(panel);
+        LocalVariableViewModel second = AddLocal(panel);
+
+        second.Name = "Local";
+        Assert.True(second.HasError);
+        Assert.False(second.HasRenameError);
+
+        second.BeginRenameCommand.Execute(null);
+        Assert.True(second.HasError);
+        second.EditText = "Local";
+        second.CommitEditCommand.Execute(null);
+        Assert.True(second.HasRenameError);
+        second.CancelEditCommand.Execute(null);
+
+        Assert.False(second.HasRenameError);
+        Assert.True(second.HasError);
     }
 
     [Fact]

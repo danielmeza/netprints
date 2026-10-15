@@ -1,6 +1,7 @@
 using NetPrints.Core;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Shell;
+using NetPrints.Editor.Variables;
 
 namespace NetPrints.Editor.Commands;
 
@@ -8,19 +9,29 @@ namespace NetPrints.Editor.Commands;
 /// The <c>delete</c> command, which acts only on the scope it was invoked from: the selected nodes of the active graph
 /// for a key in the canvas or a menu, the selected class, method, constructor, event graph or variable for a key or a
 /// context menu of the project tree. It never falls back from one to the other, so Delete on an empty canvas cannot
-/// remove the member being edited.
+/// remove the member being edited. From the Variables panel it removes the row passed as the command parameter.
 /// </summary>
 public sealed class DeleteCommandHandler : ICommandHandler
 {
     /// <inheritdoc/>
-    public bool CanExecute(CommandContext context) => context.Scope == CommandScope.ProjectTree
-        ? context.Selection.TreeItem is ClassGraph or MethodGraph or ConstructorGraph or EventGraph or Variable
-        : SelectedNodes(context);
+    public bool CanExecute(CommandContext context) => context.Scope switch
+    {
+        CommandScope.VariablesPanel => context.Parameter is VariableRowViewModel row && row.RemoveCommand.CanExecute(null),
+        CommandScope.ProjectTree => context.Selection.TreeItem is ClassGraph or MethodGraph or ConstructorGraph or EventGraph or Variable,
+        _ => SelectedNodes(context),
+    };
 
     /// <inheritdoc/>
     public async Task ExecuteAsync(CommandContext context, CancellationToken cancellationToken)
     {
-        if (context.Scope == CommandScope.ProjectTree)
+        if (context.Scope == CommandScope.VariablesPanel)
+        {
+            if (context.Parameter is VariableRowViewModel row && row.RemoveCommand.CanExecute(null))
+            {
+                row.RemoveCommand.Execute(null);
+            }
+        }
+        else if (context.Scope == CommandScope.ProjectTree)
         {
             if (context.Selection.TreeItem is { } item)
             {

@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
              xmlns:edvariables="clr-namespace:NetPrints.Editor.Variables"
              xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
              x:Class="NetPrints.Editor.Variables.VariablesPanelView"
@@ -15,19 +16,22 @@
                   IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}">
       <StackPanel x:DataType="edvariables:VariablesPanelViewModel">
         <StackPanel AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariablesClassGroup}">
-          <Grid ColumnDefinitions="*,Auto" Classes="sectionHeaderRow">
+          <Grid Classes="sectionHeaderRow">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="{StaticResource Row.RemoveColumnWidth}" />
+            </Grid.ColumnDefinitions>
             <TextBlock Classes="sectionHeader" Text="Variables" />
-            <Button Grid.Column="1" Classes="icon" Command="{Binding CreateVariableCommand}" ToolTip.Tip="Add variable" AutomationProperties.Name="Add variable"
+            <Button Grid.Column="1" Classes="icon" HorizontalAlignment="Center" Command="{Binding CreateVariableCommand}" ToolTip.Tip="Add variable" AutomationProperties.Name="Add variable"
                     AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariablesAddVariable}">
               <icons:IconPresenter IconId="{x:Static icons:IconIds.Add}" />
             </Button>
           </Grid>
           <ListBox Classes="variableList" ScrollViewer.VerticalScrollBarVisibility="Disabled" ItemsSource="{Binding ClassVariables}"
                    SelectedItem="{Binding SelectedClassVariable}">
-            <ListBox.KeyBindings>
-              <KeyBinding Gesture="Delete" Command="{Binding RemoveSelectedClassVariableCommand}" />
-              <KeyBinding Gesture="F2" Command="{Binding RenameSelectedClassVariableCommand}" />
-            </ListBox.KeyBindings>
+            <Interaction.Behaviors>
+              <edbehaviors:ScopedCommandKeysBehavior Scope="VariablesPanel" Invoker="{Binding Invoker}" Parameter="{Binding SelectedClassVariable}" />
+            </Interaction.Behaviors>
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="edvariables:MemberVariableViewModel">
                 <edvariables:VariableRowView />
@@ -36,19 +40,22 @@
           </ListBox>
         </StackPanel>
         <StackPanel IsVisible="{Binding HasMethodGroup}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariablesMethodGroup}">
-          <Grid ColumnDefinitions="*,Auto" Classes="sectionHeaderRow spaced">
+          <Grid Classes="sectionHeaderRow spaced">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="{StaticResource Row.RemoveColumnWidth}" />
+            </Grid.ColumnDefinitions>
             <TextBlock Classes="sectionHeader" Text="{Binding MethodGroupHeader}" />
-            <Button Grid.Column="1" Classes="icon" Command="{Binding CreateLocalVariableCommand}" ToolTip.Tip="Add local variable" AutomationProperties.Name="Add local variable"
+            <Button Grid.Column="1" Classes="icon" HorizontalAlignment="Center" Command="{Binding CreateLocalVariableCommand}" ToolTip.Tip="Add local variable" AutomationProperties.Name="Add local variable"
                     AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariablesAddLocalVariable}">
               <icons:IconPresenter IconId="{x:Static icons:IconIds.Add}" />
             </Button>
           </Grid>
           <ListBox Classes="variableList" ScrollViewer.VerticalScrollBarVisibility="Disabled" ItemsSource="{Binding MethodVariables}"
                    SelectedItem="{Binding SelectedLocalVariable}">
-            <ListBox.KeyBindings>
-              <KeyBinding Gesture="Delete" Command="{Binding RemoveSelectedLocalVariableCommand}" />
-              <KeyBinding Gesture="F2" Command="{Binding RenameSelectedLocalVariableCommand}" />
-            </ListBox.KeyBindings>
+            <Interaction.Behaviors>
+              <edbehaviors:ScopedCommandKeysBehavior Scope="VariablesPanel" Invoker="{Binding Invoker}" Parameter="{Binding SelectedLocalVariable}" />
+            </Interaction.Behaviors>
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="edvariables:LocalVariableViewModel">
                 <edvariables:VariableRowView />

@@ -58,7 +58,7 @@ public sealed class ShortcutGuideTests
         string table = ShortcutGuide.Generate(Registered());
 
         Assert.Contains("| Edit | Redo | Ctrl+Y, Ctrl+Shift+Z | Anywhere |", table, StringComparison.Ordinal);
-        Assert.Contains("| Edit | Delete | Delete | Graph canvas, Project tree |", table, StringComparison.Ordinal);
+        Assert.Contains("| Edit | Delete | Delete | Graph canvas, Project tree, Variables panel |", table, StringComparison.Ordinal);
         Assert.Contains("| View | Theme › Dark | – | Anywhere |", table, StringComparison.Ordinal);
         Assert.Contains("| Other | Open | Enter | Project tree |", table, StringComparison.Ordinal);
     }
