@@ -35,8 +35,10 @@ namespace NetPrints.Tests.Characterization
             // (Fixtures/Golden/AllNodes.Everything.cs) is shared with EmitterTests, which needs
             // AllNodesFixtureFactory's class to translate identically to the JSON fixture, and that
             // fixture deliberately has no event graph); a standalone instance covers it here instead.
-            var standaloneEntry = new EventEntryNode(new EventGraph("Events"), "OnStart");
+            var standaloneGraph = new EventGraph("Events");
+            var standaloneEntry = new EventEntryNode(standaloneGraph, "OnStart");
             instancesByType.TryAdd(typeof(EventEntryNode), standaloneEntry);
+            instancesByType.TryAdd(typeof(EventGraph), standaloneGraph);
 
             // LocalVariable (sub-phase H, US5) is likewise not part of the AllNodes fixture (it would
             // fork the shared "Everything" golden the same way an event graph would, see the comment
@@ -272,6 +274,7 @@ namespace NetPrints.Tests.Characterization
 
             foreach (ClassGraph cls in project.Classes)
             {
+                Register(cls);
                 RegisterNode(cls.ReturnNode);
 
                 foreach (Variable variable in cls.Variables)

@@ -1,90 +1,25 @@
 using Avalonia.Controls;
-using NetPrints.Core;
-using NetPrints.Editor.ClassEditor;
-using NetPrints.Editor.Hosting;
-using NetPrints.Editor.Main;
+using Avalonia.Controls.ApplicationLifetimes;
 
 namespace NetPrints.Editor.Hosting.Avalonia;
 
 /// <summary>
-/// Registry of class editor windows keyed by class (PAR-11, PAR-14, PAR-22).
+/// Holds the main window and picks the window that owns dialogs and pickers (the active one, so a floated Dock window owns its own), and closes the main window on request.
 /// </summary>
 public sealed class WindowService : IWindowService
 {
-    private readonly Dictionary<ClassGraph, ClassEditorWindow> windows = new(ReferenceEqualityComparer.Instance);
-
-    /// <summary>The main window (owner of dialogs when no class window is active).</summary>
+    /// <summary>The main window (owner of dialogs and pickers when no other window is active).</summary>
     public Window? MainWindow { get; set; }
 
-    /// <summary>The active window, used as dialog owner and for pickers.</summary>
-    public Window? ActiveWindow =>
-        windows.Values.FirstOrDefault(w => w.IsActive) as Window ?? (MainWindow?.IsActive == true ? MainWindow : null)
-        ?? MainWindow ?? windows.Values.FirstOrDefault();
+    /// <summary>Gets or sets where the open windows come from; by default the desktop lifetime's windows.</summary>
+    public Func<IReadOnlyList<Window>> OpenWindows { get; set; } = DesktopWindows;
 
-    /// <summary>Every currently open class editor window.</summary>
-    public IReadOnlyCollection<ClassEditorWindow> ClassEditorWindows => windows.Values;
+    /// <summary>The active window of the application (the main window or a Dock host window), or the main window when none is active.</summary>
+    public Window? ActiveWindow => OpenWindows().FirstOrDefault(window => window.IsActive) ?? MainWindow;
 
     /// <inheritdoc/>
-    public bool TryActivateClassEditor(ClassGraph cls)
-    {
-        if (!windows.TryGetValue(cls, out var window))
-        {
-            return false;
-        }
+    public void CloseMainWindow() => MainWindow?.Close();
 
-        if (!window.IsVisible)
-        {
-            window.Show();
-        }
-
-        if (window.WindowState == WindowState.Minimized)
-        {
-            window.WindowState = WindowState.Normal;
-        }
-
-        window.Activate();
-        return true;
-    }
-
-    /// <inheritdoc/>
-    public void OpenClassEditor(ClassGraph cls, EditorContext context)
-    {
-        var editor = new ClassEditorVM(cls, context);
-        var window = new ClassEditorWindow
-        {
-            DataContext = editor,
-            WindowState = WindowState.Maximized,
-        };
-
-        window.Closed += (_, _) =>
-        {
-            windows.Remove(editor.Class);
-            editor.Dispose();
-        };
-
-        windows[editor.Class] = window;
-        window.Show();
-    }
-
-    /// <inheritdoc/>
-    public ClassEditorVM? FindClassEditor(ClassGraph cls) =>
-        windows.TryGetValue(cls, out var window) ? (ClassEditorVM?)window.DataContext : null;
-
-    /// <inheritdoc/>
-    public void CloseClassEditor(ClassGraph cls)
-    {
-        if (windows.TryGetValue(cls, out var window))
-        {
-            window.Close();
-        }
-    }
-
-    /// <inheritdoc/>
-    public void CloseAllClassEditors()
-    {
-        foreach (var window in windows.Values.ToList())
-        {
-            window.Close();
-        }
-    }
+    private static IReadOnlyList<Window> DesktopWindows() =>
+        global::Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop ? desktop.Windows : [];
 }

@@ -34,6 +34,11 @@ The owner set three ground rules for any such policy:
 > `Xaml.Behaviors.Avalonia` meta package does have 12.x releases; it is avoided for the unused
 > packages it pulls in, not for a missing 12.x line.
 
+> **Amended 2026-10-01** (owner decision, P3a spec `specs/005-editor-shell/`, research R16): view model types are
+> named `<Name>ViewModel`; the `VM` suffix is not used. The existing `*VM` types are renamed at the start of P3a,
+> and a `SourceHygieneTests` check fails on any type whose name ends in `VM`. Mentions of the old names below
+> (for example `DialogVM<TResult>`, now `DialogViewModel<TResult>`) are updated by that rename.
+
 - **Three `avalonia-*` skills** (`.claude/skills/`) are the single place these rules live. They share one
   rule numbering, so an ID cited in code, a test or a PR means the same thing in any of them, all three carry the same
   `paths:` filter (`.axaml`, `.axaml.cs` and C# under `NetPrints.Editor`/`NetPrints.Desktop`), so
@@ -98,7 +103,7 @@ The owner set three ground rules for any such policy:
   `CloseWindowAction` pair directly. A dialog that closes *with* a result (`SelectMethodDialog`,
   `SelectTypeDialog`, `TrustDialog`) needs one more piece, since no prebuilt behavior can hand a VM
   value back to `Window.Close(object?)`: each dialog gets a small VM deriving from
-  `DialogVM<TResult>` (`NetPrints.Editor.Dialogs`), whose accept/cancel commands call
+  `DialogViewModel<TResult>` (`NetPrints.Editor.Dialogs`), whose accept/cancel commands call
   `RequestClose(result)`, which sets `Result` and raises `IDialogCloseSource.CloseRequested`. One
   reusable custom behavior, `DialogCloseBehavior` (`NetPrints.Editor.Behaviors`, D11 "no prebuilt
   fits, custom second"), sits on the dialog `Window`, watches its own (auto-synced) `DataContext` for
@@ -125,3 +130,37 @@ The owner set three ground rules for any such policy:
   not against explicit ones).
 - `EventTriggerBehavior` is reflection-based; if trimming the editor ever becomes a goal, every use
   found by grepping for it is a candidate to replace with a typed trigger or behavior first.
+
+## Amendment 1: rules E7, E8 and E9 (spec 005, FR-100)
+
+Three enforced rules join E1-E6 in `XamlHygieneTests`:
+
+- **E7**: every method in `src/**/*.axaml.cs` with an `(object? sender, …EventArgs e)` signature, or overriding an
+  `On*` member, is listed in `CodeBehindAllowlist` with its file, its method, a reason category (gesture, viewport
+  math, editor interop or focus plumbing) and one line of reason. The list is shrink-only: a new handler is a test
+  failure until it is migrated to a behavior or command (D9, D11) or justified, and an entry whose handler is gone
+  fails as stale. This turns the "allowlists empty or only justified gestures" goal into a build-time check.
+- **E8**: no `FontSize` or `FontFamily` literal in a view, only in `EditorStyles.axaml` and `EditorApp.axaml`, so the
+  type ramp (FR-080) is checked rather than reviewed. Spacing stays a review item, held by the literal ratchet.
+- **E9**: icons come from `IconPresenter`; no `MaterialIcon`, `SymbolIcon` or `FluentIcon` element and no bitmap
+  `Image` source outside `src/NetPrints.Editor/Icons/` (see Amendment 1 of ADR-0021 for the family).
+
+The `avalonia-xaml` skill documents the three rules next to E1-E6.
+
+## Amendment 2: the code-behind result at the end of sub-phase G (T098, T099)
+
+D11's order (prebuilt behavior, then custom behavior, then code-behind) was applied to every handler of the editor views.
+`VariableDragSourceBehavior` replaced the pointer handlers of `LocalVariableView` and `MemberVariableView`, and
+`CanvasPointerTrackerBehavior` replaced `GraphEditorView.OnAttachedToVisualTree`; seven E7 entries went, 23 to 16. The 16 that
+stay are 8 gestures (CodeView hover and pointer exit, the canvas pointer handlers, drag over and drop), 6 editor interop (CodeView
+and the `EditorApp` entry point) and 2 viewport math (`GraphEditorView.CenterWhenSized` and `OnDataContextChanged`). No view added
+in P3a has a handler. At Checkpoint G every other allowlist (E1, E2, E3, E5, E8, E9 and the dialog-sizing list) is empty, E4 and E6
+have none, and the literal ratchet holds 0 `FontSize` literals and 52 `Margin` literals, which may not rise. The list stays
+shrink-only; a new handler is a failing test until it is migrated or justified with a category and a reason.
+
+## Amendment 3: E7 covers subscriptions and lambdas (G-R10)
+
+E7 now also counts `+=` event subscriptions and `AddHandler` calls (method groups and lambdas) and any `(object? sender, T e)`
+handler, not only `EventArgs` signatures and `On*` overrides. A lambda is keyed by its event (`SearchPopup.Opened`), a method group
+by its method. The grid sync in `GraphEditorView` became a `#Editor` binding; the seven newly found handlers (two in `EditorApp`,
+five in `GraphEditorView`) are listed with a reason, so the list is 23. It stays shrink-only for the handlers E7 already knew.

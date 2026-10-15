@@ -62,6 +62,9 @@ public interface IUiDriver : IAsyncDisposable
 
     Task ClickAsync(UiTarget target, UiButton button, int clickCount, CancellationToken cancellationToken);
 
+    /// <summary>Clicks once with the Ctrl key held down.</summary>
+    Task CtrlClickAsync(UiTarget target, CancellationToken cancellationToken);
+
     /// <summary>Presses at <paramref name="from"/>, moves in steps to <paramref name="to"/>, releases.</summary>
     Task DragAsync(UiTarget from, UiTarget to, UiButton button, CancellationToken cancellationToken);
 
@@ -91,8 +94,20 @@ public interface IUiDriver : IAsyncDisposable
     /// <summary>Whether the window manager shows the window as minimized (<see cref="UiCapabilities.WindowManager"/>).</summary>
     Task<bool> IsMinimizedAsync(string window, CancellationToken cancellationToken);
 
+    /// <summary>Moves a window so its top-left corner is at a point of the screen (<see cref="UiCapabilities.WindowManager"/> on a real desktop).</summary>
+    Task MoveWindowAsync(string window, double x, double y, CancellationToken cancellationToken);
+
+    /// <summary>Closes a window the way its title bar button does (<see cref="UiCapabilities.WindowManager"/> on a real desktop).</summary>
+    Task CloseWindowAsync(string window, CancellationToken cancellationToken);
+
     /// <summary>Output written by programs the editor ran (<see cref="UiCapabilities.ProcessOutput"/>).</summary>
     Task<string> ProgramOutputAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Diagnostics: the pointer presses the driver delivered, oldest first, one line each (target, source element,
+    /// click count, timestamp, time since the previous press). Empty when nothing was pressed.
+    /// </summary>
+    string InputTrace { get; }
 
     /// <summary>Diagnostics: a dump of the UI elements with automation ids.</summary>
     Task<string> DumpAsync(CancellationToken cancellationToken);

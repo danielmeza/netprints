@@ -1,9 +1,11 @@
 using Avalonia.Headless.XUnit;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.UITests.Hosting;
+using NetPrints.Editor.UITests.Shell;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Testing.Ui.Dialogs;
 using NetPrints.Testing.Ui.Driving;
+using NetPrints.Testing.Ui.Shell;
 
 namespace NetPrints.Editor.UITests.Dialogs;
 
@@ -19,7 +21,7 @@ public class ExtensionDialogTests
         try
         {
             File.WriteAllText(Path.Combine(folder, ExtensionManifest.FileName), "{ this is not a manifest");
-            await using var app = HeadlessApp.Start([folder]);
+            await using var app = ShellApp.Start([folder]);
 
             await app.Composition.StartAsync([]);
 
@@ -31,8 +33,7 @@ public class ExtensionDialogTests
             await page.OkButton.ClickAsync(Token);
             await UiWait.UntilAsync(app.Driver, async () => !await page.ExistsAsync(Token), "issues dialog closed", Token);
 
-            await app.Main.ProjectButton.ClickAsync(Token);
-            Assert.True(await app.Main.ProjectPane.IsVisibleAsync(Token));
+            await new ShellPage(app.Driver).Menu.OpenAsync("File", ShellCommands.NewProject, Token); // still usable
         }
         finally
         {

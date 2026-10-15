@@ -3,7 +3,9 @@ using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Graph.Nodes;
 using NetPrints.Editor.Graph.Pins;
+using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Hosting;
+using NetPrints.Editor.UndoRedo;
 using NetPrints.Graph;
 
 namespace NetPrints.Editor.Tests.Graph;
@@ -16,8 +18,8 @@ public abstract class GraphTestBase : IDisposable
     protected readonly TestEditor Editor;
     protected readonly ClassGraph Class;
     protected readonly MethodGraph Method;
-    protected readonly ClassEditorVM ClassEditor;
-    protected readonly NodeGraphVM Graph;
+    protected readonly ClassContext ClassContext;
+    protected readonly NodeGraphViewModel Graph;
 
     protected static readonly TypeSpecifier StringType = TypeSpecifier.FromType<string>();
     protected static readonly TypeSpecifier IntType = TypeSpecifier.FromType<int>();
@@ -26,21 +28,22 @@ public abstract class GraphTestBase : IDisposable
     {
         Editor = editor;
         Class = new ClassGraph { Name = "C", Namespace = "N" };
-        ClassEditor = new ClassEditorVM(Class, Editor.Context);
-        ClassEditor.CreateMethodCommand.Execute(null);
-        Method = (MethodGraph)ClassEditor.Methods.Single().Graph;
-        Graph = ClassEditor.OpenedGraph!;
+        ClassContext = new ClassContext(Class, Editor.Context, new UndoRedoStack());
+        Method = ClassContext.CreateMethod();
+        ClassContext.UndoRedo.Clear();
+        Class.MarkClean();
+        Graph = new NodeGraphViewModel(Method, ClassContext.Services);
     }
 
     public void Dispose()
     {
-        ClassEditor.Dispose();
+        ClassContext.Dispose();
         GC.SuppressFinalize(this);
     }
 
-    protected NodeVM VmOf(Node node) => Graph.Nodes.Single(n => n.Node == node);
+    protected NodeViewModel VmOf(Node node) => Graph.Nodes.Single(n => n.Node == node);
 
-    protected NodePinVM VmOf(NodePin pin) => Graph.Nodes.SelectMany(n => n.AllPins).Single(p => p.Pin == pin);
+    protected NodePinViewModel VmOf(NodePin pin) => Graph.Nodes.SelectMany(n => n.AllPins).Single(p => p.Pin == pin);
 
     protected static MethodSpecifier ConsoleWriteLine(TypeSpecifier parameterType) =>
         new("WriteLine", [new MethodParameter("value", parameterType, MethodParameterPassType.Default, false, null)],

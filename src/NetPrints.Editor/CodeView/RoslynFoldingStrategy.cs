@@ -16,7 +16,7 @@ public sealed record FoldingRange(int Start, int End, string Title);
 /// Computes <see cref="FoldingRange"/>s for a class's generated C# from its Roslyn syntax tree
 /// (research.md R2: "AvaloniaEdit has no C# folding strategy"), for type declarations and member
 /// bodies (constructors, methods, accessors). A parse-only walk (no semantic model), so it is cheap
-/// enough to run on the UI thread; UI-toolkit-free, so <c>CodeViewVM</c> can call it directly (FR-038).
+/// enough to run on the UI thread; UI-toolkit-free, so <c>CodeViewViewModel</c> can call it directly (FR-038).
 /// </summary>
 public static class RoslynFoldingStrategy
 {

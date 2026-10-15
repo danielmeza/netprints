@@ -1,4 +1,20 @@
 {
+  "NetPrints.Core.ClassGraph": {
+    "Class": [],
+    "Constructors": [],
+    "DeclaredGenericArguments": [],
+    "EventGraphs": [],
+    "Methods": [],
+    "Modifiers": [],
+    "Name": [
+      "Name"
+    ],
+    "Namespace": [],
+    "PreservedDocumentState": [],
+    "Project": [],
+    "Variables": [],
+    "Visibility": []
+  },
   "NetPrints.Core.ConstructorGraph": {
     "Class": [],
     "PreservedDocumentState": [],
@@ -6,6 +22,14 @@
     "Visibility": [
       "Visibility"
     ]
+  },
+  "NetPrints.Core.EventGraph": {
+    "Class": [],
+    "Name": [
+      "Name"
+    ],
+    "PreservedDocumentState": [],
+    "Project": []
   },
   "NetPrints.Core.LocalVariable": {
     "Name": [
@@ -114,9 +138,7 @@
     ]
   },
   "NetPrints.Graph.CallMethodNode": {
-    "IsPure": [
-      "IsPure"
-    ],
+    "IsPure": "\u003Cthrows\u003E",
     "Name": [
       "Name"
     ],

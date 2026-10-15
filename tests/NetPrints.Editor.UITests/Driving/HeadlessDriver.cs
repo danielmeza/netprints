@@ -1,9 +1,13 @@
+using System.Globalization;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Input.Raw;
+using Avalonia.Interactivity;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Testing.Ui.Driving;
 using NetPrints.Testing.Ui.Snapshots;
@@ -17,6 +21,9 @@ namespace NetPrints.Editor.UITests.Driving;
 /// </summary>
 public sealed class HeadlessDriver(AutomationTree tree, Func<string> programOutput) : IUiDriver
 {
+    private readonly List<string> inputTrace = [];
+    private readonly HashSet<Window> tracedWindows = [];
+    private ulong lastPressTimestamp;
     private Window? keyboardWindow;
 
     public string Name => "headless";
@@ -69,7 +76,29 @@ public sealed class HeadlessDriver(AutomationTree tree, Func<string> programOutp
     {
         var window = tree.WindowByKey(target.Window);
         keyboardWindow = window;
+        if (tracedWindows.Add(window))
+        {
+            window.AddHandler(InputElement.PointerPressedEvent, OnPressed, RoutingStrategies.Bubble, handledEventsToo: true);
+        }
+
         return window;
+    }
+
+    /// <inheritdoc/>
+    public string InputTrace => string.Join(Environment.NewLine, inputTrace);
+
+    private void OnPressed(object? sender, PointerPressedEventArgs e)
+    {
+        var source = e.Source as Visual;
+        string? id = source?.GetSelfAndVisualAncestors()
+            .OfType<Control>()
+            .Select(AutomationProperties.GetAutomationId)
+            .FirstOrDefault(i => !string.IsNullOrEmpty(i));
+        string element = source?.GetType().Name ?? "none";
+        long delta = lastPressTimestamp == 0 ? 0 : (long)(e.Timestamp - lastPressTimestamp);
+        lastPressTimestamp = e.Timestamp;
+        inputTrace.Add(string.Create(CultureInfo.InvariantCulture,
+            $"press {e.GetCurrentPoint(null).Properties.PointerUpdateKind} source={element} id={id ?? "-"} clickCount={e.ClickCount} t={e.Timestamp} ms dt={delta} ms"));
     }
 
     private static Point P(UiTarget target) => new(target.X, target.Y);
@@ -109,6 +138,16 @@ public sealed class HeadlessDriver(AutomationTree tree, Func<string> programOutp
             window.MouseUp(P(target), Map(button));
         }
 
+        Pump();
+        return Task.CompletedTask;
+    }
+
+    public Task CtrlClickAsync(UiTarget target, CancellationToken cancellationToken)
+    {
+        var window = WindowOf(target);
+        window.MouseMove(P(target), RawInputModifiers.Control);
+        window.MouseDown(P(target), Map(UiButton.Left), RawInputModifiers.Control);
+        window.MouseUp(P(target), Map(UiButton.Left), RawInputModifiers.Control);
         Pump();
         return Task.CompletedTask;
     }
@@ -167,7 +206,11 @@ public sealed class HeadlessDriver(AutomationTree tree, Func<string> programOutp
         var (key, modifiers) = ParseChord(chord);
         var window = KeyboardWindow;
         window.KeyPress(key, modifiers, PhysicalKey.None, null);
-        window.KeyRelease(key, modifiers, PhysicalKey.None, null);
+        if (window.IsVisible)
+        {
+            window.KeyRelease(key, modifiers, PhysicalKey.None, null);
+        }
+
         Pump();
         return Task.CompletedTask;
     }
@@ -224,6 +267,20 @@ public sealed class HeadlessDriver(AutomationTree tree, Func<string> programOutp
 
     public Task MinimizeAsync(string window, CancellationToken cancellationToken) =>
         throw new NotSupportedException("The headless platform has no window manager.");
+
+    public Task MoveWindowAsync(string window, double x, double y, CancellationToken cancellationToken)
+    {
+        tree.WindowByKey(window).Position = new PixelPoint((int)x, (int)y);
+        Pump();
+        return Task.CompletedTask;
+    }
+
+    public Task CloseWindowAsync(string window, CancellationToken cancellationToken)
+    {
+        tree.WindowByKey(window).Close();
+        Pump();
+        return Task.CompletedTask;
+    }
 
     public Task<bool> IsMinimizedAsync(string window, CancellationToken cancellationToken) =>
         throw new NotSupportedException("The headless platform has no window manager.");

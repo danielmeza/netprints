@@ -26,7 +26,7 @@ public sealed partial class CodeView : UserControl, IDisposable
     private FoldingManager? foldingManager;
     private RegistryOptions? highlighting;
     private TextMate.Installation? textMate;
-    private CodeViewVM? viewModel;
+    private CodeViewViewModel? viewModel;
 
     /// <summary>Loads the control's XAML and hooks the data-context and theme-change handlers,
     /// which do not depend on this control being attached to the visual tree.</summary>
@@ -40,11 +40,32 @@ public sealed partial class CodeView : UserControl, IDisposable
     }
 
     /// <summary>The bound view model, or <see langword="null"/> if the data context is not one.</summary>
-    public CodeViewVM? ViewModel => viewModel;
+    public CodeViewViewModel? ViewModel => viewModel;
 
     /// <summary>The wrapped AvaloniaEdit editor (public for headless UI tests; <c>Editor</c>, the
     /// named element itself, is assembly-internal).</summary>
     public AvaloniaEdit.TextEditor CodeEditor => Editor;
+
+    /// <summary>
+    /// Whether TextMate has tokenized every line of the shown text. Tokenizing runs on a thread-pool thread in
+    /// short slices, so freshly set text is painted partly uncolored until this is <see langword="true"/>;
+    /// a screenshot or a test waits for it. Also <see langword="true"/> when highlighting is not installed
+    /// (not attached to the visual tree, or TextMate is unavailable), since nothing is pending then.
+    /// </summary>
+    public bool IsHighlightingSettled
+    {
+        get
+        {
+            if (textMate?.EditorModel is not { } model)
+            {
+                return true;
+            }
+
+            bool settled = true;
+            model.ForEach(line => settled &= !line.IsInvalid);
+            return settled;
+        }
+    }
 
     private void InstallHighlighting()
     {
@@ -86,7 +107,7 @@ public sealed partial class CodeView : UserControl, IDisposable
             viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         }
 
-        viewModel = DataContext as CodeViewVM;
+        viewModel = DataContext as CodeViewViewModel;
         if (viewModel is null)
         {
             return;
@@ -102,13 +123,13 @@ public sealed partial class CodeView : UserControl, IDisposable
     {
         switch (e.PropertyName)
         {
-            case nameof(CodeViewVM.Code):
+            case nameof(CodeViewViewModel.Code):
                 RefreshCode();
                 break;
-            case nameof(CodeViewVM.Diagnostics):
+            case nameof(CodeViewViewModel.Diagnostics):
                 RefreshDiagnostics();
                 break;
-            case nameof(CodeViewVM.Foldings):
+            case nameof(CodeViewViewModel.Foldings):
                 RefreshFoldings();
                 break;
         }

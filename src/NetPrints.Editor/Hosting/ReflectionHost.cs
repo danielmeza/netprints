@@ -80,10 +80,12 @@ public sealed class ReflectionHost : IReflectionHost
     /// </summary>
     /// <param name="project">Project to build a reflection provider for; must have been created
     /// through <see cref="Project.FromSnapshot"/>.</param>
-    /// <param name="cancellationToken">Cancels the background build.</param>
+    /// <param name="cancellationToken">Cancels the background build: the type enumeration and the warm-up stop
+    /// at the next type or member, and a cancelled reload publishes nothing.</param>
     /// <returns>A task that completes once this reload has either published its result or been superseded.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="project"/> is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException"><paramref name="project"/> has no <see cref="Project.Snapshot"/>.</exception>
+    /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was cancelled before the result was published.</exception>
     public async Task ReloadAsync(Project project, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(project);
@@ -122,14 +124,14 @@ public sealed class ReflectionHost : IReflectionHost
                 IReflectionProvider live = new ReflectionProvider(references, sourceFiles, excludedAssemblyNames);
                 IReflectionProvider composed = catalogs.Count == 0 ? live : new CompositeReflectionProvider([.. catalogs, live]);
                 IReflectionProvider built = new MemoizedReflectionProvider(composed);
-                var types = built.GetNonStaticTypes().ToList();
+                var types = UntilCancelled(built.GetNonStaticTypes(), cancellationToken).ToList();
 
                 // Warm-up (SC-005): Roslyn binds member symbols lazily, and the first enumeration of
                 // all static members (~120k methods on .NET 10) costs about 1.5 s. Doing it here, in
                 // the background load, keeps the first node search after a project opens well under 2 s.
+                _ = UntilCancelled(built.GetMethods(new ReflectionProviderMethodQuery().WithStatic(true)), cancellationToken).Count();
+                _ = UntilCancelled(built.GetVariables(new ReflectionProviderVariableQuery().WithStatic(true)), cancellationToken).Count();
                 cancellationToken.ThrowIfCancellationRequested();
-                _ = built.GetMethods(new ReflectionProviderMethodQuery().WithStatic(true)).Count();
-                _ = built.GetVariables(new ReflectionProviderVariableQuery().WithStatic(true)).Count();
                 return (built, types);
             }, cancellationToken).ConfigureAwait(false);
 
@@ -160,6 +162,15 @@ public sealed class ReflectionHost : IReflectionHost
         {
             Log.ReflectionReloadFailed(logger, project.Name, ex);
             throw;
+        }
+    }
+
+    private static IEnumerable<T> UntilCancelled<T>(IEnumerable<T> items, CancellationToken cancellationToken)
+    {
+        foreach (T item in items)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            yield return item;
         }
     }
 

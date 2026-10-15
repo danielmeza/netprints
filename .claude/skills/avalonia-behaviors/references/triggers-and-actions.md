@@ -34,7 +34,7 @@ generic trigger, which finds the event by name through reflection (not trim-safe
 option):
 
 ```xml
-<!-- src/NetPrints.Editor/Main/MainWindow.axaml -->
+<!-- a view that binds a chooser to a read-only property -->
 <ComboBox x:Name="BinaryTypeChooser" SelectedItem="{Binding OutputBinaryType, Mode=OneWay}">
   <Interaction.Behaviors>
     <EventTriggerBehavior EventName="SelectionChanged">

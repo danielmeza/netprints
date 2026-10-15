@@ -74,6 +74,7 @@ instead of retrying blindly.
 - Call `OnPropertyChanged(nameof(X))` manually only when the change doesn't go through an observable setter (a
   model event, a collection change, a value computed from another object). Always `nameof`, never a string.
 - No Fody or other IL weaving (`[AlsoNotifyFor]`, `[DependsOn]`, …).
+- View model types are named `<Name>ViewModel`, never `<Name>VM`, enforced by `SourceHygieneTests.NoTypeNameEndsInVM`.
 
 ## Nullable reference types
 The goal is to model and handle null correctly, not to silence warnings. A green build with `!` sprinkled
@@ -183,8 +184,10 @@ agents" below. Guard entry points with `ArgumentNullException.ThrowIfNull`,
 - Log through `[LoggerMessage]` partials in the namespace's `Log` class (precedent:
   `NetPrints.Serialization/Log.cs`, `NetPrints.Editor/Hosting/Log.cs`) with constant PascalCase templates,
   and pass the exception as the exception argument. Libraries never write to `Console`; `Cli`, `Desktop`,
-  `Editor` and `Generator` are entry points, not libraries, and are exempt. [CA1848, CA2254, CA2017,
-  CA1727, RS0030]
+  and `Generator` are entry points, not libraries, and are exempt; `Editor` is not exempt. [CA1848, CA2254,
+  CA2017, CA1727, RS0030]
+- Temporary diagnostics go through `ILogger` at Debug level, never `Console`; `Console` only where it is the
+  product's output (Cli, Desktop `--check-project`). Never commit debug prints.
 - Follow `.editorconfig` and the file's existing naming. Constants are PascalCase; generic parameters are
   `T…`. [CA1715]
 
@@ -199,12 +202,22 @@ agents" below. Guard entry points with `ArgumentNullException.ThrowIfNull`,
   report.
 
 ## Commits and tests
-- End commit messages with the attribution line(s) your session is configured with; PR bodies
-  end with the "Generated with Claude Code" footer when produced by Claude Code.
+- Commit messages, PR bodies and comments carry no tool or model attribution: no `Co-Authored-By` or
+  session trailers, no "Generated with" footers.
 - Reproduce a bug with a test that fails before fixing it. Tests use xUnit v3 and always pass
   `TestContext.Current.CancellationToken`. UI tests go through page objects and `AutomationIds`,
   with no sleeps.
-- CI (`CI` workflow) runs on Linux only and must be green before merge.
+- CI (`CI` workflow, Linux) must be green before merge. The `CLI (Windows)` workflow also runs the CLI tests on
+  `windows-latest` for changes that touch the CLI (not required, but keep it green); see `docs/contributing/testing.md`.
+
+## XAML and UI
+- **Mandatory:** before editing any `.axaml`, or view, style or converter code in `NetPrints.Editor`/`NetPrints.Desktop`,
+  load `avalonia-xaml` and `avalonia-styling` (and `avalonia-behaviors` for interaction) with the Skill tool. A
+  PreToolUse hook (`.claude/hooks/skill-paths.py`) denies the first matching edit of each agent and names the skills;
+  load them and retry. New views follow the "Layout and look" section of `avalonia-styling`.
+- **Edit repo files with the Edit/Write tools, never through the shell** (`sed -i`, `perl -i`, python writes, `tee`,
+  `>`/`>>`, `truncate`, `dd of=`). A Bash PreToolUse hook (`.claude/hooks/no-shell-edits.py`, tested in `tests/hooks`)
+  denies such commands; writes to `/tmp`, `/dev/null`, `bin/`, `obj/` and `TestResults/` and `git` are allowed.
 
 ## Batch rules for implementer agents
 A batch prompt names the task range and pastes the task text; everything below applies to every batch.
@@ -217,12 +230,10 @@ A batch prompt names the task range and pastes the task text; everything below a
   `dotnet test --solution NetPrints.slnx -c Release --no-build --no-progress --no-ansi -- --ignore-exit-code 8`,
   then `dotnet build -c Release` (0 warnings) and `dotnet format NetPrints.slnx --verify-no-changes`.
 - **Full suite includes the Desktop E2E tests, as a second, dedicated run — mirror
-  `.github/workflows/ci.yml`'s two-job split, don't fold E2E into the solution-wide command.** The
-  solution-wide command above (no `NETPRINTS_E2E`) is CI's main `Test` job: `--ignore-exit-code 8`
-  tolerates the Desktop E2E project's "zero tests ran" exit code (its tests self-skip without
-  `NETPRINTS_E2E=1`), and `NetPrints.Editor.UITests`' `HeadlessSmokeTests.MinimizeAndRestoreClassWindow`/
-  `PanCursor`/`DragFromLists` always skip too (the headless driver has no window manager, real cursor or
-  OS drag-drop — see `UiCapabilities`/`SmokeScenarios.Require`) and are tolerated the same way, by not
+  `.github/workflows/ci.yml`'s split of `test` and `e2e`, don't fold E2E into the solution-wide command.** The
+  solution-wide command above (no `NETPRINTS_E2E`) is the local equivalent of CI's `test` matrix: the Desktop E2E project
+  exits 0 without `NETPRINTS_E2E=1` (its 21 always-on tests run, 10 scenarios self-skip), and `NetPrints.Editor.UITests`' `HeadlessSmokeTests.PanCursor`
+  always skips too (the headless driver has no real cursor — see `UiCapabilities`/`SmokeScenarios.Require`) and is tolerated the same way, by not
   passing `--fail-skips`. Then run CI's `e2e` job: `NETPRINTS_E2E=1 dotnet test --project
   tests/NetPrints.Desktop.E2ETests -c Release --no-build --no-progress --no-ansi -- --fail-skips on` (no
   `--ignore-exit-code 8`: with `NETPRINTS_E2E=1` and the X11 driver's full capability set, zero skips is
@@ -254,9 +265,12 @@ A batch prompt names the task range and pastes the task text; everything below a
   package ships it at instead — see ADR-0003 for the probe that verified this. `VSTHRD111` (ConfigureAwait)
   is `error` by default too, but `none` for code that deliberately resumes on the UI thread (view models,
   views, and a short list of other paths — see ADR-0003's layering table). `S109` has no carve-out: it is
-  `error` in all of `src/**.cs`, including `NetPrints.Editor`. `dotnet format analyzers --severity info
-  --verify-no-changes` scoped to a batch's own changed files (`git diff --name-only origin/master...HEAD`)
-  surfaces the `suggestion`-level hits the build doesn't. A violation the curated rules catch gets fixed for
+  `error` in all of `src/**.cs`, including `NetPrints.Editor`. `dotnet format analyzers NetPrints.slnx --severity
+  info --verify-no-changes --no-restore --include $(git diff --name-only --diff-filter=d <batch-base-sha> -- '*.cs')`
+  surfaces the `suggestion`-level hits the build doesn't, for the batch's own files only (`<batch-base-sha>` is the
+  commit the batch started from, so uncommitted edits count; `--include` does narrow the run, and an empty list
+  silently formats everything, so check the list first). Never use `origin/master...HEAD` there: on a phase branch
+  that is hundreds of files and reports thousands of pre-existing hits. A violation the curated rules catch gets fixed for
   real, not suppressed — the one exception is a site where the analyzer's ownership/intent-tracking
   genuinely cannot see the truth, suppressed with a member-level
   `[SuppressMessage("<Category>", "<ID>", Justification = "ADR-0003: <one-line reason>")]` on the smallest

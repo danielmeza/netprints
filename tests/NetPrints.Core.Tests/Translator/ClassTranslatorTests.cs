@@ -178,5 +178,32 @@ namespace NetPrints.Tests
             Assert.DoesNotContain("public get", translated);
             Assert.DoesNotContain("public set", translated);
         }
+
+        /// <summary>
+        /// A <c>const</c> variable has no value to emit until member defaults land (P3b): the translator
+        /// reports one NetPrints diagnostic instead of CS0145, CS0504, CS0106 or a syntax error.
+        /// </summary>
+        [Theory]
+        [InlineData(VariableModifiers.Const, false)]
+        [InlineData(VariableModifiers.Const | VariableModifiers.Static, false)]
+        [InlineData(VariableModifiers.Const | VariableModifiers.ReadOnly, false)]
+        [InlineData(VariableModifiers.Const, true)]
+        public void AConstVariableIsReportedAsNpt009(VariableModifiers modifiers, bool withAccessors)
+        {
+            ClassGraph constFixture = new ClassGraph() { Name = "ConstFixture", Namespace = "TestNamespace" };
+            MethodGraph? getter = withAccessors ? CreateIntGetter(constFixture, "get_Limit", MemberVisibility.Public) : null;
+            Variable constant = new Variable(constFixture, "Limit", TypeSpecifier.FromType<int>(), getter, null, modifiers);
+            constFixture.Variables.Add(constant);
+
+            TranslationException direct = Assert.Throws<TranslationException>(() => classTranslator.TranslateVariable(constant));
+            TranslationException whole = Assert.Throws<TranslationException>(() => classTranslator.TranslateClass(constFixture));
+
+            Assert.All(new[] { direct, whole }, ex =>
+            {
+                Assert.Equal(TranslationDiagnosticCodes.ConstVariableUnsupported, ex.Code);
+                Assert.Contains("'Limit'", ex.Message, StringComparison.Ordinal);
+                Assert.Contains("Const needs a default value, which variables can't have yet.", ex.Message, StringComparison.Ordinal);
+            });
+        }
     }
 }

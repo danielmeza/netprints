@@ -192,7 +192,7 @@ namespace NetPrints.Reflection
     /// the given assemblies, source files and in-memory sources. See <see cref="MemoizedReflectionProvider"/>
     /// for a caching wrapper around repeated queries.
     /// </summary>
-    public class ReflectionProvider : IReflectionProvider
+    public class ReflectionProvider : IReflectionProvider, ITypeAssemblyLocator
     {
         private readonly MemberCache memberCache = new MemberCache();
         private readonly CSharpCompilation compilation;
@@ -253,7 +253,7 @@ namespace NetPrints.Reflection
             }
 
             var assemblyReferences = existingAssemblies
-                .Select(a => (MetadataReference)MetadataReference.CreateFromFile(a.Path))
+                .Select(SharedMetadataReferences.For)
                 .ToList();
 
             // Create syntax trees from sources
@@ -452,13 +452,20 @@ namespace NetPrints.Reflection
         private ITypeSymbol? GetTypeFromSpecifier(TypeSpecifier specifier) =>
             cachedTypeSpecifierSymbols.GetOrAdd(specifier, ComputeTypeFromSpecifier);
 
+        /// <inheritdoc/>
+        public string? GetAssemblyName(TypeSpecifier type)
+        {
+            ArgumentNullException.ThrowIfNull(type);
+            return GetTypeFromSpecifier(type)?.ContainingAssembly?.Name;
+        }
+
         private ITypeSymbol? ComputeTypeFromSpecifier(TypeSpecifier specifier)
         {
             string lookupName = specifier.Name;
 
             // Find array ranks and remove them from the lookup name.
-            // Example: int[][,] -> arrayRanks: { 1, 2 }, lookupName: int
-            Stack<int> arrayRanks = new Stack<int>();
+            // Example: int[][,] -> arrayRanks: { 2, 1 } (innermost first), lookupName: int
+            Queue<int> arrayRanks = new Queue<int>();
             while (lookupName.EndsWith("]", StringComparison.Ordinal))
             {
                 lookupName = lookupName.Remove(lookupName.Length - 1);
@@ -468,7 +475,7 @@ namespace NetPrints.Reflection
                     arrayRank++;
                     lookupName = lookupName.Remove(lookupName.Length - 1);
                 }
-                arrayRanks.Push(arrayRank);
+                arrayRanks.Enqueue(arrayRank);
 
                 if (lookupName.Last() != '[')
                 {
@@ -510,10 +517,9 @@ namespace NetPrints.Reflection
             if (foundType != null)
             {
                 // Make array
-                //while (arrayRanks.TryPop(out int arrayRank))
                 while (arrayRanks.Count > 0)
                 {
-                    int arrayRank = arrayRanks.Pop();
+                    int arrayRank = arrayRanks.Dequeue();
                     foundType = compilation.CreateArrayTypeSymbol(foundType, arrayRank);
                 }
             }

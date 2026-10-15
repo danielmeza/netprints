@@ -146,4 +146,12 @@ public sealed class GraphCanvas(IUiDriver driver, AutomationQuery window)
         await Driver.DragAsync(await OffsetAsync(5, 5, cancellationToken), await OffsetAsync(e.Bounds.Width - 5, e.Bounds.Height - 5, cancellationToken),
             UiButton.Left, cancellationToken);
     }
+
+    /// <summary>Waits until the viewport is within one unit of <paramref name="expected"/> on both axes.</summary>
+    public Task WaitForViewportAsync((double X, double Y) expected, CancellationToken cancellationToken) =>
+        UiWait.UntilAsync(Driver, async () =>
+        {
+            var now = await ViewportAsync(cancellationToken);
+            return Math.Abs(now.X - expected.X) < 1 && Math.Abs(now.Y - expected.Y) < 1;
+        }, "the viewport restored", cancellationToken);
 }

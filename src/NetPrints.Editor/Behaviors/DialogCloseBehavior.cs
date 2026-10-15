@@ -8,7 +8,7 @@ namespace NetPrints.Editor.Behaviors;
 /// Closes the attached window with its view model's result once the view model raises <see
 /// cref="IDialogCloseSource.CloseRequested"/> (D11 "no prebuilt fits, custom second"; D16, ADR-0007
 /// batch X2b). The one reusable close-with-result behavior shared by every dialog whose VM derives
-/// from <see cref="DialogVM{TResult}"/> (<c>SelectMethodDialog</c>, <c>SelectTypeDialog</c>,
+/// from <see cref="DialogViewModel{TResult}"/> (<c>SelectMethodDialog</c>, <c>SelectTypeDialog</c>,
 /// <c>TrustDialog</c>); a dialog that closes with no result keeps using the prebuilt
 /// <c>ButtonClickEventTriggerBehavior</c> + <c>CloseWindowAction</c> pair instead.
 /// </summary>

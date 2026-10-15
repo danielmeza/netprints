@@ -36,6 +36,7 @@ public sealed class GraphSummaryPropertyTests
         ["EventEntryNodeDocument.Visibility"] = [On<EventEntryNodeDocument>(n => n with { Visibility = Flip(n.Visibility) })],
         ["EventEntryNodeDocument.Modifiers"] = [On<EventEntryNodeDocument>(n => n with { Modifiers = n.Modifiers ^ MethodModifiers.Abstract })],
         ["EventEntryNodeDocument.Overrides"] = [On<EventEntryNodeDocument>(n => n with { Overrides = n.Overrides is null ? null : n.Overrides with { ReturnTypes = [Int] } })],
+        ["EventEntryNodeDocument.Arguments"] = [On<EventEntryNodeDocument>(n => n with { Arguments = [new EventArgumentDocument("amount", Int)] })],
         ["EventEntryNodeDocument.ArgumentCount"] = [On<EventEntryNodeDocument>(n => n with { ArgumentCount = n.ArgumentCount + 1 })],
         ["CallMethodNodeDocument.Method"] = MethodMutations<CallMethodNodeDocument>(n => n.Method, (n, method) => n with { Method = method }),
         ["CallMethodNodeDocument.GenericArgumentCount"] = [On<CallMethodNodeDocument>(n => n with { GenericArgumentCount = n.GenericArgumentCount + 1 })],

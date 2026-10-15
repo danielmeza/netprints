@@ -1,68 +1,68 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
              xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
              xmlns:ednodes="clr-namespace:NetPrints.Editor.Graph.Nodes"
              xmlns:edpins="clr-namespace:NetPrints.Editor.Graph.Pins"
-             xmlns:edsearch="clr-namespace:NetPrints.Editor.Search"
+             xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
              xmlns:nn="clr-namespace:Nodify.Avalonia.Nodes;assembly=Nodify.Avalonia"
-             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
              xmlns:conv="clr-namespace:Avalonia.Data.Converters;assembly=Avalonia.Base"
              x:Class="NetPrints.Editor.Graph.Nodes.NodeView"
-             x:DataType="ednodes:NodeVM"
+             x:DataType="ednodes:NodeViewModel"
              ToolTip.Tip="{Binding ToolTip}">
   <UserControl.Resources>
-    <!-- Pin connector: exec = square, data = circle, type = triangle; dimmed when unconnected (PAR-43). -->
+    <!-- Pin connector: exec = square, data = circle, type = triangle; an outline until connected, then filled (FR-108). -->
     <ControlTemplate x:Key="PinConnectorTemplate">
-      <Panel Width="14" Height="14" x:DataType="edpins:NodePinVM" Background="Transparent" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinConnector}">
-        <Rectangle Classes="pin" Width="14" Height="14" StrokeThickness="3" IsVisible="{Binding ShowRectangle}">
-          <Rectangle.Fill>
-            <MultiBinding Converter="{x:Static edgraph:PinFillConverter.Instance}">
-              <Binding Path="Kind" />
-              <Binding Path="IsDimmed" />
-            </MultiBinding>
-          </Rectangle.Fill>
-        </Rectangle>
-        <Ellipse Classes="pin" Width="14" Height="14" StrokeThickness="3" IsVisible="{Binding ShowCircle}">
-          <Ellipse.Fill>
-            <MultiBinding Converter="{x:Static edgraph:PinFillConverter.Instance}">
-              <Binding Path="Kind" />
-              <Binding Path="IsDimmed" />
-            </MultiBinding>
-          </Ellipse.Fill>
+      <Panel Classes="pinHitbox" Width="24" Height="24" x:DataType="edpins:NodePinViewModel" Background="Transparent" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinConnector}">
+        <Rectangle Classes="pin pin-exec" Classes.connected="{Binding IsConnected}" Width="16" Height="16" IsVisible="{Binding ShowRectangle}" />
+        <Ellipse Classes="pin" Classes.connected="{Binding IsConnected}" Width="16" Height="16" IsVisible="{Binding ShowCircle}">
+          <Interaction.Behaviors>
+            <edbehaviors:StyleClassBehavior ClassName="{Binding FamilyClass}" />
+          </Interaction.Behaviors>
         </Ellipse>
-        <Polygon Classes="pin" Points="0,0 13,7 0,14" StrokeThickness="1" IsVisible="{Binding ShowTriangle}">
-          <Polygon.Fill>
-            <MultiBinding Converter="{x:Static edgraph:PinFillConverter.Instance}">
-              <Binding Path="Kind" />
-              <Binding Path="IsDimmed" />
-            </MultiBinding>
-          </Polygon.Fill>
-        </Polygon>
+        <Path Classes="pin pin-type" Classes.connected="{Binding IsConnected}" Data="{DynamicResource Pin.TypeShape}" IsVisible="{Binding ShowTriangle}" />
         <!-- Default-value indicator -->
-        <Polygon Points="0,0 6,7 0,14" IsHitTestVisible="False" IsVisible="{Binding ShowDefaultValueIndicator}"
-                 Fill="{Binding IsDefaultValueActive, Converter={x:Static edgraph:DefaultValueBrushConverter.Instance}}" />
+        <Polygon Classes="defaultValue" Classes.inactive="{Binding !IsDefaultValueActive}" Points="0,0 6,7 0,14" IsHitTestVisible="False"
+                 IsVisible="{Binding ShowDefaultValueIndicator}" />
       </Panel>
     </ControlTemplate>
 
     <!-- Pin header: inline editors for unconnected inputs (PAR-44) and the (editable) name (PAR-45). -->
-    <DataTemplate x:Key="PinHeaderTemplate" x:DataType="edpins:NodePinVM">
+    <DataTemplate x:Key="PinHeaderTemplate" x:DataType="edpins:NodePinViewModel">
       <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+        <TextBlock Classes="pinHint" Text="{Binding SelfHint}" IsVisible="{Binding SelfHint, Converter={x:Static conv:ObjectConverters.IsNotNull}}" />
         <TextBox Classes="pinValue" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinValueText}" MinWidth="60" Text="{Binding UnconnectedText}" PlaceholderText="{Binding UnconnectedTextWatermark}"
                  IsVisible="{Binding ShowUnconnectedValue}" />
         <ComboBox Classes="pinValue" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinValueEnum}" ItemsSource="{Binding PossibleEnumNames}" SelectedItem="{Binding UnconnectedEnumName}"
                   IsVisible="{Binding ShowEnumValue}" />
         <CheckBox Classes="pinValue" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinValueCheck}" IsChecked="{Binding UnconnectedBool}" IsVisible="{Binding ShowBooleanValue}" />
-        <TextBlock AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinLabel}" Text="{Binding DisplayName}" IsVisible="{Binding ShowLabel}" FontSize="14" FontWeight="SemiBold"
+        <TextBlock AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinLabel}" Text="{Binding DisplayName}" Classes="pinLabel" IsVisible="{Binding ShowLabel}"
                    Foreground="{DynamicResource Node.TitleForeground}" VerticalAlignment="Center" />
-        <TextBox Classes="pinValue" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinLabel}" Text="{Binding Name}" IsVisible="{Binding ShowEditableName}" FontSize="14" FontWeight="SemiBold" MinWidth="60" />
+        <TextBox Classes="pinValue pinLabel" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinLabel}" Text="{Binding Name}" IsVisible="{Binding ShowEditableName}" MinWidth="60" />
       </StackPanel>
     </DataTemplate>
   </UserControl.Resources>
 
   <UserControl.Styles>
-    <Style Selector="Shape.pin:pointerover">
+    <Style Selector=":is(Shape).pin:pointerover">
       <Setter Property="Stroke" Value="{DynamicResource Pin.HoverStroke}" />
+    </Style>
+    <Style Selector="Panel.pinHitbox">
+      <Setter Property="RenderTransform" Value="scale(1.0)" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1" Easing="SineEaseOut" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Panel.pinHitbox > :is(Shape)">
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Panel.pinHitbox:pointerover">
+      <Setter Property="RenderTransform" Value="scale(1.3)" />
     </Style>
     <Style Selector="Border#NodeBorder">
       <Setter Property="MinWidth" Value="224" />
@@ -71,7 +71,7 @@
       <Setter Property="MinWidth" Value="56" />
     </Style>
     <Style Selector="Grid#PinArea">
-      <Setter Property="Margin" Value="10,10,10,5" />
+      <Setter Property="Margin" Value="12,12,12,12" />
     </Style>
     <Style Selector="Grid#PinArea.reroute">
       <Setter Property="Margin" Value="0" />
@@ -98,96 +98,90 @@
 
   <!-- Node (PAR-39..42): header colored by kind, selected border, shadow, label. -->
   <Border x:Name="NodeBorder" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Node}" AutomationProperties.Name="{Binding Name}" Classes.reroute="{Binding IsRerouteNode}"
-          BorderThickness="2" Background="{DynamicResource Node.CardBackground}" BoxShadow="{DynamicResource Node.CardShadow}"
-          BorderBrush="{Binding IsSelected, Converter={x:Static edgraph:SelectedBorderConverter.Instance}}">
+          Classes="nodeCard" Classes.selected="{Binding IsSelected}"
+          BorderThickness="2" Background="{DynamicResource Node.CardBackground}" CornerRadius="8">
     <StackPanel>
-      <Border x:Name="Header" Height="46" IsVisible="{Binding !IsRerouteNode}"
-              Background="{Binding VisualKind, Converter={x:Static edgraph:NodeKindBrushConverter.Instance}}">
-        <Grid ColumnDefinitions="Auto,Auto,*">
-          <!-- Overload chooser (PAR-40) -->
-          <ComboBox x:Name="Overloads" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeOverloads}" Margin="2" Width="24" ToolTip.Tip="Overloads" IsVisible="{Binding ShowOverloads}"
-                    ItemsSource="{Binding Overloads}" SelectedItem="{Binding SelectedOverload}" MaxDropDownHeight="400">
-            <ComboBox.ItemTemplate>
-              <DataTemplate x:DataType="x:Object">
-                <TextBlock Text="{Binding Converter={x:Static edsearch:MethodSpecifierConverter.Instance}}" />
-              </DataTemplate>
-            </ComboBox.ItemTemplate>
-          </ComboBox>
-          <TextBlock x:Name="NodeLabel" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLabel}" Grid.Column="1" Text="{Binding Label}" Margin="10" FontWeight="SemiBold" FontSize="18"
-                     Foreground="{DynamicResource Node.SubtitleForeground}" VerticalAlignment="Center" />
+      <Border x:Name="Header" Classes="nodeHeader" MinHeight="46" IsVisible="{Binding !IsRerouteNode}" CornerRadius="8,8,0,0" Padding="8,4">
+        <Interaction.Behaviors>
+          <edbehaviors:StyleClassBehavior ClassName="{Binding Role.StyleClass}" />
+        </Interaction.Behaviors>
+        <Grid ColumnDefinitions="Auto,Auto,Auto,*">
+          <icons:IconPresenter IconId="{Binding KindIconId}" VerticalAlignment="Center" AutomationProperties.AccessibilityView="Raw" />
+          <!-- Overloads button (PAR-40, FR-095): the flyout lists every overload. -->
+          <Button x:Name="OverloadsButton" Grid.Column="1" Classes="icon" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeOverloads}"
+                  AutomationProperties.Name="Overloads" ToolTip.Tip="{Binding OverloadsTooltip}" IsVisible="{Binding ShowOverloads}">
+            <icons:IconPresenter IconId="{x:Static icons:IconIds.Overloads}" AutomationProperties.AccessibilityView="Raw" />
+            <Interaction.Behaviors>
+              <edbehaviors:HideFlyoutOnPickBehavior Picker="{Binding OverloadPicker}" />
+            </Interaction.Behaviors>
+            <Button.Flyout>
+              <Flyout Placement="BottomEdgeAlignedLeft">
+                <ctl:MethodPickerList Width="{StaticResource Flyout.MethodPickerWidth}" DataContext="{Binding OverloadPicker}" />
+              </Flyout>
+            </Button.Flyout>
+          </Button>
+          <TextBlock x:Name="NodeLabel" Classes="nodeTitle" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLabel}" Grid.Column="2" Text="{Binding Label}" Margin="12,0"
+                     VerticalAlignment="Center" />
           <!-- Pure (PAR-41) -->
-          <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="10,0" HorizontalAlignment="Right" IsVisible="{Binding CanSetPure}">
-            <TextBlock Text="Pure" VerticalAlignment="Center" Margin="0,0,4,0" />
+          <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="12,0" HorizontalAlignment="Right" IsVisible="{Binding CanSetPure}">
+            <TextBlock Text="Pure" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,4,0" />
             <CheckBox IsChecked="{Binding IsPure}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodePure}" VerticalAlignment="Center" />
           </StackPanel>
         </Grid>
       </Border>
 
-      <!-- Pin rows (OWN-05b): both columns are still driven off the same NodeVM.PinRows list, one
-           entry per row, so row i's left pin and right pin are always the two halves of the same
-           PinRowVM and land at the same height (both ItemsControls stack fixed-Height="28" items in
-           lockstep) - unlike the old Inputs/Outputs columns, which drifted apart whenever one side had
-           an extra pin (Exec, a generic type parameter) the other side didn't. -->
-      <Grid x:Name="PinArea" Classes.reroute="{Binding IsRerouteNode}" ColumnDefinitions="*,*">
-        <StackPanel>
-          <ItemsControl x:Name="InputPins" ItemsSource="{Binding PinRows}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="ednodes:PinRowVM">
-                <!-- The Border always renders at a fixed height, so a row with no left pin still
-                     reserves its row's worth of space (an IsVisible="False" pin collapses to zero
-                     height on its own, which would pull every later row up and re-break the pairing
-                     this view exists to fix). -->
-                <Border Height="28">
-                  <nn:NodeInput x:DataType="edpins:NodePinVM" DataContext="{Binding Left}"
-                                IsVisible="{Binding Converter={x:Static conv:ObjectConverters.IsNotNull}}"
-                                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Pin}" AutomationProperties.Name="{Binding AutomationName}" Header="{Binding}" ToolTip.Tip="{Binding ToolTip}"
-                                HeaderTemplate="{StaticResource PinHeaderTemplate}"
-                                ConnectorTemplate="{StaticResource PinConnectorTemplate}"
-                                IsConnected="{Binding IsConnected}"
-                                Anchor="{Binding Anchor, Mode=OneWayToSource, Converter={x:Static edgraph:GraphPointConverter.Instance}}" />
-                </Border>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
+      <!-- Pin rows (OWN-05b): one PinRowViewModel per row, so its left and right pin share a row and stay level. -->
+      <Grid x:Name="PinArea" Classes.reroute="{Binding IsRerouteNode}" RowDefinitions="Auto,Auto">
+        <ItemsControl ItemsSource="{Binding PinRows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="ednodes:PinRowViewModel">
+              <Grid ColumnDefinitions="*,*" MinHeight="32">
+                <nn:NodeInput x:DataType="edpins:NodePinViewModel" DataContext="{Binding Left}" Theme="{StaticResource NetPrints.NodeInput}"
+                              IsVisible="{Binding Converter={x:Static conv:ObjectConverters.IsNotNull}}"
+                              AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Pin}" AutomationProperties.Name="{Binding AutomationName}" Header="{Binding}" ToolTip.Tip="{Binding ToolTip}"
+                              HeaderTemplate="{StaticResource PinHeaderTemplate}"
+                              ConnectorTemplate="{StaticResource PinConnectorTemplate}"
+                              IsConnected="{Binding IsConnected}"
+                              Anchor="{Binding Anchor, Mode=OneWayToSource, Converter={x:Static edgraph:GraphPointConverter.Instance}}">
+                  <Interaction.Behaviors>
+                    <edbehaviors:StyleClassBehavior ClassName="{Binding FamilyClass}" />
+                  </Interaction.Behaviors>
+                </nn:NodeInput>
+                <nn:NodeOutput Grid.Column="1" x:DataType="edpins:NodePinViewModel" DataContext="{Binding Right}" Theme="{StaticResource NetPrints.NodeOutput}"
+                               IsVisible="{Binding Converter={x:Static conv:ObjectConverters.IsNotNull}}"
+                               AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Pin}" AutomationProperties.Name="{Binding AutomationName}" Header="{Binding}" ToolTip.Tip="{Binding ToolTip}"
+                               HeaderTemplate="{StaticResource PinHeaderTemplate}"
+                               ConnectorTemplate="{StaticResource PinConnectorTemplate}"
+                               IsConnected="{Binding IsConnected}"
+                               Anchor="{Binding Anchor, Mode=OneWayToSource, Converter={x:Static edgraph:GraphPointConverter.Instance}}">
+                  <Interaction.Behaviors>
+                    <edbehaviors:StyleClassBehavior ClassName="{Binding FamilyClass}" />
+                  </Interaction.Behaviors>
+                </nn:NodeOutput>
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Grid Grid.Row="1" ColumnDefinitions="*,*">
           <!-- Left +/- (PAR-42) -->
           <StackPanel Orientation="Horizontal" IsVisible="{Binding ShowLeftPinButtons}">
             <Button Classes="icon" ToolTip.Tip="{Binding LeftPlusToolTip}" AutomationProperties.Name="{Binding LeftPlusToolTip}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLeftPlus}" Command="{Binding LeftPinsPlusCommand}">
-              <mi:MaterialIcon Kind="Plus" />
+              <icons:IconPresenter IconId="{x:Static icons:IconIds.Add}" />
             </Button>
             <Button Classes="icon" ToolTip.Tip="{Binding LeftMinusToolTip}" AutomationProperties.Name="{Binding LeftMinusToolTip}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLeftMinus}" Command="{Binding LeftPinsMinusCommand}">
-              <mi:MaterialIcon Kind="Minus" />
+              <icons:IconPresenter IconId="{x:Static icons:IconIds.Remove}" />
             </Button>
           </StackPanel>
-        </StackPanel>
-
-        <StackPanel Grid.Column="1">
-          <ItemsControl x:Name="OutputPins" ItemsSource="{Binding PinRows}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="ednodes:PinRowVM">
-                <!-- See the matching Border in InputPins above: reserves the row's height even when
-                     this row has no right pin. -->
-                <Border Height="28">
-                  <nn:NodeOutput x:DataType="edpins:NodePinVM" DataContext="{Binding Right}"
-                                 IsVisible="{Binding Converter={x:Static conv:ObjectConverters.IsNotNull}}"
-                                 AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Pin}" AutomationProperties.Name="{Binding AutomationName}" Header="{Binding}" ToolTip.Tip="{Binding ToolTip}"
-                                 HeaderTemplate="{StaticResource PinHeaderTemplate}"
-                                 ConnectorTemplate="{StaticResource PinConnectorTemplate}"
-                                 IsConnected="{Binding IsConnected}"
-                                 Anchor="{Binding Anchor, Mode=OneWayToSource, Converter={x:Static edgraph:GraphPointConverter.Instance}}" />
-                </Border>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
           <!-- Right +/- (PAR-42) -->
-          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" IsVisible="{Binding ShowRightPinButtons}">
+          <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" IsVisible="{Binding ShowRightPinButtons}">
             <Button Classes="icon" ToolTip.Tip="{Binding RightPlusToolTip}" AutomationProperties.Name="{Binding RightPlusToolTip}" Command="{Binding RightPinsPlusCommand}">
-              <mi:MaterialIcon Kind="Plus" />
+              <icons:IconPresenter IconId="{x:Static icons:IconIds.Add}" />
             </Button>
             <Button Classes="icon" ToolTip.Tip="{Binding RightMinusToolTip}" AutomationProperties.Name="{Binding RightMinusToolTip}" Command="{Binding RightPinsMinusCommand}">
-              <mi:MaterialIcon Kind="Minus" />
+              <icons:IconPresenter IconId="{x:Static icons:IconIds.Remove}" />
             </Button>
           </StackPanel>
-        </StackPanel>
+        </Grid>
       </Grid>
     </StackPanel>
   </Border>

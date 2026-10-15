@@ -92,9 +92,30 @@ internal static partial class Log
     [LoggerMessage(EventId = 1025, Level = LogLevel.Information, Message = "Host services disposed")]
     public static partial void HostServicesDisposed(ILogger logger);
 
+    /// <summary>Logs 1026: the exit confirmation threw; the application keeps running and the unsaved work stays.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="exception">The exception the confirmation threw.</param>
+    [LoggerMessage(EventId = 1026, Level = LogLevel.Error, Message = "The exit confirmation failed; the application keeps running")]
+    public static partial void ShutdownConfirmationFailed(ILogger logger, Exception exception);
+
+    /// <summary>Logs 1027: <c>NETPRINTS_AUTOMATION</c> was set and the automation agent could not start; the process exits.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="exception">The exception the agent's start threw.</param>
+    /// <param name="pipeName">Name of the pipe the agent was asked to listen on.</param>
+    [LoggerMessage(EventId = 1027, Level = LogLevel.Critical, Message = "Could not start the automation agent on '{PipeName}'")]
+    public static partial void AutomationAgentStartFailed(ILogger logger, Exception exception, string pipeName);
+
     /// <summary>Logs 1030: a fire-and-forget task passed to <see cref="TaskExtensions.Forget(Task, ILogger)"/> faulted.</summary>
     /// <param name="logger">Logger to write to.</param>
     /// <param name="exception">The task's (unwrapped) exception.</param>
     [LoggerMessage(EventId = 1030, Level = LogLevel.Error, Message = "Fire-and-forget task faulted")]
     public static partial void TaskFaulted(ILogger logger, Exception exception);
+
+    /// <summary>Logs 1041: <see cref="ProjectLoader.LoadProjectAsync"/> restored the previous project's
+    /// extensions after a failed load, and that restore itself failed. The original load failure is
+    /// still shown to the user.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="exception">The exception the rollback threw.</param>
+    [LoggerMessage(EventId = 1041, Level = LogLevel.Error, Message = "Restoring the previous project's extensions after a failed load also failed")]
+    public static partial void ExtensionRollbackFailed(ILogger logger, Exception exception);
 }

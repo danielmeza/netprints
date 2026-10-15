@@ -55,6 +55,30 @@ namespace NetPrints.Tests.Translator
         }
 
         [Fact]
+        public void IndexerSetterAssignsTheNewValueToTheIndexedElement()
+        {
+            var method = new MethodGraph("Main") { Visibility = MemberVisibility.Public };
+            var indexer = new VariableSpecifier("this[]", TypeSpecifier.FromType<int>(), MemberVisibility.Public,
+                MemberVisibility.Public, TypeSpecifier.FromType<System.Collections.Generic.List<int>>(), VariableModifiers.None);
+
+            var setter = new VariableSetterNode(method, indexer);
+            LiteralNode index = LiteralNode.WithValue(method, 7);
+            LiteralNode value = LiteralNode.WithValue(method, 5);
+            GraphUtil.ConnectDataPins(index.ValuePin, setter.IndexPin ?? throw new System.InvalidOperationException("No index pin."));
+            GraphUtil.ConnectDataPins(value.ValuePin, setter.NewValuePin);
+            GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, setter.InputExecPins[0]);
+            GraphUtil.ConnectExecPins(setter.OutputExecPins[0], method.ReturnNodes.First().ReturnPin);
+
+            var translator = new ExecutionGraphTranslator(TranslationEnvironment.BuiltIn);
+            string code = translator.Translate(method, true, []);
+
+            var assignment = System.Text.RegularExpressions.Regex.Match(code, @"this\[(\w+)\] = (\w+);");
+            Assert.True(assignment.Success, $"Expected an indexer assignment. Code:\n{code}");
+            Assert.Contains($"{assignment.Groups[1].Value} = 7;", code);
+            Assert.Contains($"{assignment.Groups[2].Value} = 5;", code);
+        }
+
+        [Fact]
         public void Npt004WhenALocalNameMatchesAParameter()
         {
             var method = new MethodGraph("Main") { Visibility = MemberVisibility.Public };

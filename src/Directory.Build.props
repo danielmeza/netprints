@@ -16,7 +16,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" PrivateAssets="all" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" />
   </ItemGroup>
-  <ItemGroup Condition="'$(MSBuildProjectName)' != 'NetPrintsVSIX' And '$(MSBuildProjectName)' != 'NetPrints.Cli' And '$(MSBuildProjectName)' != 'NetPrints.Desktop' And '$(MSBuildProjectName)' != 'NetPrints.Editor' And '$(MSBuildProjectName)' != 'NetPrints.Generator'">
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'NetPrintsVSIX' And '$(MSBuildProjectName)' != 'NetPrints.Cli' And '$(MSBuildProjectName)' != 'NetPrints.Desktop' And '$(MSBuildProjectName)' != 'NetPrints.Generator'">
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.Console.txt" />
   </ItemGroup>
 

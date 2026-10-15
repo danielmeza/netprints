@@ -96,17 +96,39 @@ public class UndoRedoStackTests
     }
 
     [Fact]
-    public void RemoveMethodHasNoOpUndo()
+    public void RemoveMethodUndoPutsTheMethodBackAtItsIndexAndRedoRemovesIt()
     {
         var cls = NewClass();
-        var method = new MethodGraph("M") { Class = cls };
-        cls.Methods.Add(method);
+        var first = new MethodGraph("First") { Class = cls };
+        var removed = new MethodGraph("M") { Class = cls };
+        var last = new MethodGraph("Last") { Class = cls };
+        cls.Methods.Add(first);
+        cls.Methods.Add(removed);
+        cls.Methods.Add(last);
         var stack = new UndoRedoStack();
 
-        stack.Do(EditorCommands.RemoveMethod(cls, method));
-        Assert.Empty(cls.Methods);
+        stack.Do(EditorCommands.RemoveMethod(cls, removed));
+        Assert.Equal([first, last], cls.Methods);
         Assert.True(stack.Undo());
-        Assert.Empty(cls.Methods);
+        Assert.Equal([first, removed, last], cls.Methods);
+        Assert.True(stack.Redo());
+        Assert.Equal([first, last], cls.Methods);
+    }
+
+    [Fact]
+    public void RemoveMethodUndoPutsAConstructorBackAtItsIndex()
+    {
+        var cls = NewClass();
+        var first = new ConstructorGraph { Class = cls };
+        var removed = new ConstructorGraph { Class = cls };
+        cls.Constructors.Add(first);
+        cls.Constructors.Add(removed);
+        var stack = new UndoRedoStack();
+
+        stack.Do(EditorCommands.RemoveMethod(cls, first));
+        Assert.Equal([removed], cls.Constructors);
+        Assert.True(stack.Undo());
+        Assert.Equal([first, removed], cls.Constructors);
     }
 
     [Fact]

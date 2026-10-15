@@ -586,7 +586,7 @@ public sealed class MsBuildProjectSystem : IProjectSystem
     {
         if (kind is DeclaredReferenceKind.Package or DeclaredReferenceKind.Project)
         {
-            throw new ArgumentException($"A {kind} reference is not editable in P1 and cannot be removed.", nameof(kind));
+            throw new ArgumentException($"A {kind} reference cannot be removed here.", nameof(kind));
         }
 
         string matchInclude = kind == DeclaredReferenceKind.SourceDirectory ? SourceDirectoryGlob(projectDirectory, include) : include;

@@ -1,7 +1,8 @@
 using Avalonia.Headless.XUnit;
 using NetPrints.Core;
-using NetPrints.Editor.UITests.ClassEditor;
+using NetPrints.Editor.UITests.Shell;
 using NetPrints.Graph;
+using NetPrints.Testing.Ui.Shell;
 
 namespace NetPrints.Editor.UITests.Graph;
 
@@ -14,8 +15,8 @@ public class EditFlowTests
     public async Task CreateIfElseConnectSaveAndReload()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var method = (MethodGraph)session.GraphVM.Graph;
-        session.GraphVM.Nodes.Single(n => n.Node == method.EntryNode).OutputExecPins.Single().DisconnectAll();
+        var method = (MethodGraph)session.GraphViewModel.Graph;
+        session.GraphViewModel.Nodes.Single(n => n.Node == method.EntryNode).OutputExecPins.Single().DisconnectAll();
         await session.WaitForRenderedAsync(Token);
 
         var search = await (await session.Graph.RightClickEmptyAsync(Token)).WaitOpenAsync(Token);
@@ -29,7 +30,7 @@ public class EditFlowTests
         double x = method.Nodes.OfType<IfElseNode>().Single().PositionX;
 
         var before = LastWrite(session.Sample.Directory);
-        await session.ClassEditor.SaveButton.ClickAsync(Token);
+        await session.Page.Menu.InvokeAsync("File", ShellCommands.Save, Token);
         await Testing.Ui.Driving.UiWait.UntilAsync(session.Driver, () => Task.FromResult(LastWrite(session.Sample.Directory) > before), "saved", Token);
 
         var reloaded = (await session.App.Composition.Context.Persistence.LoadAsync(session.Sample.ProjectPath, Token)).Project;

@@ -2,8 +2,10 @@ using System.Collections.ObjectModel;
 using System.Text.Json;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
-using NetPrints.Editor.Main;
+using NetPrints.Editor.Shell;
+using NetPrints.Editor.Tests.Shell;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Projects;
 using NetPrints.Reflection;
@@ -21,7 +23,8 @@ public sealed class HostChannelBridgeTests : IDisposable
     private readonly InMemoryHostChannel host;
     private readonly SpyReflectionHost reflection;
     private readonly TestEditor editor;
-    private readonly MainEditorVM vm;
+    private readonly ProjectRig rig;
+    private readonly FakeShell shell = new();
     private readonly string csproj = TestPaths.CopyHelloWorldSample();
 
     public HostChannelBridgeTests(IReflectionHost sharedReflection)
@@ -29,13 +32,24 @@ public sealed class HostChannelBridgeTests : IDisposable
         (InMemoryHostChannel editorEnd, host) = InMemoryHostChannel.CreatePair("test");
         reflection = new SpyReflectionHost(sharedReflection);
         editor = TestEditor.Create(_ => reflection, hostChannel: editorEnd);
-        vm = new MainEditorVM(editor.Context);
+        rig = new ProjectRig(editor.Context);
+        rig.Actions.Api = shell;
+        shell.Opened = OpenGraphDocument;
     }
 
     public void Dispose()
     {
-        vm.OnMainWindowClosed();
+        rig.Dispose();
         TestPaths.TryDelete(csproj);
+    }
+
+    // What the shell host's document factory does for a graph document.
+    private void OpenGraphDocument(DocumentId id)
+    {
+        ProjectSessionViewModel session = rig.Session ?? throw new InvalidOperationException("No session.");
+        NodeGraph graph = CommandTargets.GraphOf(session, id) ?? throw new InvalidOperationException("No graph.");
+        ClassGraph cls = graph as ClassGraph ?? graph.Class ?? throw new InvalidOperationException("No class.");
+        rig.Shell.AddDocument(new GraphDocumentViewModel(id, new NodeGraphViewModel(graph, session.ContextFor(cls).Services), cls, session));
     }
 
     private static HostMessage FocusMessage(string path) =>
@@ -44,24 +58,25 @@ public sealed class HostChannelBridgeTests : IDisposable
     [Fact]
     public async Task TypesChangedReloadsTheReflectionProviderOnce()
     {
-        await vm.LoadProjectAsync(csproj);
+        await rig.LoadProjectAsync(csproj);
         int before = reflection.Reloads;
 
         await host.SendAsync(new HostMessage(HostMessageTypes.TypesChanged, NoPayload), TestContext.Current.CancellationToken);
 
+        await reflection.WhenReloadsReach(before + 1).WaitAsync(TimeSpan.FromSeconds(30), TestContext.Current.CancellationToken);
         Assert.Equal(before + 1, reflection.Reloads);
     }
 
     [Fact]
     public async Task AnUnknownMessageTypeIsIgnored()
     {
-        await vm.LoadProjectAsync(csproj);
+        await rig.LoadProjectAsync(csproj);
         int before = reflection.Reloads;
 
         await host.SendAsync(new HostMessage("acme.something-else", NoPayload), TestContext.Current.CancellationToken);
 
         Assert.Equal(before, reflection.Reloads);
-        Assert.Empty(editor.Windows.Open);
+        Assert.Empty(shell.Calls);
         Assert.Empty(editor.Dialogs.Errors);
     }
 
@@ -74,54 +89,54 @@ public sealed class HostChannelBridgeTests : IDisposable
     }
 
     [Fact]
-    public async Task FocusDocumentOpensTheClassAndActivatesItTheSecondTime()
+    public async Task FocusDocumentOpensTheClassGraphAndOpensItAgainTheSecondTime()
     {
-        await vm.LoadProjectAsync(csproj);
+        await rig.LoadProjectAsync(csproj);
+        ClassGraph cls = Assert.Single(rig.Project?.Classes ?? []);
         string graphPath = Path.Combine(Path.GetDirectoryName(csproj) ?? "", "HelloWorld.Program.netpc.json");
+        DocumentId expected = CommandTargets.GraphDocumentOf(rig.Session ?? throw new InvalidOperationException("No session."), cls)
+            ?? throw new InvalidOperationException("No document id.");
 
         await host.SendAsync(FocusMessage("HelloWorld.Program.netpc.json"), TestContext.Current.CancellationToken);
-        ClassGraph opened = Assert.Single(editor.Windows.Open.Keys);
-        Assert.Equal("HelloWorld.Program", opened.FullName);
+        Assert.Equal([$"OpenDocument:{expected}"], shell.Calls);
 
         await host.SendAsync(FocusMessage(graphPath), TestContext.Current.CancellationToken);
-        Assert.Single(editor.Windows.Open);
-        Assert.Same(opened, Assert.Single(editor.Windows.Activated));
+        Assert.Equal([$"OpenDocument:{expected}", $"OpenDocument:{expected}"], shell.Calls);
+        Assert.Single(rig.Shell.Documents);
     }
 
     [Fact]
-    public async Task FocusDocumentWithANodeIdNavigatesToTheNode()
+    public async Task FocusDocumentWithANodeIdRevealsTheNode()
     {
         // R2-21: HelloWorld.Program's return node is "n000000000vny2" (see ExtensionPersistenceTests).
-        await vm.LoadProjectAsync(csproj);
+        await rig.LoadProjectAsync(csproj);
 
         await host.SendAsync(new HostMessage(HostMessageTypes.FocusDocument,
             JsonSerializer.SerializeToElement(new { path = "HelloWorld.Program.netpc.json", nodeId = "n000000000vny2" })),
             TestContext.Current.CancellationToken);
 
-        ClassGraph opened = Assert.Single(editor.Windows.Open.Keys);
-        ClassEditorVM classEditor = editor.Windows.Open[opened];
-        Assert.NotNull(classEditor.OpenedGraph);
-        var revealed = Assert.Single(classEditor.OpenedGraph.SelectedNodes);
+        var document = Assert.IsType<GraphDocumentViewModel>(Assert.Single(rig.Shell.Documents));
+        var revealed = Assert.Single(document.Graph.SelectedNodes);
         Assert.Equal("n000000000vny2", revealed.Node.Id);
     }
 
     [Fact]
     public async Task FocusDocumentForAnUnknownPathOrWithoutOneIsIgnored()
     {
-        await vm.LoadProjectAsync(csproj);
+        await rig.LoadProjectAsync(csproj);
 
         await host.SendAsync(FocusMessage("Nowhere.netpc.json"), TestContext.Current.CancellationToken);
         await host.SendAsync(new HostMessage(HostMessageTypes.FocusDocument, NoPayload), TestContext.Current.CancellationToken);
 
-        Assert.Empty(editor.Windows.Open);
+        Assert.Empty(shell.Calls);
         Assert.Empty(editor.Dialogs.Errors);
     }
 
     [Fact]
-    public async Task ClosingTheMainWindowStopsListening()
+    public async Task DisposingTheActionsStopsListening()
     {
-        await vm.LoadProjectAsync(csproj);
-        vm.OnMainWindowClosed();
+        await rig.LoadProjectAsync(csproj);
+        rig.Dispose();
         int before = reflection.Reloads;
 
         await host.SendAsync(new HostMessage(HostMessageTypes.TypesChanged, NoPayload), TestContext.Current.CancellationToken);
@@ -140,7 +155,26 @@ public sealed class HostChannelBridgeTests : IDisposable
     /// <summary>Counts reloads without doing them; every other member is the loaded shared host's.</summary>
     private sealed class SpyReflectionHost(IReflectionHost inner) : IReflectionHost
     {
+        private readonly object gate = new();
+        private readonly List<(int Count, TaskCompletionSource Done)> waiters = [];
+
         public int Reloads { get; private set; }
+
+        /// <summary>Completes once the provider has been reloaded <paramref name="count"/> times in all: a reload waits for the one it cancels, so it does not run before the message handler returns.</summary>
+        public Task WhenReloadsReach(int count)
+        {
+            lock (gate)
+            {
+                if (Reloads >= count)
+                {
+                    return Task.CompletedTask;
+                }
+
+                var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                waiters.Add((count, done));
+                return done.Task;
+            }
+        }
 
         public bool IsLoaded => inner.IsLoaded;
 
@@ -162,7 +196,21 @@ public sealed class HostChannelBridgeTests : IDisposable
 
         public Task ReloadAsync(Project project, CancellationToken cancellationToken = default)
         {
-            Reloads++;
+            lock (gate)
+            {
+                Reloads++;
+                waiters.RemoveAll(waiter =>
+                {
+                    bool reached = Reloads >= waiter.Count;
+                    if (reached)
+                    {
+                        waiter.Done.TrySetResult();
+                    }
+
+                    return reached;
+                });
+            }
+
             return Task.CompletedTask;
         }
     }

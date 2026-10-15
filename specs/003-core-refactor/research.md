@@ -26,7 +26,7 @@
 
 Owner rule for this phase: **reuse, don't reinvent**. §1 lists every decision taken from existing
 sources. §2 records the research done only for questions those sources left open. Spikes ran on Linux
-with SDK 10.0.400 in the session scratchpad (`p1spike/`, `aespike/`), outside the repository. Package
+with SDK 10.0.400 in a session scratch folder (`p1spike/`, `aespike/`), outside the repository. Package
 versions were checked against the nuget.org flat-container and registration APIs on 2026-09-25.
 
 Abbreviations: **Plan** = the plan page (`.agent-archive/2026-09-25-session-c18f4e98/netprints-unreal-plan.html`);
@@ -288,7 +288,7 @@ RoslynPad.Editor.Avalonia 5.0.0 (R4), McMaster.NETCore.Plugins 2.0.0 (R8).
 
 ## 5. Revision: the project is an SDK-style `.csproj` (research R11–R16)
 
-Spikes in the session scratchpad: `sdkspike/` (props/targets + an `Exec`'d net10.0 generator, built
+Spikes in a session scratch folder: `sdkspike/` (props/targets + an `Exec`'d net10.0 generator, built
 with SDK 10.0.400) and `wsspike/` (Microsoft.Build.Locator + MSBuildWorkspace opening that project).
 
 ### R11. Package shape: PackageReference with `build/` props+targets
@@ -322,7 +322,7 @@ only, `BeforeTargets="CoreCompile"`. No MSBuild task assembly.
   and extension assemblies.
 - `Exec` only spawns a process, so it behaves the same in `dotnet build`, `msbuild.exe` (VS 2022/2026)
   and Rider. `DOTNET_HOST_PATH` is set by the .NET SDK for every SDK-style build (verified:
-  `/home/…/.dotnet/dotnet` from `dotnet msbuild -getProperty:DOTNET_HOST_PATH`).
+  `~/.dotnet/dotnet` from `dotnet msbuild -getProperty:DOTNET_HOST_PATH`).
 - Spike results (`sdkspike/`): first build generates both graphs and compiles them; second build logs
   *Skipping target "NetPrintsGenerate" because all output files are up-to-date*; touching one graph logs
   *Building target "NetPrintsGenerate" partially* and regenerates only that file. Found during the spike:

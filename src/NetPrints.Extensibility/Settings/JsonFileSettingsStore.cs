@@ -63,7 +63,7 @@ public sealed class JsonFileSettingsStore : ISettingsStore
 
     /// <summary>
     /// The per-user settings file: <c>NetPrints/settings.json</c> under the application-data folder
-    /// (<c>$XDG_CONFIG_HOME</c> or <c>~/.config</c> on Linux and macOS, <c>%APPDATA%</c> on Windows).
+    /// (<c>$XDG_CONFIG_HOME</c> or <c>~/.config</c> on Linux, <c>~/Library/Application Support</c> on macOS, <c>%APPDATA%</c> on Windows).
     /// </summary>
     /// <returns>The full path.</returns>
     public static string DefaultFilePath() =>

@@ -1,7 +1,7 @@
 using Avalonia.Headless.XUnit;
 using NetPrints.Core;
 using NetPrints.Editor.Graph;
-using NetPrints.Editor.UITests.ClassEditor;
+using NetPrints.Editor.UITests.Shell;
 using NetPrints.Graph;
 using NetPrints.Testing.Ui.Driving;
 
@@ -38,7 +38,7 @@ public class CanvasPopupPositioningTests
     public async Task ReleasingACableOnEmptyCanvasOpensSearchAtTheDropPoint()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var write = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode);
+        var write = session.GraphViewModel.Nodes.Single(n => n.Node is CallMethodNode);
         var execOut = write.OutputExecPins.First(p => p.Pin.Name != "Catch");
         var at = await session.Graph.EmptyPointAsync(Token, UnclampedDx, UnclampedDy);
 
@@ -54,18 +54,18 @@ public class CanvasPopupPositioningTests
     public async Task PickingAPropertyFromMemberSearchAnchorsGetSetAtTheClickPoint()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var cls = session.GraphVM.Graph.Class ?? throw new InvalidOperationException("Main has no class.");
-        var variable = new Variable(cls, "V", TypeSpecifier.FromType<Version>(), null, null, VariableModifiers.None);
+        var cls = session.GraphViewModel.Graph.Class ?? throw new InvalidOperationException("Main has no class.");
+        var variable = new Variable(cls, "V", TypeSpecifier.FromType<System.Text.StringBuilder>(), null, null, VariableModifiers.None);
         cls.Variables.Add(variable);
-        session.GraphVM.AddNode<VariableGetterNode>(new GraphPoint(400, 100), null, variable.Specifier);
+        session.GraphViewModel.AddNode<VariableGetterNode>(new GraphPoint(400, 100), null, variable.Specifier);
         await session.WaitForRenderedAsync(Token);
 
         // Drag from the object pin to empty canvas: opens the member search for its type (owner-reported bug).
         var dropPoint = await session.Graph.EmptyPointAsync(Token, UnclampedDx, UnclampedDy);
-        await session.Graph.Node("VariableGetterNode").Output("Version").DragCableToAsync(dropPoint, Token);
+        await session.Graph.Node("VariableGetterNode").Output("StringBuilder").DragCableToAsync(dropPoint, Token);
         var search = await session.Graph.Search.WaitOpenAsync(Token);
 
-        string rowText = await search.FilterAsync("major", t => t.Contains("Major", StringComparison.Ordinal), Token);
+        string rowText = await search.FilterAsync("capacity", t => t.Contains("Capacity", StringComparison.Ordinal), Token);
         var rowCenter = await search.Row(rowText).CenterAsync(Token);
 
         await search.ChooseAsync(rowText, Token);
@@ -82,7 +82,9 @@ public class CanvasPopupPositioningTests
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var editorBounds = (await session.Graph.GetAsync(Token)).Bounds;
 
-        // No selection: falls back to the canvas center.
+        await session.PickMainFromTheTreeAsync(Token);
+
+        // No selection: falls back to the canvas center; no click, the opened graph has the focus.
         await session.Driver.PressAsync("Ctrl+Space", Token);
         var search = await session.Graph.Search.WaitOpenAsync(Token);
         var centerBounds = (await search.View.GetAsync(Token)).Bounds;
@@ -95,7 +97,7 @@ public class CanvasPopupPositioningTests
         // A node selected: falls back to its position.
         var node = session.Graph.Node("CallMethodNode");
         await node.SelectAsync(Token);
-        var nodeLocation = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode).Location;
+        var nodeLocation = session.GraphViewModel.Nodes.Single(n => n.Node is CallMethodNode).Location;
 
         await session.Driver.PressAsync("Ctrl+Space", Token);
         await search.WaitOpenAsync(Token);
@@ -109,7 +111,7 @@ public class CanvasPopupPositioningTests
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var editorBounds = (await session.Graph.GetAsync(Token)).Bounds;
-        var clientSize = session.ClassWindow.ClientSize;
+        var clientSize = session.Window.ClientSize;
         var at = await session.Graph.OffsetAsync(editorBounds.Width - 10, editorBounds.Height - 10, Token);
 
         await session.Driver.ClickAsync(at, UiButton.Right, 1, Token);

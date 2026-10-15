@@ -1,50 +1,48 @@
-using NetPrints.Testing.Ui.Driving;
-
 namespace NetPrints.Testing.Ui.Screenplay;
 
-/// <summary>The build status line of a class window ("Build succeeded", "Build failed with …").</summary>
-public sealed class TheBuildStatus(string classFullName) : IQuestion<string>
+/// <summary>The last build result line of the Output panel ("Build succeeded", "Build failed with …").</summary>
+public sealed class TheBuildStatus : IQuestion<string>
 {
     public string Description => "the build status";
 
-    public static TheBuildStatus In(string classFullName) => new(classFullName);
+    public static TheBuildStatus Now() => new();
 
     public async Task<string> AnsweredByAsync(Actor actor, CancellationToken cancellationToken) =>
-        await actor.Using<UseNetPrints>().ClassEditor(classFullName).StatusText.TextAsync(cancellationToken) ?? "";
+        await actor.Using<UseNetPrints>().Shell.Bottom.BuildResultAsync(cancellationToken) ?? "";
 }
 
-/// <summary>The names of the nodes on the open graph of a class window.</summary>
-public sealed class TheNodes(string classFullName) : IQuestion<IReadOnlyList<string>>
+/// <summary>The names of the nodes on the open graph.</summary>
+public sealed class TheNodes : IQuestion<IReadOnlyList<string>>
 {
     public string Description => "the nodes on the canvas";
 
-    public static TheNodes In(string classFullName) => new(classFullName);
+    public static TheNodes OnTheCanvas() => new();
 
     public async Task<IReadOnlyList<string>> AnsweredByAsync(Actor actor, CancellationToken cancellationToken) =>
-        await actor.Using<UseNetPrints>().ClassEditor(classFullName).Graph.NodeNamesAsync(cancellationToken);
+        await actor.Using<UseNetPrints>().Shell.Graph.NodeNamesAsync(cancellationToken);
 }
 
-/// <summary>The number of nodes on the open graph of a class window.</summary>
-public sealed class TheNodeCount(string classFullName) : IQuestion<int>
+/// <summary>The number of nodes on the open graph.</summary>
+public sealed class TheNodeCount : IQuestion<int>
 {
     public string Description => "the number of nodes on the canvas";
 
-    public static TheNodeCount In(string classFullName) => new(classFullName);
+    public static TheNodeCount OnTheCanvas() => new();
 
     public async Task<int> AnsweredByAsync(Actor actor, CancellationToken cancellationToken) =>
-        await actor.Using<UseNetPrints>().ClassEditor(classFullName).Graph.NodeCountAsync(cancellationToken);
+        await actor.Using<UseNetPrints>().Shell.Graph.NodeCountAsync(cancellationToken);
 }
 
 /// <summary>
-/// What the started program wrote, once the class window's Output tab contains
-/// <paramref name="expected"/> (or the wait times out).
+/// What the started program wrote, once the Output panel contains <paramref name="expected"/> (or
+/// the wait times out): the panel's lines joined by new lines.
 /// </summary>
-public sealed class TheProgramOutput(string classFullName, string expected) : IQuestion<string>
+public sealed class TheProgramOutput(string expected) : IQuestion<string>
 {
     public string Description => "the program's output";
 
-    public static TheProgramOutput In(string classFullName, string expected) => new(classFullName, expected);
+    public static TheProgramOutput Containing(string expected) => new(expected);
 
     public async Task<string> AnsweredByAsync(Actor actor, CancellationToken cancellationToken) =>
-        await actor.Using<UseNetPrints>().ClassEditor(classFullName).WaitForOutputContainingAsync(expected, cancellationToken);
+        string.Join('\n', await actor.Using<UseNetPrints>().Shell.Bottom.WaitForOutputContainingAsync(expected, cancellationToken));
 }

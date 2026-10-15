@@ -7,13 +7,15 @@ namespace NetPrints.Editor.Hosting;
 /// Coalesces repeated <c>ShutdownRequested</c> events into a single cleanup pass: the first
 /// request cancels and starts cleanup, later requests made while cleanup is running cancel and
 /// reuse that same task, and once cleanup has finished a request passes through so the process
-/// can exit.
+/// can exit. With a confirmation, cleanup starts only when it is accepted; a declined one, or one that throws, keeps the
+/// application running and the next request asks again.
 /// </summary>
 public sealed class ShutdownCoordinator
 {
     private readonly Func<ValueTask> cleanUpAsync;
     private readonly Action shutdown;
     private readonly ILogger logger;
+    private readonly Func<Task<bool>>? confirmAsync;
     private bool cleanedUp;
     private Task? cleanup;
 
@@ -24,7 +26,8 @@ public sealed class ShutdownCoordinator
     /// <param name="cleanUpAsync">Disposes host services and any other per-run cleanup.</param>
     /// <param name="shutdown">Lets shutdown proceed once cleanup has finished.</param>
     /// <param name="logger">Logger for a cleanup failure (<see cref="Log.ShutdownCleanupFailed"/>).</param>
-    public ShutdownCoordinator(Func<ValueTask> cleanUpAsync, Action shutdown, ILogger logger)
+    /// <param name="confirmAsync">Asked before cleanup starts; returns <see langword="false"/> to keep the application running. Null asks nothing.</param>
+    public ShutdownCoordinator(Func<ValueTask> cleanUpAsync, Action shutdown, ILogger logger, Func<Task<bool>>? confirmAsync = null)
     {
         ArgumentNullException.ThrowIfNull(cleanUpAsync);
         ArgumentNullException.ThrowIfNull(shutdown);
@@ -33,6 +36,7 @@ public sealed class ShutdownCoordinator
         this.cleanUpAsync = cleanUpAsync;
         this.shutdown = shutdown;
         this.logger = logger;
+        this.confirmAsync = confirmAsync;
     }
 
     /// <summary>
@@ -48,7 +52,32 @@ public sealed class ShutdownCoordinator
         }
 
         e.Cancel = true;
-        cleanup ??= CleanUpAndShutdownAsync();
+        if (cleanup is not { IsCompleted: false })
+        {
+            cleanup = ConfirmCleanUpAndShutdownAsync();
+        }
+    }
+
+    private async Task ConfirmCleanUpAndShutdownAsync()
+    {
+        if (confirmAsync is not null)
+        {
+            try
+            {
+                if (!await confirmAsync())
+                {
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Fail safe: exiting without the answer could lose unsaved work, so the next request asks again.
+                Log.ShutdownConfirmationFailed(logger, ex);
+                return;
+            }
+        }
+
+        await CleanUpAndShutdownAsync();
     }
 
     private async Task CleanUpAndShutdownAsync()

@@ -338,11 +338,17 @@ public sealed class JsonFileSettingsStore : ISettingsStore
 // ProjectSnapshot.GetProperty(name) (project-system.md §4). No NetPrints-specific project settings file exists.
 ```
 
-File layout: `{ "schemaVersion": 1, "netprints": { "extensionPaths": [], "trustedProjects": [] }, "extensions": { "<id>": { … } } }`
+File layout: `{ "schemaVersion": 1, "netprints": { "enableAnimations": true, "extensionPaths": [], "trustedProjects": [] }, "extensions": { "<id>": { … } } }`
 (ordinal-sorted; UTF-8 without BOM, 2-space STJ `WriteIndented`, `\n` line endings and a final `\n` as in
 document-format.md §1.1; the graph-only rules — `$schema`, inline records, ids — do not apply). `netprints` is the built-in
 section (`NetPrintsSettings` record: `ExtensionPaths`, `TrustedProjects` = full `.csproj` paths whose
-`NetPrintsExtension` items the user allowed).
+`NetPrintsExtension` items the user allowed, `EnableAnimations`).
+
+| Key (`netprints.*`) | Type | Default | Meaning |
+|---|---|---|---|
+| `enableAnimations` | bool | `true` | When `false`, the editor removes every control transition at start-up (reduced motion). Read once, so a change applies on the next start. |
+| `extensionPaths` | string[] | `[]` | Directories searched for extensions. |
+| `trustedProjects` | string[] | `[]` | Full `.csproj` paths whose `NetPrintsExtension` items the user allowed. |
 
 | Rule | Contract |
 |---|---|

@@ -11,9 +11,13 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Logging;
 using Avalonia.Media;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
+using NetPrints.Desktop.Logging;
 using NetPrints.Editor;
 using NetPrints.Editor.Hosting;
+using NetPrints.Editor.State;
 using NetPrints.Extensibility;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
@@ -38,8 +42,17 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
-        var (factory, explicitLogLevel) = CreateLoggerFactory();
+        using SessionLog? session = args is [CheckProjectArgument, ..]
+            ? null
+            : SessionLog.Start(EditorDataPaths.Resolve().LogDirectory, TimeProvider.System, Environment.ProcessId, SessionLog.DefaultRetainedSessions);
+        var (factory, explicitLogLevel) = CreateLoggerFactory(session);
         using ILoggerFactory loggerFactory = factory;
+        if (session is not null)
+        {
+            AppDomain.CurrentDomain.UnhandledException +=
+                new CrashHandler(loggerFactory.CreateLogger<CrashHandler>(), session, CrashHandler.DefaultFlushTimeout).Handle;
+        }
+
         Logger.Sink = new AvaloniaLogSink(loggerFactory, explicitLogLevel);
 
         // Must run before any Microsoft.Build-namespace type is loaded (project-system.md §4).
@@ -58,8 +71,8 @@ internal static class Program
         EditorApp.HostServices = new EditorHostServices(loggerFactory, extensions, settings, channel.Channel, channel.Error, msBuildAvailable,
             async () =>
             {
-                await extensions.DisposeAsync().ConfigureAwait(false);
-                await channel.Channel.DisposeAsync().ConfigureAwait(false);
+                await extensions.DisposeAsync();
+                await channel.Channel.DisposeAsync();
             });
 
         // EditorApp's ShutdownRequested handler awaits HostServices.DisposeAsync() before the app exits.
@@ -168,7 +181,7 @@ internal static class Program
     /// <see cref="AvaloniaLogSink"/> knows whether to floor its own chatty areas to
     /// <see cref="LogLevel.Warning"/>.
     /// </summary>
-    private static (ILoggerFactory Factory, LogLevel? ExplicitMinimumLevel) CreateLoggerFactory()
+    private static (ILoggerFactory Factory, LogLevel? ExplicitMinimumLevel) CreateLoggerFactory(SessionLog? session)
     {
         LogLevel minimumLevel = LogLevel.Information;
         string? levelName = Environment.GetEnvironmentVariable("NETPRINTS_LOG_LEVEL");
@@ -179,8 +192,23 @@ internal static class Program
             explicitLevel = overridden;
         }
 
-        ILoggerFactory factory = LoggerFactory.Create(builder => builder.AddSimpleConsole().SetMinimumLevel(minimumLevel));
+        ILoggerFactory factory = session is null
+            ? LoggerFactory.Create(builder => AddConsole(builder).SetMinimumLevel(minimumLevel))
+            : session.CreateLoggerFactory(minimumLevel, builder => AddConsole(builder));
         return (factory, explicitLevel);
+    }
+
+    /// <summary>
+    /// Adds the simple console logger. Lines at <see cref="LogLevel.Error"/> and above go to stderr, which is all
+    /// <c>EditorProcess.ConnectOrFailFastAsync</c> shows of a failed start (ADR-0033 decision 8); the rest stays on stdout.
+    /// </summary>
+    /// <param name="builder">The builder to add the provider to.</param>
+    /// <returns><paramref name="builder"/>.</returns>
+    internal static ILoggingBuilder AddConsole(ILoggingBuilder builder)
+    {
+        builder.AddSimpleConsole();
+        builder.Services.Configure<ConsoleLoggerOptions>(options => options.LogToStandardErrorThreshold = LogLevel.Error);
+        return builder;
     }
 
     /// <summary>

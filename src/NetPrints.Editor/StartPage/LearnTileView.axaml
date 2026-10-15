@@ -1,0 +1,50 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:sp="clr-namespace:NetPrints.Editor.StartPage"
+             x:Class="NetPrints.Editor.StartPage.LearnTileView"
+             x:DataType="sp:LearnTileViewModel">
+  <UserControl.Styles>
+    <Style Selector="Button.link">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
+      <Setter Property="CornerRadius" Value="16" />
+      <Setter Property="Padding" Value="12,6" />
+      <Setter Property="Margin" Value="0,0,8,8" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <BrushTransition Property="Background" Duration="0:0:0.15" />
+          <BrushTransition Property="BorderBrush" Duration="0:0:0.15" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Button.link:pointerover">
+      <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListLowBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightListMediumBrush}" />
+    </Style>
+  </UserControl.Styles>
+  <!-- The Learn card: the guide, the keyboard shortcuts sheet, the documentation and the release notes. -->
+  <Border Classes="card" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageLearn}">
+    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+      <Border Classes="card-icon"><icons:IconPresenter IconId="{x:Static icons:IconIds.CardLearn}" /></Border>
+      <StackPanel Grid.Column="1" Spacing="12">
+        <StackPanel>
+          <TextBlock FontWeight="SemiBold" Text="Learn" />
+          <TextBlock Classes="secondary" TextWrapping="Wrap" Text="Guides, shortcuts and what changed." />
+        </StackPanel>
+        <WrapPanel>
+          <Button Classes="link" Content="Getting started guide" Command="{Binding OpenGuideCommand}"
+                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageLearnGuide}" />
+          <Button Classes="link" Content="Keyboard shortcuts" Command="{Binding ShowKeyboardShortcutsCommand}"
+                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageLearnShortcuts}" />
+          <Button Classes="link" Content="Documentation" Command="{Binding OpenDocumentationCommand}"
+                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageLearnDocs}" />
+          <Button Classes="link" Content="Release notes" Command="{Binding OpenReleaseNotesCommand}"
+                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageReleasesLink}" />
+        </WrapPanel>
+      </StackPanel>
+    </Grid>
+  </Border>
+</UserControl>

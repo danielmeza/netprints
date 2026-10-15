@@ -1,6 +1,13 @@
 <!--
 Sync Impact Report
-- Version change: 1.2.2 → 1.2.3 (PATCH, owner-approved 2026-09-26): legacy DataContract XML is no longer
+- Version change: 1.2.3 → 1.2.4 (PATCH, 2026-10-01; proposed in `specs/005-editor-shell/plan.md` Complexity
+  Tracking, applied by P3a batch S2 on the coordinator's instruction, owner confirmation on PR #12): Development
+  Workflow lets other workflows add path-filtered Windows or macOS legs that extend `CI` for a component (first:
+  the CLI on Windows, `cli-windows.yml`, ADR-0019); they never replace the Linux `CI` gate. The VS extension
+  workflow (P4) becomes one such leg instead of the single exception.
+- Affected specs: `specs/005-editor-shell` (plan.md Complexity Tracking, contracts/ci.md §2).
+- Templates: no template edits required.
+- Previous: 1.2.2 → 1.2.3 (PATCH, owner-approved 2026-09-26): legacy DataContract XML is no longer
   read at all; the repo's own legacy files are migrated once in P1 and the legacy code is removed.
 - Previous: 1.2.1 → 1.2.2 (PATCH, owner-approved 2026-09-25): release packaging workflows may
   use macOS/Windows runners; main CI stays Linux-only.
@@ -108,8 +115,10 @@ dead dependencies rather than carrying them forward.
   the PR is merged.
 - Main CI is the Linux-only GitHub Actions workflow named `CI` (`.github/workflows/ci.yml`,
   ubuntu-latest). It builds the whole solution and runs all tests headless, and MUST pass
-  before merge. The single exception is the VS extension: when P4 resumes it gets its own
-  Windows workflow chained after `CI` via `workflow_run`, path-filtered.
+  before merge. Other workflows may add Windows or macOS legs that extend `CI` for a component,
+  path-filtered (for example the CLI on Windows, `cli-windows.yml`); they never replace the Linux
+  `CI` gate. The VS extension is one such leg: when P4 resumes it gets its own Windows workflow
+  chained after `CI` via `workflow_run`, path-filtered.
 - Release packaging workflows (e.g. `release.yml`) may use macOS or Windows runners where a
   platform build needs them (macOS app bundles, Windows smoke tests). They are not a substitute for
   the Linux `CI` gate.
@@ -122,4 +131,4 @@ principle/section added; PATCH: clarifications) and notes affected specs. Review
 check PRs against these principles; any deviation MUST be justified in the plan's
 Complexity Tracking section.
 
-**Version**: 1.2.3 | **Ratified**: 2026-09-24 | **Last Amended**: 2026-09-26
+**Version**: 1.2.4 | **Ratified**: 2026-09-24 | **Last Amended**: 2026-10-01

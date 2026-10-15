@@ -1,5 +1,10 @@
 using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Editor.Commands.CommandPalette;
+using NetPrints.Editor.Commands.KeyboardShortcuts;
+using NetPrints.Editor.Dialogs;
+using NetPrints.Editor.Lifecycle;
+using NetPrints.Editor.Navigation;
 using NetPrints.Editor.References;
 
 namespace NetPrints.Editor.Hosting;
@@ -9,17 +14,28 @@ namespace NetPrints.Editor.Hosting;
 /// </summary>
 public interface IEditorDialogs
 {
+    /// <summary>Shows a non-blocking toast notification.</summary>
+    void ShowNotification(string title, string message);
+
     /// <summary>Shows an error with a copy-friendly message.</summary>
     Task ShowErrorAsync(string title, string message);
 
     /// <summary>Lets the user choose a type; returns null when cancelled.</summary>
     Task<TypeSpecifier?> SelectTypeAsync(IEnumerable<TypeSpecifier> types, TypeSpecifier initial);
 
-    /// <summary>Lets the user choose a method (the first one is preselected); returns null when cancelled.</summary>
+    /// <summary>Lets the user choose a method from a filterable list (the first one is preselected); returns null when cancelled.</summary>
     Task<MethodSpecifier?> SelectMethodAsync(IEnumerable<MethodSpecifier> methods);
 
+    /// <summary>
+    /// Lets the user choose a base method to override: the list is grouped by declaring type, nearest base type first, and the
+    /// methods whose name is in <paramref name="overriddenNames"/> are dimmed and cannot be picked. Returns null when cancelled.
+    /// </summary>
+    /// <param name="methods">The overridable methods of the base types, nearest first.</param>
+    /// <param name="overriddenNames">Names of the methods the class already has.</param>
+    Task<MethodSpecifier?> SelectOverrideAsync(IEnumerable<MethodSpecifier> methods, IReadOnlySet<string> overriddenNames);
+
     /// <summary>Shows the references dialog of a project until it is closed.</summary>
-    Task ShowReferencesAsync(ReferenceListVM references);
+    Task ShowReferencesAsync(ReferenceListViewModel references);
 
     /// <summary>
     /// Asks whether a project's extensions may be loaded (extension-points.md §8.3): they run code in the
@@ -30,8 +46,52 @@ public interface IEditorDialogs
     /// <returns><see langword="true"/> to trust the project, <see langword="false"/> to open it without them.</returns>
     Task<bool> ConfirmTrustAsync(string projectPath, IReadOnlyList<string> extensionFolders);
 
+    /// <summary>Shows the keyboard shortcuts sheet until it is closed.</summary>
+    /// <param name="sheet">The commands and their shortcuts.</param>
+    Task ShowKeyboardShortcutsAsync(KeyboardShortcutsViewModel sheet);
+
+    /// <summary>Shows the command palette until a command is chosen or it is dismissed.</summary>
+    /// <param name="palette">The commands and the filter.</param>
+    Task ShowCommandPaletteAsync(CommandPaletteViewModel palette);
+
+    /// <summary>Shows go to anything until a result is chosen or it is dismissed.</summary>
+    /// <param name="goTo">The providers and the filter.</param>
+    Task ShowGoToAnythingAsync(GoToAnythingViewModel goTo);
+
+    /// <summary>Shows the About dialog until it is closed.</summary>
+    /// <param name="about">The version and the project links.</param>
+    Task ShowAboutAsync(AboutViewModel about);
+
+    /// <summary>Asks the user to confirm an action that cannot be undone.</summary>
+    /// <param name="title">Dialog title.</param>
+    /// <param name="message">What will happen.</param>
+    /// <param name="confirmLabel">The text of the button that goes ahead.</param>
+    /// <returns><see langword="true"/> when the user confirmed, <see langword="false"/> when cancelled.</returns>
+    Task<bool> ConfirmAsync(string title, string message, string confirmLabel);
+
+    /// <summary>Names the folder a sample is copied to and asks whether to go ahead, change the folder or cancel.</summary>
+    /// <param name="sampleName">The sample's name.</param>
+    /// <param name="targetFolder">The full path of the folder the copy goes in.</param>
+    /// <returns>The user's choice; <see cref="SampleTargetChoice.Cancel"/> when the dialog was dismissed.</returns>
+    Task<SampleTargetChoice> ConfirmSampleTargetAsync(string sampleName, string targetFolder);
+
     /// <summary>Shows a list of diagnostics until the dialog is closed.</summary>
     /// <param name="title">Dialog title.</param>
     /// <param name="issues">The diagnostics, one row each.</param>
     Task ShowIssuesAsync(string title, IReadOnlyList<CodeDiagnostic> issues);
+
+    /// <summary>Asks what to do with the unsaved files before the project is unloaded.</summary>
+    /// <param name="files">The unsaved files, listed in the dialog.</param>
+    /// <returns>The user's choice; <see cref="UnloadChoice.Cancel"/> when the dialog was dismissed.</returns>
+    Task<UnloadChoice> ConfirmUnsavedAsync(IReadOnlyList<UnsavedFile> files);
+
+    /// <summary>Offers to restore the backed-up files of the project being opened.</summary>
+    /// <param name="files">The backed-up files, listed in the dialog.</param>
+    /// <returns>The user's answer, one restore-or-discard choice per file; <see cref="RecoveryAnswer.Later"/> when the dialog was dismissed.</returns>
+    Task<RecoveryAnswer> ConfirmRecoverAsync(IReadOnlyList<RecoveryFile> files);
+
+    /// <summary>Shows the New project dialog; the dialog creates the project itself.</summary>
+    /// <param name="dialog">The dialog's view model.</param>
+    /// <returns>The path of the new <c>.csproj</c>, or <see langword="null"/> when the dialog was cancelled.</returns>
+    Task<string?> ShowNewProjectAsync(NewProjectDialogViewModel dialog);
 }

@@ -1,6 +1,8 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using NetPrints.Catalog;
 using NetPrints.Testing;
@@ -26,18 +28,39 @@ namespace NetPrints.Tests.Samples
         [Fact]
         public async Task AGraphCallingAnAnnotatedNodeBuildsAndRunsInATemporaryProject()
         {
-            string fixtureDir = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "tests", "NetPrints.Core.Tests", "Fixtures", "AnnotatedCall");
+            Assert.Equal("Hello, World!", await BuildAndRunAsync("AnnotatedCall"));
+        }
+
+        // FR-092, SC-007, G-R12: a member the catalog hides from search builds and runs as it does with no catalog at all.
+        [Fact]
+        public async Task AGraphCallingAMemberTheCatalogHidesBuildsAndRunsUnchanged()
+        {
+            CatalogDocument document = Assert.Single(EmbeddedCatalogReader.Read(FixtureExtensions.AnnotatedLibraryAssembly()));
+            CatalogType greeter = Assert.Single(document.Types, type => type.Id == "T:AnnotatedFixture.Greeter");
+            Assert.DoesNotContain(greeter.Methods ?? [], method => method.Name == "Undeclared");
+
+            Assembly library = Assembly.LoadFrom(FixtureExtensions.AnnotatedLibraryAssembly());
+            Type greeterType = library.GetType("AnnotatedFixture.Greeter") ?? throw new InvalidOperationException("The fixture library has no Greeter.");
+            MethodInfo undeclared = greeterType.GetMethod("Undeclared") ?? throw new InvalidOperationException("Greeter has no Undeclared.");
+            string withoutTheCatalog = Convert.ToString(undeclared.Invoke(Activator.CreateInstance(greeterType), null), CultureInfo.InvariantCulture) ?? string.Empty;
+
+            Assert.Equal(withoutTheCatalog, await BuildAndRunAsync("AnnotatedHiddenCall"));
+        }
+
+        private static async Task<string> BuildAndRunAsync(string name)
+        {
+            string fixtureDir = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "tests", "NetPrints.Core.Tests", "Fixtures", name);
             string directory = Directory.CreateTempSubdirectory("netprints-an12-").FullName;
             try
             {
-                File.Copy(Path.Combine(fixtureDir, "AnnotatedCall.Program.netpc.json"), Path.Combine(directory, "AnnotatedCall.Program.netpc.json"));
-                await File.WriteAllTextAsync(Path.Combine(directory, "AnnotatedCall.csproj"), $"""
+                File.Copy(Path.Combine(fixtureDir, $"{name}.Program.netpc.json"), Path.Combine(directory, $"{name}.Program.netpc.json"));
+                await File.WriteAllTextAsync(Path.Combine(directory, $"{name}.csproj"), $"""
                     <Project Sdk="Microsoft.NET.Sdk">
 
                       <PropertyGroup>
                         <OutputType>Exe</OutputType>
                         <TargetFramework>net10.0</TargetFramework>
-                        <RootNamespace>AnnotatedCall</RootNamespace>
+                        <RootNamespace>{name}</RootNamespace>
                         <NetPrintsProfile>netprints.default</NetPrintsProfile>
                       </PropertyGroup>
 
@@ -54,14 +77,14 @@ namespace NetPrints.Tests.Samples
 
                 LocalSdkLayout.Write(directory);
                 (int buildExit, string buildOutput) = await ExternalProcess.RunDotnetAsync(directory, environment: null,
-                    "build", Path.Combine(directory, "AnnotatedCall.csproj"), "-nodeReuse:false", "-v:n", "-tl:off", "--nologo");
+                    "build", Path.Combine(directory, $"{name}.csproj"), "-nodeReuse:false", "-v:n", "-tl:off", "--nologo");
                 Assert.True(buildExit == 0, buildOutput);
-                Assert.True(File.Exists(Path.Combine(directory, "AnnotatedCall.Program.netpc.g.cs")), buildOutput);
+                Assert.True(File.Exists(Path.Combine(directory, $"{name}.Program.netpc.g.cs")), buildOutput);
 
                 (int runExit, string runOutput) = await ExternalProcess.RunDotnetAsync(directory, environment: null,
-                    "run", "--project", Path.Combine(directory, "AnnotatedCall.csproj"), "--no-build");
+                    "run", "--project", Path.Combine(directory, $"{name}.csproj"), "--no-build");
                 Assert.True(runExit == 0, runOutput);
-                Assert.Equal("Hello, World!", runOutput.Trim());
+                return runOutput.Trim();
             }
             finally
             {

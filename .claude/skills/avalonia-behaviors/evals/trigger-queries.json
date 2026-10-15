@@ -55,7 +55,7 @@
     "split": "train"
   },
   {
-    "query": "add a unit test for ClassEditorVM.RemoveMethodCommand",
+    "query": "add a unit test for ClassEditorViewModel.RemoveMethodCommand",
     "should_trigger": false,
     "split": "train"
   },

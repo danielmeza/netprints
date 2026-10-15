@@ -30,7 +30,8 @@ public static class TestAppBuilder
             .WithInterFont()
             // No system fonts are needed (clean CI images and containers have none).
             .With(new FontManagerOptions { DefaultFamilyName = EditorApp.DefaultFontFamily })
-            .AfterSetup(builder => ((EditorApp)builder.Instance!).DisableTransitions());
+            .AfterSetup(builder => ((EditorApp)builder.Instance!).DisableTransitions())
+            .AfterSetup(builder => HeadlessPlatformSettings.Install(builder.Instance));
     }
 
     /// <summary>Invariant culture and UTC, whatever the machine's settings (deterministic text and snapshots).</summary>

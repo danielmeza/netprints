@@ -23,6 +23,18 @@ public sealed class EditorSdkVersionTests : IDisposable
     public void StripBuildMetadataRemovesThePlusSuffixOnly(string version, string expected) =>
         Assert.Equal(expected, EditorSdkVersion.StripBuildMetadata(version));
 
+    [Theory]
+    [InlineData("0.2.1-alpha.0.7+abc", "0.2.0", "0.2.0")]
+    [InlineData("0.2.0+abc", "0.2.0", "0.2.0")]
+    [InlineData("0.3.0-rc.1+abc", "0.3.0-rc.1", "0.3.0-rc.1")]
+    [InlineData("0.3.0", "0.2.0", "0.3.0")]
+    [InlineData("0.2.1-alpha.0.7", null, "0.2.1-alpha.0.7")]
+    [InlineData("0.2.1-alpha.0.7", "", "0.2.1-alpha.0.7")]
+    [InlineData(null, "0.2.0", "0.2.0")]
+    [InlineData(null, null, EditorSdkVersion.Fallback)]
+    public void APrereleaseBuildWritesTheLatestPublishedVersionAndAReleaseItsOwn(string? informational, string? latestRelease, string expected) =>
+        Assert.Equal(expected, EditorSdkVersion.Choose(informational, latestRelease));
+
     [Fact]
     public async Task CreateAsyncWritesTheEditorsOwnVersionNotThePlaceholder()
     {

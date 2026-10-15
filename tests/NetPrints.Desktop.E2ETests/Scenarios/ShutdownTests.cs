@@ -8,7 +8,8 @@ namespace NetPrints.Desktop.E2ETests.Scenarios;
 /// EditorApp's <c>desktop.ShutdownRequested</c> wiring (EditorApp.axaml.cs): closing the main
 /// window awaits the host services' async cleanup exactly once, then the process exits. Rents its
 /// own worker from <see cref="DesktopWorkerPool"/> (batch D2), so it runs independently of the
-/// other smoke tests.
+/// other smoke tests. Exempt from the failure capture (Review A R11): the editor exits by design, so
+/// there is no leased editor left to dump, and its assertion messages already carry the stderr.
 /// </summary>
 public sealed class ShutdownTests(DesktopWorkerPool pool)
 {

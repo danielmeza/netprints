@@ -28,9 +28,9 @@ public static class AutomationPropertyNames
     /// </summary>
     public const string GridRenderPath = nameof(GridRenderPath);
     /// <summary>
-    /// Reported by an image: whether it has a source ("True"/"False").
+    /// Reported by an icon presenter: its icon id.
     /// </summary>
-    public const string HasSource = nameof(HasSource);
+    public const string IconId = nameof(IconId);
     /// <summary>
     /// Reported by every control: its bounds height in DIP, as text.
     /// </summary>
@@ -71,6 +71,10 @@ public static class AutomationPropertyNames
     /// Reported by a selecting items control (eg. a list): its item count, as text.
     /// </summary>
     public const string ItemCount = nameof(ItemCount);
+    /// <summary>
+    /// Reported by every control: its <c>AutomationProperties.ItemStatus</c> (for example "Unsaved" on a project tree class row), or <see langword="null"/> if it has none.
+    /// </summary>
+    public const string ItemStatus = nameof(ItemStatus);
     /// <summary>
     /// Reported by a graph item container: its canvas X position in DIP, as text.
     /// </summary>
@@ -131,6 +135,10 @@ public static class AutomationPropertyNames
     /// Reported by every control: whether its tooltip is currently open ("True"/"False"; OWN-01, owner report).
     /// </summary>
     public const string ToolTipIsOpen = nameof(ToolTipIsOpen);
+    /// <summary>
+    /// Reported by the code view: whether syntax highlighting has tokenized every line of the shown text ("True"/"False"), so a screenshot no longer changes as the highlighter catches up.
+    /// </summary>
+    public const string HighlightingSettled = nameof(HighlightingSettled);
     /// <summary>
     /// Reported by every control: its CLR type name.
     /// </summary>

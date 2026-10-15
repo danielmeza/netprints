@@ -1,5 +1,4 @@
 using NetPrints.Core;
-using NetPrints.Editor.Main;
 using NetPrints.Extensibility;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Projects;
@@ -23,7 +22,7 @@ public sealed class ProjectProfileTests : IDisposable
             Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance);
     }
 
-    private async Task<(string Csproj, string Text)> OpenAsync(TestEditor editor, MainEditorVM vm, string profileId)
+    private async Task<(string Csproj, string Text)> OpenAsync(TestEditor editor, ProjectRig rig, string profileId)
     {
         string csproj = TestPaths.CopyHelloWorldSample();
         cleanup.Add(Path.GetDirectoryName(csproj) ?? csproj);
@@ -31,7 +30,7 @@ public sealed class ProjectProfileTests : IDisposable
         ProjectSnapshot snapshot = await editor.Projects.LoadAsync(csproj, TestContext.Current.CancellationToken);
         editor.Projects.Seed(snapshot with { ProfileId = profileId });
 
-        await vm.LoadProjectAsync(csproj);
+        await rig.LoadProjectAsync(csproj);
         return (csproj, text);
     }
 
@@ -39,32 +38,32 @@ public sealed class ProjectProfileTests : IDisposable
     public async Task AnUnknownProfileFallsBackToTheDefaultProfileAndReportsNpd005WithoutTouchingTheCsproj()
     {
         var editor = TestEditor.Create(TestEditor.CreateReflectionHost);
-        var vm = new MainEditorVM(editor.Context);
+        var rig = new ProjectRig(editor.Context);
 
-        (string csproj, string before) = await OpenAsync(editor, vm, "unknown.profile");
-        int classes = vm.Project?.Classes.Count ?? 0;
-        await vm.NewClassCommand.ExecuteAsync(null);
+        (string csproj, string before) = await OpenAsync(editor, rig, "unknown.profile");
+        int classes = rig.Project?.Classes.Count ?? 0;
+        await rig.NewClassAsync();
 
         string message = editor.Dialogs.Errors.Single(e => e.Title == "Project loaded with issues").Message;
         Assert.Contains("NPD005", message);
         Assert.Contains("unknown.profile", message);
         Assert.Equal(before, await File.ReadAllTextAsync(csproj, TestContext.Current.CancellationToken));
-        Assert.Equal(classes + 1, vm.Project?.Classes.Count);
-        Assert.Equal("MyClass", vm.Project?.Classes[^1].Name);
-        Assert.Equal(vm.Project?.DefaultNamespace, vm.Project?.Classes[^1].Namespace);
+        Assert.Equal(classes + 1, rig.Project?.Classes.Count);
+        Assert.Equal("MyClass", rig.Project?.Classes[^1].Name);
+        Assert.Equal(rig.Project?.DefaultNamespace, rig.Project?.Classes[^1].Namespace);
     }
 
     [Fact]
     public async Task ANewClassIsBuiltFromTheTemplateOfTheProjectsProfile()
     {
         var editor = TestEditor.Create(TestEditor.CreateReflectionHost, HostWithTemplatedProfile());
-        var vm = new MainEditorVM(editor.Context);
+        var rig = new ProjectRig(editor.Context);
 
-        await OpenAsync(editor, vm, ProfileExtension.TemplatedProfile.ProfileId);
-        await vm.NewClassCommand.ExecuteAsync(null);
+        await OpenAsync(editor, rig, ProfileExtension.TemplatedProfile.ProfileId);
+        await rig.NewClassAsync();
 
         Assert.DoesNotContain(editor.Dialogs.Errors, e => e.Message.Contains("NPD005", StringComparison.Ordinal));
-        ClassGraph created = vm.Project?.Classes[^1] ?? throw new InvalidOperationException("No class was created.");
+        ClassGraph created = rig.Project?.Classes[^1] ?? throw new InvalidOperationException("No class was created.");
         Assert.Equal("MyClass", created.Name);
         Assert.Equal("Templated", created.Namespace);
     }
@@ -74,19 +73,19 @@ public sealed class ProjectProfileTests : IDisposable
     {
         var editor = TestEditor.Create(TestEditor.CreateReflectionHost);
         editor.Dialogs.TrustAnswer = true;
-        var vm = new MainEditorVM(editor.Context);
+        var rig = new ProjectRig(editor.Context);
         string csproj = TestPaths.CopyHelloWorldSample();
         string projectDirectory = Path.GetDirectoryName(csproj) ?? csproj;
         cleanup.Add(projectDirectory);
         ProjectSnapshot snapshot = await editor.Projects.LoadAsync(csproj, TestContext.Current.CancellationToken);
         editor.Projects.Seed(snapshot with { ProfileId = "netprints.test", ExtensionFolders = [TestExtensionFolder.CopyTo(projectDirectory)] });
 
-        await vm.LoadProjectAsync(csproj);
-        await vm.NewClassCommand.ExecuteAsync(null);
+        await rig.LoadProjectAsync(csproj);
+        await rig.NewClassAsync();
 
         Assert.NotNull(editor.Extensions.Current.FindProfile("netprints.test"));
         Assert.DoesNotContain(editor.Dialogs.Errors, e => e.Message.Contains("NPD005", StringComparison.Ordinal));
-        ClassGraph created = vm.Project?.Classes[^1] ?? throw new InvalidOperationException("No class was created.");
+        ClassGraph created = rig.Project?.Classes[^1] ?? throw new InvalidOperationException("No class was created.");
         Assert.Equal("MyClass", created.Name);
     }
 
@@ -94,13 +93,13 @@ public sealed class ProjectProfileTests : IDisposable
     public async Task TheDefaultProfileIsUsedWithoutAWarning()
     {
         var editor = TestEditor.Create(TestEditor.CreateReflectionHost);
-        var vm = new MainEditorVM(editor.Context);
+        var rig = new ProjectRig(editor.Context);
 
-        await OpenAsync(editor, vm, DefaultProjectProfile.ProfileId);
-        await vm.NewClassCommand.ExecuteAsync(null);
+        await OpenAsync(editor, rig, DefaultProjectProfile.ProfileId);
+        await rig.NewClassAsync();
 
         Assert.Empty(editor.Dialogs.Errors);
-        Assert.Equal(vm.Project?.DefaultNamespace, vm.Project?.Classes[^1].Namespace);
+        Assert.Equal(rig.Project?.DefaultNamespace, rig.Project?.Classes[^1].Namespace);
     }
 
     private sealed class ProfileExtension : INetPrintsExtension

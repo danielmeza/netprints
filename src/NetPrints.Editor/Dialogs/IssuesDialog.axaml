@@ -1,31 +1,35 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
         xmlns:ed="clr-namespace:NetPrints.Editor"
         xmlns:eddialogs="clr-namespace:NetPrints.Editor.Dialogs"
+        xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
         x:Class="NetPrints.Editor.Dialogs.IssuesDialog"
-        x:DataType="eddialogs:IssuesDialogVM"
+        x:DataType="eddialogs:IssuesDialogViewModel"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
-        Width="700" Height="400"
+        SizeToContent="WidthAndHeight"
         WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.IssuesDialog}">
-  <Grid RowDefinitions="*,Auto" Margin="8">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
+  <ctl:DialogShell Title="{Binding $parent[Window].Title}" IconId="{x:Static icons:IconIds.DialogWarning}">
+    <ctl:DialogShell.Actions>
+      <!-- Closes the dialog with no result (D11, ADR-0007 batch X2b). -->
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.IssuesOkButton}" Content="OK" Classes="dialogAction"
+              IsDefault="True" IsCancel="True">
+        <Interaction.Behaviors>
+          <ButtonClickEventTriggerBehavior>
+            <CloseWindowAction />
+          </ButtonClickEventTriggerBehavior>
+        </Interaction.Behaviors>
+      </Button>
+    </ctl:DialogShell.Actions>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="{StaticResource Dialog.ListMaxHeight}">
       <ItemsControl AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ExtensionLoadErrors}" ItemsSource="{Binding Issues}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="x:String">
-            <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="2,4" FontFamily="monospace"
+            <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="2,4" FontFamily="{StaticResource Font.Mono}"
                        AutomationProperties.AutomationId="{x:Static ed:AutomationIds.IssueRow}" AutomationProperties.Name="{Binding}" />
           </DataTemplate>
         </ItemsControl.ItemTemplate>
       </ItemsControl>
     </ScrollViewer>
-    <!-- Closes the dialog with no result (D11, ADR-0007 batch X2b). -->
-    <Button Grid.Row="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.IssuesOkButton}" Content="OK" HorizontalAlignment="Right" Margin="0,8,0,0" MinWidth="80"
-            IsDefault="True">
-      <Interaction.Behaviors>
-        <ButtonClickEventTriggerBehavior>
-          <CloseWindowAction />
-        </ButtonClickEventTriggerBehavior>
-      </Interaction.Behaviors>
-    </Button>
-  </Grid>
+  </ctl:DialogShell>
 </Window>

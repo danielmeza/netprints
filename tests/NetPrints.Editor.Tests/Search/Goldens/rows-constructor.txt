@@ -1,0 +1,97 @@
+== none
+H:NetPrints
+  For Loop | netprints.icon.category.loop
+  If Else | netprints.icon.category.if
+  Construct New Object | netprints.icon.category.create
+  Type Of | netprints.icon.category.type
+  Explicit Cast | netprints.icon.category.convert
+  Make Array | netprints.icon.category.listView
+  Literal | netprints.icon.category.literal
+  Type | netprints.icon.category.type
+  Make Array Type | netprints.icon.category.type
+  Throw | netprints.icon.category.throw
+  Ternary | netprints.icon.category.conditionalRule
+  Default | netprints.icon.category.none
+H:This Methods
+  System.Object GetHashCode () : System.Int32 | netprints.icon.category.method
+  System.Object ToString () : System.String | netprints.icon.category.method
+H:Static Methods
+  System.Console ReadLine () : System.String | netprints.icon.category.method
+  System.Console WriteLine () | netprints.icon.category.method
+  System.Console WriteLine (value: System.Int32) | netprints.icon.category.method
+  System.Console WriteLine (value: System.String) | netprints.icon.category.method
+  System.Math Max (val1: System.Int32, val2: System.Int32) : System.Int32 | netprints.icon.category.method
+  System.String IsNullOrEmpty (value: System.String) : System.Boolean | netprints.icon.category.method
+H:Static Variables
+  System.Int32 MaxValue : System.Int32 | netprints.icon.category.property
+  System.String Empty : System.String | netprints.icon.category.property
+== exec in
+H:NetPrints
+  For Loop | netprints.icon.category.loop
+  If Else | netprints.icon.category.if
+  Construct New Object | netprints.icon.category.create
+  Type Of | netprints.icon.category.type
+  Explicit Cast | netprints.icon.category.convert
+  Make Array | netprints.icon.category.listView
+  Literal | netprints.icon.category.literal
+  Type | netprints.icon.category.type
+  Make Array Type | netprints.icon.category.type
+  Throw | netprints.icon.category.throw
+  Ternary | netprints.icon.category.conditionalRule
+  Default | netprints.icon.category.none
+H:This Methods
+  System.Object GetHashCode () : System.Int32 | netprints.icon.category.method
+  System.Object ToString () : System.String | netprints.icon.category.method
+H:Static Methods
+  System.Console ReadLine () : System.String | netprints.icon.category.method
+  System.Console WriteLine () | netprints.icon.category.method
+  System.Console WriteLine (value: System.Int32) | netprints.icon.category.method
+  System.Console WriteLine (value: System.String) | netprints.icon.category.method
+  System.Math Max (val1: System.Int32, val2: System.Int32) : System.Int32 | netprints.icon.category.method
+  System.String IsNullOrEmpty (value: System.String) : System.Boolean | netprints.icon.category.method
+== exec out
+H:NetPrints
+  For Loop | netprints.icon.category.loop
+  If Else | netprints.icon.category.if
+  Construct New Object | netprints.icon.category.create
+  Type Of | netprints.icon.category.type
+  Explicit Cast | netprints.icon.category.convert
+  Make Array | netprints.icon.category.listView
+  Literal | netprints.icon.category.literal
+  Type | netprints.icon.category.type
+  Make Array Type | netprints.icon.category.type
+  Throw | netprints.icon.category.throw
+  Ternary | netprints.icon.category.conditionalRule
+  Default | netprints.icon.category.none
+H:This Methods
+  System.Object GetHashCode () : System.Int32 | netprints.icon.category.method
+  System.Object ToString () : System.String | netprints.icon.category.method
+H:Static Methods
+  System.Console ReadLine () : System.String | netprints.icon.category.method
+  System.Console WriteLine () | netprints.icon.category.method
+  System.Console WriteLine (value: System.Int32) | netprints.icon.category.method
+  System.Console WriteLine (value: System.String) | netprints.icon.category.method
+  System.Math Max (val1: System.Int32, val2: System.Int32) : System.Int32 | netprints.icon.category.method
+  System.String IsNullOrEmpty (value: System.String) : System.Boolean | netprints.icon.category.method
+== string data in
+H:Static Methods
+  System.Console ReadLine () : System.String | netprints.icon.category.method
+== string data out
+H:NetPrints
+  Make Delegate For A Method Of String | netprints.icon.category.delegate
+H:Pin Variables
+  System.Int32 Length : System.Int32 | netprints.icon.category.property
+H:Pin Methods
+  System.String ToUpperInvariant () : System.String | netprints.icon.category.method
+H:Static Methods
+  System.Console WriteLine (value: System.String) | netprints.icon.category.method
+  System.String IsNullOrEmpty (value: System.String) : System.Boolean | netprints.icon.category.method
+== type in
+H:Types
+  System.Object | netprints.icon.category.type
+  System.String | netprints.icon.category.type
+  System.Int32 | netprints.icon.category.type
+  System.Collections.Generic.List<System.Int32> | netprints.icon.category.type
+== int type out
+H:Generic Types
+  System.Collections.Generic.List<System.Int32> | netprints.icon.category.type

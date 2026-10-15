@@ -4,28 +4,29 @@ using NetPrints.Editor.Hosting.Avalonia;
 
 namespace NetPrints.Editor.Dialogs;
 
-/// <summary>Chooses a method; the first one is preselected (PAR-59).</summary>
+/// <summary>Chooses a method from a filterable list grouped by declaring type (FR-095).</summary>
 public partial class SelectMethodDialog : Window, IDialogResult<MethodSpecifier>
 {
-    private readonly SelectMethodDialogVM viewModel;
+    private readonly SelectMethodDialogViewModel viewModel;
 
     /// <summary>Loads the dialog's XAML, with no choices set.</summary>
     public SelectMethodDialog() : this([])
     {
     }
 
-    /// <summary>Loads the dialog's XAML with the offered methods; the first one is preselected.</summary>
-    /// <param name="methods">Methods offered by the chooser.</param>
-    public SelectMethodDialog(IEnumerable<MethodSpecifier> methods)
+    /// <summary>Loads the dialog's XAML with the offered methods.</summary>
+    /// <param name="methods">Methods offered by the chooser, nearest base type first.</param>
+    /// <param name="overriddenNames">Names of the methods the class already has; their rows are dimmed and cannot be picked.</param>
+    /// <param name="title">The window and shell title.</param>
+    /// <param name="acceptLabel">The accept button's label.</param>
+    public SelectMethodDialog(IEnumerable<MethodSpecifier> methods, IReadOnlySet<string>? overriddenNames = null,
+        string title = SelectMethodDialogViewModel.OverrideTitle, string acceptLabel = SelectMethodDialogViewModel.OverrideLabel)
     {
-        viewModel = new SelectMethodDialogVM(methods);
+        viewModel = new SelectMethodDialogViewModel(methods, overriddenNames, title, acceptLabel);
         DataContext = viewModel;
         InitializeComponent();
     }
 
-    /// <summary>The dialog's result once closed via the VM's <c>SelectCommand</c>, or <see langword="null"/> before then.</summary>
+    /// <summary>The dialog's result once closed, or <see langword="null"/> before then and after a cancel.</summary>
     public MethodSpecifier? Result => viewModel.Result;
-
-    /// <summary>The currently selected method, or <see langword="null"/> if none is selected.</summary>
-    public MethodSpecifier? SelectedMethod => viewModel.SelectedMethod;
 }

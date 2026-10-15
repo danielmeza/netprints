@@ -12,6 +12,10 @@
     <PackageReference Include="System.Reactive" />
   </ItemGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="NetPrints.Editor" />
+    <InternalsVisibleTo Include="NetPrints.Editor.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\NetPrints.Core\NetPrints.Core.csproj" />
   </ItemGroup>
 </Project>

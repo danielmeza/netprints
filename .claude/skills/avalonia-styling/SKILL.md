@@ -51,17 +51,48 @@ before inventing a new one. Use `StaticResource` for things that never vary by t
   such as `pinValue` keep their names. Don't rename them just to conform.
 - Prefer a style class to repeating the same five inline setters. For a color change, use a style, not a template.
 
+## Layout and look
+
+The classes in `EditorStyles.axaml` are the vocabulary. Pick one before writing a local `Margin`, `FontSize` or `FontWeight`;
+add a class there (D8) when none fits, and name it for its role, not its look (`codeBlock`, not `darkBox`).
+
+- **Property grid.** An inspector or form grid is `<Grid Classes="propertyGrid" ColumnDefinitions="Auto,*">`: labels in the
+  `Auto` column are `TextBlock.inspectorLabel`, and the editors take their row gap from the child selectors
+  (`Grid.propertyGrid > :is(TextBox)`, `ComboBox`, `StackPanel`, `CheckBox`). No fixed label width, no per-control `Margin`,
+  and no `RowSpacing`, which would also space collapsed rows.
+- **Dialogs.** A dialog is `<Grid Classes="dialogRoot">` with a header (`TextBlock.dialogTitle`, with an icon if it helps),
+  a body and a footer of `Button.dialogAction`. Size the window with `SizeToContent` plus `MaxWidth`/`MinWidth`, not a fixed
+  `Width`/`Height` (list dialogs are the exception). A read-only message or log is a `TextBox.codeBlock`. See `ErrorDialog.axaml`.
+- **Text roles.** `title`, `section`, `secondary`, `treeItem`, `nodeTitle`, `pinLabel` (TextBlock and TextBox), `memberName`,
+  plus `dialogTitle`, `groupTitle`, `formLabel`, `menuShortcut`. A view picks a class and does not set `FontSize` or `FontWeight`.
+- **Tokens.** Colors and shadows are theme tokens named `Area.Role` and defined in both `Dark` and `Light`
+  (`Popup.Shadow` is a `BoxShadows` token). A view never writes `BoxShadow="... #40000000"`.
+- **Motion** is a `Transitions` setter in a style, never a keyframe `Animations` block or an infinite animation:
+  `EditorApp.DisableTransitions()` strips transitions when `netprints.enableAnimations` is off, and nothing else can switch
+  motion off.
+- **Hit targets** are at least 24 px. Keep a small glyph and wrap it in a transparent 24 px panel (`Panel.pinHitbox` around
+  a 16 px pin), instead of growing the glyph.
+- **Empty states.** A list or panel that can be empty shows a message bound to an `IsEmpty` flag on the view model
+  (`InspectorPanelView`, `RecentProjectsTileView`), with an AutomationId when a test needs it.
+- **One Style per selector.** Avalonia has no comma selectors: repeat the `<Style>` for each target, as the propertyGrid
+  child selectors do.
+
+## Icons
+
+- Icons are `IconPresenter` with an icon id from `IconIds` (E9); never a library control or a bitmap. It draws in the inherited
+  foreground, so colour it through a style class or a token on the parent, not a converter. Size comes from the `Icon.Small`
+  (16) and `Icon.Medium` (20, class `medium`) tokens. `IsActive` draws the filled glyph of an outline and filled pair.
+- A new glyph is one entry in `IconRegistry` plus one constant in `IconIds`; `IconRegistry` is the only code that names `MaterialIconKind`.
+- The product mark is not an icon id: it is the `App.Mark` `DrawingImage` (`Icons/AppMark.axaml`, colours as `Brand.*` tokens),
+  shown with `<Image Source="{DynamicResource App.Mark}" />`. Nothing in `src/` may be a raster image except the `.ico` window icons
+  (`NoRasterIconsInSource`).
+
 ## Gotchas
 
 - A brush that a converter builds in C# freezes the variant it was built in, because the binding isn't re-evaluated
   when the theme changes (see D5).
 - A `ControlTheme` replaces the whole template and only one applies at a time. Base it on the default
   (`BasedOn="{StaticResource {x:Type nodify:ItemContainer}}"`) or the control loses the parts you didn't restyle.
-
-## Known debt
-
-- `NodeKindBrushConverter` returns Dark-only brushes from `GraphBrushes`. It moves to tokens and style classes when a
-  Light variant is needed.
 
 ## Before you finish
 
@@ -70,3 +101,9 @@ before inventing a new one. Use `StaticResource` for things that never vary by t
 3. Check both variants. In a headless test, set `RequestedThemeVariant` (on the app or a `ThemeVariantScope`) to
    `ThemeVariant.Light` and then `ThemeVariant.Dark` and assert what resolves, as `GridRenderTests` does; for a quick
    look, run the editor and switch the variant.
+4. When a change alters how a surface looks, run `ContactSheetTests` (UI artifacts folder, `contact-sheet.png`; CI uploads it as
+   the `contact-sheet` artifact) and read it: panels, start page, graph, dialogs and pickers in Dark and Light at 1.0 and 2.0. Its
+   owner-call strip overrides `Pin.TypeShape`, `Canvas.Background` and `Node.CardBackground` on one tile only; the product carries
+   no option for them, so don't add one.
+5. The editor guides show the default Dark theme in their screenshots (`docs/guide/editor`). A change that alters the look of a
+   surface they show means `scripts/guide-screenshots.sh` and a look at every image that changed.

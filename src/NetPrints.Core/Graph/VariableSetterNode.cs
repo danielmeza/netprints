@@ -9,12 +9,12 @@ namespace NetPrints.Graph
     public class VariableSetterNode : VariableNode
     {
         /// <summary>
-        /// Input data pin for the new value of the variable. At index 0 when there is no target pin
-        /// (a static or method-local variable, <see cref="VariableNode.TargetPin"/>), else index 1.
+        /// Input data pin for the new value of the variable. It is always the last input data pin: after
+        /// the target pin (an instance variable) and the index pin (an indexer), when present.
         /// </summary>
         public NodeInputDataPin NewValuePin
         {
-            get { return IsStatic || IsLocalVariable ? InputDataPins[0] : InputDataPins[1]; }
+            get { return InputDataPins[^1]; }
         }
 
         /// <summary>

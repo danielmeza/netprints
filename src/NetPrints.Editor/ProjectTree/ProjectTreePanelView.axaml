@@ -1,0 +1,74 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
+             xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
+             xmlns:edtree="clr-namespace:NetPrints.Editor.ProjectTree"
+             xmlns:shell="clr-namespace:NetPrints.Editor.Shell"
+             x:Class="NetPrints.Editor.ProjectTree.ProjectTreePanelView"
+             x:DataType="edtree:ProjectTreePanelViewModel">
+  <!-- project > classes > Methods, Constructors, Variables, Event graphs; the keys of the ProjectTree scope run on the tree's selection. -->
+  <Panel>
+  <TreeView Classes="Solid" ItemsSource="{Binding Roots}" SelectedItem="{Binding SelectedItem}"
+            AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TreeView}">
+    <Interaction.Behaviors>
+      <edbehaviors:ScopedCommandKeysBehavior Scope="ProjectTree" Invoker="{Binding Invoker}" />
+      <edbehaviors:ExecuteCommandOnItemDoubleClickBehavior Command="{Binding OpenItemCommand}" />
+    </Interaction.Behaviors>
+    <TreeView.Styles>
+      <Style Selector="TreeViewItem" x:DataType="edtree:ProjectTreeItemViewModel">
+        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+        <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
+        <Setter Property="AutomationProperties.Name" Value="{Binding Name}" />
+        <Setter Property="AutomationProperties.ItemStatus" Value="{Binding ItemStatus}" />
+        <Setter Property="ContextMenu">
+          <ContextMenu ItemsSource="{Binding MenuEntries}">
+            <ContextMenu.Styles>
+              <Style Selector="MenuItem" x:DataType="shell:CommandEntryViewModel">
+                <Setter Property="Header" Value="{Binding Label}" />
+                <Setter Property="Command" Value="{Binding RunCommand}" />
+                <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
+                <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />
+              </Style>
+            </ContextMenu.Styles>
+          </ContextMenu>
+        </Setter>
+      </Style>
+      <Style Selector="TextBox.treeRename" x:DataType="edtree:ProjectTreeItemViewModel">
+        <Setter Property="AutomationProperties.AutomationId" Value="{Binding RenameBoxAutomationId}" />
+      </Style>
+      <Style Selector="TextBlock.treeRenameError" x:DataType="edtree:ProjectTreeItemViewModel">
+        <Setter Property="AutomationProperties.AutomationId" Value="{Binding RenameErrorAutomationId}" />
+      </Style>
+    </TreeView.Styles>
+    <TreeView.ItemTemplate>
+      <TreeDataTemplate x:DataType="edtree:ProjectTreeItemViewModel" ItemsSource="{Binding Children}">
+        <Grid ColumnDefinitions="Auto,*" Background="Transparent">
+          <Interaction.Behaviors>
+            <edbehaviors:TreeDragSourceBehavior />
+          </Interaction.Behaviors>
+          <icons:IconPresenter Grid.Column="0" IconId="{Binding IconId}" Margin="0,0,8,0" AutomationProperties.AccessibilityView="Raw" />
+          <TextBlock Grid.Column="1" Classes="treeItem" Text="{Binding DisplayName}" VerticalAlignment="Center" IsVisible="{Binding IsNotEditing}" />
+          <StackPanel Grid.Column="1">
+            <TextBox Classes="treeRename" Text="{Binding EditText}" MinWidth="120" IsVisible="{Binding IsEditing}"
+                     AutomationProperties.Name="Name">
+              <Interaction.Behaviors>
+                <FocusOnVisibleBehavior />
+                <TextBoxSelectAllOnGotFocusBehavior />
+                <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding CommitEditCommand}" />
+                <ExecuteCommandOnKeyDownBehavior Key="Escape" Command="{Binding CancelEditCommand}" />
+                <ExecuteCommandOnLostFocusBehavior Command="{Binding CancelEditCommand}" />
+              </Interaction.Behaviors>
+            </TextBox>
+            <TextBlock Classes="fieldError treeRenameError" Text="{Binding EditError}" IsVisible="{Binding HasEditError}" />
+          </StackPanel>
+        </Grid>
+      </TreeDataTemplate>
+    </TreeView.ItemTemplate>
+  </TreeView>
+  <ctl:EmptyState IconId="{x:Static icons:IconIds.EmptyProject}" Message="No project is open." ActionText="Open project…"
+                  ActionCommand="{Binding OpenProjectCommand}" IsVisible="{Binding IsEmpty}"
+                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TreeEmpty}" />
+  </Panel>
+</UserControl>

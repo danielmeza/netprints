@@ -1,5 +1,7 @@
 # Contract: Main CI workflow (`CI`)
 
+> The job layout in this contract is superseded by `specs/005-editor-shell/contracts/ci.md` (jobs `checks`, `test` matrix and the aggregate `build-test`; per-leg artifacts).
+
 Consumers: every PR (merge gate), the README badge, and the **P4 Visual Studio extension workflow**,
 which chains after this one. Changing any item marked **stable** requires updating P4's workflow
 and this contract.

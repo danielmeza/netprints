@@ -24,7 +24,7 @@ pointer handlers in code-behind, which D1 allows as gesture mechanics. For a new
   `ItemsSource` list itself, and `ListReorderDragBehavior` only draws a drop placeholder. Neither calls a command, so
   the model and undo miss the move. The package isn't referenced either.
 
-Sketch, not compiled (`ItemVM`, `ListVM`, `MoveRequest` and `MoveCommand` stand for your own types; the
+Sketch, not compiled (`ItemViewModel`, `ListViewModel`, `MoveRequest` and `MoveCommand` stand for your own types; the
 `DropHandlerBase` signatures are the 12.0.7 ones):
 
 ```xml
@@ -33,7 +33,7 @@ Sketch, not compiled (`ItemVM`, `ListVM`, `MoveRequest` and `MoveCommand` stand 
     <ContextDropBehavior Context="{Binding}" Handler="{x:Static edb:ReorderDropHandler.Instance}" />
   </Interaction.Behaviors>
   <ListBox.ItemTemplate>
-    <DataTemplate x:DataType="ed:ItemVM">
+    <DataTemplate x:DataType="ed:ItemViewModel">
       <Grid ColumnDefinitions="Auto,*" Background="Transparent">
         <mi:MaterialIcon Kind="DragVertical" Background="Transparent">
           <Interaction.Behaviors>
@@ -53,11 +53,11 @@ public sealed class ReorderDropHandler : DropHandlerBase
     public static ReorderDropHandler Instance { get; } = new();
 
     public override bool Validate(object? sender, DragEventArgs e, object? sourceContext, object? targetContext, object? state) =>
-        sourceContext is ItemVM && targetContext is ListVM && TargetItem(e) is not null;
+        sourceContext is ItemViewModel && targetContext is ListViewModel && TargetItem(e) is not null;
 
     public override bool Execute(object? sender, DragEventArgs e, object? sourceContext, object? targetContext, object? state)
     {
-        if (sourceContext is not ItemVM moved || targetContext is not ListVM list || TargetItem(e) is not { } target)
+        if (sourceContext is not ItemViewModel moved || targetContext is not ListViewModel list || TargetItem(e) is not { } target)
         {
             return false;
         }
@@ -72,8 +72,8 @@ public sealed class ReorderDropHandler : DropHandlerBase
         return true;
     }
 
-    private static ItemVM? TargetItem(DragEventArgs e) =>
-        (e.Source as Visual)?.FindAncestorOfType<ListBoxItem>(includeSelf: true)?.DataContext as ItemVM;
+    private static ItemViewModel? TargetItem(DragEventArgs e) =>
+        (e.Source as Visual)?.FindAncestorOfType<ListBoxItem>(includeSelf: true)?.DataContext as ItemViewModel;
 }
 ```
 

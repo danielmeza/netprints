@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Editor.Hosting;
-using NetPrints.Editor.Main;
 using NetPrints.Extensibility;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
@@ -39,12 +38,12 @@ public sealed class TestExtensionHostChannelTests : IAsyncLifetime
             ?? throw new InvalidOperationException("The factory did not keep its host end.");
 
         var editor = TestEditor.Create(TestEditor.CreateReflectionHost, hostChannel: selection.Channel);
-        var vm = new MainEditorVM(editor.Context);
+        var rig = new ProjectRig(editor.Context);
         try
         {
-            await vm.LoadProjectAsync(csproj);
+            await rig.LoadProjectAsync(csproj);
 
-            // Settle the reload that opening the project itself triggers (MainEditorVM.OnProjectChanged)
+            // Settle the reload that opening the project itself triggers (ProjectLoader.SetProject)
             // before sending the channel message below: otherwise the two reloads race, and the count
             // observed afterward depends on which one the ReflectionHost version guard lets publish last
             // (R2-22). Loaded is the host's own signal for "a reload has published"; no sleep involved.
@@ -69,7 +68,7 @@ public sealed class TestExtensionHostChannelTests : IAsyncLifetime
         }
         finally
         {
-            vm.OnMainWindowClosed();
+            rig.Dispose();
             await selection.Channel.DisposeAsync();
         }
     }

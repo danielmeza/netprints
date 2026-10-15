@@ -687,8 +687,8 @@ Sub-phase F (`6925062^..00c87e3`), reviewed at `00c87e3`: Checkpoint F not accep
 
 **Red/green evidence**
 
-- Red (before the fix; `*GraphSummary*`, `GitInstallCommandTests`, `GitDriversEndToEndTests`; saved at `/mnt/DATA/tmp/claude/red/ff2-red.txt`): 35 tests, 13 failed, 22 passed. Failed: the hand-written golden, the four `--textconv` cases (unknown option), the five textconv-value tests of GI-T09 (including the reinstall and `--uninstall` ones), the property-coverage test, and the two GI-T10 cases (`git diff` of a `pure` change is empty; `git diff` after a driver conflict).
-- Green: the same 35 pass (`/mnt/DATA/tmp/claude/red/ff2-green1.txt`). The property test first failed on test-side toggles that set a value the fixture already had; those were fixed in the tests, not the writer.
+- Red (before the fix; `*GraphSummary*`, `GitInstallCommandTests`, `GitDriversEndToEndTests`; saved as `ff2-red.txt`): 35 tests, 13 failed, 22 passed. Failed: the hand-written golden, the four `--textconv` cases (unknown option), the five textconv-value tests of GI-T09 (including the reinstall and `--uninstall` ones), the property-coverage test, and the two GI-T10 cases (`git diff` of a `pure` change is empty; `git diff` after a driver conflict).
+- Green: the same 35 pass (`ff2-green1.txt`). The property test first failed on test-side toggles that set a value the fixture already had; those were fixed in the tests, not the writer.
 - Written after the code in that sense: `GraphSummaryPropertyTests.EveryBuiltInNodeKindHasAnArmThatRendersItsKind` and `EveryPropertyOfEveryBuiltInNodeKindHasAMutationCase` passed on the first run (the old writer already rendered every kind; the second is a tripwire for future properties). The regenerated AllNodes and HelloWorld goldens are recorded from the writer and only reviewed.
 - Full suite 1654 total, 1644 passed, 10 skipped, 0 failed; `dotnet format --verify-no-changes` clean; build 0 warnings 0 errors.
 
@@ -705,7 +705,7 @@ Sub-phase F (`6925062^..00c87e3`), reviewed at `00c87e3`: Checkpoint F not accep
 
 **Red/green evidence**
 
-- Red (saved at `/mnt/DATA/tmp/claude/red/ff3-cli-red.txt` and `ff3-core-red.txt`): `FormatCommandTests`, `GraphMergerTests`, `GitInstallCommandTests`, `GitDriversEndToEndTests` 53 tests, 5 failed (shuffled connections, unreadable directory line, absolute path outside the current directory, the byte-exact fallback, the isolated git configuration); `JsonDocumentFormatTests` 9 tests, 1 failed (connection order).
+- Red (saved as `ff3-cli-red.txt` and `ff3-core-red.txt`): `FormatCommandTests`, `GraphMergerTests`, `GitInstallCommandTests`, `GitDriversEndToEndTests` 53 tests, 5 failed (shuffled connections, unreadable directory line, absolute path outside the current directory, the byte-exact fallback, the isolated git configuration); `JsonDocumentFormatTests` 9 tests, 1 failed (connection order).
 - Green: the same classes pass; `NetPrints.Cli.Tests` 266 of 266.
 - Written after the code in that sense: the two F-R19 tests passed on the first run (the install was already idempotent, as probe 4 said). No test pins the UTF-8 console encoding: on Linux the default is already UTF-8, so it could not be made red here.
 - Full suite 1662 total, 1652 passed, 10 skipped, 0 failed; `dotnet format --verify-no-changes` clean; build 0 warnings 0 errors.

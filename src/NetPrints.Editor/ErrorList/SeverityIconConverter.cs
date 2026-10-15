@@ -1,7 +1,7 @@
 using System.Globalization;
 using Avalonia.Data.Converters;
-using Material.Icons;
 using NetPrints.Compilation;
+using NetPrints.Editor.Icons;
 
 namespace NetPrints.Editor.ErrorList;
 
@@ -11,17 +11,17 @@ public sealed class SeverityIconConverter : IValueConverter
     /// <summary>Shared, stateless instance for XAML bindings.</summary>
     public static readonly SeverityIconConverter Instance = new();
 
-    /// <summary>Maps <paramref name="value"/> to its icon kind.</summary>
+    /// <summary>Maps <paramref name="value"/> to its icon id.</summary>
     /// <param name="value">Severity to convert; anything but a <see cref="CodeDiagnosticSeverity"/> yields <see langword="null"/>.</param>
     /// <param name="targetType">Unused.</param>
     /// <param name="parameter">Unused.</param>
     /// <param name="culture">Unused.</param>
-    /// <returns>The severity's icon kind, or <see langword="null"/>.</returns>
+    /// <returns>The severity's icon id, or <see langword="null"/>.</returns>
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => value switch
     {
-        CodeDiagnosticSeverity.Error => MaterialIconKind.CloseCircle,
-        CodeDiagnosticSeverity.Warning => MaterialIconKind.AlertCircle,
-        CodeDiagnosticSeverity.Info => MaterialIconKind.InformationCircle,
+        CodeDiagnosticSeverity.Error => IconIds.SeverityError,
+        CodeDiagnosticSeverity.Warning => IconIds.SeverityWarning,
+        CodeDiagnosticSeverity.Info => IconIds.SeverityInfo,
         _ => null,
     };
 

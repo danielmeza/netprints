@@ -203,6 +203,40 @@ namespace NetPrints.Tests.Projects
             }
         }
 
+        // A .netpc saved with Const still loads; generating it reports NPT009 naming the variable instead of
+        // writing C# that fails with CS0145.
+        [Fact]
+        public async Task AGraphWithAConstVariableLoadsAndGenerateAsyncReportsNpt009()
+        {
+            string directory = Directory.CreateTempSubdirectory("netprints-generator-const-").FullName;
+            try
+            {
+                var cls = new ClassGraph { Name = "WithConst", Namespace = "GenTests" };
+                cls.Variables.Add(new Variable(cls, "Limit", TypeSpecifier.FromType<int>(), null, null, VariableModifiers.Const));
+                string graphPath = await WriteGraphAsync(directory, cls);
+                string outputPath = Path.Combine(directory, "WithConst.netpc.g.cs");
+
+                ClassGraph loaded = await LoadClassAsync(graphPath);
+                Assert.Equal(VariableModifiers.Const, Assert.Single(loaded.Variables).Modifiers);
+
+                var request = new GenerateRequest(
+                    Path.Combine(directory, "Gen.csproj"), "GenTests", "netprints.default",
+                    [new GraphJob(graphPath, outputPath)], []);
+                IReadOnlyList<GeneratedFileResult> results = await NewGenerator().GenerateAsync(request, TestContext.Current.CancellationToken);
+
+                GeneratedFileResult result = Assert.Single(results);
+                Assert.False(result.Written);
+                CodeDiagnostic diagnostic = Assert.Single(result.Diagnostics);
+                Assert.Equal(TranslationDiagnosticCodes.ConstVariableUnsupported, diagnostic.Id);
+                Assert.Contains("'Limit'", diagnostic.Message, StringComparison.Ordinal);
+                Assert.False(File.Exists(outputPath));
+            }
+            finally
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+
         [Fact]
         public void RenderFileNormalizesLineEndingsAndTrailingNewline()
         {

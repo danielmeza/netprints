@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Editor.Hosting;
-using NetPrints.Editor.Main;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Projects;
 using NetPrints.Workspace;
@@ -84,7 +83,7 @@ public sealed class ProjectPropertyTests : IDisposable
 
         try
         {
-            await new MainEditorVM(editor.Context).LoadProjectAsync(csproj);
+            await new ProjectRig(editor.Context).LoadProjectAsync(csproj);
 
             Assert.Equal(2, editor.Projects.LoadCalls.Count);
             Assert.Contains("NetPrintsTestMode", editor.Extensions.Current.ProjectProperties);
@@ -103,7 +102,7 @@ public sealed class ProjectPropertyTests : IDisposable
 
         try
         {
-            await new MainEditorVM(editor.Context).LoadProjectAsync(csproj);
+            await new ProjectRig(editor.Context).LoadProjectAsync(csproj);
 
             Assert.Single(editor.Projects.LoadCalls);
         }

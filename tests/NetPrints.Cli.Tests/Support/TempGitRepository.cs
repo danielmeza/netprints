@@ -50,8 +50,19 @@ internal sealed class TempGitRepository : IDisposable
 
     public void Dispose()
     {
-        Directory.Delete(Path, recursive: true);
-        Directory.Delete(_isolation, recursive: true);
+        DeleteTree(Path);
+        DeleteTree(_isolation);
+    }
+
+    // Git marks its object files read-only, which Windows refuses to delete.
+    private static void DeleteTree(string directory)
+    {
+        foreach (string file in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories))
+        {
+            System.IO.File.SetAttributes(file, FileAttributes.Normal);
+        }
+
+        Directory.Delete(directory, recursive: true);
     }
 
     public Task<ProcessResult> RunGitAsync(params string[] args) => RunGitAsync(null, args);

@@ -472,8 +472,8 @@ internal sealed class CatalogWalker(RoslynCompilation compilation, ICatalogFilte
         {
             case ITypeParameterSymbol parameter:
                 return new CatalogTypeRef { Name = parameter.Name, Generic = true };
-            case IArrayTypeSymbol:
-                return new CatalogTypeRef { Name = ArrayTypeName };
+            case IArrayTypeSymbol array:
+                return ArrayTypeRef(array);
             case IDynamicTypeSymbol:
                 return new CatalogTypeRef { Name = ObjectTypeName };
             case INamedTypeSymbol named:
@@ -487,5 +487,24 @@ internal sealed class CatalogWalker(RoslynCompilation compilation, ICatalogFilte
             default:
                 return new CatalogTypeRef { Name = type.ToDisplayString() };
         }
+    }
+
+    private CatalogTypeRef ArrayTypeRef(IArrayTypeSymbol array)
+    {
+        System.Text.StringBuilder suffix = new();
+        ITypeSymbol element = array;
+        while (element is IArrayTypeSymbol inner)
+        {
+            suffix.Append('[').Append(',', inner.Rank - 1).Append(']');
+            element = inner.ElementType;
+        }
+
+        if (element is ITypeParameterSymbol or IPointerTypeSymbol)
+        {
+            return new CatalogTypeRef { Name = ArrayTypeName };
+        }
+
+        CatalogTypeRef elementRef = TypeRef(element);
+        return elementRef with { Name = elementRef.Name + suffix, IsEnum = false, IsInterface = false };
     }
 }

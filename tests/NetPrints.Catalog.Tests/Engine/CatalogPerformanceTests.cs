@@ -17,10 +17,14 @@ namespace NetPrints.Catalog.Tests.Engine;
 public sealed class CatalogPerformanceTests
 {
     private const string SystemRuntime = "System.Runtime";
-    private static readonly TimeSpan FixtureLimit = TimeSpan.FromSeconds(5);
-    private static readonly TimeSpan SystemRuntimeLimit = TimeSpan.FromSeconds(30);
+    private const int SanityFactor = 5;
+
+    private static readonly bool Strict = Environment.GetEnvironmentVariable("NETPRINTS_PERF_STRICT") == "1";
+    private static readonly TimeSpan FixtureLimit = TimeSpan.FromSeconds(Strict ? 5 : 5 * SanityFactor);
+    private static readonly TimeSpan SystemRuntimeLimit = TimeSpan.FromSeconds(Strict ? 30 : 30 * SanityFactor);
 
     [Fact]
+    [Trait("Category", "Performance")]
     public void TheFixtureCatalogIsBuiltUnderFiveSeconds()
     {
         var watch = Stopwatch.StartNew();
@@ -32,6 +36,7 @@ public sealed class CatalogPerformanceTests
     }
 
     [Fact]
+    [Trait("Category", "Performance")]
     public void TheSystemRuntimeReferenceAssemblyIsCatalogedUnderThirtySeconds()
     {
         string directory = ReferenceAssemblyDirectory();

@@ -1,6 +1,9 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.CodeAnalysis.CSharp;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -84,9 +87,14 @@ namespace NetPrints.Graph
             }
         }
 
+        private readonly List<BaseType> declaredTypes = [];
+
+        private BaseType DeclaredType(int index) =>
+            index < declaredTypes.Count ? declaredTypes[index] : TypeSpecifier.FromType<object>();
+
         /// <summary>
-        /// Propagates each input type pin's inferred type (or <see cref="object"/> if none has been
-        /// inferred) to the corresponding output data pin, so a custom event's argument pins (added by
+        /// Propagates each input type pin's inferred type (or the type declared for the argument, <see cref="object"/>
+        /// by default, if none has been inferred) to the corresponding output data pin, so a custom event's argument pins (added by
         /// <see cref="AddArgument"/>) reflect a connected type. An override entry's argument pins have
         /// no input type pins and are unaffected.
         /// </summary>
@@ -98,7 +106,7 @@ namespace NetPrints.Graph
 
             for (int i = 0; i < InputTypePins.Count; i++)
             {
-                OutputDataPins[i].PinType.Value = InputTypePins[i].InferredType?.Value ?? TypeSpecifier.FromType<object>();
+                OutputDataPins[i].PinType.Value = InputTypePins[i].InferredType?.Value ?? DeclaredType(i);
             }
         }
 
@@ -131,6 +139,77 @@ namespace NetPrints.Graph
         }
 
         /// <summary>
+        /// The entry's arguments, in order: the name and type of each output data pin. A pin whose type is not a
+        /// plain <see cref="TypeSpecifier"/> reads as <see cref="object"/>.
+        /// </summary>
+        public IReadOnlyList<EventArgument> Arguments =>
+            OutputDataPins.Select(pin => new EventArgument(pin.Name, pin.PinType.Value as TypeSpecifier ?? TypeSpecifier.FromType<object>())).ToList();
+
+        /// <summary>
+        /// The entry's arguments as declared: the name of each output data pin and the type set by
+        /// <see cref="SetArguments"/> (<see cref="object"/> if none), not the type a connected type node infers.
+        /// This is what is serialized, so a type node's own connection stays the only record of its type.
+        /// </summary>
+        public IReadOnlyList<EventArgument> DeclaredArguments =>
+            OutputDataPins.Select((pin, i) => new EventArgument(pin.Name, DeclaredType(i) as TypeSpecifier ?? TypeSpecifier.FromType<object>())).ToList();
+
+        /// <summary>
+        /// Whether <paramref name="name"/> can name an argument: a C# identifier that is not a keyword.
+        /// </summary>
+        /// <param name="name">The candidate name.</param>
+        /// <returns><see langword="true"/> if <see cref="SetArguments"/> accepts the name.</returns>
+        public static bool IsValidArgumentName(string name) =>
+            SyntaxFacts.IsValidIdentifier(name) && SyntaxFacts.GetKeywordKind(name) == SyntaxKind.None;
+
+        /// <summary>
+        /// Replaces the custom event's arguments. The output pins follow in order: pins that stay keep their
+        /// connections, extra ones are disconnected and removed, missing ones are added.
+        /// </summary>
+        /// <param name="arguments">The new arguments; names are valid C# identifiers and unique.</param>
+        /// <exception cref="InvalidOperationException">This is an override entry, whose arguments come from the base method.</exception>
+        /// <exception cref="ArgumentException">A name is not a valid identifier or is used twice; nothing changes.</exception>
+        public void SetArguments(IReadOnlyList<EventArgument> arguments)
+        {
+            ArgumentNullException.ThrowIfNull(arguments);
+
+            if (OverriddenMethod is not null)
+            {
+                throw new InvalidOperationException("An override entry's arguments come from the base method.");
+            }
+
+            HashSet<string> seen = [];
+            foreach (EventArgument argument in arguments)
+            {
+                if (!IsValidArgumentName(argument.Name))
+                {
+                    throw new ArgumentException($"'{argument.Name}' is not a valid C# identifier", nameof(arguments));
+                }
+
+                if (!seen.Add(argument.Name))
+                {
+                    throw new ArgumentException($"The argument name '{argument.Name}' is used twice", nameof(arguments));
+                }
+            }
+
+            while (OutputDataPins.Count > arguments.Count)
+            {
+                RemoveArgument();
+            }
+
+            while (OutputDataPins.Count < arguments.Count)
+            {
+                AddArgument();
+            }
+
+            for (int i = 0; i < arguments.Count; i++)
+            {
+                OutputDataPins[i].Name = arguments[i].Name;
+                OutputDataPins[i].PinType.Value = arguments[i].Type;
+                declaredTypes[i] = arguments[i].Type;
+            }
+        }
+
+        /// <summary>
         /// Adds one more custom-event argument: an output data pin typed <see cref="object"/> by
         /// default, and the matching input type pin used to resolve its actual type from a connected
         /// type node (the same pin pattern as <see cref="MethodEntryNode.AddArgument"/>).
@@ -140,6 +219,7 @@ namespace NetPrints.Graph
             int argIndex = OutputDataPins.Count;
             AddOutputDataPin($"Input{argIndex}", new ObservableValue<BaseType>(TypeSpecifier.FromType<object>()));
             AddInputTypePin($"Input{argIndex}Type");
+            declaredTypes.Add(TypeSpecifier.FromType<object>());
         }
 
         /// <summary>
@@ -162,6 +242,7 @@ namespace NetPrints.Graph
                     NodeInputTypePin itpToRemove = InputTypePins[InputTypePins.Count - 1];
                     GraphUtil.DisconnectInputTypePin(itpToRemove);
                     InputTypePins.Remove(itpToRemove);
+                    declaredTypes.RemoveAt(declaredTypes.Count - 1);
                 }
             }
         }

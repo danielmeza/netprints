@@ -269,8 +269,12 @@ website/node_modules/
 website/build/
 website/.docusaurus/
 website/static/img/*.png
+website/static/img/*.svg
 docs/api/_site/
 docs/api/reference/
 
 # Publish output from `dotnet publish ... -o out/`
 out/
+
+# Python bytecode of the hook scripts
+__pycache__/

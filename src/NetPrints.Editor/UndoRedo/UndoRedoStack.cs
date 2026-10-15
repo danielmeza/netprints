@@ -5,7 +5,7 @@ namespace NetPrints.Editor.UndoRedo;
 /// </summary>
 public interface IUndoableCommand
 {
-    /// <summary>Human-readable name of the command (unused by <see cref="UndoRedoStack"/> itself; for diagnostics).</summary>
+    /// <summary>Human-readable name of the command (shown as <see cref="UndoRedoStack.UndoName"/> and <see cref="UndoRedoStack.RedoName"/>).</summary>
     string Name { get; }
 
     /// <summary>Performs the command's action.</summary>
@@ -15,6 +15,12 @@ public interface IUndoableCommand
     void Undo();
 }
 
+/// <summary>A position of an <see cref="UndoRedoStack"/> captured by <see cref="UndoRedoStack.CapturePosition"/>.</summary>
+/// <param name="Depth">The number of recorded commands.</param>
+/// <param name="Top">The newest recorded command, or null.</param>
+/// <param name="Epoch">How many times the saved state was forgotten before the capture.</param>
+public readonly record struct SavePoint(int Depth, IUndoableCommand? Top, int Epoch);
+
 /// <summary>
 /// Undo/redo history of one class editor (the WPF editor used a global singleton).
 /// </summary>
@@ -22,12 +28,68 @@ public sealed class UndoRedoStack
 {
     private readonly Stack<IUndoableCommand> undoStack = new();
     private readonly Stack<IUndoableCommand> redoStack = new();
+    private int? savedDepth;
+    private IUndoableCommand? savedTop;
+    private int epoch;
+    private int applying;
 
     /// <summary>Whether <see cref="Undo"/> would undo a command.</summary>
     public bool CanUndo => undoStack.Count > 0;
 
     /// <summary>Whether <see cref="Redo"/> would redo a command.</summary>
     public bool CanRedo => redoStack.Count > 0;
+
+    /// <summary>Whether the history is exactly where <see cref="MarkSaved()"/> last recorded it (same depth, same top command).</summary>
+    public bool IsAtSavedState => savedDepth is { } depth && depth == undoStack.Count && ReferenceEquals(savedTop, TopOrNull());
+
+    /// <summary>Whether a command is being executed, undone or redone right now: a model change seen meanwhile belongs to the history, not to an edit that bypasses it.</summary>
+    public bool IsApplying => applying > 0;
+
+    /// <summary>The <see cref="IUndoableCommand.Name"/> of the command <see cref="Undo"/> would undo, or null.</summary>
+    public string? UndoName => undoStack.TryPeek(out var command) ? command.Name : null;
+
+    /// <summary>The <see cref="IUndoableCommand.Name"/> of the command <see cref="Redo"/> would redo, or null.</summary>
+    public string? RedoName => redoStack.TryPeek(out var command) ? command.Name : null;
+
+    /// <summary>Records the current history position as the saved state and raises <see cref="Changed"/>.</summary>
+    public void MarkSaved()
+    {
+        savedDepth = undoStack.Count;
+        savedTop = TopOrNull();
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Captures the current history position so a save that starts now can mark exactly that state as saved with <see cref="MarkSaved(SavePoint)"/>.</summary>
+    /// <returns>The position, valid until <see cref="ForgetSavedState"/> or <see cref="Clear"/> is called.</returns>
+    public SavePoint CapturePosition() => new(undoStack.Count, TopOrNull(), epoch);
+
+    /// <summary>Records <paramref name="point"/> as the saved state, unless <see cref="ForgetSavedState"/> or <see cref="Clear"/> ran since it was captured.</summary>
+    /// <param name="point">A position returned by <see cref="CapturePosition"/>.</param>
+    public void MarkSaved(SavePoint point)
+    {
+        if (point.Epoch != epoch)
+        {
+            return;
+        }
+
+        savedDepth = point.Depth;
+        savedTop = point.Top;
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Forgets the saved state: a change that bypasses the history (a node delete) calls this, so returning to the old position does not count as saved.</summary>
+    public void ForgetSavedState()
+    {
+        epoch++;
+        if (savedDepth is null)
+        {
+            return;
+        }
+
+        savedDepth = null;
+        savedTop = null;
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
 
     /// <summary>Raised after <see cref="Do"/>, <see cref="Undo"/>, <see cref="Redo"/> or <see cref="Clear"/> changes the history.</summary>
     public event EventHandler? Changed;
@@ -42,7 +104,14 @@ public sealed class UndoRedoStack
     /// <summary>Executes a command and records it. Clears the redo history (PAR-60).</summary>
     public void Do(IUndoableCommand command)
     {
-        command.Execute();
+        RunApplying(command.Execute);
+        Record(command);
+    }
+
+    /// <summary>Records a command whose <see cref="IUndoableCommand.Execute"/> the caller already ran, so a command that turned out to change nothing can be left out. Clears the redo history.</summary>
+    /// <param name="command">The executed command.</param>
+    public void Record(IUndoableCommand command)
+    {
         undoStack.Push(command);
         redoStack.Clear();
         Changed?.Invoke(this, EventArgs.Empty);
@@ -57,7 +126,7 @@ public sealed class UndoRedoStack
             return false;
         }
 
-        command.Undo();
+        RunApplying(command.Undo);
         redoStack.Push(command);
         Changed?.Invoke(this, EventArgs.Empty);
         Applied?.Invoke(this, EventArgs.Empty);
@@ -72,7 +141,7 @@ public sealed class UndoRedoStack
             return false;
         }
 
-        command.Execute();
+        RunApplying(command.Execute);
         undoStack.Push(command);
         Changed?.Invoke(this, EventArgs.Empty);
         Applied?.Invoke(this, EventArgs.Empty);
@@ -84,8 +153,38 @@ public sealed class UndoRedoStack
     {
         undoStack.Clear();
         redoStack.Clear();
+        epoch++;
+        savedDepth = null;
+        savedTop = null;
         Changed?.Invoke(this, EventArgs.Empty);
     }
+
+    /// <summary>Runs <paramref name="action"/> with <see cref="IsApplying"/> true; for a caller that executes a command itself before <see cref="Record"/>.</summary>
+    /// <param name="action">The action that changes the model.</param>
+    public void RunApplying(Action action) => RunApplying(() =>
+    {
+        action();
+        return true;
+    });
+
+    /// <summary>Runs <paramref name="action"/> with <see cref="IsApplying"/> true and returns what it returns.</summary>
+    /// <typeparam name="T">The type of the result.</typeparam>
+    /// <param name="action">The function that changes the model.</param>
+    /// <returns>The result of <paramref name="action"/>.</returns>
+    public T RunApplying<T>(Func<T> action)
+    {
+        applying++;
+        try
+        {
+            return action();
+        }
+        finally
+        {
+            applying--;
+        }
+    }
+
+    private IUndoableCommand? TopOrNull() => undoStack.TryPeek(out var command) ? command : null;
 }
 
 /// <summary>

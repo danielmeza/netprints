@@ -66,6 +66,15 @@ namespace NetPrints.Core
         }
 
         /// <summary>
+        /// Whether the parameter is a C# <c>params</c> array.
+        /// </summary>
+        public bool IsParams
+        {
+            get;
+            init;
+        }
+
+        /// <summary>
         /// Creates a method parameter specifier.
         /// </summary>
         /// <param name="name">Name of the parameter.</param>
@@ -182,6 +191,14 @@ namespace NetPrints.Core
             Visibility = visibility;
             GenericArguments = genericArguments.ToList();
         }
+
+        /// <summary>
+        /// Returns a copy of this specifier under <paramref name="name"/>; everything else is unchanged.
+        /// </summary>
+        /// <param name="name">The new method name.</param>
+        /// <returns>The renamed specifier.</returns>
+        public MethodSpecifier WithName(string name) =>
+            new(name, Parameters, ReturnTypes, Modifiers, Visibility, DeclaringType, GenericArguments);
 
         /// <summary>
         /// Returns the method's declaring type (for a static method), name, parameter types,

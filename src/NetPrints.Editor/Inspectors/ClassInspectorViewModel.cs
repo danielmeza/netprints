@@ -1,0 +1,130 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+using NetPrints.Core;
+using NetPrints.Editor.CodeView;
+using NetPrints.Editor.UndoRedo;
+
+namespace NetPrints.Editor.Inspectors;
+
+/// <summary>The class inspector: the class's name, namespace, visibility and modifiers, and its generated code.</summary>
+public sealed class ClassInspectorViewModel : ObservableObject
+{
+    private readonly UndoRedoStack undoRedo;
+
+    /// <summary>Creates the inspector of a class.</summary>
+    /// <param name="cls">The class.</param>
+    /// <param name="codeView">The read-only C# code view of the class.</param>
+    /// <param name="undoRedo">The class's undo stack, which records name, namespace, visibility and modifier edits.</param>
+    public ClassInspectorViewModel(ClassGraph cls, CodeViewViewModel codeView, UndoRedoStack undoRedo)
+    {
+        ArgumentNullException.ThrowIfNull(cls);
+        ArgumentNullException.ThrowIfNull(codeView);
+        ArgumentNullException.ThrowIfNull(undoRedo);
+        Class = cls;
+        CodeView = codeView;
+        this.undoRedo = undoRedo;
+    }
+
+    /// <summary>Gets the class.</summary>
+    public ClassGraph Class { get; }
+
+    /// <summary>Gets the read-only C# code view of the class.</summary>
+    public CodeViewViewModel CodeView { get; }
+
+    /// <summary>Gets the class name with its namespace.</summary>
+    public string FullName => Class.FullName ?? "";
+
+    /// <summary>Gets the title of the class: its name.</summary>
+    public string Title => Class.Name ?? "";
+
+    /// <summary>Gets the visibility values offered by the visibility chooser.</summary>
+    public IReadOnlyList<MemberVisibility> PossibleVisibilities => VisibilityChoices.All;
+
+    /// <summary>Gets or sets the class's name, without namespace; also refreshes <see cref="Title"/> and <see cref="FullName"/>.</summary>
+    public string Name
+    {
+        get => Class.Name;
+        set
+        {
+            if (Class.Name != value)
+            {
+                undoRedo.Do(EditorCommands.SetMemberProperty("Rename class", value, () => Class.Name, name =>
+                {
+                    Class.Name = name;
+                    OnPropertyChanged(nameof(Name));
+                    OnPropertyChanged(nameof(Title));
+                    OnPropertyChanged(nameof(FullName));
+                }));
+            }
+        }
+    }
+
+    /// <summary>Gets or sets the class's namespace; also refreshes <see cref="FullName"/>.</summary>
+    public string Namespace
+    {
+        get => Class.Namespace;
+        set
+        {
+            if (Class.Namespace != value)
+            {
+                undoRedo.Do(EditorCommands.SetMemberProperty("Set namespace", value, () => Class.Namespace, space =>
+                {
+                    Class.Namespace = space;
+                    OnPropertyChanged(nameof(Namespace));
+                    OnPropertyChanged(nameof(FullName));
+                }));
+            }
+        }
+    }
+
+    /// <summary>Gets or sets the class's visibility.</summary>
+    public MemberVisibility Visibility
+    {
+        get => Class.Visibility;
+        set
+        {
+            if (Class.Visibility != value)
+            {
+                undoRedo.Do(EditorCommands.SetMemberProperty("Set visibility", value, () => Class.Visibility, visibility =>
+                {
+                    Class.Visibility = visibility;
+                    OnPropertyChanged(nameof(Visibility));
+                }));
+            }
+        }
+    }
+
+    /// <summary>Gets or sets the class's modifiers.</summary>
+    public ClassModifiers Modifiers
+    {
+        get => Class.Modifiers;
+        set
+        {
+            if (Class.Modifiers != value)
+            {
+                undoRedo.Do(EditorCommands.SetMemberProperty("Set modifiers", value, () => Class.Modifiers, modifiers =>
+                {
+                    Class.Modifiers = modifiers;
+                    OnPropertyChanged(nameof(Modifiers));
+                    OnPropertyChanged(nameof(IsSealed));
+                    OnPropertyChanged(nameof(IsAbstract));
+                    OnPropertyChanged(nameof(IsStatic));
+                    OnPropertyChanged(nameof(IsPartial));
+                }));
+            }
+        }
+    }
+
+    /// <summary>Gets or sets whether <see cref="ClassModifiers.Sealed"/> is set.</summary>
+    public bool IsSealed { get => Modifiers.HasFlag(ClassModifiers.Sealed); set => SetModifier(ClassModifiers.Sealed, value); }
+
+    /// <summary>Gets or sets whether <see cref="ClassModifiers.Abstract"/> is set.</summary>
+    public bool IsAbstract { get => Modifiers.HasFlag(ClassModifiers.Abstract); set => SetModifier(ClassModifiers.Abstract, value); }
+
+    /// <summary>Gets or sets whether <see cref="ClassModifiers.Static"/> is set.</summary>
+    public bool IsStatic { get => Modifiers.HasFlag(ClassModifiers.Static); set => SetModifier(ClassModifiers.Static, value); }
+
+    /// <summary>Gets or sets whether <see cref="ClassModifiers.Partial"/> is set.</summary>
+    public bool IsPartial { get => Modifiers.HasFlag(ClassModifiers.Partial); set => SetModifier(ClassModifiers.Partial, value); }
+
+    private void SetModifier(ClassModifiers flag, bool value) => Modifiers = value ? Modifiers | flag : Modifiers & ~flag;
+}

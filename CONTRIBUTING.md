@@ -92,8 +92,8 @@ and validates every conforming instance with the sourcemeta `jsonschema` CLI.
   belong in the commit message, the PR description or `specs/`, not in code comments — this
   matters most here, since this repo is contributed back upstream. XML doc comments (`///`) are
   the exception and may be as detailed as needed.
-- Commit messages end with the attribution line(s) your session is configured with; PR
-  descriptions end with the "Generated with Claude Code" footer when written by Claude Code.
+- Commit messages, PR descriptions and comments carry no tool or model attribution: no
+  `Co-Authored-By` or session trailers, no "Generated with" footers.
 
 ## Getting help
 

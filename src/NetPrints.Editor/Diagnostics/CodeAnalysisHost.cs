@@ -40,6 +40,7 @@ public sealed class CodeAnalysisHost : ICodeAnalysisHost
     private readonly BehaviorSubject<CodeAnalysisSnapshot> snapshots = new(CodeAnalysisSnapshot.Empty);
     private readonly IDisposable pipeline;
     private volatile CodeAnalysisSession? session;
+    private volatile Project? lastRequested;
     private CancellationTokenSource? analysisCts;
     private bool disposed;
 
@@ -81,6 +82,7 @@ public sealed class CodeAnalysisHost : ICodeAnalysisHost
         ArgumentNullException.ThrowIfNull(project);
         ObjectDisposedException.ThrowIf(disposed, this);
 
+        lastRequested = project;
         requests.OnNext(project);
     }
 
@@ -99,10 +101,19 @@ public sealed class CodeAnalysisHost : ICodeAnalysisHost
     {
         ProjectSnapshot? snapshot = reflection.Snapshot;
         session = snapshot is null ? null : new CodeAnalysisSession(snapshot.References, snapshot.OtherSources, snapshot.CompilationOptionsJson);
+        if (lastRequested is { } project)
+        {
+            requests.OnNext(project);
+        }
     }
 
     private void OnDebounced(Project project)
     {
+        if (!reflection.IsLoaded)
+        {
+            return;
+        }
+
         analysisCts?.Cancel();
         analysisCts?.Dispose();
         var cts = new CancellationTokenSource();

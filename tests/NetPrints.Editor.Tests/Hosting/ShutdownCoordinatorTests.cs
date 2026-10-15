@@ -116,4 +116,89 @@ public class ShutdownCoordinatorTests
         Assert.Equal(1024, entry.EventId.Id);
         Assert.Same(failure, entry.Exception);
     }
+
+    [Fact]
+    public async Task ADeclinedConfirmationCancelsTheRequestSkipsCleanupAndTheNextRequestAsksAgain()
+    {
+        int cleanups = 0;
+        int confirmations = 0;
+        var coordinator = new ShutdownCoordinator(
+            () =>
+            {
+                cleanups++;
+                return ValueTask.CompletedTask;
+            },
+            () => { },
+            new CollectingLogger<ShutdownCoordinator>(),
+            () =>
+            {
+                confirmations++;
+                return Task.FromResult(false);
+            });
+
+        var first = new ShutdownRequestedEventArgs();
+        var second = new ShutdownRequestedEventArgs();
+        coordinator.OnShutdownRequested(first);
+        await Task.Yield();
+        coordinator.OnShutdownRequested(second);
+
+        Assert.True(first.Cancel);
+        Assert.True(second.Cancel);
+        Assert.Equal(2, confirmations);
+        Assert.Equal(0, cleanups);
+    }
+
+    [Fact]
+    public async Task AnAcceptedConfirmationRunsCleanupThenShutdown()
+    {
+        var shutdownCalled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        int cleanups = 0;
+        var coordinator = new ShutdownCoordinator(
+            () =>
+            {
+                cleanups++;
+                return ValueTask.CompletedTask;
+            },
+            () => shutdownCalled.TrySetResult(),
+            new CollectingLogger<ShutdownCoordinator>(),
+            () => Task.FromResult(true));
+
+        var request = new ShutdownRequestedEventArgs();
+        coordinator.OnShutdownRequested(request);
+        await shutdownCalled.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+        Assert.True(request.Cancel);
+        Assert.Equal(1, cleanups);
+    }
+
+    [Fact]
+    public async Task AThrowingConfirmationIsLoggedAndTheApplicationKeepsRunning()
+    {
+        var failure = new InvalidOperationException("confirm boom");
+        int shutdownCalls = 0;
+        int cleanups = 0;
+        var logger = new CollectingLogger<ShutdownCoordinator>();
+        var coordinator = new ShutdownCoordinator(
+            () =>
+            {
+                cleanups++;
+                return ValueTask.CompletedTask;
+            },
+            () => shutdownCalls++,
+            logger,
+            () => throw failure);
+
+        var request = new ShutdownRequestedEventArgs();
+        coordinator.OnShutdownRequested(request);
+        await Task.Yield();
+        var next = new ShutdownRequestedEventArgs();
+        coordinator.OnShutdownRequested(next);
+
+        Assert.True(request.Cancel);
+        Assert.True(next.Cancel);
+        Assert.Equal(0, shutdownCalls);
+        Assert.Equal(0, cleanups);
+        Assert.All(logger.Entries, entry => Assert.Equal(1026, entry.EventId.Id));
+        Assert.Same(failure, logger.Entries[0].Exception);
+    }
 }

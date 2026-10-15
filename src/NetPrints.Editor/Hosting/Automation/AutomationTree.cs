@@ -8,6 +8,7 @@ using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.VisualTree;
 using NetPrints.Editor.Graph;
+using NetPrints.Editor.Icons;
 using Nodify.Avalonia;
 
 namespace NetPrints.Editor.Hosting.Automation;
@@ -138,8 +139,9 @@ public sealed class AutomationTree : IDisposable
             }
         }
 
-        // Open popups (their content is a logical child of the Popup).
-        foreach (var popupChild in visited.OfType<Popup>().Where(p => p.IsOpen).Select(p => p.Child as Control).OfType<Control>().ToList())
+        // Open popups (their content is a logical child of the Popup) and the content of open button flyouts.
+        var openFlyouts = visited.OfType<Button>().Select(b => b.Flyout).OfType<Flyout>().Where(f => f.IsOpen).Select(f => f.Content as Control);
+        foreach (var popupChild in visited.OfType<Popup>().Where(p => p.IsOpen).Select(p => p.Child as Control).Concat(openFlyouts).OfType<Control>().ToList())
         {
             foreach (var c in SelfAndDescendants(popupChild))
             {
@@ -188,6 +190,7 @@ public sealed class AutomationTree : IDisposable
             [AutomationPropertyNames.IsEnabled] = control.IsEffectivelyEnabled.ToString(),
             [AutomationPropertyNames.IsVisible] = control.IsEffectivelyVisible.ToString(),
             [AutomationPropertyNames.IsFocused] = control.IsFocused.ToString(),
+            [AutomationPropertyNames.ItemStatus] = AutomationProperties.GetItemStatus(control),
             [AutomationPropertyNames.IsKeyboardFocusWithin] = control.IsKeyboardFocusWithin.ToString(),
             [AutomationPropertyNames.PseudoClasses] = string.Join(' ', control.Classes),
             [AutomationPropertyNames.ToolTip] = ToolTip.GetTip(control) as string,
@@ -215,6 +218,7 @@ public sealed class AutomationTree : IDisposable
                 break;
             case NetPrints.Editor.CodeView.CodeView codeView:
                 p[AutomationPropertyNames.IsReadOnly] = codeView.Editor.IsReadOnly.ToString();
+                p[AutomationPropertyNames.HighlightingSettled] = codeView.IsHighlightingSettled.ToString();
                 break;
             case NodifyEditor editor:
                 p[AutomationPropertyNames.ViewportZoom] = Invariant(editor.ViewportZoom);
@@ -234,8 +238,8 @@ public sealed class AutomationTree : IDisposable
                 p[AutomationPropertyNames.MinorColor] = grid.MinorColor.ToString();
                 p[AutomationPropertyNames.MajorColor] = grid.MajorColor.ToString();
                 break;
-            case Image image:
-                p[AutomationPropertyNames.HasSource] = (image.Source is not null).ToString();
+            case IconPresenter icon:
+                p[AutomationPropertyNames.IconId] = icon.IconId;
                 break;
             case Popup popup:
                 p[AutomationPropertyNames.IsOpen] = popup.IsOpen.ToString();
@@ -297,6 +301,16 @@ public sealed class AutomationTree : IDisposable
         ContentControl { Content: string text } => text,
         _ => null,
     };
+
+    /// <summary>
+    /// Every tracked window followed by its controls that have an automation id, hidden ones included
+    /// (failure diagnostics).
+    /// </summary>
+    public IReadOnlyList<AutomationElement> Snapshot() =>
+        windows.SelectMany(window => SelfAndDescendants(window)
+            .Where(c => c == window || !string.IsNullOrEmpty(AutomationProperties.GetAutomationId(c)))
+            .Select(c => Describe(c, window)))
+            .ToList();
 
     /// <summary>A text dump of every tracked window's elements with automation ids (diagnostics).</summary>
     public string Dump()

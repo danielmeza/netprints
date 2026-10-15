@@ -1,0 +1,42 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edvariables="clr-namespace:NetPrints.Editor.Variables"
+             x:Class="NetPrints.Editor.Variables.VariablesPanelView"
+             x:DataType="edvariables:ShellVariablesPanelViewModel">
+  <!-- The member variables of the active class, and the local variables of the active method. -->
+  <Panel>
+    <TextBlock Margin="{StaticResource Space.S}" TextWrapping="Wrap" Text="Open a graph to see the variables of its class."
+               IsVisible="{Binding Current, Converter={x:Static ObjectConverters.IsNull}}"
+               AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariablesEmpty}" />
+    <Grid RowDefinitions="*,Auto" DataContext="{Binding Current}"
+          IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <Grid x:DataType="edvariables:VariablesPanelViewModel" RowDefinitions="Auto,*,Auto" Grid.Row="0"
+            AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariablesClassGroup}">
+        <TextBlock Classes="header" Text="Class" />
+        <ListBox Grid.Row="1" ItemsSource="{Binding ClassVariables}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="edvariables:MemberVariableViewModel">
+              <edvariables:MemberVariableView />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+        <Button Grid.Row="2" Classes="flat" Content="Add variable" Command="{Binding CreateVariableCommand}"
+                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariablesAddVariable}" />
+      </Grid>
+      <Grid x:DataType="edvariables:VariablesPanelViewModel" Grid.Row="1" RowDefinitions="Auto,Auto,Auto" IsVisible="{Binding HasMethodGroup}"
+            AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariablesMethodGroup}">
+        <TextBlock Classes="header" Text="{Binding MethodGroupHeader}" />
+        <ListBox Grid.Row="1" MaxHeight="200" ItemsSource="{Binding MethodVariables}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="edvariables:LocalVariableViewModel">
+              <edvariables:LocalVariableView />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+        <Button Grid.Row="2" Classes="flat" Content="Add local variable" Command="{Binding CreateLocalVariableCommand}"
+                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariablesAddLocalVariable}" />
+      </Grid>
+    </Grid>
+  </Panel>
+</UserControl>

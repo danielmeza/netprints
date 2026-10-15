@@ -29,7 +29,7 @@ namespace NetPrints.Serialization;
 public sealed record ProjectLoadResult(Project Project, ProjectSnapshot Snapshot, IReadOnlyList<DocumentIssue> Issues);
 
 /// <summary>
-/// Result of <see cref="ProjectPersistence.SaveAsync"/>: the files it wrote, in write order, and any
+/// Result of <c>ProjectPersistence.SaveAsync</c>: the files it wrote, in write order, and any
 /// translation failures found while rendering a dirty class's generated C# (R1-01).
 /// </summary>
 /// <param name="WrittenFiles">Full paths of the files that were written (a class's graph, its
@@ -40,7 +40,7 @@ public sealed record ProjectSaveResult(IReadOnlyList<string> WrittenFiles, IRead
 
 /// <summary>
 /// Loads, saves and adds class graphs of a project backed by a <c>.csproj</c> (document-format.md
-/// §2.8): the facade <c>MainEditorVM</c> and the CLI use instead of talking to
+/// §2.8): the editor shell and the CLI use instead of talking to
 /// <see cref="IProjectSystem"/>, <see cref="DocumentFormatRegistry"/> and <see cref="IDocumentMapper"/>
 /// directly. Stateless; safe to share. The model it builds or edits is owned by the caller's thread.
 /// </summary>
@@ -201,9 +201,25 @@ public sealed class ProjectPersistence
     /// <param name="cancellationToken">Cancels the operation.</param>
     /// <returns>The files that were written, in write order, and one diagnostic per class whose
     /// generated C# failed to render.</returns>
-    public async Task<ProjectSaveResult> SaveAsync(Project project, Func<ClassGraph, string> renderGenerated, CancellationToken cancellationToken)
+    public Task<ProjectSaveResult> SaveAsync(Project project, Func<ClassGraph, string> renderGenerated, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
+        return SaveAsync(project, project.Classes, renderGenerated, cancellationToken);
+    }
+
+    /// <summary>
+    /// Like <c>SaveAsync(project, renderGenerated, cancellationToken)</c>, but saves only the dirty
+    /// ones among <paramref name="classes"/>; the other dirty classes stay dirty.
+    /// </summary>
+    /// <param name="project">Project the classes belong to.</param>
+    /// <param name="classes">The classes to save when dirty.</param>
+    /// <param name="renderGenerated">Renders a class's generated C# file.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>The files that were written and the render diagnostics.</returns>
+    public async Task<ProjectSaveResult> SaveAsync(Project project, IReadOnlyCollection<ClassGraph> classes, Func<ClassGraph, string> renderGenerated, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(classes);
         ArgumentNullException.ThrowIfNull(renderGenerated);
 
         string projectDirectory = GetDirectoryOrThrow(project.Path);
@@ -213,7 +229,7 @@ public sealed class ProjectPersistence
         var written = new List<string>();
         var diagnostics = new List<CodeDiagnostic>();
 
-        foreach (ClassGraph cls in project.Classes)
+        foreach (ClassGraph cls in classes)
         {
             if (!cls.IsDirty)
             {
@@ -224,6 +240,7 @@ public sealed class ProjectPersistence
 
             cls.EnsureUniqueMemberIds();
 
+            long editVersion = cls.EditVersion;
             string graphPath = project.GetGraphFilePath(cls);
             ClassDocument document = current.Mapper.ToDocument(cls);
             byte[] graphBytes = await RenderAsync(
@@ -256,13 +273,13 @@ public sealed class ProjectPersistence
                 // F-07: the translator (and any extension translator) has raw throw sites that are not
                 // a TranslationException, e.g. an unresolved generic pin type. Isolate those the same
                 // way, as NPT000, so one bad class does not abort saving the rest (R1-01). A caller that
-                // wants a translation failure to abort the whole save instead (e.g. MainEditorVM.CompileAsync)
+                // wants a translation failure to abort the whole save instead (e.g. ProjectSessionViewModel.CompileAsync)
                 // throws a ClassTranslationAbortException from renderGenerated, which is left to propagate.
                 diagnostics.Add(new CodeDiagnostic(CodeDiagnosticSeverity.Error, TranslationDiagnosticCodes.Unclassified,
                     $"{cls.FullName}: {ex.Message}", cls.FullName, null, null, null, null));
             }
 
-            cls.MarkClean();
+            cls.MarkCleanIfUnchanged(editVersion);
         }
 
         return new ProjectSaveResult(written, diagnostics);
@@ -334,6 +351,115 @@ public sealed class ProjectPersistence
         cls.LoadedGraphFilePath = targetPath;
         project.Classes.Add(cls);
         return (cls, issues);
+    }
+
+    /// <summary>
+    /// Replaces a class of <paramref name="project"/> with the one read from <paramref name="content"/> (the bytes of a graph file), in the
+    /// same place of <see cref="Core.Project.Classes"/> and for the same graph file, and marks it unsaved: a save writes it.
+    /// </summary>
+    /// <param name="project">The project that holds <paramref name="existing"/>.</param>
+    /// <param name="existing">The class to replace.</param>
+    /// <param name="content">The graph file's bytes.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>The restored class, and any non-fatal issues found mapping it.</returns>
+    /// <exception cref="DocumentFormatException">The content is not a readable graph file.</exception>
+    /// <exception cref="InvalidOperationException"><paramref name="existing"/> is not a class of <paramref name="project"/>.</exception>
+    internal async Task<(ClassGraph Class, IReadOnlyList<DocumentIssue> Issues)> RestoreClassAsync(
+        Project project, ClassGraph existing, byte[] content, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(existing);
+        ArgumentNullException.ThrowIfNull(content);
+
+        int index = project.Classes.IndexOf(existing);
+        if (index < 0)
+        {
+            throw new InvalidOperationException($"'{existing.FullName}' is not a class of the project.");
+        }
+
+        Serializers current = serializers;
+        string graphFilePath = existing.LoadedGraphFilePath ?? project.GetGraphFilePath(existing);
+        var id = new DocumentId(Path.GetFileName(graphFilePath));
+        IDocumentFormat format = current.Formats.Find(id, DocumentKind.Class)
+            ?? throw new DocumentFormatException($"No document format recognizes '{id}'.", id);
+
+        ClassDocument document;
+        await using (var input = new MemoryStream(content, false))
+        {
+            document = await format.ReadClassAsync(input, id, cancellationToken).ConfigureAwait(false);
+        }
+
+        var issues = new List<DocumentIssue>();
+        ClassGraph restored = current.Mapper.FromDocument(document, project, issues, id);
+        restored.LoadedGraphFilePath = graphFilePath;
+        restored.MarkDirty();
+        project.Classes[index] = restored;
+        return (restored, issues);
+    }
+
+    /// <summary>
+    /// Adds to <paramref name="project"/> the class read from <paramref name="content"/> (the bytes of a graph file) for a graph file the project
+    /// does not have: a class that was never saved. The class is marked unsaved and remembers <paramref name="classPath"/> as its file, so a
+    /// save writes it there.
+    /// </summary>
+    /// <param name="project">The project to add the class to.</param>
+    /// <param name="classPath">The graph file's path relative to the project, with <c>/</c> separators.</param>
+    /// <param name="content">The graph file's bytes.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>The added class, and any non-fatal issues found mapping it.</returns>
+    /// <exception cref="DocumentFormatException">The content is not a readable graph file.</exception>
+    /// <exception cref="InvalidOperationException">The file already exists, or the project already has a class of that name.</exception>
+    internal async Task<(ClassGraph Class, IReadOnlyList<DocumentIssue> Issues)> RestoreNewClassAsync(
+        Project project, string classPath, byte[] content, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentException.ThrowIfNullOrEmpty(classPath);
+        ArgumentNullException.ThrowIfNull(content);
+
+        string graphFilePath = Path.GetFullPath(Path.Combine(GetDirectoryOrThrow(project.Path), classPath));
+        if (File.Exists(graphFilePath))
+        {
+            throw new InvalidOperationException($"'{classPath}' already exists in the project, so a never-saved class cannot be restored there.");
+        }
+
+        Serializers current = serializers;
+        var id = new DocumentId(Path.GetFileName(graphFilePath));
+        IDocumentFormat format = current.Formats.Find(id, DocumentKind.Class)
+            ?? throw new DocumentFormatException($"No document format recognizes '{id}'.", id);
+
+        ClassDocument document;
+        await using (var input = new MemoryStream(content, false))
+        {
+            document = await format.ReadClassAsync(input, id, cancellationToken).ConfigureAwait(false);
+        }
+
+        var issues = new List<DocumentIssue>();
+        ClassGraph restored = current.Mapper.FromDocument(document, project, issues, id);
+        if (project.Classes.Any(existing => existing.FullName == restored.FullName))
+        {
+            throw new InvalidOperationException($"A class named '{restored.FullName}' is already in the project.");
+        }
+
+        restored.LoadedGraphFilePath = graphFilePath;
+        restored.MarkDirty();
+        project.Classes.Add(restored);
+        return (restored, issues);
+    }
+
+    /// <summary>
+    /// Renders the graph file a save of <paramref name="cls"/> would write, without writing it or marking the class clean. The
+    /// class is read before the first await, so a caller that must read it on one thread only needs to start the call there.
+    /// </summary>
+    /// <param name="cls">The class to render.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>The canonical JSON of the class's graph file.</returns>
+    internal async Task<byte[]> RenderClassAsync(ClassGraph cls, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(cls);
+        Serializers current = serializers;
+        cls.EnsureUniqueMemberIds();
+        ClassDocument document = current.Mapper.ToDocument(cls);
+        return await RenderAsync((stream, ct) => current.Formats.Default.WriteClassAsync(document, stream, ct), cancellationToken).ConfigureAwait(false);
     }
 
     private static async ValueTask<byte[]> RenderAsync(Func<Stream, CancellationToken, ValueTask> write, CancellationToken cancellationToken)

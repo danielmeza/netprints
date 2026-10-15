@@ -69,3 +69,61 @@ M:System.Text.Json.JsonSerializer.SerializeAsync``1(System.IO.Pipelines.PipeWrit
 M:System.Text.Json.JsonSerializer.SerializeAsync(System.IO.Pipelines.PipeWriter,System.Object,System.Type,System.Text.Json.JsonSerializerOptions,System.Threading.CancellationToken);Use the JsonTypeInfo overload of a source-generated JsonSerializerContext
 M:System.Text.Json.JsonSerializer.Serialize``1(System.Text.Json.Utf8JsonWriter,``0,System.Text.Json.JsonSerializerOptions);Use the JsonTypeInfo overload of a source-generated JsonSerializerContext
 M:System.Text.Json.JsonSerializer.Serialize(System.Text.Json.Utf8JsonWriter,System.Object,System.Type,System.Text.Json.JsonSerializerOptions);Use the JsonTypeInfo overload of a source-generated JsonSerializerContext
+
+;; Ad-hoc debug output (ADR-0033): log through ILogger and [LoggerMessage]. The format has no wildcard, so each overload is its own line (BannedSymbolsTests lists them from the framework and fails on a new one).
+M:System.IO.File.AppendAllText(System.String,System.String);Log through ILogger
+M:System.IO.File.AppendAllText(System.String,System.String,System.Text.Encoding);Log through ILogger
+M:System.IO.File.AppendAllText(System.String,System.ReadOnlySpan{System.Char});Log through ILogger
+M:System.IO.File.AppendAllText(System.String,System.ReadOnlySpan{System.Char},System.Text.Encoding);Log through ILogger
+M:System.IO.File.AppendAllTextAsync(System.String,System.String,System.Threading.CancellationToken)~System.Threading.Tasks.Task;Log through ILogger
+M:System.IO.File.AppendAllTextAsync(System.String,System.String,System.Text.Encoding,System.Threading.CancellationToken)~System.Threading.Tasks.Task;Log through ILogger
+M:System.IO.File.AppendAllTextAsync(System.String,System.ReadOnlyMemory{System.Char},System.Threading.CancellationToken)~System.Threading.Tasks.Task;Log through ILogger
+M:System.IO.File.AppendAllTextAsync(System.String,System.ReadOnlyMemory{System.Char},System.Text.Encoding,System.Threading.CancellationToken)~System.Threading.Tasks.Task;Log through ILogger
+M:System.IO.File.AppendAllLines(System.String,System.Collections.Generic.IEnumerable{System.String});Log through ILogger
+M:System.IO.File.AppendAllLines(System.String,System.Collections.Generic.IEnumerable{System.String},System.Text.Encoding);Log through ILogger
+M:System.IO.File.AppendAllLinesAsync(System.String,System.Collections.Generic.IEnumerable{System.String},System.Threading.CancellationToken)~System.Threading.Tasks.Task;Log through ILogger
+M:System.IO.File.AppendAllLinesAsync(System.String,System.Collections.Generic.IEnumerable{System.String},System.Text.Encoding,System.Threading.CancellationToken)~System.Threading.Tasks.Task;Log through ILogger
+M:System.IO.File.AppendAllBytes(System.String,System.Byte[]);Log through ILogger
+M:System.IO.File.AppendAllBytes(System.String,System.ReadOnlySpan{System.Byte});Log through ILogger
+M:System.IO.File.AppendAllBytesAsync(System.String,System.Byte[],System.Threading.CancellationToken)~System.Threading.Tasks.Task;Log through ILogger
+M:System.IO.File.AppendAllBytesAsync(System.String,System.ReadOnlyMemory{System.Byte},System.Threading.CancellationToken)~System.Threading.Tasks.Task;Log through ILogger
+M:System.Diagnostics.Trace.Write(System.Object);Log through ILogger
+M:System.Diagnostics.Trace.Write(System.Object,System.String);Log through ILogger
+M:System.Diagnostics.Trace.Write(System.String);Log through ILogger
+M:System.Diagnostics.Trace.Write(System.String,System.String);Log through ILogger
+M:System.Diagnostics.Trace.WriteIf(System.Boolean,System.Object);Log through ILogger
+M:System.Diagnostics.Trace.WriteIf(System.Boolean,System.Object,System.String);Log through ILogger
+M:System.Diagnostics.Trace.WriteIf(System.Boolean,System.String);Log through ILogger
+M:System.Diagnostics.Trace.WriteIf(System.Boolean,System.String,System.String);Log through ILogger
+M:System.Diagnostics.Trace.WriteLine(System.Object);Log through ILogger
+M:System.Diagnostics.Trace.WriteLine(System.Object,System.String);Log through ILogger
+M:System.Diagnostics.Trace.WriteLine(System.String);Log through ILogger
+M:System.Diagnostics.Trace.WriteLine(System.String,System.String);Log through ILogger
+M:System.Diagnostics.Trace.WriteLineIf(System.Boolean,System.Object);Log through ILogger
+M:System.Diagnostics.Trace.WriteLineIf(System.Boolean,System.Object,System.String);Log through ILogger
+M:System.Diagnostics.Trace.WriteLineIf(System.Boolean,System.String);Log through ILogger
+M:System.Diagnostics.Trace.WriteLineIf(System.Boolean,System.String,System.String);Log through ILogger
+M:System.Diagnostics.Debug.Write(System.Object);Log through ILogger
+M:System.Diagnostics.Debug.Write(System.Object,System.String);Log through ILogger
+M:System.Diagnostics.Debug.Write(System.String);Log through ILogger
+M:System.Diagnostics.Debug.Write(System.String,System.String);Log through ILogger
+M:System.Diagnostics.Debug.WriteIf(System.Boolean,System.Diagnostics.Debug.WriteIfInterpolatedStringHandler@);Log through ILogger
+M:System.Diagnostics.Debug.WriteIf(System.Boolean,System.Diagnostics.Debug.WriteIfInterpolatedStringHandler@,System.String);Log through ILogger
+M:System.Diagnostics.Debug.WriteIf(System.Boolean,System.Object);Log through ILogger
+M:System.Diagnostics.Debug.WriteIf(System.Boolean,System.Object,System.String);Log through ILogger
+M:System.Diagnostics.Debug.WriteIf(System.Boolean,System.String);Log through ILogger
+M:System.Diagnostics.Debug.WriteIf(System.Boolean,System.String,System.String);Log through ILogger
+M:System.Diagnostics.Debug.WriteLine(System.Object);Log through ILogger
+M:System.Diagnostics.Debug.WriteLine(System.Object,System.String);Log through ILogger
+M:System.Diagnostics.Debug.WriteLine(System.String);Log through ILogger
+M:System.Diagnostics.Debug.WriteLine(System.String,System.Object[]);Log through ILogger
+M:System.Diagnostics.Debug.WriteLine(System.String,System.String);Log through ILogger
+M:System.Diagnostics.Debug.WriteLineIf(System.Boolean,System.Diagnostics.Debug.WriteIfInterpolatedStringHandler@);Log through ILogger
+M:System.Diagnostics.Debug.WriteLineIf(System.Boolean,System.Diagnostics.Debug.WriteIfInterpolatedStringHandler@,System.String);Log through ILogger
+M:System.Diagnostics.Debug.WriteLineIf(System.Boolean,System.Object);Log through ILogger
+M:System.Diagnostics.Debug.WriteLineIf(System.Boolean,System.Object,System.String);Log through ILogger
+M:System.Diagnostics.Debug.WriteLineIf(System.Boolean,System.String);Log through ILogger
+M:System.Diagnostics.Debug.WriteLineIf(System.Boolean,System.String,System.String);Log through ILogger
+
+;; NLog's static LogManager: the session log owns an isolated LogFactory (ADR-0033).
+T:NLog.LogManager;Use the SessionLog's isolated LogFactory through ILogger

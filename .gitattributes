@@ -101,6 +101,9 @@ tests/NetPrints.Core.Tests/Fixtures/Golden/*.cs -text
 *.netpc.json text eol=lf
 *.netpc.g.cs text eol=lf
 
+# Catalog files are written with LF by the CLI on every OS; the committed snapshots the catalog tests compare against must match.
+*.npcat.json text eol=lf
+
 # Binary files: never diff, never convert line endings.
 *.png binary
 *.ico binary

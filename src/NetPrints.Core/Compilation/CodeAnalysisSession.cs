@@ -68,7 +68,7 @@ public sealed class CodeAnalysisSession
             : NullableContextOptions.Disable;
         compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: nullableContextOptions);
 
-        this.references = [.. references.Where(assembly => File.Exists(assembly.Path)).Select(ToMetadataReference)];
+        this.references = [.. references.Where(assembly => File.Exists(assembly.Path)).Select(SharedMetadataReferences.For)];
         otherSourceTrees = [.. otherSources.Select(source => CSharpSyntaxTree.ParseText(source.Text, parseOptions, source.Path))];
     }
 
@@ -161,15 +161,6 @@ public sealed class CodeAnalysisSession
             : null;
 
         return DiagnosticMapper.FromRoslyn(diagnostic, null, cls?.Map) with { ClassFullName = cls?.FullName };
-    }
-
-    private static MetadataReference ToMetadataReference(ResolvedAssembly assembly)
-    {
-        DocumentationProvider? documentation = assembly.DocumentationPath is { } path && File.Exists(path)
-            ? XmlDocumentationProvider.CreateFromFile(path)
-            : null;
-
-        return MetadataReference.CreateFromFile(assembly.Path, documentation: documentation);
     }
 
     private static LanguageVersion ParseLanguageVersion(string value) =>

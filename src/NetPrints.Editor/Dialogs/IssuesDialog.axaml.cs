@@ -17,7 +17,7 @@ public partial class IssuesDialog : Window
     public IssuesDialog(string title, IReadOnlyList<CodeDiagnostic> issues)
     {
         Title = title;
-        DataContext = new IssuesDialogVM(issues);
+        DataContext = new IssuesDialogViewModel(issues);
         InitializeComponent();
     }
 }

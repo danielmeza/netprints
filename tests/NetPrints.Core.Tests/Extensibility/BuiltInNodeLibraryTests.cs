@@ -114,10 +114,10 @@ public class BuiltInNodeLibraryTests
     {
         var suggestions = BuiltInNodeLibrary.Instance.NodeKinds.SelectMany(k => k.Suggestions).ToDictionary(s => s.DisplayName, s => s.IconKey);
 
-        Assert.Equal("Loop_16x.png", suggestions["For Loop"]);
-        Assert.Equal("Create_16x.png", suggestions["Construct New Object"]);
-        Assert.Equal("ConditionalRule_16x.png", suggestions["Ternary"]);
-        Assert.Equal("Task_16x.png", suggestions["Await"]);
+        Assert.Equal("netprints.icon.category.loop", suggestions["For Loop"]);
+        Assert.Equal("netprints.icon.category.create", suggestions["Construct New Object"]);
+        Assert.Equal("netprints.icon.category.conditionalRule", suggestions["Ternary"]);
+        Assert.Equal("netprints.icon.category.task", suggestions["Await"]);
     }
 
     [Fact]

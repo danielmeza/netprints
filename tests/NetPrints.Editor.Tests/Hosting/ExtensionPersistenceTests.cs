@@ -1,5 +1,4 @@
 using NetPrints.Core;
-using NetPrints.Editor.Main;
 using NetPrints.Graph;
 using NetPrints.Projects;
 
@@ -43,15 +42,15 @@ public sealed class ExtensionPersistenceTests : IDisposable
     {
         (string csproj, string graphPath) = await ProjectWithLogNodeAsync();
         editor.Dialogs.TrustAnswer = true;
-        var vm = new MainEditorVM(editor.Context);
+        var rig = new ProjectRig(editor.Context);
 
-        await vm.LoadProjectAsync(csproj);
+        await rig.LoadProjectAsync(csproj);
 
-        Assert.NotNull(FindLogNode(vm.Project));
+        Assert.NotNull(FindLogNode(rig.Project));
         Assert.DoesNotContain(editor.Dialogs.Errors, e => e.Message.Contains("NPD001", StringComparison.Ordinal));
 
-        vm.Project?.Classes.Single().MarkDirty();
-        await editor.Persistence.SaveAsync(vm.Project ?? throw new InvalidOperationException("No project."), _ => "// generated", TestContext.Current.CancellationToken);
+        rig.Project?.Classes.Single().MarkDirty();
+        await editor.Persistence.SaveAsync(rig.Project ?? throw new InvalidOperationException("No project."), _ => "// generated", TestContext.Current.CancellationToken);
         Assert.Contains("\"netprints.test/Log\"", await File.ReadAllTextAsync(graphPath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
     }
 
@@ -59,15 +58,15 @@ public sealed class ExtensionPersistenceTests : IDisposable
     public async Task ADeclinedExtensionsNodeIsPreservedNotLoaded()
     {
         (string csproj, string graphPath) = await ProjectWithLogNodeAsync();
-        var vm = new MainEditorVM(editor.Context);
+        var rig = new ProjectRig(editor.Context);
 
-        await vm.LoadProjectAsync(csproj);
+        await rig.LoadProjectAsync(csproj);
 
-        Assert.Null(FindLogNode(vm.Project));
+        Assert.Null(FindLogNode(rig.Project));
         Assert.Contains("NPD001", editor.Dialogs.Errors.Single(e => e.Title == "Project loaded with issues").Message, StringComparison.Ordinal);
 
-        vm.Project?.Classes.Single().MarkDirty();
-        await editor.Persistence.SaveAsync(vm.Project ?? throw new InvalidOperationException("No project."), _ => "// generated", TestContext.Current.CancellationToken);
+        rig.Project?.Classes.Single().MarkDirty();
+        await editor.Persistence.SaveAsync(rig.Project ?? throw new InvalidOperationException("No project."), _ => "// generated", TestContext.Current.CancellationToken);
         Assert.Contains("\"netprints.test/Log\"", await File.ReadAllTextAsync(graphPath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
     }
 
@@ -79,10 +78,10 @@ public sealed class ExtensionPersistenceTests : IDisposable
         // extensions must be restored, or its nodes stop translating until it is reopened.
         (string csprojA, string graphPathA) = await ProjectWithLogNodeAsync();
         editor.Dialogs.TrustAnswer = true;
-        var vm = new MainEditorVM(editor.Context);
-        await vm.LoadProjectAsync(csprojA);
-        Assert.NotNull(FindLogNode(vm.Project));
-        Project projectA = vm.Project ?? throw new InvalidOperationException("No project.");
+        var rig = new ProjectRig(editor.Context);
+        await rig.LoadProjectAsync(csprojA);
+        Assert.NotNull(FindLogNode(rig.Project));
+        Project projectA = rig.Project ?? throw new InvalidOperationException("No project.");
 
         // B declares a graph file that does not exist on disk (a corrupt/edited-externally project):
         // Persistence.LoadAsync throws DocumentNotFoundException, uncaught, after B's (empty)
@@ -93,9 +92,9 @@ public sealed class ExtensionPersistenceTests : IDisposable
         ProjectSnapshot snapshotB = await editor.Projects.LoadAsync(csprojB, TestContext.Current.CancellationToken);
         editor.Projects.Seed(snapshotB with { GraphFiles = [Path.Combine(directoryB, "Missing.netpc.json")] });
 
-        await vm.LoadProjectAsync(csprojB);
+        await rig.LoadProjectAsync(csprojB);
 
-        Assert.Same(projectA, vm.Project);
+        Assert.Same(projectA, rig.Project);
         Assert.Contains(editor.Dialogs.Errors, e => e.Title == "Failed to load project");
 
         // A's own extension is still active: its Log node still saves as its own kind, not as

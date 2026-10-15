@@ -1,17 +1,17 @@
 using Avalonia.Controls;
 using Microsoft.Extensions.Logging.Abstractions;
-using NetPrints.Editor.ClassEditor;
+using NetPrints.Core;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
-using NetPrints.Editor.Main;
 using NetPrints.Editor.References;
+using NetPrints.Editor.Shell;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Extensibility;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
-using NetPrints.Testing.Ui.Main;
+using NetPrints.Testing;
 using NetPrints.Testing.Ui.Screenplay;
 using NetPrints.Testing.Ui.Snapshots;
 
@@ -30,7 +30,6 @@ public sealed class HeadlessApp : IAsyncDisposable
     public const int ScreenHeight = 1000;
 
     private readonly IDisposable exceptionHandler;
-    private readonly IDisposable classWindowSizer;
 
     private readonly ExtensionHost extensions;
     private readonly string settingsDirectory;
@@ -68,36 +67,21 @@ public sealed class HeadlessApp : IAsyncDisposable
         exceptionHandler = Composition.InstallUnhandledExceptionHandler(); // as EditorApp does on the desktop
         Tree = new AutomationTree();
 
-        // Headless maximized windows keep their size: use the E2E screen size.
-        classWindowSizer = Avalonia.Controls.Window.WindowOpenedEvent.AddClassHandler(typeof(ClassEditorWindow), (sender, _) =>
-        {
-            if (sender is ClassEditorWindow window)
-            {
-                window.Width = ScreenWidth;
-                window.Height = ScreenHeight;
-            }
-        });
         Driver = new HeadlessDriver(Tree, () => Processes.Output);
-        Window = Composition.CreateMainWindow();
-        Window.Show();
-        Tree.Track(Window);
+        Composition.CreateShellWindow(); // never shown: the suites that need a shell window use ShellApp
         HeadlessDriver.Pump();
-        Main = new MainWindowPage(Driver);
         Actor = Actor.Named("Ada").WhoCan(UseNetPrints.With(Driver, FilePicker));
     }
 
     public ISettingsStore Settings { get; }
     public TestComposition Composition { get; }
-    public MainWindow Window { get; }
     public RecordingDialogs Dialogs { get; }
     public CapturingProcessLauncher Processes { get; }
     public QueuedFilePicker FilePicker { get; }
     public AutomationTree Tree { get; }
     public HeadlessDriver Driver { get; }
-    public MainWindowPage Main { get; }
     public Actor Actor { get; }
-    public MainEditorVM ViewModel => Composition.MainEditor
-        ?? throw new InvalidOperationException($"{nameof(Composition.MainEditor)} has not been created yet.");
+    public ProjectSessionViewModel? Session => Composition.Shell?.Session;
 
     public static HeadlessApp Start() => new([]);
 
@@ -107,15 +91,11 @@ public sealed class HeadlessApp : IAsyncDisposable
     /// <summary>Opens a project the way the command line does (PAR-05) and waits for its types.</summary>
     public async Task OpenStartupProjectAsync(string path, CancellationToken cancellationToken)
     {
-        await ViewModel.OpenStartupProjectAsync([path]);
-        await Testing.Ui.Driving.UiWait.UntilAsync(Driver, () => Task.FromResult(ViewModel.Project is not null), "project loaded", cancellationToken);
+        await Composition.StartAsync([path]);
+        await Testing.Ui.Driving.UiWait.UntilAsync(Driver, () => Task.FromResult(Session is not null), "project loaded", cancellationToken);
         await Testing.Ui.Driving.UiWait.UntilAsync(Driver, () => Task.FromResult(Composition.Context.Reflection.NonStaticTypes.Count > 0),
             "reflection loaded", cancellationToken, TimeSpan.FromSeconds(60));
     }
-
-    /// <summary>The window of an open class editor (for arranging and asserting through the API).</summary>
-    public ClassEditorWindow ClassWindow(string fullName) =>
-        Composition.Windows.ClassEditorWindows.Single(w => (w.DataContext as ClassEditorVM)?.Class.FullName == fullName);
 
     /// <summary>
     /// Saves a screenshot of every open window and a dump of the automation tree for the current
@@ -126,8 +106,7 @@ public sealed class HeadlessApp : IAsyncDisposable
         try
         {
             string test = TestContext.Current.Test?.TestDisplayName ?? "unknown";
-            string folder = Path.Combine(UiArtifacts.Directory, "diagnostics",
-                string.Concat(test.Split(Path.GetInvalidFileNameChars())).Replace(' ', '_'));
+            string folder = Path.Combine(UiArtifacts.Directory, "diagnostics", UiArtifacts.SafeName(test));
             Directory.CreateDirectory(folder);
             File.WriteAllText(Path.Combine(folder, "tree.txt"), Tree.Dump());
             foreach (var window in Tree.Windows.Where(w => w.IsVisible).ToList())
@@ -145,13 +124,13 @@ public sealed class HeadlessApp : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await SaveDiagnosticsAsync();
+        Dialogs.UnsavedAnswer = UnloadChoice.Discard;
         foreach (var window in Tree.Windows.Reverse().ToList())
         {
             window.Close();
         }
 
         exceptionHandler.Dispose();
-        classWindowSizer.Dispose();
         Tree.Dispose();
         Processes.Dispose();
         Composition.Dispose();
@@ -172,9 +151,28 @@ public static class UiArtifacts
 {
     /// <summary><c>NETPRINTS_UI_ARTIFACTS</c> (CI: TestResults/ui), else a folder next to the tests.</summary>
     public static string Directory { get; } =
-        Environment.GetEnvironmentVariable("NETPRINTS_UI_ARTIFACTS") is { Length: > 0 } configured
+        Environment.GetEnvironmentVariable(TestEnvironment.UiArtifactsVariable) is { Length: > 0 } configured
             ? configured
             : Path.Combine(AppContext.BaseDirectory, "ui-artifacts");
+
+    /// <summary>Turns a test display name into a file or folder name that actions/upload-artifact accepts.</summary>
+    /// <param name="name">The display name.</param>
+    /// <returns>The name with every rejected character replaced by an underscore; <c>unknown</c> when blank.</returns>
+    public static string SafeName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return "unknown";
+        }
+
+        var builder = new System.Text.StringBuilder(name.Length);
+        foreach (char character in name)
+        {
+            builder.Append(char.IsWhiteSpace(character) || character is '"' or ':' or '<' or '>' or '|' or '*' or '?' or '\\' or '/' || char.IsControl(character) ? '_' : character);
+        }
+
+        return builder.ToString();
+    }
 
     private static readonly string Baselines = typeof(UiArtifacts).Assembly
         .GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)

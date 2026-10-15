@@ -1,0 +1,23 @@
+<Styles xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+                    xmlns:icons="clr-namespace:NetPrints.Editor.Icons">
+  <Styles.Resources>
+    <ControlTheme x:Key="{x:Type icons:IconPresenter}" TargetType="icons:IconPresenter">
+    <Setter Property="Width" Value="{DynamicResource Icon.Small}" />
+    <Setter Property="Height" Value="{DynamicResource Icon.Small}" />
+    <Setter Property="Focusable" Value="False" />
+    <Setter Property="IsHitTestVisible" Value="False" />
+    <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
+    <Setter Property="Template">
+      <ControlTemplate>
+        <mi:MaterialIcon AutomationProperties.AccessibilityView="Raw" Kind="{Binding Glyph.Kind, RelativeSource={RelativeSource TemplatedParent}}" x:DataType="icons:IconPresenter" Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" />
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^.medium">
+      <Setter Property="Width" Value="{DynamicResource Icon.Medium}" />
+      <Setter Property="Height" Value="{DynamicResource Icon.Medium}" />
+    </Style>
+  </ControlTheme>
+  </Styles.Resources>
+</Styles>

@@ -6,7 +6,7 @@ namespace NetPrints.Editor.Dialogs;
 /// <summary>Asks whether a project's extensions may be loaded (extension-points.md §8.3).</summary>
 public partial class TrustDialog : Window, IDialogResult<bool>
 {
-    private readonly TrustDialogVM viewModel;
+    private readonly TrustDialogViewModel viewModel;
 
     /// <summary>Loads the dialog's XAML, with no project set.</summary>
     public TrustDialog() : this("", [])
@@ -18,7 +18,7 @@ public partial class TrustDialog : Window, IDialogResult<bool>
     /// <param name="extensionFolders">Full paths of the project's extension folders.</param>
     public TrustDialog(string projectPath, IReadOnlyList<string> extensionFolders)
     {
-        viewModel = new TrustDialogVM(projectPath, extensionFolders);
+        viewModel = new TrustDialogViewModel(projectPath, extensionFolders);
         DataContext = viewModel;
         InitializeComponent();
     }

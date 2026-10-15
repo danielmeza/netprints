@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using Microsoft.CodeAnalysis;
 using NetPrints.Core;
 
@@ -45,37 +46,33 @@ namespace NetPrints.Reflection
         /// nested-class ("+"-separated) name, whether it is an enum or interface, and its generic
         /// arguments (recursively converted; a generic argument that is itself a type parameter
         /// becomes a <see cref="GenericType"/> via <see cref="GenericTypeSpecifierFromSymbol"/>). An
-        /// array type is represented as <see cref="Array"/> (a TODO notes this loses the element type).
+        /// array type keeps its element type and ranks in the name (<c>System.Int32[][,]</c>), with the element's generic
+        /// arguments on the specifier; an array of a type parameter or a pointer is <see cref="Array"/>.
         /// </summary>
         /// <param name="type">Type symbol to convert.</param>
         /// <returns>The equivalent type specifier.</returns>
         /// <exception cref="ArgumentException"><paramref name="type"/> is an unbound generic type (eg. <c>List&lt;&gt;</c>).</exception>
         public static TypeSpecifier TypeSpecifierFromSymbol(ITypeSymbol type)
         {
-            string typeName;
-
             if (type is IArrayTypeSymbol)
             {
-                // TODO: Get more interesting type?
-                typeName = typeof(Array).FullName ?? throw new UnreachableException($"{nameof(Array)}.{nameof(Type.FullName)} is never null for a non-generic BCL type.");
+                return ArrayTypeSpecifierFromSymbol(type);
             }
-            else
-            {
-                // Get the nested name (represented by + between classes)
-                // See https://stackoverflow.com/questions/2443244/having-a-in-the-class-name
-                string nestedPrefix = "";
-                ITypeSymbol? containingType = type.ContainingType;
-                while (containingType != null)
-                {
-                    nestedPrefix = $"{containingType.Name}+{nestedPrefix}";
-                    containingType = containingType.ContainingType;
-                }
 
-                typeName = nestedPrefix + type.Name.Split('`').First();
-                if (type.ContainingNamespace != null && !type.ContainingNamespace.IsGlobalNamespace)
-                {
-                    typeName = type.ContainingNamespace + "." + typeName;
-                }
+            // Get the nested name (represented by + between classes)
+            // See https://stackoverflow.com/questions/2443244/having-a-in-the-class-name
+            string nestedPrefix = "";
+            ITypeSymbol? containingType = type.ContainingType;
+            while (containingType != null)
+            {
+                nestedPrefix = $"{containingType.Name}+{nestedPrefix}";
+                containingType = containingType.ContainingType;
+            }
+
+            string typeName = nestedPrefix + type.Name.Split('`').First();
+            if (type.ContainingNamespace != null && !type.ContainingNamespace.IsGlobalNamespace)
+            {
+                typeName = type.ContainingNamespace + "." + typeName;
             }
 
             TypeSpecifier typeSpecifier = new TypeSpecifier(typeName,
@@ -104,6 +101,25 @@ namespace NetPrints.Reflection
             }
 
             return typeSpecifier;
+        }
+
+        private static TypeSpecifier ArrayTypeSpecifierFromSymbol(ITypeSymbol type)
+        {
+            StringBuilder suffix = new StringBuilder();
+            ITypeSymbol element = type;
+            while (element is IArrayTypeSymbol array)
+            {
+                suffix.Append('[').Append(',', array.Rank - 1).Append(']');
+                element = array.ElementType;
+            }
+
+            if (element is ITypeParameterSymbol or IPointerTypeSymbol)
+            {
+                return new TypeSpecifier(typeof(Array).FullName ?? throw new UnreachableException($"{nameof(Array)}.{nameof(Type.FullName)} is never null for a non-generic BCL type."));
+            }
+
+            TypeSpecifier elementSpecifier = TypeSpecifierFromSymbol(element);
+            return new TypeSpecifier(elementSpecifier.Name + suffix, false, false, elementSpecifier.GenericArguments);
         }
 
         /// <summary>
@@ -171,7 +187,10 @@ namespace NetPrints.Reflection
         public static MethodParameter MethodParameterFromSymbol(in IParameterSymbol paramSymbol)
         {
             return new MethodParameter(paramSymbol.Name, BaseTypeSpecifierFromSymbol(paramSymbol.Type), refKindToPassType[paramSymbol.RefKind],
-                paramSymbol.HasExplicitDefaultValue, paramSymbol.HasExplicitDefaultValue ? paramSymbol.ExplicitDefaultValue : null);
+                paramSymbol.HasExplicitDefaultValue, paramSymbol.HasExplicitDefaultValue ? paramSymbol.ExplicitDefaultValue : null)
+            {
+                IsParams = paramSymbol.IsParams,
+            };
         }
 
         /// <summary>

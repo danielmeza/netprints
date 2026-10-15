@@ -69,7 +69,7 @@ and a restored NuGet cache.
 | Lifecycle (Loaded, DataContext changed, theme changed) | `LoadedTrigger`, `DataContextChangedTrigger`, `ActualThemeVariantChangedTrigger` | [triggers-and-actions.md](references/triggers-and-actions.md) |
 | One event, one command, no typed behavior fits | `EventTriggerBehavior EventName="..."` + `InvokeCommandAction` (option 4) | [triggers-and-actions.md](references/triggers-and-actions.md) |
 | OK or Close closes the dialog with no result | `ButtonClickEventTriggerBehavior` + `CloseWindowAction` | [dialogs-windows-popups.md](references/dialogs-windows-popups.md) |
-| Accept/cancel closes the dialog *with* a result | a VM deriving from `DialogVM<TResult>` + the custom `edb:DialogCloseBehavior` on the `Window` | [dialogs-windows-popups.md](references/dialogs-windows-popups.md) |
+| Accept/cancel closes the dialog *with* a result | a VM deriving from `DialogViewModel<TResult>` + the custom `edb:DialogCloseBehavior` on the `Window` | [dialogs-windows-popups.md](references/dialogs-windows-popups.md) |
 | Popups and flyouts | `PopupOpenedTrigger`, `HideFlyoutAction`, `ButtonHideFlyoutOnClickBehavior`; canvas popups stay `CanvasPopup` (ADR-0004) | [dialogs-windows-popups.md](references/dialogs-windows-popups.md) |
 | Focus on open, show or click; select all | `FocusOnAttachedToVisualTreeBehavior`, `FocusOnVisibleBehavior`, `FocusSelectedItemBehavior`, `TextBoxSelectAllOnGotFocusBehavior` | [focus-and-text.md](references/focus-and-text.md) |
 | Follow a growing log or list | `AutoScrollToBottomBehavior` | [lists-and-scrolling.md](references/lists-and-scrolling.md) |
@@ -91,6 +91,13 @@ and the dialog behaviors. Their decisions and side effects belong in commands an
 - `EventTriggerBehavior EventName="..."` finds the event by reflection, so a typo fails only at runtime.
 - `AutoScrollToBottomBehavior` does nothing on a `TextBox`. Attach it to a `ScrollViewer` or an `ItemsControl`.
 
+## What stays in code-behind
+
+After T098 the E7 list has 16 entries: CodeView (AvaloniaEdit interop and hover gestures), `EditorApp`'s entry point, and in
+`GraphEditorView` the pointer gestures, drag over and drop, and the viewport math. Drag sources and the canvas pointer tracker are
+behaviors now (`VariableDragSourceBehavior`, `CanvasPointerTrackerBehavior`); look in `src/NetPrints.Editor/Behaviors/` before
+writing a new one, and delete the E7 entry of any handler you migrate.
+
 ## Known debt
 
 - `Ctrl+` in a gesture is documented to map to Cmd on macOS, but it has not been verified on a Mac.
@@ -101,6 +108,8 @@ and the dialog behaviors. Their decisions and side effects belong in commands an
 2. A VM unit test covers each command the behavior calls; a headless test (`[AvaloniaFact]`) covers the wiring when
    it is more than one line (a trigger with several actions, a custom behavior, a tunnel-routed key).
 3. Build the test project and run `tests/NetPrints.Core.Tests/bin/Debug/net10.0/NetPrints.Core.Tests -class '*XamlHygieneTests'`: E3 fails on a command-shaped handler left in XAML. Fix and re-run until green.
+4. A new or changed shortcut or command changes the shortcut table of the commands guide. Rewrite it from the registry with
+   `NETPRINTS_UPDATE_SNAPSHOTS=1` and `ShortcutGuideTests` (see `docs/contributing/testing.md`), never by hand.
 
 ## Reference files and scripts
 

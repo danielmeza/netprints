@@ -1,6 +1,6 @@
 using Avalonia.Headless.XUnit;
 using NetPrints.Editor.Hosting.Automation;
-using NetPrints.Editor.UITests.ClassEditor;
+using NetPrints.Editor.UITests.Shell;
 using NetPrints.Graph;
 using NetPrints.Testing.Ui.Driving;
 
@@ -26,7 +26,7 @@ public class PinValueTextEditingTests
     public async Task SpaceInsertsATextSpaceWithoutMovingFocusOffTheBox()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var valuePin = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode).InputDataPins.Single();
+        var valuePin = session.GraphViewModel.Nodes.Single(n => n.Node is CallMethodNode).InputDataPins.Single();
         var valueBox = session.Graph.Node("CallMethodNode").Input(valuePin.Pin.Name).ValueBox;
 
         await valueBox.ClickAsync(Token);
@@ -47,7 +47,7 @@ public class PinValueTextEditingTests
     public async Task DeleteAndBackspaceStayInTheBoxInsteadOfHittingTheCanvas()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var valuePin = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode).InputDataPins.Single();
+        var valuePin = session.GraphViewModel.Nodes.Single(n => n.Node is CallMethodNode).InputDataPins.Single();
         var valueBox = session.Graph.Node("CallMethodNode").Input(valuePin.Pin.Name).ValueBox;
         var node = session.Graph.Node("CallMethodNode");
 

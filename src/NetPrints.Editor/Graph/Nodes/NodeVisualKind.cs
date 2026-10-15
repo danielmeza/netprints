@@ -43,4 +43,16 @@ public enum NodeVisualKind
 
     /// <summary>A <see cref="NetPrints.Graph.TernaryNode"/>.</summary>
     Ternary,
+
+    /// <summary>An <see cref="NetPrints.Graph.IfElseNode"/>.</summary>
+    IfElse,
+
+    /// <summary>A <see cref="NetPrints.Graph.ForLoopNode"/>.</summary>
+    ForLoop,
+
+    /// <summary>An <see cref="NetPrints.Graph.ExplicitCastNode"/>.</summary>
+    ExplicitCast,
+
+    /// <summary>An <see cref="NetPrints.Graph.AwaitNode"/>.</summary>
+    Await,
 }

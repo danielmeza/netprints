@@ -7,6 +7,8 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     <!-- Shared by the PackageVersion below and NetPrints.Core.Tests' PackageDownload (PublicApiTrackingTests loads the analyzer from the package folder). -->
     <PublicApiAnalyzersVersion>5.6.0</PublicApiAnalyzersVersion>
+    <!-- Shared by the PackageVersion below and NetPrints.Editor.Tests' PackageDownload (BannedSymbolsTests runs the analyzer over samples). -->
+    <BannedApiAnalyzersVersion>5.6.0</BannedApiAnalyzersVersion>
   </PropertyGroup>
 
   <ItemGroup Label="Versioning">
@@ -15,8 +17,11 @@
   </ItemGroup>
 
   <ItemGroup Label="Core and reflection">
+    <PackageVersion Include="Irihi.Ursa" Version="2.2.0" />
+    <PackageVersion Include="Irihi.Ursa.Themes.Semi" Version="2.2.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
+    <PackageVersion Include="Semi.Avalonia" Version="12.1.0.1" />
   </ItemGroup>
 
   <!-- Analyzer-only packages (ADR-0003), referenced repo-wide from Directory.Build.props. A curated
@@ -28,7 +33,7 @@
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.7.23" />
     <!-- RS0030 (ADR-0003 follow-up): bans sync-over-async and DateTime.Now/Thread.Sleep APIs no
          CA/VSTHRD/Sonar rule targets. src/Directory.Build.props only, so tests/ is unaffected. -->
-    <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.6.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="$(BannedApiAnalyzersVersion)" />
     <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="$(PublicApiAnalyzersVersion)" />
   </ItemGroup>
 
@@ -60,6 +65,10 @@
     <PackageVersion Include="Xaml.Behaviors.Interactions" Version="12.0.7" />
     <PackageVersion Include="Xaml.Behaviors.Interactions.Custom" Version="12.0.7" />
     <PackageVersion Include="Xaml.Behaviors.Interactions.DragAndDrop" Version="12.0.7" />
+    <!-- ADR-0018: the shell docks with Dock.Avalonia, behind Shell/Docking. Exact pins; no ReactiveUI, Newtonsoft or Dock serializer package (the layout is persisted as a NetPrints-owned DTO, ADR-0018). -->
+    <PackageVersion Include="Dock.Avalonia" Version="[12.1.0.6]" />
+    <PackageVersion Include="Dock.Model.Mvvm" Version="[12.1.0.6]" />
+    <PackageVersion Include="Dock.Avalonia.Themes.Fluent" Version="[12.1.0.6]" />
   </ItemGroup>
 
   <ItemGroup Label="Logging">
@@ -67,6 +76,9 @@
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
+    <!-- ADR-0033: the file log provider, referenced by NetPrints.Desktop only. -->
+    <PackageVersion Include="NLog" Version="6.2.1" />
+    <PackageVersion Include="NLog.Extensions.Logging" Version="6.2.1" />
   </ItemGroup>
 
   <ItemGroup Label="Workspace (MSBuild evaluation, project system)">
@@ -104,6 +116,9 @@
          (IOutputDevice.DisplayAsync: MissingMethodException) — a known xunit.v3 3.2.2/MTP-v2 gap,
          not something fixable from this repo's package references alone. -->
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
+    <!-- CI hang dumps (ci.yml's test matrix passes the hangdump flags). Same 1.9.1 as the
+         Microsoft.Testing.Platform that xunit.v3 3.2.2 resolves to, for the reason above. -->
+    <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="1.9.1" />
     <!-- SchemaTests (R1-17): validates the committed fixtures against schemas/netpc.v1.schema.json. -->
     <PackageVersion Include="JsonSchema.Net" Version="9.4.0" />
   </ItemGroup>

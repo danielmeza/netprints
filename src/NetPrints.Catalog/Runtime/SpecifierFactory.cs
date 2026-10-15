@@ -77,7 +77,10 @@ internal static class SpecifierFactory
                 _ => MethodParameterPassType.Default,
             },
             parameter.Default is not null,
-            DefaultValue(parameter.Default));
+            DefaultValue(parameter.Default))
+        {
+            IsParams = parameter.Params,
+        };
 
     public static MethodSpecifier Method(CatalogMethod method, TypeSpecifier declaringType) =>
         new(

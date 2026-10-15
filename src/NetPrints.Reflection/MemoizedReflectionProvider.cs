@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using NetPrints.Core;
 
 namespace NetPrints.Reflection
@@ -12,7 +13,7 @@ namespace NetPrints.Reflection
     /// provider's underlying data changes (eg. the compilation was rebuilt), since results are cached
     /// for the lifetime of this instance otherwise.
     /// </summary>
-    public class MemoizedReflectionProvider : IReflectionProvider
+    public class MemoizedReflectionProvider : IReflectionProvider, ICatalogScope
     {
         private readonly IReflectionProvider provider;
 
@@ -51,7 +52,7 @@ namespace NetPrints.Reflection
             nameof(memoizedTypeSpecifierIsSubclassOf), nameof(memoizedGetMethods), nameof(memoizedGetVariables))]
         public void Reset()
         {
-            memoizedGetConstructors = provider.GetConstructors;
+            memoizedGetConstructors = typeSpecifier => provider.GetConstructors(typeSpecifier).ToList();
             memoizedGetConstructors = memoizedGetConstructors.Memoize();
 
             memoizedGetEnumNames = provider.GetEnumNames;
@@ -69,13 +70,13 @@ namespace NetPrints.Reflection
             memoizedGetNonStaticTypes = provider.GetNonStaticTypes;
             memoizedGetNonStaticTypes = memoizedGetNonStaticTypes.Memoize();
 
-            memoizedGetOverridableMethodsForType = provider.GetOverridableMethodsForType;
+            memoizedGetOverridableMethodsForType = typeSpecifier => provider.GetOverridableMethodsForType(typeSpecifier).ToList();
             memoizedGetOverridableMethodsForType = memoizedGetOverridableMethodsForType.Memoize();
 
             memoizedGetMethods = provider.GetMethods;
             memoizedGetMethods = memoizedGetMethods.Memoize();
 
-            memoizedGetPublicMethodOverloads = provider.GetPublicMethodOverloads;
+            memoizedGetPublicMethodOverloads = methodSpecifier => provider.GetPublicMethodOverloads(methodSpecifier).ToList();
             memoizedGetPublicMethodOverloads = memoizedGetPublicMethodOverloads.Memoize();
 
             memoizedGetVariables = provider.GetVariables;
@@ -127,6 +128,10 @@ namespace NetPrints.Reflection
         /// <inheritdoc/>
         public IEnumerable<VariableSpecifier> GetVariables(ReflectionProviderVariableQuery query)
             => memoizedGetVariables(query);
+
+        /// <inheritdoc/>
+        public string? GetHidingCatalogId(TypeSpecifier type)
+            => (provider as ICatalogScope)?.GetHidingCatalogId(type);
 
         /// <inheritdoc/>
         public bool HasImplicitCast(TypeSpecifier fromType, TypeSpecifier toType)

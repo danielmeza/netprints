@@ -37,7 +37,7 @@ namespace NetPrints.Tests.Core
             "Closing", "IsCheckedChanged", "ValueChanged", "ContextRequested",
         };
 
-        private static readonly HashSet<string> IconTags = new(StringComparer.Ordinal) { "MaterialIcon", "PathIcon", "Image", "Path", "Viewbox", "Svg" };
+        private static readonly HashSet<string> IconTags = new(StringComparer.Ordinal) { "MaterialIcon", "PathIcon", "Image", "Path", "Viewbox", "Svg", "IconPresenter" };
         private static readonly HashSet<string> ButtonTags = new(StringComparer.Ordinal)
         {
             "Button", "ToggleButton", "RepeatButton", "SplitButton", "DropDownButton", "HyperlinkButton",
@@ -119,7 +119,6 @@ namespace NetPrints.Tests.Core
         /// legitimate home for a raw color, and that is already excluded per-element below.</summary>
         private static readonly Dictionary<string, string> E2Allowlist = new(StringComparer.Ordinal)
         {
-            ["src/NetPrints.Editor/EditorApp.axaml:13"] = "FluentTheme's own Dark palette definition (ColorPaletteResources): the literal is the base system color, one level below any token.",
         };
 
         /// <summary>True when <paramref name="value"/> is a color literal E2 forbids: not a binding/resource
@@ -132,13 +131,16 @@ namespace NetPrints.Tests.Core
                 return false;
             }
 
-            return HexColorPattern.IsMatch(trimmed) || NamedColorPattern.IsMatch(trimmed);
+            return trimmed.Split([' ', ',', '\t', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries)
+                .Any(token => HexColorPattern.IsMatch(token) || NamedColorPattern.IsMatch(token));
         }
 
-        [Fact]
-        public void E2_NoColorLiteralsInViews()
+        private static readonly HashSet<string> ColorTextElements = new(StringComparer.Ordinal) { "BoxShadows", "Color", "SolidColorBrush" };
+
+        /// <summary>Scans for E2 offenders. A key names the element, the attribute and the literal, never a line,
+        /// so editing above an allowlisted literal neither breaks nor widens the entry.</summary>
+        private static (List<string> Offenders, HashSet<string> Seen) ScanColorLiterals(AxamlFile[] files, IReadOnlyDictionary<string, string> allowlist)
         {
-            AxamlFile[] files = LoadAxamlFiles();
             var offenders = new List<string>();
             var seen = new HashSet<string>(StringComparer.Ordinal);
 
@@ -149,6 +151,16 @@ namespace NetPrints.Tests.Core
                     if (IsUnderThemeDictionaries(element))
                     {
                         continue;
+                    }
+
+                    if (ColorTextElements.Contains(element.Name.LocalName) && !element.HasElements && IsColorLiteral(element.Value))
+                    {
+                        string textKey = $"{file.RelativePath}:{element.Name.LocalName}.#text={element.Value.Trim()}";
+                        seen.Add(textKey);
+                        if (!allowlist.ContainsKey(textKey))
+                        {
+                            offenders.Add($"{file.RelativePath}:{LineOf(element)}: {textKey}");
+                        }
                     }
 
                     if (element.Name.LocalName == "Setter")
@@ -162,11 +174,11 @@ namespace NetPrints.Tests.Core
                             continue;
                         }
 
-                        string setterKey = $"{file.RelativePath}:{LineOf(element)}";
+                        string setterKey = $"{file.RelativePath}:Setter.{property.Value}={value.Value.Trim()}";
                         seen.Add(setterKey);
-                        if (!E2Allowlist.ContainsKey(setterKey))
+                        if (!allowlist.ContainsKey(setterKey))
                         {
-                            offenders.Add($"{setterKey}: Setter Property=\"{property.Value}\" Value=\"{value.Value}\"");
+                            offenders.Add($"{file.RelativePath}:{LineOf(element)}: {setterKey}: Setter Property=\"{property.Value}\" Value=\"{value.Value}\"");
                         }
 
                         continue;
@@ -180,18 +192,54 @@ namespace NetPrints.Tests.Core
                             continue;
                         }
 
-                        string key = $"{file.RelativePath}:{LineOf(attribute)}";
+                        string key = $"{file.RelativePath}:{element.Name.LocalName}.{attribute.Name.LocalName}={attribute.Value.Trim()}";
                         seen.Add(key);
-                        if (!E2Allowlist.ContainsKey(key))
+                        if (!allowlist.ContainsKey(key))
                         {
-                            offenders.Add($"{key}: {attribute.Name.LocalName}=\"{attribute.Value}\"");
+                            offenders.Add($"{file.RelativePath}:{LineOf(attribute)}: {key}: {attribute.Name.LocalName}=\"{attribute.Value}\"");
                         }
                     }
                 }
             }
 
+            return (offenders, seen);
+        }
+
+        [Fact]
+        public void E2_NoColorLiteralsInViews()
+        {
+            (List<string> offenders, HashSet<string> seen) = ScanColorLiterals(LoadAxamlFiles(), E2Allowlist);
             Assert.Empty(offenders);
             AssertAllowlistHasNoStaleEntries(E2Allowlist.Keys, seen);
+        }
+
+        private static AxamlFile Synthetic(string path, string xml) => new(path, XDocument.Parse(xml, LoadOptions.SetLineInfo));
+
+        [Fact]
+        public void E2_AnAllowlistedLiteralStaysAllowedWhenLinesAreAddedAboveIt()
+        {
+            const string palette = "<ColorPaletteResources RegionColor=\"#FF252525\" />";
+            AxamlFile moved = Synthetic("src/NetPrints.Editor/EditorApp.axaml", "<Application>\n\n\n\n" + palette + "</Application>");
+
+            var allowlist = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["src/NetPrints.Editor/EditorApp.axaml:ColorPaletteResources.RegionColor=#FF252525"] = "synthetic entry for this test",
+            };
+
+            (List<string> offenders, HashSet<string> seen) = ScanColorLiterals([moved], allowlist);
+
+            Assert.Empty(offenders);
+            Assert.Equal(allowlist.Keys.Order(StringComparer.Ordinal), seen.Order(StringComparer.Ordinal));
+        }
+
+        [Fact]
+        public void E2_ARawColorOnAnotherElementIsNotCoveredByTheAllowlist()
+        {
+            AxamlFile file = Synthetic("src/NetPrints.Editor/EditorApp.axaml", "<Application>\n<Border Background=\"#FF252525\" />\n<ColorPaletteResources RegionColor=\"#FF000000\" /></Application>");
+
+            (List<string> offenders, _) = ScanColorLiterals([file], new Dictionary<string, string>(StringComparer.Ordinal));
+
+            Assert.Equal(2, offenders.Count);
         }
 
         /// <summary>E3: command-shaped events wired to a code-behind handler in XAML. Pointer and
@@ -302,6 +350,214 @@ namespace NetPrints.Tests.Core
             AssertAllowlistHasNoStaleEntries(E5Allowlist.Keys, seen);
         }
 
+        /// <summary>E8: no literal <c>FontSize</c> or <c>FontFamily</c> outside <c>EditorStyles.axaml</c> and
+        /// <c>EditorApp.axaml</c>. Rule E8 drives all such literals to zero by replacing them with class-based
+        /// styling or <c>Font.*</c> tokens. Allowlist shrinks to empty as T092/T092a fix each file.</summary>
+        private static readonly Dictionary<string, string> E8Allowlist = new(StringComparer.Ordinal)
+        {
+        };
+
+        [Fact]
+        public void E8_NoFontSizeOrFontFamilyLiteralsOutsideEditorStyles()
+        {
+            AxamlFile[] files = LoadAxamlFiles();
+            var offenders = new List<string>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+
+            foreach (AxamlFile file in files)
+            {
+                if (file.RelativePath is "src/NetPrints.Editor/EditorStyles.axaml" or "src/NetPrints.Editor/EditorApp.axaml"
+                    || IsStyleOrResourceFile(file))
+                {
+                    continue;
+                }
+
+                bool hasFontSizeLiteral = false;
+                bool hasFontFamilyLiteral = false;
+
+                foreach (XElement element in file.Document.Descendants())
+                {
+                    // Check FontSize direct attributes and Setters
+                    XAttribute? fontSizeAttr = element.Attributes().FirstOrDefault(a => a.Name.LocalName == "FontSize" && !a.Value.TrimStart().StartsWith('{'));
+                    if (fontSizeAttr is not null)
+                    {
+                        hasFontSizeLiteral = true;
+                    }
+
+                    if (element.Name.LocalName == "Setter" && element.Attribute("Property")?.Value == "FontSize")
+                    {
+                        if (element.Attribute("Value") is { } value && !value.Value.TrimStart().StartsWith('{'))
+                        {
+                            hasFontSizeLiteral = true;
+                        }
+                    }
+
+                    // Check FontFamily direct attributes and Setters
+                    XAttribute? fontFamilyAttr = element.Attributes().FirstOrDefault(a => a.Name.LocalName == "FontFamily" && !a.Value.TrimStart().StartsWith('{'));
+                    if (fontFamilyAttr is not null)
+                    {
+                        hasFontFamilyLiteral = true;
+                    }
+
+                    if (element.Name.LocalName == "Setter" && element.Attribute("Property")?.Value == "FontFamily")
+                    {
+                        if (element.Attribute("Value") is { } value && !value.Value.TrimStart().StartsWith('{'))
+                        {
+                            hasFontFamilyLiteral = true;
+                        }
+                    }
+                }
+
+                if (hasFontSizeLiteral)
+                {
+                    string key = $"{file.RelativePath}:FontSize";
+                    seen.Add(key);
+                    if (!E8Allowlist.ContainsKey(key))
+                    {
+                        offenders.Add(key);
+                    }
+                }
+
+                if (hasFontFamilyLiteral)
+                {
+                    string key = $"{file.RelativePath}:FontFamily";
+                    seen.Add(key);
+                    if (!E8Allowlist.ContainsKey(key))
+                    {
+                        offenders.Add(key);
+                    }
+                }
+            }
+
+            Assert.True(offenders.Count == 0, "FontSize and FontFamily literals must be replaced with Font.* tokens or style classes (see E8): " + string.Join(", ", offenders));
+            AssertAllowlistHasNoStaleEntries(E8Allowlist.Keys, seen);
+        }
+
+        private static readonly string[] FontRampKeys = ["Font.Caption", "Font.Body", "Font.Subtitle", "Font.Title", "Font.Watermark"];
+
+        /// <summary>FR-080: every <c>FontSize</c> in any axaml file, styles and resources included, resolves to a <c>Font.*</c> ramp token.</summary>
+        [Fact]
+        public void E8_EveryFontSizeIsARampToken()
+        {
+            var offenders = new List<string>();
+            foreach (AxamlFile file in LoadAxamlFiles())
+            {
+                foreach (XElement element in file.Document.Descendants())
+                {
+                    string? value = element.Name.LocalName == "Setter" && element.Attribute("Property")?.Value == "FontSize"
+                        ? element.Attribute("Value")?.Value
+                        : element.Attributes().FirstOrDefault(a => a.Name.LocalName == "FontSize")?.Value;
+                    if (value is not null && !FontRampKeys.Any(key => value.Trim() == $"{{StaticResource {key}}}" || value.Trim() == $"{{DynamicResource {key}}}"))
+                    {
+                        offenders.Add($"{file.RelativePath}: FontSize {value}");
+                    }
+                }
+            }
+
+            Assert.True(offenders.Count == 0, "FontSize must be a Font.* ramp token (FR-080): " + string.Join(", ", offenders));
+        }
+
+        private static AxamlFile LoadAxaml(string relativePath) =>
+            LoadAxamlFiles().Single(file => file.RelativePath == relativePath);
+
+        private static XElement[] StyleSetters(AxamlFile file, string selector) =>
+            [.. file.Document.Descendants().Where(e => e.Name.LocalName == "Style" && e.Attribute("Selector")?.Value == selector).Elements()];
+
+        [Fact]
+        public void TheTabularStyleSetsTnumAndLeavesTheFontFamilyAlone()
+        {
+            AxamlFile styles = LoadAxaml("src/NetPrints.Editor/EditorStyles.axaml");
+
+            foreach (string selector in new[] { "TextBlock.tabular", "TextBox.tabular" })
+            {
+                XElement[] setters = StyleSetters(styles, selector);
+                Assert.Contains(setters, s => s.Attribute("Property")?.Value == "FontFeatures" && s.Attribute("Value")?.Value == "tnum");
+                Assert.DoesNotContain(setters, s => s.Attribute("Property")?.Value == "FontFamily");
+            }
+        }
+
+        [Fact]
+        public void TheCodeBlockClassUsesFontMono()
+        {
+            Assert.Contains(
+                StyleSetters(LoadAxaml("src/NetPrints.Editor/EditorStyles.axaml"), "TextBox.codeBlock"),
+                s => s.Attribute("Property")?.Value == "FontFamily" && s.Attribute("Value")?.Value == "{StaticResource Font.Mono}");
+            Assert.Contains(
+                LoadAxaml("src/NetPrints.Editor/Dialogs/ErrorDialog.axaml").Document.Descendants(),
+                e => e.Name.LocalName == "TextBox" && e.Attribute("Classes")?.Value.Split(' ').Contains("codeBlock") == true);
+        }
+
+        [Theory]
+        [InlineData("src/NetPrints.Editor/ErrorList/ErrorListView.axaml", "{Binding Header}")]
+        [InlineData("src/NetPrints.Editor/Shell/ShellWindow.axaml", "{Binding BadgeText}")]
+        [InlineData("src/NetPrints.Editor/Shell/ShellWindow.axaml", "{Binding StatusBar.BuildStateText}")]
+        public void CountsTakeTheTabularClass(string path, string textBinding)
+        {
+            XElement block = LoadAxaml(path).Document.Descendants()
+                .First(e => e.Name.LocalName == "TextBlock" && e.Attribute("Text")?.Value == textBinding);
+
+            Assert.Contains("tabular", block.Attribute("Classes")?.Value.Split(' ') ?? []);
+        }
+
+        /// <summary>E9: icons come from <c>IconPresenter</c>. A <c>MaterialIcon</c>, <c>SymbolIcon</c> or <c>FluentIcon</c>
+        /// element and a bitmap <c>Image</c> source may appear only under <c>src/NetPrints.Editor/Icons/</c>.</summary>
+        private static readonly Dictionary<string, string> E9Allowlist = new(StringComparer.Ordinal)
+        {
+        };
+
+        private static readonly HashSet<string> IconLibraryTags = new(StringComparer.Ordinal) { "MaterialIcon", "SymbolIcon", "FluentIcon" };
+
+        private static bool IsBitmapSource(string? source) =>
+            source is not null && !source.StartsWith("{DynamicResource", StringComparison.Ordinal) && !source.StartsWith("{StaticResource", StringComparison.Ordinal);
+
+        private static (List<string> Offenders, HashSet<string> Seen) ScanIconElements(IEnumerable<AxamlFile> files, IReadOnlyDictionary<string, string> allowlist)
+        {
+            var offenders = new List<string>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            foreach (AxamlFile file in files.Where(f => !f.RelativePath.StartsWith("src/NetPrints.Editor/Icons/", StringComparison.Ordinal)))
+            {
+                foreach (XElement element in file.Document.Descendants())
+                {
+                    string name = element.Name.LocalName;
+                    bool offends = IconLibraryTags.Contains(name) || (name == "Image" && IsBitmapSource(element.Attribute("Source")?.Value));
+                    if (!offends)
+                    {
+                        continue;
+                    }
+
+                    string key = IconLibraryTags.Contains(name) ? $"{file.RelativePath}:{LineOf(element)}" : $"{file.RelativePath}:Image";
+                    seen.Add(key);
+                    if (!allowlist.ContainsKey(key))
+                    {
+                        offenders.Add($"{key}: <{name}>");
+                    }
+                }
+            }
+
+            return (offenders, seen);
+        }
+
+        [Fact]
+        public void E9_IconsComeFromIconPresenter()
+        {
+            (List<string> offenders, HashSet<string> seen) = ScanIconElements(LoadAxamlFiles(), E9Allowlist);
+
+            Assert.Empty(offenders);
+            AssertAllowlistHasNoStaleEntries(E9Allowlist.Keys, seen);
+        }
+
+        [Fact]
+        public void E9_FlagsAnIconElementOutsideTheIconsFolderOnly()
+        {
+            AxamlFile outside = Synthetic("src/NetPrints.Editor/X/V.axaml", "<UserControl xmlns:mi=\"clr-namespace:M\">\n<mi:MaterialIcon Kind=\"Plus\" />\n<Image Source=\"a.png\" />\n<Image Source=\"{Binding B}\" />\n<Image Source=\"{DynamicResource App.Mark}\" />\n</UserControl>");
+            AxamlFile inside = Synthetic("src/NetPrints.Editor/Icons/IconPresenter.axaml", "<ControlTheme xmlns:mi=\"clr-namespace:M\">\n<mi:MaterialIcon Kind=\"Plus\" />\n</ControlTheme>");
+
+            (List<string> offenders, _) = ScanIconElements([outside, inside], new Dictionary<string, string>());
+
+            Assert.Equal(3, offenders.Count);
+            Assert.All(offenders, offender => Assert.StartsWith("src/NetPrints.Editor/X/V.axaml", offender, StringComparison.Ordinal));
+        }
+
         /// <summary>E6: a key declared under <c>ThemeDictionaries</c> must be looked up with
         /// <c>DynamicResource</c>, never <c>StaticResource</c> (which cannot see theme dictionaries). A
         /// regression guard: no allowlist.</summary>
@@ -341,6 +597,360 @@ namespace NetPrints.Tests.Core
             Assert.True(themeKeys.Count > 0, "Expected at least one ThemeDictionaries key (EditorStyles.axaml).");
             Assert.Empty(offenders);
         }
+
+        [Fact]
+        public void E2_StyleFilesAndBoxShadowsAreScannedForColorLiterals()
+        {
+            string[] styleFiles = [.. LoadAxamlFiles().Select(f => f.RelativePath).Where(p => p.Contains("/Styles/", StringComparison.Ordinal) || p.EndsWith("Styles.axaml", StringComparison.Ordinal))];
+            Assert.NotEmpty(styleFiles);
+
+            var none = new Dictionary<string, string>(StringComparer.Ordinal);
+            (List<string> inStyles, _) = ScanColorLiterals(
+                [Synthetic("src/NetPrints.Editor/Shell/Docking/DockStyles.axaml", "<Styles><Style Selector=\"Border\"><Setter Property=\"Background\" Value=\"#FF112233\" /><Setter Property=\"BoxShadow\" Value=\"0 4 12 0 Black\" /></Style></Styles>")], none);
+            Assert.Equal(2, inStyles.Count);
+
+            (List<string> shadow, _) = ScanColorLiterals([Synthetic("src/X/ViewStyles.axaml", "<Styles><Border BoxShadow=\"0 4 12 0 #40000000\" /></Styles>")], none);
+            Assert.Single(shadow);
+
+            (List<string> text, _) = ScanColorLiterals([Synthetic("src/X/ViewStyles.axaml", "<ResourceDictionary><BoxShadows x:Key=\"A\" xmlns:x=\"http://schemas.microsoft.com/winfx/2006/xaml\">0 4 12 0 #40000000</BoxShadows></ResourceDictionary>")], none);
+            Assert.Single(text);
+
+            (List<string> themed, _) = ScanColorLiterals([Synthetic("src/X/ViewStyles.axaml", "<ResourceDictionary><ResourceDictionary.ThemeDictionaries><ResourceDictionary x:Key=\"Dark\" xmlns:x=\"http://schemas.microsoft.com/winfx/2006/xaml\"><BoxShadows x:Key=\"A\">0 4 12 0 #40000000</BoxShadows></ResourceDictionary></ResourceDictionary.ThemeDictionaries></ResourceDictionary>")], none);
+            Assert.Empty(themed);
+        }
+
+        [Fact]
+        public void NoNumericAncestorLevelSelectors()
+        {
+            var offenders = new List<string>();
+            foreach (AxamlFile file in LoadAxamlFiles())
+            {
+                offenders.AddRange(FindNumericAncestorLevels(file));
+            }
+
+            Assert.Empty(offenders);
+        }
+
+        [Fact]
+        public void NumericAncestorLevelsAreFlaggedInPlantedBindings()
+        {
+            AxamlFile planted = Synthetic("src/X/V.axaml", "<UserControl><Button Command=\"{Binding $parent[Border;2].DataContext.Go}\" /><Button Tag=\"{Binding RelativeSource={RelativeSource AncestorType=Grid, AncestorLevel=2}}\" /><Button Command=\"{Binding $parent[ListBox].DataContext.Go}\" /></UserControl>");
+            Assert.Equal(2, FindNumericAncestorLevels(planted).Count());
+        }
+
+        private static IEnumerable<string> FindNumericAncestorLevels(AxamlFile file) =>
+            file.Document.Descendants().SelectMany(e => e.Attributes())
+                .Where(a => NumericAncestorLevelPattern.IsMatch(a.Value))
+                .Select(a => $"{file.RelativePath}:{LineOf(a)}: {a.Value}");
+
+        /// <summary>Dialog windows (<c>*Dialog.axaml</c> with a <c>Window</c> root) size to their content, per the
+        /// "Layout and look" dialog anatomy in the avalonia-styling skill. Keyed by file path; the reason is why the
+        /// fixed size stays. Entries are legacy fixed sizes: remove one when its dialog moves to SizeToContent.</summary>
+        private static readonly Dictionary<string, string> DialogSizingAllowlist = new(StringComparer.Ordinal);
+
+        private static bool SizesToContent(AxamlFile file) =>
+            file.Document.Root?.Attribute("SizeToContent") is { } size && !string.Equals(size.Value, "Manual", StringComparison.Ordinal);
+
+        private static bool IsDialogWindow(AxamlFile file) =>
+            file.RelativePath.EndsWith("Dialog.axaml", StringComparison.Ordinal) && file.Document.Root?.Name.LocalName == "Window";
+
+        [Fact]
+        public void DialogWindowsSizeToContentOrAreAllowlisted()
+        {
+            AxamlFile[] dialogs = [.. LoadAxamlFiles().Where(IsDialogWindow)];
+            Assert.NotEmpty(dialogs);
+
+            string[] offenders = [.. dialogs.Where(d => !SizesToContent(d) && !DialogSizingAllowlist.ContainsKey(d.RelativePath)).Select(d => d.RelativePath)];
+            Assert.Empty(offenders);
+            AssertAllowlistHasNoStaleEntries(DialogSizingAllowlist.Keys, [.. dialogs.Where(d => !SizesToContent(d)).Select(d => d.RelativePath)]);
+        }
+
+        [Fact]
+        public void ADialogWithAFixedSizeAndNoSizeToContentIsFlagged()
+        {
+            AxamlFile fixedSize = Synthetic("src/X/NewDialog.axaml", "<Window Width=\"400\" Height=\"300\" />");
+            AxamlFile sized = Synthetic("src/X/OkDialog.axaml", "<Window SizeToContent=\"WidthAndHeight\" MaxWidth=\"600\" />");
+            Assert.True(IsDialogWindow(fixedSize) && !SizesToContent(fixedSize));
+            Assert.True(IsDialogWindow(sized) && SizesToContent(sized));
+        }
+
+        private const string RatchetBaselinePath = "tests/NetPrints.Core.Tests/Core/xaml-literal-ratchet.txt";
+
+        private static bool IsStyleOrResourceFile(AxamlFile file) =>
+            file.Document.Root?.Name.LocalName is "Application" or "Styles" or "ResourceDictionary";
+
+        /// <summary>Counts literal (non-binding) <c>Margin</c> and <c>FontSize</c> values per view, including
+        /// <c>Setter</c> values, as <c>"Margin path" -> count</c> and <c>"FontSize path" -> count</c>.</summary>
+        private static SortedDictionary<string, int> CountLiterals(IEnumerable<AxamlFile> files)
+        {
+            var counts = new SortedDictionary<string, int>(StringComparer.Ordinal);
+            foreach (AxamlFile file in files.Where(f => !IsStyleOrResourceFile(f)))
+            {
+                foreach (XElement element in file.Document.Descendants())
+                {
+                    var hits = new List<string>();
+                    if (element.Name.LocalName == "Setter")
+                    {
+                        if (element.Attribute("Property")?.Value is ("Margin" or "FontSize") and var property
+                            && element.Attribute("Value") is { } value && !value.Value.TrimStart().StartsWith('{'))
+                        {
+                            hits.Add(property);
+                        }
+                    }
+                    else
+                    {
+                        hits.AddRange(element.Attributes()
+                            .Where(a => a.Name.LocalName is "Margin" or "FontSize" && !a.Value.TrimStart().StartsWith('{'))
+                            .Select(a => a.Name.LocalName));
+                    }
+
+                    foreach (string hit in hits)
+                    {
+                        string key = $"{hit} {file.RelativePath}";
+                        counts[key] = counts.GetValueOrDefault(key) + 1;
+                    }
+                }
+            }
+
+            return counts;
+        }
+
+        private static Dictionary<string, int> ReadRatchetBaseline()
+        {
+            var baseline = new Dictionary<string, int>(StringComparer.Ordinal);
+            foreach (string line in File.ReadAllLines(Path.Combine(SampleProjectFactory.FindRepositoryRoot(), RatchetBaselinePath)))
+            {
+                int split = line.LastIndexOf(' ');
+                if (line.Length > 0 && !line.StartsWith('#') && split > 0)
+                {
+                    baseline[line[..split]] = int.Parse(line[(split + 1)..], System.Globalization.CultureInfo.InvariantCulture);
+                }
+            }
+
+            return baseline;
+        }
+
+        private const string Gesture = "gesture";
+        private const string ViewportMath = "viewport math";
+        private const string EditorInterop = "editor interop";
+        private const string FocusPlumbing = "focus plumbing";
+
+        private static readonly string[] CodeBehindReasonCategories = [Gesture, ViewportMath, EditorInterop, FocusPlumbing];
+
+        /// <summary>One kept code-behind handler: where it is, why it stays in code-behind, in one line.</summary>
+        private sealed record CodeBehindEntry(string File, string Method, string Category, string Reason)
+        {
+            public string Key => $"{File}:{Method}";
+        }
+
+        private static CodeBehindEntry Editor(string tail, string method, string category, string reason) =>
+            new($"src/NetPrints.Editor/{tail}", method, category, reason);
+
+        /// <summary>E7: every event handler in <c>src/**/*.axaml.cs</c> is listed here with a reason, or migrated to a
+        /// behavior, command or style. Shrink-only: a new handler needs a justified entry, a migrated one leaves.</summary>
+        private static readonly CodeBehindEntry[] CodeBehindAllowlist =
+        [
+            Editor("CodeView/CodeView.axaml.cs", "OnActualThemeVariantChanged", EditorInterop, "Re-applies the AvaloniaEdit highlighting theme when the variant changes."),
+            Editor("CodeView/CodeView.axaml.cs", "OnDataContextChanged", EditorInterop, "Rebinds the AvaloniaEdit document to the new view model."),
+            Editor("CodeView/CodeView.axaml.cs", "OnViewModelPropertyChanged", EditorInterop, "Pushes view model text and selection changes into the AvaloniaEdit control."),
+            Editor("CodeView/CodeView.axaml.cs", "OnPointerHover", Gesture, "Hover over the text editor resolves the symbol under the pointer."),
+            Editor("CodeView/CodeView.axaml.cs", "OnPointerHoverStopped", Gesture, "Ends the hover gesture and clears the quick info."),
+            Editor("CodeView/CodeView.axaml.cs", "OnPointerExited", Gesture, "Pointer leaving the editor clears the quick info."),
+            Editor("CodeView/CodeView.axaml.cs", "OnAttachedToVisualTree", EditorInterop, "Subscribes the AvaloniaEdit and theme events while attached."),
+            Editor("CodeView/CodeView.axaml.cs", "OnDetachedFromVisualTree", EditorInterop, "Unsubscribes the AvaloniaEdit and theme events when detached."),
+            Editor("EditorApp.axaml.cs", "OnFrameworkInitializationCompleted", EditorInterop, "Application entry point that builds the shell window and the lifetime hooks."),
+            Editor("Graph/GraphEditorView.axaml.cs", "CenterWhenSized", ViewportMath, "Centers the Nodify viewport on a revealed node once the canvas has a size."),
+            Editor("Graph/GraphEditorView.axaml.cs", "OnEditorPointerPressed", Gesture, "Starts the connector and canvas pointer gestures on the Nodify editor."),
+            Editor("Graph/GraphEditorView.axaml.cs", "OnEditorPointerMoved", Gesture, "Tracks the pointer for the drag-to-connect gesture."),
+            Editor("Graph/GraphEditorView.axaml.cs", "OnEditorPointerReleased", Gesture, "Ends the pointer gesture and opens the search at the drop point."),
+            Editor("Graph/GraphEditorView.axaml.cs", "OnDragOver", Gesture, "Accepts a variable dragged from the panels onto the canvas."),
+            Editor("Graph/GraphEditorView.axaml.cs", "OnDrop", Gesture, "Drops a dragged variable at a canvas position, converting screen to graph coordinates."),
+            Editor("Graph/GraphEditorView.axaml.cs", "OnDataContextChanged", ViewportMath, "Resets the Nodify viewport zoom and location when a new graph opens."),
+            Editor("EditorApp.axaml.cs", "desktop.Exit", EditorInterop, "Disposes the exception handler and automation agent when the desktop lifetime exits."),
+            Editor("EditorApp.axaml.cs", "desktop.ShutdownRequested", EditorInterop, "Hands the lifetime's shutdown request to the shutdown coordinator."),
+            Editor("Graph/GraphEditorView.axaml.cs", "OnNodeRevealRequested", ViewportMath, "Centers the Nodify viewport on a node the graph asks to reveal."),
+            Editor("Graph/GraphEditorView.axaml.cs", "PointerCaptureLostEvent", Gesture, "Clears the pan cursor when the editor loses the pointer capture."),
+            Editor("Graph/GraphEditorView.axaml.cs", "SearchPopup.Opened", FocusPlumbing, "Focuses the search box when the canvas popup opens."),
+            Editor("Graph/GraphEditorView.axaml.cs", "SearchPopup.FallbackPositionRequested", ViewportMath, "Supplies the selected node or canvas centre as the popup position."),
+            Editor("Graph/GraphEditorView.axaml.cs", "GetSetPopup.FallbackPositionRequested", ViewportMath, "Supplies the selected node or canvas centre as the popup position."),
+        ];
+
+        private static string[] FindCodeBehindHandlers(string relativePath, string source)
+        {
+            IEnumerable<string> bySignature = EventHandlerSignaturePattern.Matches(source).Select(m => m.Groups["name"].Value);
+            IEnumerable<string> byOverride = OnOverridePattern.Matches(source).Select(m => m.Groups["name"].Value);
+
+            IEnumerable<string> bySubscription = SubscriptionPattern.Matches(source).Select(NameOrMethod);
+            IEnumerable<string> byAddHandler = AddHandlerPattern.Matches(source).Select(NameOrMethod);
+
+            return [.. bySignature.Concat(byOverride).Concat(bySubscription).Concat(byAddHandler).Distinct(StringComparer.Ordinal).Select(name => $"{relativePath}:{name}")];
+        }
+
+        private static string NameOrMethod(Match match) =>
+            match.Groups["method"].Success ? match.Groups["method"].Value : match.Groups["name"].Value;
+
+        private static (List<string> Offenders, HashSet<string> Seen) ScanCodeBehind(IEnumerable<(string Path, string Source)> files)
+        {
+            HashSet<string> allowed = [.. CodeBehindAllowlist.Select(entry => entry.Key)];
+            HashSet<string> seen = new(StringComparer.Ordinal);
+            List<string> offenders = [];
+
+            foreach ((string path, string source) in files)
+            {
+                foreach (string key in FindCodeBehindHandlers(path, source))
+                {
+                    seen.Add(key);
+                    if (!allowed.Contains(key))
+                    {
+                        offenders.Add(key);
+                    }
+                }
+            }
+
+            return (offenders, seen);
+        }
+
+        private static List<(string Path, string Source)> LoadCodeBehindFiles()
+        {
+            string root = SampleProjectFactory.FindRepositoryRoot();
+            string src = Path.Combine(root, "src");
+            string[] paths = [.. Directory.EnumerateFiles(src, "*.axaml.cs", SearchOption.AllDirectories)
+                .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                    && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+                .OrderBy(path => path, StringComparer.Ordinal)];
+
+            Assert.True(paths.Length > 0, "Expected to scan at least one src/**/*.axaml.cs file.");
+
+            return [.. paths.Select(path => (Path.GetRelativePath(root, path).Replace('\\', '/'), File.ReadAllText(path)))];
+        }
+
+        [Fact]
+        public void E7_EveryCodeBehindHandlerIsListedWithAReason()
+        {
+            (List<string> offenders, HashSet<string> seen) = ScanCodeBehind(LoadCodeBehindFiles());
+
+            Assert.True(offenders.Count == 0, "Code-behind handlers must be migrated to a behavior or command, or listed in CodeBehindAllowlist with a reason (see E7): " + string.Join(", ", offenders));
+            AssertAllowlistHasNoStaleEntries(CodeBehindAllowlist.Select(entry => entry.Key), seen);
+        }
+
+        [Fact]
+        public void E7_AllowlistEntriesNameAKnownCategoryAndGiveAReason()
+        {
+            string[] bad = [.. CodeBehindAllowlist
+                .Where(entry => !CodeBehindReasonCategories.Contains(entry.Category) || string.IsNullOrWhiteSpace(entry.Reason))
+                .Select(entry => entry.Key)];
+
+            Assert.Empty(bad);
+            Assert.Equal(CodeBehindAllowlist.Length, CodeBehindAllowlist.Select(entry => entry.Key).Distinct(StringComparer.Ordinal).Count());
+        }
+
+        [Fact]
+        public void E7_FlagsAnUnlistedHandlerAndAnOnOverride()
+        {
+            const string source = "class V { void OnFoo(object? sender, PointerPressedEventArgs e) {} protected override void OnBar(EventArgs e) {} void Plain(int x) {} }";
+
+            (List<string> offenders, _) = ScanCodeBehind([("src/X/V.axaml.cs", source)]);
+
+            Assert.Equal(["src/X/V.axaml.cs:OnFoo", "src/X/V.axaml.cs:OnBar"], offenders);
+        }
+
+        [Fact]
+        public void E7_FlagsSubscriptionsLambdasAndHandlersWithAnyEventType()
+        {
+            const string source = """
+                class V
+                {
+                    V()
+                    {
+                        Editor.PropertyChanged += (_, e) => Sync();
+                        Popup.Opened += (_, _) => Focus();
+                        Panel.Shown += OnShown;
+                        Editor.AddHandler(PointerCaptureLostEvent, (_, _) => Reset(), Bubble, true);
+                        Editor.AddHandler(PointerPressedEvent, OnPressed, Tunnel, true);
+                        total += 1;
+                        count += other;
+                    }
+
+                    void OnNode(object? sender, NodeViewModel node) {}
+                }
+                """;
+
+            (List<string> offenders, _) = ScanCodeBehind([("src/X/V.axaml.cs", source)]);
+
+            Assert.Equal(
+                [
+                    "src/X/V.axaml.cs:OnNode",
+                    "src/X/V.axaml.cs:Editor.PropertyChanged",
+                    "src/X/V.axaml.cs:Popup.Opened",
+                    "src/X/V.axaml.cs:OnShown",
+                    "src/X/V.axaml.cs:PointerCaptureLostEvent",
+                    "src/X/V.axaml.cs:OnPressed",
+                ],
+                offenders);
+        }
+
+        private static readonly Regex EventHandlerSignaturePattern = EventHandlerSignatureRegex();
+
+        private static readonly Regex OnOverridePattern = OnOverrideRegex();
+
+        private static readonly Regex SubscriptionPattern = SubscriptionRegex();
+
+        private static readonly Regex AddHandlerPattern = AddHandlerRegex();
+
+        [GeneratedRegex(@"\b(?<name>\w+)\s*\(\s*object\??\s+\w+\s*,\s*[\w.<>?]+\s+\w+\s*\)")]
+        private static partial Regex EventHandlerSignatureRegex();
+
+        [GeneratedRegex(@"(?<name>[\w.]+)\s*\+=\s*(?:(?:\([^)]*\)|\w+)\s*=>|async\b|delegate\b|(?<method>[A-Z]\w*)\s*;)")]
+        private static partial Regex SubscriptionRegex();
+
+        [GeneratedRegex(@"\bAddHandler\s*\(\s*(?<name>[\w.]+)\s*,\s*(?:(?:\([^)]*\)|\w+)\s*=>|(?<method>\w+))")]
+        private static partial Regex AddHandlerRegex();
+
+        [GeneratedRegex(@"\boverride\s+[\w.<>?\[\]]+\s+(?<name>On\w+)\s*\(")]
+        private static partial Regex OnOverrideRegex();
+
+        /// <summary>Ratchet, not a cleanup: literal Margin and FontSize counts per view may not rise above the
+        /// checked-in baseline. Rule E8 later drives FontSize to zero.</summary>
+        [Fact]
+        public void MarginAndFontSizeLiteralsNeverExceedTheBaseline()
+        {
+            SortedDictionary<string, int> current = CountLiterals(LoadAxamlFiles());
+            if (Environment.GetEnvironmentVariable("NETPRINTS_UPDATE_RATCHET") == "1")
+            {
+                File.WriteAllLines(
+                    Path.Combine(SampleProjectFactory.FindRepositoryRoot(), RatchetBaselinePath),
+                    ["# Literal Margin/FontSize counts per view (XamlHygieneTests ratchet). Regenerate with NETPRINTS_UPDATE_RATCHET=1 only when counts went down.", .. current.Select(c => $"{c.Key} {c.Value}")]);
+            }
+
+            Dictionary<string, int> baseline = ReadRatchetBaseline();
+
+            string[] rose = [.. current.Where(c => c.Value > baseline.GetValueOrDefault(c.Key)).Select(c => $"{c.Key}: {baseline.GetValueOrDefault(c.Key)} -> {c.Value}")];
+            Assert.True(rose.Length == 0, "Literal Margin/FontSize count went up (use a style class from EditorStyles.axaml instead): " + string.Join("; ", rose));
+
+            string[] lower = [.. baseline.Where(b => current.GetValueOrDefault(b.Key) < b.Value).Select(b => $"{b.Key} {current.GetValueOrDefault(b.Key)}")];
+            if (lower.Length > 0)
+            {
+                TestContext.Current.SendDiagnosticMessage($"Ratchet: {lower.Length} baseline entries can be lowered. Lower {RatchetBaselinePath} (run this test once with NETPRINTS_UPDATE_RATCHET=1) to: {string.Join("; ", lower)}");
+            }
+        }
+
+        [Fact]
+        public void TheRatchetCountsLiteralsAndIgnoresBindingsAndStyleFiles()
+        {
+            AxamlFile view = Synthetic("src/X/V.axaml", "<UserControl><Border Margin=\"4\" FontSize=\"12\"><TextBlock Margin=\"{Binding M}\" /><Style><Setter Property=\"FontSize\" Value=\"10\" /></Style></Border></UserControl>");
+            AxamlFile styles = Synthetic("src/X/S.axaml", "<Styles><Setter Property=\"Margin\" Value=\"1\" /></Styles>");
+
+            SortedDictionary<string, int> counts = CountLiterals([view, styles]);
+
+            Assert.Equal(1, counts["Margin src/X/V.axaml"]);
+            Assert.Equal(2, counts["FontSize src/X/V.axaml"]);
+            Assert.Equal(2, counts.Count);
+        }
+
+        private static readonly Regex NumericAncestorLevelPattern = NumericAncestorLevelRegex();
+
+        [GeneratedRegex(@"\$parent\[[^\]]*;\s*\d+\s*\]|AncestorLevel\s*=\s*\d+")]
+        private static partial Regex NumericAncestorLevelRegex();
 
         [GeneratedRegex(@"^(AliceBlue|Aqua|Beige|Black|Blue|Brown|Crimson|Cyan|DarkGray|DarkGreen|DarkOrange|DarkRed|DimGray|DodgerBlue|Gold|Gray|Green|Grey|HotPink|Indigo|LightBlue|LightGray|LightGreen|Lime|Magenta|Maroon|Navy|Olive|Orange|OrangeRed|Pink|Purple|Red|Salmon|Silver|SkyBlue|Teal|Tomato|Violet|White|WhiteSmoke|Yellow|YellowGreen)$")]
         private static partial Regex NamedColorRegex();

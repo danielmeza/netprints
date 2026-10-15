@@ -15,12 +15,25 @@
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="Xunit.DependencyInjection" />
     <PackageReference Include="Microsoft.Reactive.Testing" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
     <!-- RC-T09 (DocumentationTests): NetPrints.Workspace pulls in Microsoft.CodeAnalysis.Workspaces.MSBuild,
          whose own dependency on Microsoft.Build.Framework carries no asset exclusion of its own
          (MSBuildLocator's MSBL001, research K10): pin and exclude both here too, exactly like
          NetPrints.Workspace.csproj and NetPrints.Core.Tests.csproj. -->
     <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- BannedSymbolsTests loads the analyzer from its package folder: download it without referencing it, so it never analyzes the tests. -->
+  <ItemGroup>
+    <PackageDownload Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="[$(BannedApiAnalyzersVersion)]" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>BannedApiAnalyzersPath</_Parameter1>
+      <_Parameter2>$(NuGetPackageRoot)microsoft.codeanalysis.bannedapianalyzers/$(BannedApiAnalyzersVersion)</_Parameter2>
+    </AssemblyAttribute>
   </ItemGroup>
 
   <ItemGroup>
@@ -38,6 +51,8 @@
     <ProjectReference Include="..\NetPrints.TestExtension\NetPrints.TestExtension.csproj" ReferenceOutputAssembly="false" />
     <!-- Built first, never referenced: tests load the fx.catalog extension from its own output folder. -->
     <ProjectReference Include="..\Fixtures\Extensions\Fx.Catalog\Fx.Catalog.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: the new-project build test builds a created project against this repository's generator. -->
+    <ProjectReference Include="..\..\src\NetPrints.Generator\NetPrints.Generator.csproj" ReferenceOutputAssembly="false" />
     <!-- Built first, never referenced: the embedded-catalog discovery tests read its dll. -->
     <ProjectReference Include="..\Fixtures\Catalog\CatalogAnnotatedLib\CatalogAnnotatedLib.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>

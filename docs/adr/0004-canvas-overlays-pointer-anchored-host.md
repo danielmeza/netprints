@@ -7,17 +7,17 @@ Accepted (2026-09-27).
 ## Context
 
 Commit 4b8e580 fixed one report of the Get/Set chooser opening away from the mouse — dragging a
-variable onto the canvas — by adding `GetSetChooserVM.ScreenPosition` (an `Avalonia.Point`, set by
-`NodeGraphVM.Drop(MemberVariableVM, GraphPoint, Point)`) and binding `GetSetPopup`'s
+variable onto the canvas — by adding `GetSetChooserViewModel.ScreenPosition` (an `Avalonia.Point`, set by
+`NodeGraphViewModel.Drop(MemberVariableViewModel, GraphPoint, Point)`) and binding `GetSetPopup`'s
 `HorizontalOffset`/`VerticalOffset` to it in `GraphEditorView.axaml`. That fix was per-caller: the
-other path that opens the same popup, `SuggestionListVM.SelectAsync`'s `case VariableSpecifier`
+other path that opens the same popup, `SuggestionListViewModel.SelectAsync`'s `case VariableSpecifier`
 (picking a property/field from the member search, e.g. after dragging from an object pin), never set
 `ScreenPosition`, so it opened at the origin instead. The owner reported this as the same bug
 recurring under a different trigger.
 
 Root cause: `Placement="Pointer"` reads Avalonia's own last-pointer-position tracking, which is
 `internal` and is not kept current by drag-and-drop (`DragEventArgs`, not `PointerEventArgs`). The
-per-caller fix threaded a screen coordinate through the view model (`GetSetChooserVM.ScreenPosition`,
+per-caller fix threaded a screen coordinate through the view model (`GetSetChooserViewModel.ScreenPosition`,
 the 3-arg `Drop` overload) to work around this, which put a view concern (screen pixels) in the view
 model and had to be repeated for every new opening path and every new kind of popup.
 
@@ -48,8 +48,8 @@ Positioning a canvas overlay is a view concern, solved once, centrally:
   popup opened; and only one `CanvasPopup` is open per `TopLevel` at a time (opening one closes any
   other already open for the same window).
 - `SearchPopup` and `GetSetPopup` in `GraphEditorView.axaml` are `CanvasPopup`s. The screen-coordinate
-  plumbing this replaces is gone: `GetSetChooserVM.ScreenPosition`, the 3-arg
-  `NodeGraphVM.Drop(MemberVariableVM, GraphPoint, Point)` overload (now 2-arg, graph coordinates
+  plumbing this replaces is gone: `GetSetChooserViewModel.ScreenPosition`, the 3-arg
+  `NodeGraphViewModel.Drop(MemberVariableViewModel, GraphPoint, Point)` overload (now 2-arg, graph coordinates
   only), `NodeSearchView`'s own Escape handling, and `GetSetChooserView`'s pointer-exit-to-close
   handler.
 - Every pointer-related canvas overlay, today and future, goes through `CanvasPopup`: the node, pin,

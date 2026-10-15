@@ -4,16 +4,20 @@
              xmlns:vm="clr-namespace:NetPrints.Editor.CodeView"
              xmlns:conv="clr-namespace:Avalonia.Data.Converters;assembly=Avalonia.Base"
              x:Class="NetPrints.Editor.CodeView.CodeView"
-             x:DataType="vm:CodeViewVM"
+             x:DataType="vm:CodeViewViewModel"
              ToolTip.Tip="{Binding QuickInfoText}"
              ToolTip.IsOpen="{Binding QuickInfoText, Converter={x:Static conv:ObjectConverters.IsNotNull}}">
   <!-- Read-only C# preview (FR-031..035): line numbers, no wrap, TextMate highlighting and folding
        installed in code-behind (theme-aware; falls back to plain text if TextMate is unavailable). -->
-  <!-- Text is pushed from CodeViewVM.Code in code-behind, not bound: AvaloniaEdit's TextEditor.Text
+  <!-- Text is pushed from CodeViewViewModel.Code in code-behind, not bound: AvaloniaEdit's TextEditor.Text
        setter is a plain CLR property compiled bindings cannot target (AVLN3000). -->
   <ae:TextEditor Name="Editor"
                  IsReadOnly="True"
                  ShowLineNumbers="True"
                  WordWrap="False"
-                 FontFamily="avares://NetPrints.Editor/Assets/Fonts#Cascadia Mono" />
+                 FontFamily="{StaticResource Font.Mono}" >
+    <ae:TextEditor.Options>
+      <ae:TextEditorOptions HighlightCurrentLine="True" />
+    </ae:TextEditor.Options>
+  </ae:TextEditor>
 </UserControl>

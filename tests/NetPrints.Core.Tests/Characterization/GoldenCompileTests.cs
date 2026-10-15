@@ -30,6 +30,7 @@ namespace NetPrints.Tests.Characterization
             yield return new object[] { "HelloWorld.Program.cs" };
             yield return new object[] { "Locals.cs" };
             yield return new object[] { "AllNodes.Everything.cs" };
+            yield return new object[] { "EventArguments.Combat.cs" };
         }
 
         [Theory]
