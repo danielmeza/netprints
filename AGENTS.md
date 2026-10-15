@@ -265,9 +265,12 @@ A batch prompt names the task range and pastes the task text; everything below a
   package ships it at instead — see ADR-0003 for the probe that verified this. `VSTHRD111` (ConfigureAwait)
   is `error` by default too, but `none` for code that deliberately resumes on the UI thread (view models,
   views, and a short list of other paths — see ADR-0003's layering table). `S109` has no carve-out: it is
-  `error` in all of `src/**.cs`, including `NetPrints.Editor`. `dotnet format analyzers --severity info
-  --verify-no-changes` scoped to a batch's own changed files (`git diff --name-only origin/master...HEAD`)
-  surfaces the `suggestion`-level hits the build doesn't. A violation the curated rules catch gets fixed for
+  `error` in all of `src/**.cs`, including `NetPrints.Editor`. `dotnet format analyzers NetPrints.slnx --severity
+  info --verify-no-changes --no-restore --include $(git diff --name-only --diff-filter=d <batch-base-sha> -- '*.cs')`
+  surfaces the `suggestion`-level hits the build doesn't, for the batch's own files only (`<batch-base-sha>` is the
+  commit the batch started from, so uncommitted edits count; `--include` does narrow the run, and an empty list
+  silently formats everything, so check the list first). Never use `origin/master...HEAD` there: on a phase branch
+  that is hundreds of files and reports thousands of pre-existing hits. A violation the curated rules catch gets fixed for
   real, not suppressed — the one exception is a site where the analyzer's ownership/intent-tracking
   genuinely cannot see the truth, suppressed with a member-level
   `[SuppressMessage("<Category>", "<ID>", Justification = "ADR-0003: <one-line reason>")]` on the smallest
