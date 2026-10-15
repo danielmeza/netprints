@@ -40,8 +40,9 @@ instead.
 - [0035: Editor themes are data](0035-editor-themes-are-data.md)
 - [0036: Member defaults and editor metadata](0036-member-defaults-and-editor-metadata.md)
 - [0037: Run profile kinds](0037-run-profile-kinds.md)
+- [0038: The C# target and feature requirements](0038-csharp-target-and-feature-requirements.md)
 
 Numbers 0024-0030 and 0032 are reserved by the roadmap for ADRs not yet written (analyzer and generator
 infrastructure, declarative pins, node kinds, localization, node search, node capabilities, the Extensibility
-Stairway split, graph rules); 0031 and later were written first. Numbers 0038 and 0039 are reserved as well: 0038 is the C#
-target and feature requirements, and 0039 is user attributes and their editor extension model.
+Stairway split, graph rules); 0031 and later were written first. Number 0039 is reserved as well, for user attributes and
+their editor extension model.

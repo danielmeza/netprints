@@ -425,7 +425,7 @@ packages for extension authors. No performance work here (owner decision 2026-09
     the start of P3).
   - Tests: workspace fixtures (no `LangVersion`, `latest`, `preview`, `10.0`, an unknown `16.0`, multi-target) and a three-writer
     byte-identity test. About 3-5 units. `netprints check` for the target has low priority.
-  - Planned ADR-0038 (C# target and feature requirements) and ADR-0039 (user attributes and their editor extension model).
+  - [ADR-0038](../../docs/adr/0038-csharp-target-and-feature-requirements.md) (C# target and feature requirements); planned ADR-0039 (user attributes and their editor extension model).
   - Design and prior art: `.agent-archive/2026-10-14-attributes-langversion/` (outside this repo).
 Done when: also docs updated (guides, API reference, ADRs as applicable).
 
