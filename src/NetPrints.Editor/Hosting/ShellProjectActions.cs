@@ -31,6 +31,7 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
     private const string WaitingForBuildText = "Waiting for the build…";
     private const string DropOneMessage = "Drop one .csproj file, or one project folder, at a time.";
     private static readonly TimeSpan RefusedDropDuration = TimeSpan.FromSeconds(8);
+    private static readonly TimeSpan ThemeStatusDuration = TimeSpan.FromSeconds(5);
 
     private readonly EditorContext context;
     private readonly ShellViewModel shell;
@@ -230,13 +231,16 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
     /// <inheritdoc/>
     public async Task SetThemeAsync(EditorTheme theme, CancellationToken cancellationToken)
     {
+        global::Avalonia.Styling.ThemeVariant? actual = null;
         if (global::Avalonia.Application.Current is EditorApp app)
         {
             app.ApplyTheme(theme);
+            actual = app.ActualThemeVariant;
         }
 
         await context.Settings.SetAsync(EditorSettings.Descriptor, new EditorSettings { Theme = theme }, cancellationToken).ConfigureAwait(true);
         shell.NotifyCommandStatesChanged();
+        shell.ShowStatus(ThemeStatusText.For(theme, actual), ThemeStatusDuration);
     }
 
     /// <inheritdoc/>

@@ -97,7 +97,7 @@ two shortcuts lists both. A dash means the command has no shortcut; it is still 
 | View | Reset layout | – | Anywhere |
 | View | Theme › Dark | – | Anywhere |
 | View | Theme › Light | – | Anywhere |
-| View | Theme › System | – | Anywhere |
+| View | Theme › System (follow OS) | – | Anywhere |
 | View | Command palette… | Ctrl+Shift+P | Anywhere |
 | Go | Go to anything… | Ctrl+P | Anywhere |
 | Go | Back | Alt+Left | Anywhere |

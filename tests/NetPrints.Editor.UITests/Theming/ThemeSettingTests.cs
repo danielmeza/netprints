@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Headless.XUnit;
 using Avalonia.Styling;
+using NetPrints.Editor.Commands.CommandPalette;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.State;
 using NetPrints.Editor.UITests.Shell;
@@ -38,13 +39,49 @@ public class ThemeSettingTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task ThePaletteNamesTheThemeCommandsByWhatTheyDo()
+    {
+        await using var app = ShellApp.Start();
+        var palette = new CommandPaletteViewModel(app.Shell.Registry, app.Commands) { Query = "Theme" };
+
+        Assert.Equal(["Theme: Dark", "Theme: Light", "Theme: System (follow OS)"], palette.Items.Select(item => item.Label).Order());
+    }
+
+    [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]
+    [InlineData("Theme: Light", EditorTheme.Light, "Theme: Light")]
+    [InlineData("Theme: Dark", EditorTheme.Dark, "Theme: Dark")]
+    [InlineData("Theme: System", EditorTheme.System, null)]
+    public async Task RunningAThemeFromThePaletteAppliesItAndSaysSoInTheStatusBar(string query, EditorTheme expected, string? status)
+    {
+        await using var app = ShellApp.Start();
+        try
+        {
+            App.ApplyTheme(expected == EditorTheme.Dark ? EditorTheme.Light : EditorTheme.Dark);
+            var palette = new CommandPaletteViewModel(app.Shell.Registry, app.Commands) { Query = query };
+            Assert.NotNull(palette.SelectedItem);
+
+            palette.RunSelectedCommand.Execute(null);
+
+            await UiWait.UntilAsync(app.Driver, () => Task.FromResult(app.Shell.StatusMessage is not null), "theme status shown", TestContext.Current.CancellationToken);
+            Assert.Equal(VariantOf(expected), App.RequestedThemeVariant);
+            Assert.Equal(expected, app.Composition.Context.Settings.Get(EditorSettings.Descriptor).Theme);
+            string resolved = App.ActualThemeVariant == ThemeVariant.Dark ? "Dark" : "Light";
+            Assert.Equal(status ?? $"Theme: System ({resolved})", app.Shell.StatusMessage);
+        }
+        finally
+        {
+            App.ApplyTheme(EditorTheme.Dark);
+        }
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task TheThemeMenuChecksTheActiveThemeAndFollowsTheChoice()
     {
         await using var app = ShellApp.Start();
         try
         {
             CommandEntryViewModel[] choices = [.. Assert.IsType<MenuBarViewModel>(app.Shell.MenuBar).Menus.Single(menu => menu.Header == "View").Items.Single(entry => entry.IsSubmenu).Items ?? []];
-            Assert.Equal(["Dark", "Light", "System"], choices.Select(choice => choice.Label));
+            Assert.Equal(["Dark", "Light", "System (follow OS)"], choices.Select(choice => choice.Label));
             Assert.Equal([true, false, false], choices.Select(choice => choice.IsChecked));
 
             Assert.True(app.Commands.TryRun(app.Command("theme.light")));

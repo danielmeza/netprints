@@ -29,7 +29,7 @@ public sealed partial class CommandPaletteViewModel : DialogViewModel<object>
         [
             .. registry.Commands.Select(command => new PaletteItem(
                 command,
-                command.Label,
+                command.Menu?.Submenu is { } submenu ? submenu + ": " + command.Label : command.Label,
                 string.Join(", ", command.DefaultGestures ?? []),
                 command.Menu?.Display ?? "",
                 invoker.CanRun(command))),

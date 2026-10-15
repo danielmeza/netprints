@@ -3004,3 +3004,10 @@ editor was not run with a pipe that cannot be bound.
   `InteractionStateTests.KeyboardFocusShowsTheRingWithTheControlsCornerRadius` now expects `Radius.Tab` for the document tab. Baselines regenerated (the removed frame
   makes the document area 2 px wider and shifts the content by 1 px, and the tab changes): `editor-shell-main` (+ `-dark|light-1.0|1.5|2.0`), `editor-shell-no-project`,
   `canvas-every-node-kind` (+ the six scaled), `canvas-preview-cable` and `search-popup`; the start page baselines are untouched.
+- **OF-6, the System theme from the command palette seems to do nothing.** Cause: the palette already ran the theme commands (`ThemeCommandHandler`), but the item
+  was labelled just "System", gave no hint of what it does, and a switch to the theme already shown (an OS that is dark, the editor already dark) changed nothing
+  visible and said nothing. No settings UI is added (P3). Fix: the palette label of a command in a submenu is `Submenu: Label` (`Theme: Dark`, `Theme: Light`,
+  `Theme: System (follow OS)`, the menu entry is now `System (follow OS)`), and `ShellProjectActions.SetThemeAsync` shows `Theme: <name>` in the status bar for
+  five seconds, `Theme: System (Dark|Light)` with the variant the OS resolved to for System (`ThemeStatusText`). Tests (written after the code):
+  `ThemeSettingTests.ThePaletteNamesTheThemeCommandsByWhatTheyDo`, `ThemeSettingTests.RunningAThemeFromThePaletteAppliesItAndSaysSoInTheStatusBar` (runs the
+  selected palette item for each theme and checks the variant, the stored setting and the status text) and `ThemeStatusTextTests`.

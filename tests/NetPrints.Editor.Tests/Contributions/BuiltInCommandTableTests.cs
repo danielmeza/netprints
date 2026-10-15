@@ -63,7 +63,7 @@ public class BuiltInCommandTableTests
         new("resetLayout", "Reset layout", "View", "layout", [], Everywhere, null, typeof(ResetLayoutCommandHandler)),
         new("theme.dark", "Dark", "View", "theme", [], Everywhere, null, typeof(ThemeCommandHandler)),
         new("theme.light", "Light", "View", "theme", [], Everywhere, null, typeof(ThemeCommandHandler)),
-        new("theme.system", "System", "View", "theme", [], Everywhere, null, typeof(ThemeCommandHandler)),
+        new("theme.system", "System (follow OS)", "View", "theme", [], Everywhere, null, typeof(ThemeCommandHandler)),
         new("commandPalette", "Command palette…", "View", "find", ["Ctrl+Shift+P"], Everywhere, null, typeof(CommandPaletteCommandHandler)),
         new("goToAnything", "Go to anything…", "Go", "find", ["Ctrl+P"], Everywhere, null, typeof(GoToAnythingCommandHandler)),
         new("navigateBack", "Back", "Go", "history", ["Alt+Left"], Everywhere, null, typeof(NavigateHistoryCommandHandler)),
