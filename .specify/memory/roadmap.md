@@ -404,6 +404,29 @@ packages for extension authors. No performance work here (owner decision 2026-09
   - Planned ADRs (0024–0027 above): 0028 (node search providers and node creation), 0029 (node capabilities as role interfaces, including `IMemberReferencingNode`), 0030 (Extensibility Stairway split and the editor facet), 0031 (editor composition and DI; written 2026-10-08), 0032 (graph rules). Also written, with unreserved numbers: 0033 (logging and per-user folders), 0034 (smart enums and generic math). Planned amendments: ADR-0020 (typed descriptor contexts, per-session contribution groups, `AppliesTo`, new contribution kinds), ADR-0021 (extension icon ids), ADR-0026 (`PrepareFromSearchAsync`, offers from typed pins), ADR-0010 (conformance checks for providers, rules and contributions).
   - **Editor themes** ([ADR-0035](../../docs/adr/0035-editor-themes-are-data.md), owner 2026-10-13): every visual element is a token a theme can set; themes are data and never run code. **B0** (about 4-5 units): the token catalogue in product code with the contrast math, a per-variant overlay in `Application.Resources.ThemeDictionaries[Dark|Light]`, `darkPreset`/`lightPreset` string settings, embedded presets (NetPrints Dark, NetPrints Light, Classic Dark, High contrast on Semi's own HC variants), wire opacity and thickness tokens, a theme settings page, the reserved manifest `themes` field before the publish gate, and a test of the overlay precedence. **B1** (about 9 more): user `*.nptheme.json` files, validation messages, Reload and Duplicate. **C** (themes declared by ordinary extensions, via B17). B1 and C go in P3 if capacity allows, otherwise P6. Contrast: warn and apply; the built-in presets are gated by tests. Semi keys are passed through and validated at runtime, never curated.
   - **Value-editor contract** ([ADR-0036](../../docs/adr/0036-member-defaults-and-editor-metadata.md)): R6's `PinEditorDescriptor` widens into a value-editor contract shared by pins, variable and parameter defaults and grid rows (no extra cost while experimental). The model-driven grid with plugin-contributed editors (c, about 13-15 units) lands at the P3 tail if it fits, otherwise in P3b.
+- **C# target (owner 2026-10-14; ADR-0038)**: one stable `CSharpTarget` per project, carried by `ProjectSnapshot` and reached through
+  `Project` and `IProjectSession`.
+  - Emission depends on the language version only. It is computed from the evaluated `LangVersion`, `MaxSupportedLangVersion` and
+    `TargetFramework(s)` and passed in the generate request, so the editor, `regen` and the SDK `NetPrintsGenerate` target write
+    identical bytes. `latest`, `preview` and `default` resolve to the smaller of the TFM's `MaxSupportedLangVersion` and the
+    editor Roslyn's maximum, with an info hint to pin `<LangVersion>`; a multi-targeted project uses the minimum version and the
+    intersection of capabilities. A version newer than the TFM's is only an info message.
+  - Types and runtime features only gate availability and diagnostics; a missing type is a warning. The editor does not run the
+    project's generators to probe (revisit with Godot D1.6).
+  - Filtering: short lists show unavailable items disabled with the reason and quick fixes; node search hides them, with a "Show
+    unavailable" toggle; the attribute picker hides `ValidOn` mismatches. Lowering after use: a declared fallback with an info
+    diagnostic, otherwise an error; stored data never changes. Quick fixes: edit `<LangVersion>` up to `MaxSupportedLangVersion`;
+    a PolySharp hint when only types are missing.
+  - The node translators get a default-implemented `Target` on `IExecutionTranslationContext`; literal formatting follows the
+    version.
+  - Before the gate: stable `CSharpLanguageVersion` and a minimal `CSharpTarget`; `CSharpFeature` and `Requires` (on node-search
+    entries, inside SUG4) are experimental under a new `NPXE` id; `ICommandContext` reaches the target through the session.
+    Unknown document members are preserved on save (`[JsonExtensionData]`) before any new document field ships (about 1 unit, at
+    the start of P3).
+  - Tests: workspace fixtures (no `LangVersion`, `latest`, `preview`, `10.0`, an unknown `16.0`, multi-target) and a three-writer
+    byte-identity test. About 3-5 units. `netprints check` for the target has low priority.
+  - Planned ADR-0038 (C# target and feature requirements) and ADR-0039 (user attributes and their editor extension model).
+  - Design and prior art: `.agent-archive/2026-10-14-attributes-langversion/` (outside this repo).
 Done when: also docs updated (guides, API reference, ADRs as applicable).
 
 ### P3b — Declarations and code style (owner-approved 2026-09-26)
@@ -427,8 +450,13 @@ profiles and P3 extensions use, so custom emitters need no core changes.
   - collection expressions;
   - file-scoped or block namespaces.
 
-  A style declares its minimum `LangVersion`. Reading referenced code recognizes every form; today only
-  classic `this` extension methods are recognized.
+  A style declares the C# features it requires and an optional fallback style (owner 2026-10-14; ADR-0038). The language
+  version alone decides whether it is used. Below its minimum the translator uses the fallback and reports NPT011 (info); a
+  feature with no fallback reports NPT010 (error). Missing types or runtime features gate availability and warn, but never
+  change the output. The stored model never changes. Node translators see the same target through their translation context,
+  and built-in node kinds declare `Requires` through the S7 generator. Tests: snapshot and compile at representative versions
+  (7.3, 9, 10, 12, 13, 14) and frameworks (netstandard2.0, net8.0, net10.0). Reading referenced code recognizes every form;
+  today only classic `this` extension methods are recognized.
 - **Code style from `.editorconfig`, natively.** The project system already loads the project with
   `MSBuildWorkspace`, so Roslyn resolves the project's or solution's `.editorconfig` per document.
   - Formatting: the generated C# goes through `Formatter.FormatAsync` with the document's options.
@@ -452,7 +480,7 @@ profiles and P3 extensions use, so custom emitters need no core changes.
   not detected.
   - The modifier registry uses the same descriptor style. Each descriptor has the C# it emits, where it
     applies, an **exclusivity group** and its constraints: last parameter, array or collection type, needs a
-    default, first parameter of a static class, minimum C# version.
+    default, first parameter of a static class, required C# features (version, types, runtime).
   - Built-in: `ref`/`out`/`in`/`ref readonly` (one exclusive group), `params`, a default value, `scoped`, `this`.
   - Per-parameter editing: selecting a parameter pin shows its modifiers. Exclusive groups are radio options,
     and invalid combinations are disabled with the reason. The pin context menu and the inspector share one
@@ -469,6 +497,36 @@ profiles and P3 extensions use, so custom emitters need no core changes.
   - (b) **Editor metadata** (about 8-9 units): category, tooltip (Summary), display name, range, edit scope, advanced and a raw
     pass-through list; a per-member extension data bag that survives a save; an opt-in `global::System.ComponentModel.*` emission style.
   - (c) the model-driven grid with plugin-contributed editors, if it did not land in P3.
+- **User attributes (owner 2026-10-14; ADR-0039)**, about 16-18 units for v1, with contracts landing here with A1-A3 over R6:
+  - typed attribute uses on declaration slots: class, method, event method (stored on its entry node), constructor, field,
+    property with `field:`, parameter (in the per-parameter record) and `return:`; schema v1 `init` members;
+  - argument values: constants (through `PrimitiveKinds`, no `decimal`), enums, `typeof`, arrays, `null`, named arguments,
+    `params`, and constant and `nameof` references stored by member id; raw C# arguments are deferred to v1.1;
+  - a picker driven by `AttributeUsage` and the project's references, hiding `ValidOn` mismatches;
+  - pre-compile checks paired with Roslyn: CS0592, CS0579, CS7046, CS8968 and CS0416; a stale target specifier is a NetPrints
+    error, because Roslyn only warns (CS0657);
+  - attributes emitted as `global::` names, one per line; feature-owned attributes win on single-use conflicts, with "Promote";
+    owner-tagged emitted attributes land with A1 under NPXE0003;
+  - ADR-0036's raw metadata list is not the same thing as user attributes. Assembly and module attributes are edited through
+    project settings later (P6 or candidates).
+
+  Semantic rules for `Obsolete`, `Conditional`, caller-info and `Flags` follow (about 3 units, v1.1 if needed). Delegates, enum
+  members, record and primary-constructor parameters, events and type parameters gain slots with their kinds.
+- **Plugin-owned attributes (owner 2026-10-14; ADR-0039)**: the core gives native attributes on every declaration, with a generic
+  editor for constants, enums, `typeof` and arrays. Each plugin (Godot, Unreal, Unity) registers its attribute types and
+  contributes four things, as Unreal's `IDetailCustomization` and `IPropertyTypeCustomization` do:
+  - **attribute descriptors**: per-argument editors such as asset, resource or collision-channel pickers that store the C#
+    constant; validation; C# requirements; and a presentation as a row or as its own section;
+  - **inspector sections** on variables, methods and classes, which are views over the model's attributes, so nothing is lost
+    without the plugin;
+  - **type editors**, shared with R6 default values;
+  - **behaviour** through the existing contribution points (nodes, graph rules, commands).
+
+  Unreal flags become views over `[UProperty]` stored in the model; ADR-0039 resolves the ADR-0036 decision 8 conflict. The
+  contracts go in P3b with A1-A3 over R6; the implementations ship in each plugin's phase.
+- **Declaration-only partial members** (about 4-5 units): signature-only `partial` methods (C# 9 extended partial methods),
+  properties (C# 13) and events and constructors (C# 14), for source generators (`GeneratedRegex`, `LibraryImport`,
+  `LoggerMessage`, Godot, UnrealSharp BlueprintEvent pairs). User attributes and U2 build on it.
 - **P1 guard:** P1's translation seams and class/member emitters (sub-phase F, T065) must not assume every
   declaration is a class. The P1 Opus review checks this; nothing of this phase is built in P1.
 - **Designer-authored comments as XML docs** (owner idea, 2026-09-27; ADR-0002, widened same day). A designer
@@ -573,8 +631,8 @@ launcher, Unreal `IHostChannel` pipe, `unreal` project profile, upstream PR impl
 Member defaults and flags ([ADR-0036](../../docs/adr/0036-member-defaults-and-editor-metadata.md)): U1 maps the P3b metadata to
 `PropertyFlags` and MetaTags (`[UiMin]`/`[UiMax]`; `ClampMin`, `ClampMax` and `ExposeOnSpawn` take strings; raw `UMetaData` passes
 through) and adds a CDO smoke test (hot reload, Blueprint children, inherited properties; the constructor-assignment evidence is
-settled), with the Unreal flags section (Instance Editable, Expose on Spawn, Replicated, SaveGame) stored per member in an extension
-bag (about 3 units); U2 adds the FVector, FRotator and FLinearColor defaults and editors (about 3 units). Assets and components stay
+settled), with the Unreal flags section (Instance Editable, Expose on Spawn, Replicated, SaveGame) as views over `[UProperty]` stored in
+the model (ADR-0039 supersedes the extension bag of ADR-0036 decision 8; implemented in the Unreal plugin, about 3 units); U2 adds the FVector, FRotator and FLinearColor defaults and editors (about 3 units). Assets and components stay
 in Unreal's Details panel.
 Done when (each of U1, U2, U3): also docs updated (guides, API reference, ADRs as applicable).
 
