@@ -56,7 +56,7 @@ namespace NetPrints.Tests.Core
                     .Select(leg => Text(Get(leg, "filter")))
                     .Select(filter => (NamespaceFilters(filter, "--filter-namespace"), NamespaceFilters(filter, "--filter-not-namespace"))),
             ];
-            Assert.True(shards.Count >= 2, "The UI project has to run in at least two shards.");
+            Assert.Equal(4, shards.Count);
 
             string[] namespaces =
             [
@@ -110,7 +110,7 @@ namespace NetPrints.Tests.Core
             string[] names = [.. legs.Select(leg => Text(Get(leg, "name")))];
             string[] slugs = [.. legs.Select(leg => Text(Get(leg, "leg")))];
 
-            Assert.Equal(["Core", "Catalog", "CLI", "Editor", "Editor UI (headless) 1/2", "Editor UI (headless) 2/2"], names);
+            Assert.Equal(["Core", "Catalog", "CLI", "Editor", "Editor UI (headless) 1/4", "Editor UI (headless) 2/4", "Editor UI (headless) 3/4", "Editor UI (headless) 4/4"], names);
             Assert.All(slugs, slug => Assert.NotEmpty(slug));
             Assert.Equal(slugs.Length, slugs.Distinct(StringComparer.Ordinal).Count());
         }

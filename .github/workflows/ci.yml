@@ -130,17 +130,25 @@ jobs:
           - name: Editor
             leg: editor
             project: tests/NetPrints.Editor.Tests
-          # The headless UI project runs in two shards split by namespace: shard 1 lists its namespaces, shard 2 runs
-          # the complement (--filter-not-namespace), so a new test class always lands in exactly one shard.
-          # CiWorkflowTests checks that the two filters stay complementary.
-          - name: Editor UI (headless) 1/2
+          # The headless UI project runs in four shards split by namespace: shards 1 to 3 list their namespaces, shard 4
+          # runs the complement (--filter-not-namespace), so a new test class always lands in exactly one shard.
+          # CiWorkflowTests checks that the filters stay complementary.
+          - name: Editor UI (headless) 1/4
             leg: editor-ui-1
             project: tests/NetPrints.Editor.UITests
-            filter: --filter-namespace NetPrints.Editor.UITests.Graph --filter-namespace NetPrints.Editor.UITests.Snapshots --filter-namespace NetPrints.Editor.UITests.Scenarios
-          - name: Editor UI (headless) 2/2
+            filter: --filter-namespace NetPrints.Editor.UITests.Graph
+          - name: Editor UI (headless) 2/4
             leg: editor-ui-2
             project: tests/NetPrints.Editor.UITests
-            filter: --filter-not-namespace NetPrints.Editor.UITests.Graph --filter-not-namespace NetPrints.Editor.UITests.Snapshots --filter-not-namespace NetPrints.Editor.UITests.Scenarios
+            filter: --filter-namespace NetPrints.Editor.UITests.Shell
+          - name: Editor UI (headless) 3/4
+            leg: editor-ui-3
+            project: tests/NetPrints.Editor.UITests
+            filter: --filter-namespace NetPrints.Editor.UITests.Theming --filter-namespace NetPrints.Editor.UITests.Snapshots --filter-namespace NetPrints.Editor.UITests.Events
+          - name: Editor UI (headless) 4/4
+            leg: editor-ui-4
+            project: tests/NetPrints.Editor.UITests
+            filter: --filter-not-namespace NetPrints.Editor.UITests.Graph --filter-not-namespace NetPrints.Editor.UITests.Shell --filter-not-namespace NetPrints.Editor.UITests.Theming --filter-not-namespace NetPrints.Editor.UITests.Snapshots --filter-not-namespace NetPrints.Editor.UITests.Events
     env:
       # Snapshot actual/diff images, flow screenshots and per-test diagnostics of the headless UI leg.
       NETPRINTS_UI_ARTIFACTS: ${{ github.workspace }}/TestResults/ui
@@ -221,9 +229,9 @@ jobs:
           path: TestResults/ui/**
           if-no-files-found: warn
 
-      # The contact sheet of ContactSheetTests (Snapshots namespace, shard 1) for the sub-phase G visual review.
+      # The contact sheet of ContactSheetTests (Snapshots namespace, shard 3) for the sub-phase G visual review.
       - name: Upload contact sheet
-        if: always() && matrix.leg == 'editor-ui-1'
+        if: always() && matrix.leg == 'editor-ui-3'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: contact-sheet
