@@ -160,6 +160,31 @@ namespace NetPrints.Tests.Core
             Assert.Contains("Connect a variable to ref parameter 'result'", ex.Message);
         }
 
+        [Theory]
+        [InlineData(MethodParameterPassType.Out, "out", false)]
+        [InlineData(MethodParameterPassType.Out, "out", true)]
+        [InlineData(MethodParameterPassType.Reference, "ref", false)]
+        [InlineData(MethodParameterPassType.Reference, "ref", true)]
+        public void UnconnectedByRefConstructorArgumentIsATranslationError(MethodParameterPassType passType, string kind, bool withUnconnectedValue)
+        {
+            var method = new MethodGraph("Main") { Visibility = MemberVisibility.Public };
+            var constructor = new ConstructorSpecifier([Parameter("result", IntType, passType)], StringType);
+            var node = new ConstructorNode(method, constructor);
+
+            if (withUnconnectedValue)
+            {
+                node.ArgumentPins[0].UnconnectedValue = 0;
+            }
+
+            GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, node.InputExecPins.Single());
+            GraphUtil.ConnectExecPins(node.OutputExecPins[0], method.ReturnNodes.First().ReturnPin);
+
+            var ex = Assert.Throws<TranslationException>(() => new ExecutionGraphTranslator(TranslationEnvironment.BuiltIn).Translate(method, true, []));
+
+            Assert.Equal(TranslationDiagnosticCodes.UnsetRequiredInput, ex.Code);
+            Assert.Contains($"Connect a variable to {kind} parameter 'result'", ex.Message);
+        }
+
         [Fact]
         public void LoadingPureOnACallThatCannotBePureLoadsItImpureAndReportsAnIssue()
         {
