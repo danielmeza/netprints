@@ -2951,3 +2951,16 @@ editor was not run with a pipe that cannot be bound.
 - The `openFolder` and the T112-1 loader tests were written before the loader change but the plumbing (interface, fakes) first,
   so their first red was the four behaviour failures above, shown by temporarily disabling the folder branch.
 - T113 is not ticked: the docs findings T112-4 and T112-6 to T112-9 are the next batch.
+
+## Batch T113b (docs and comment findings of the final review)
+
+| Finding | Commit | Fix |
+|---|---|---|
+| T112-4 | 9d50611e | `contracts/state-files.md` §1 rewritten: state root per OS, logs, `settings.json` in the config folder, what each variable moves (`NETPRINTS_STATE_DIR` moves state, backups and logs, not `settings.json`), migration; `data-model.md` row and the `EditorDataPaths` comment fixed; `quickstart.md` adds `XDG_CONFIG_HOME` or `HOME` next to `NETPRINTS_STATE_DIR` and a note in §9. The user guide already said it right |
+| T112-6 | ab6ac8ca | Checkpoint H: 50 tokens, 23 E7 entries (9 gesture, 8 editor interop, 5 viewport math, 1 focus plumbing); the open-point sentence now says SC-006 was met after H-R4; proposals 1 (moot), 2 (`d5f5002c`) and 4 (`8137378f`) marked |
+| T112-7 | e2438f95 | `contracts/commands.md` §1 lists `help.openLogsFolder` |
+| T112-8 | 6782ca03 | `testing.md` perf paragraph names the four projects; `contracts/ci.md` §1 adds `perf`, `trim-readiness`, `desktop-publish` and `jsonschema`, and names the four UI shards' namespaces |
+| T112-9 | f4aae3df | `UserFolders` and `JsonFileSettingsStore` comments say `~/Library/Application Support` on macOS |
+
+- Whole Release suite: 4051 total, 0 failed, 33 skipped. Desktop E2E (`NETPRINTS_E2E=1`, display start 110, `--fail-skips on`): 53 total, 0 failed, 1 skipped (`GuideScreenshotTests.TheGuidesAreIllustrated`, not run by design).
+- `scripts/build-docs.sh` succeeds. T113 is ticked.

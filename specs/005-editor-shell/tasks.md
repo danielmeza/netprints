@@ -1365,7 +1365,7 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
 
 ### Batch H-F — model: sonnet — T113 (reserved: fix final review findings)
 
-- [ ] T113 Fix every finding of T112 (test first for behaviour findings), reply on each thread, whole suite plus the
+- [x] T113 Fix every finding of T112 (test first for behaviour findings), reply on each thread, whole suite plus the
   Desktop E2E run, commit; tick with "no findings" if there were none.
 
 ### Batch H-M — model: sonnet — T114 (merge preparation)
