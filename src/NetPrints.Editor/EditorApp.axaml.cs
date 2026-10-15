@@ -179,7 +179,7 @@ public partial class EditorApp : Application
                     // fast (stderr, non-zero exit) instead of leaving a caller waiting on a pipe
                     // that will never accept a connection. This runs before the dispatcher loop
                     // starts, so it never reaches the unhandled-exception dialog.
-                    Console.Error.WriteLine($"[NetPrints automation] Could not start the automation agent on '{pipeName}': {e}");
+                    Hosting.Log.AutomationAgentStartFailed(HostServices.LoggerFactory.CreateLogger(nameof(EditorApp)), e, pipeName);
                     throw;
                 }
 

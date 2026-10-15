@@ -184,8 +184,10 @@ agents" below. Guard entry points with `ArgumentNullException.ThrowIfNull`,
 - Log through `[LoggerMessage]` partials in the namespace's `Log` class (precedent:
   `NetPrints.Serialization/Log.cs`, `NetPrints.Editor/Hosting/Log.cs`) with constant PascalCase templates,
   and pass the exception as the exception argument. Libraries never write to `Console`; `Cli`, `Desktop`,
-  `Editor` and `Generator` are entry points, not libraries, and are exempt. [CA1848, CA2254, CA2017,
-  CA1727, RS0030]
+  and `Generator` are entry points, not libraries, and are exempt; `Editor` is not exempt. [CA1848, CA2254,
+  CA2017, CA1727, RS0030]
+- Temporary diagnostics go through `ILogger` at Debug level, never `Console`; `Console` only where it is the
+  product's output (Cli, Desktop `--check-project`). Never commit debug prints.
 - Follow `.editorconfig` and the file's existing naming. Constants are PascalCase; generic parameters are
   `T…`. [CA1715]
 

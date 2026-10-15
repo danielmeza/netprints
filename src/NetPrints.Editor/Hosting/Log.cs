@@ -98,6 +98,13 @@ internal static partial class Log
     [LoggerMessage(EventId = 1026, Level = LogLevel.Error, Message = "The exit confirmation failed; the application keeps running")]
     public static partial void ShutdownConfirmationFailed(ILogger logger, Exception exception);
 
+    /// <summary>Logs 1027: <c>NETPRINTS_AUTOMATION</c> was set and the automation agent could not start; the process exits.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="exception">The exception the agent's start threw.</param>
+    /// <param name="pipeName">Name of the pipe the agent was asked to listen on.</param>
+    [LoggerMessage(EventId = 1027, Level = LogLevel.Critical, Message = "Could not start the automation agent on '{PipeName}'")]
+    public static partial void AutomationAgentStartFailed(ILogger logger, Exception exception, string pipeName);
+
     /// <summary>Logs 1030: a fire-and-forget task passed to <see cref="TaskExtensions.Forget(Task, ILogger)"/> faulted.</summary>
     /// <param name="logger">Logger to write to.</param>
     /// <param name="exception">The task's (unwrapped) exception.</param>
