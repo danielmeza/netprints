@@ -26,7 +26,8 @@ public class BuiltInCommandTableTests
     private static readonly Row[] Table =
     [
         new("newProject", "New project…", "File", "project", ["Ctrl+Shift+N"], Everywhere, null, typeof(NewProjectCommandHandler)),
-        new("openProject", "Open folder or project…", "File", "project", ["Ctrl+O"], Everywhere, null, typeof(OpenProjectCommandHandler)),
+        new("openProject", "Open project…", "File", "project", ["Ctrl+O"], Everywhere, null, typeof(OpenProjectCommandHandler)),
+        new("openFolder", "Open folder…", "File", "project", [], Everywhere, null, typeof(OpenFolderCommandHandler)),
         new("closeProject", "Close project", "File", "project", [], Everywhere, null, typeof(CloseProjectCommandHandler)),
         new("newClass", "New class", "File", "class", [], Everywhere, null, typeof(NewClassCommandHandler)),
         new("addExistingClass", "Add existing class…", "File", "class", [], Everywhere, null, typeof(AddExistingClassCommandHandler)),

@@ -11,7 +11,8 @@ Menu order: **File, Edit, View, Go, Build, Help**. Groups inside a menu are sepa
 | Id (`netprints.command.`…) | Label | Menu › group | Default shortcut | Scope | Bar |
 |---|---|---|---|---|---|
 | `newProject` | New project… | File › project | Ctrl+Shift+N | Global | |
-| `openProject` | Open folder or project… | File › project | Ctrl+O | Global | |
+| `openProject` | Open project… | File › project | Ctrl+O | Global | Asks for a `.csproj` with a file picker. The parameter is a path: a `.csproj`, or a folder that holds exactly one (otherwise the not-a-project error) |
+| `openFolder` | Open folder… | File › project | — | Global | Asks for a folder with the folder picker and opens the one `.csproj` it holds (same rule as the `openProject` parameter) |
 | `closeProject` | Close project | File › project | — | Global | |
 | `newClass` | New class | File › class | — | Global | |
 | `addExistingClass` | Add existing class… | File › class | — | Global | |

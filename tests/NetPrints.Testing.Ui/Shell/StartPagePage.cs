@@ -11,6 +11,8 @@ public sealed class StartPagePage(IUiDriver driver) : UiElement(driver, new Auto
 
     public UiElement OpenButton => Find(AutomationIds.StartPageOpenButton);
 
+    public UiElement OpenFolderButton => Find(AutomationIds.StartPageOpenFolderButton);
+
     public UiElement Search => Find(AutomationIds.StartPageRecentSearch);
 
     public UiElement ReopenLast => Find(AutomationIds.StartPageReopenLast);

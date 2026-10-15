@@ -218,15 +218,42 @@ internal sealed class ProjectLoader : IDisposable
         context.Extensions.Current.FindProfile(profileId) ?? (profileId == DefaultProjectProfile.ProfileId ? DefaultProjectProfile.Instance : null);
 
     /// <summary>Opens a project, asking for it with a *.csproj picker unless a path is given.</summary>
-    /// <param name="path">The <c>.csproj</c> path, or null to ask the user.</param>
+    /// <param name="path">The <c>.csproj</c> path, a folder that holds exactly one, or null to ask the user.</param>
     /// <returns>A task that completes when the project is open, or the user cancelled.</returns>
     public async Task OpenProjectAsync(string? path)
     {
         path ??= await context.FilePicker.OpenFileAsync("Open Project", [FileFilter.ProjectFiles]).ConfigureAwait(true);
         if (path is not null)
         {
-            await LoadProjectAsync(path).ConfigureAwait(true);
+            await LoadFileOrFolderAsync(path).ConfigureAwait(true);
         }
+    }
+
+    /// <summary>Asks for a folder with the folder picker and opens the one <c>.csproj</c> it holds.</summary>
+    /// <returns>A task that completes when the project is open, or the user cancelled or the folder was refused.</returns>
+    public async Task OpenFolderAsync()
+    {
+        if (await context.FilePicker.OpenFolderAsync("Open Folder").ConfigureAwait(true) is { } folder)
+        {
+            await LoadFileOrFolderAsync(folder).ConfigureAwait(true);
+        }
+    }
+
+    private async Task LoadFileOrFolderAsync(string path)
+    {
+        if (!Directory.Exists(path))
+        {
+            await LoadProjectAsync(path).ConfigureAwait(true);
+            return;
+        }
+
+        if (ResolveProjectFile(path) is { } projectFile)
+        {
+            await LoadProjectAsync(projectFile).ConfigureAwait(true);
+            return;
+        }
+
+        await context.Dialogs.ShowErrorAsync("Failed to open the folder", NotAProjectMessage(path, "Choose")).ConfigureAwait(true);
     }
 
     /// <summary>

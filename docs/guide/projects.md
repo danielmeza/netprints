@@ -35,8 +35,9 @@ With no project open the document area shows the **Start** page (**Help › Star
   most 20 unpinned ones. A row opens the project; the pin button keeps it at the top; the remove button forgets it
   (the project's files are never touched). The search box filters by name or path, and a project whose file is gone
   stays in the list marked "Not found" until you remove it.
-- **Open folder or project…** opens a `.csproj`, or a folder that holds exactly one. A start-up argument that is not
-  one of those leaves the start page with a message naming the path.
+- **Open project…** and **Open folder…** open a `.csproj` file picker and a folder picker. A folder opens when it
+  holds exactly one `.csproj`; otherwise an error names the folder. A start-up argument that is not a `.csproj` or such
+  a folder leaves the start page with a message naming the path.
 - **New project…** asks for a template, a project name (also its namespace) and a location, checks them before writing
   anything, creates the project in `<location>/<name>` and opens it. The dialog shows that folder, and rejects one that
   already exists and is not empty. The location is remembered for the next time and starts at the `NetPrints` folder
@@ -71,7 +72,7 @@ ignored with a log entry: the editor starts with the defaults. **View › Reset 
 
 ## The editor window
 
-The editor opens one project per window, from **File › Open folder or project…** or as the first argument
+The editor opens one project per window, from **File › Open project…**, **File › Open folder…** or as the first argument
 on the command line. There is no launcher and no separate window per class. The window has:
 
 - a **menu bar** (File, Edit, View, Go, Build, Help) and a **command bar** with the common commands (save, compile,

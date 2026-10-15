@@ -762,9 +762,13 @@ public static class AutomationIds
     /// </summary>
     public const string StartPageRecentRemove = "StartPage.RecentRemove";
     /// <summary>
-    /// Automation id for the open folder or project button.
+    /// Automation id for the open project button.
     /// </summary>
     public const string StartPageOpenButton = "StartPage.OpenButton";
+    /// <summary>
+    /// Automation id for the open folder button.
+    /// </summary>
+    public const string StartPageOpenFolderButton = "StartPage.OpenFolderButton";
     /// <summary>
     /// Automation id for the new project button.
     /// </summary>

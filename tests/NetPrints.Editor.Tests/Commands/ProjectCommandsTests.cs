@@ -22,6 +22,7 @@ public sealed class ProjectCommandsTests : SessionCommandTests
     public static TheoryData<ICommandHandler, string> UnloadingHandlers() => new()
     {
         { new OpenProjectCommandHandler(), "OpenProject:" },
+        { new OpenFolderCommandHandler(), "OpenFolder" },
         { new NewProjectCommandHandler(), "NewProject" },
         { new CloseProjectCommandHandler(), "CloseProject" },
     };

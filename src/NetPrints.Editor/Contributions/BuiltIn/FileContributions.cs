@@ -30,12 +30,22 @@ public static class FileContributions
 
         registry.AddCommand(new CommandDescriptor(
             ContributionIds.CommandPrefix + "openProject",
-            "Open folder or project…",
+            "Open project…",
             new OpenProjectCommandHandler(),
             IconId: IconIds.OpenProject,
             DefaultGestures: ["Ctrl+O"],
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, ProjectGroup, 1),
+            CommandBarOrder: null));
+
+        registry.AddCommand(new CommandDescriptor(
+            ContributionIds.CommandPrefix + "openFolder",
+            "Open folder…",
+            new OpenFolderCommandHandler(),
+            IconId: IconIds.OpenProject,
+            DefaultGestures: null,
+            Scope: CommandScope.Global,
+            Menu: new MenuPlacement(MenuName, ProjectGroup, 2),
             CommandBarOrder: null));
 
         registry.AddCommand(new CommandDescriptor(
@@ -45,7 +55,7 @@ public static class FileContributions
             IconId: null,
             DefaultGestures: null,
             Scope: CommandScope.Global,
-            Menu: new MenuPlacement(MenuName, ProjectGroup, 2),
+            Menu: new MenuPlacement(MenuName, ProjectGroup, 3),
             CommandBarOrder: null));
 
         registry.AddCommand(new CommandDescriptor(

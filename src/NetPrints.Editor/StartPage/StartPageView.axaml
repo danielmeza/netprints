@@ -142,16 +142,28 @@
                   </Button>
                 </DataTemplate>
                 <DataTemplate DataType="sp:OpenProjectTileViewModel" x:DataType="sp:OpenProjectTileViewModel">
-                  <Button Classes="card" Command="{Binding OpenCommand}" AutomationProperties.Name="Open folder or project"
-                          AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageOpenButton}">
-                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
-                      <Border Classes="card-icon"><icons:IconPresenter IconId="{x:Static icons:IconIds.CardOpenProject}" /></Border>
-                      <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                        <TextBlock FontWeight="SemiBold" Text="Open folder or project…" />
-                        <TextBlock Classes="secondary" TextWrapping="Wrap" Text="Open a project folder or a .csproj file from disk." />
-                      </StackPanel>
-                    </Grid>
-                  </Button>
+                  <StackPanel Spacing="12">
+                    <Button Classes="card" Command="{Binding OpenCommand}" AutomationProperties.Name="Open project"
+                            AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageOpenButton}">
+                      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                        <Border Classes="card-icon"><icons:IconPresenter IconId="{x:Static icons:IconIds.CardOpenProject}" /></Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                          <TextBlock FontWeight="SemiBold" Text="Open project…" />
+                          <TextBlock Classes="secondary" TextWrapping="Wrap" Text="Pick a .csproj file from disk." />
+                        </StackPanel>
+                      </Grid>
+                    </Button>
+                    <Button Classes="card" Command="{Binding OpenFolderCommand}" AutomationProperties.Name="Open folder"
+                            AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageOpenFolderButton}">
+                      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                        <Border Classes="card-icon"><icons:IconPresenter IconId="{x:Static icons:IconIds.CardOpenProject}" /></Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                          <TextBlock FontWeight="SemiBold" Text="Open folder…" />
+                          <TextBlock Classes="secondary" TextWrapping="Wrap" Text="Pick a folder that holds one project." />
+                        </StackPanel>
+                      </Grid>
+                    </Button>
+                  </StackPanel>
                 </DataTemplate>
               </ItemsControl.DataTemplates>
               <ItemsControl.ItemsPanel>

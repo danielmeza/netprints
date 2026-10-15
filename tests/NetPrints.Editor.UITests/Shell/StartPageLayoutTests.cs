@@ -178,7 +178,7 @@ public class StartPageLayoutTests
 
         foreach (string id in new[]
         {
-            AutomationIds.StartPageRoot, AutomationIds.StartPageRecentSearch, AutomationIds.StartPageRecentList, AutomationIds.StartPageOpenButton,
+            AutomationIds.StartPageRoot, AutomationIds.StartPageRecentSearch, AutomationIds.StartPageRecentList, AutomationIds.StartPageOpenButton, AutomationIds.StartPageOpenFolderButton,
             AutomationIds.StartPageNewButton, AutomationIds.StartPageReopenLast, AutomationIds.StartPageSamplesList, AutomationIds.StartPageSampleOpen, AutomationIds.StartPageReleasesLink,
             AutomationIds.StartPageLearn, AutomationIds.StartPageLearnGuide, AutomationIds.StartPageLearnShortcuts, AutomationIds.StartPageLearnDocs,
         })

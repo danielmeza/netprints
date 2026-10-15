@@ -23,6 +23,14 @@ public interface IProjectActions
     /// <returns>A task that completes when the project is open, or the user cancelled.</returns>
     Task OpenProjectAsync(string? path, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Asks for a folder with the folder picker and opens the one <c>.csproj</c> it holds. A folder without exactly one
+    /// <c>.csproj</c> shows an error and opens nothing; cancelling the picker opens nothing.
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the flow.</param>
+    /// <returns>A task that completes when the project is open, or the user cancelled or the folder was refused.</returns>
+    Task OpenFolderAsync(CancellationToken cancellationToken);
+
     /// <summary>Copies a bundled sample to the last project location (a numeric suffix when the folder exists) after one confirmation that names the target and offers Change, then opens the copy; the bundled files are never modified.</summary>
     /// <param name="sampleName">The sample's name, as the samples tile lists it.</param>
     /// <param name="cancellationToken">Cancels the flow.</param>

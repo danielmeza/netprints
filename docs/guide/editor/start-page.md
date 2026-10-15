@@ -35,8 +35,9 @@ the start page says so.
 
   ![The New project dialog with the Console app template and a project name](../../../website/static/img/guide/editor/new-project-dialog.png)
 
-- **Open folder or project…** opens a file picker for a `.csproj` file or a project folder. You can also drop either
-  on the window.
+- **Open project…** opens a file picker for a `.csproj` file. **Open folder…** opens a folder picker and opens the
+  one `.csproj` the folder holds; a folder with none or several shows an error. You can also drop a `.csproj` or such
+  a folder on the window.
 - **Samples** lists the samples that come with the editor. A sample opens as a copy: the dialog shows the folder
   the copy goes in, **Change…** lets you pick another, and **Copy and open** makes the copy and opens it. The
   bundled sample itself is never changed.

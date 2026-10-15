@@ -98,6 +98,72 @@ public sealed class ProjectLoaderTests : IDisposable
     }
 
     [Fact]
+    public async Task OpenProjectWithAFolderThatHoldsOneProjectLoadsIt()
+    {
+        string path = Track(TestPaths.CopyHelloWorldSample());
+        ProjectRig rig = NewRig();
+
+        await rig.Actions.OpenProjectAsync(Path.GetDirectoryName(path), TestContext.Current.CancellationToken);
+
+        Assert.Equal(path, rig.Project?.Path);
+        Assert.Empty(testEditor.Dialogs.Errors);
+    }
+
+    [Fact]
+    public async Task OpenFolderAsksTheFolderPickerAndLoadsTheProjectItHolds()
+    {
+        string path = Track(TestPaths.CopyHelloWorldSample());
+        testEditor.FilePicker.FolderAnswers.Enqueue(Path.GetDirectoryName(path));
+        ProjectRig rig = NewRig();
+
+        await rig.Actions.OpenFolderAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(path, rig.Project?.Path);
+        Assert.Single(testEditor.FilePicker.Calls, call => call.StartsWith("folder:", StringComparison.Ordinal));
+        Assert.DoesNotContain(testEditor.FilePicker.Calls, call => call.StartsWith("open:", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task OpenFolderCancelledOpensNothing()
+    {
+        ProjectRig rig = NewRig();
+
+        await rig.Actions.OpenFolderAsync(TestContext.Current.CancellationToken);
+
+        Assert.Null(rig.Project);
+        Assert.Empty(testEditor.Dialogs.Errors);
+    }
+
+    [Fact]
+    public async Task AFolderWithoutAProjectShowsTheNotAProjectError()
+    {
+        string folder = Track(TestPaths.CreateTempDirectory());
+        testEditor.FilePicker.FolderAnswers.Enqueue(folder);
+        ProjectRig rig = NewRig();
+
+        await rig.Actions.OpenFolderAsync(TestContext.Current.CancellationToken);
+
+        Assert.Null(rig.Project);
+        Assert.Empty(testEditor.Projects.LoadCalls);
+        Assert.Contains("holds exactly one", Assert.Single(testEditor.Dialogs.Errors).Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AFolderWithSeveralProjectsShowsTheNotAProjectError()
+    {
+        string folder = Track(TestPaths.CreateTempDirectory());
+        File.WriteAllText(Path.Combine(folder, "A.csproj"), "<Project />");
+        File.WriteAllText(Path.Combine(folder, "B.csproj"), "<Project />");
+        ProjectRig rig = NewRig();
+
+        await rig.Actions.OpenProjectAsync(folder, TestContext.Current.CancellationToken);
+
+        Assert.Null(rig.Project);
+        Assert.Empty(testEditor.Projects.LoadCalls);
+        Assert.Contains("holds exactly one", Assert.Single(testEditor.Dialogs.Errors).Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task OpeningANetppShowsAMessageAndWritesNothing()
     {
         TestEditor editor = testEditor;

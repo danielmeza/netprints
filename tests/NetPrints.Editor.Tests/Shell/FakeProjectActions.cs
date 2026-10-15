@@ -34,6 +34,13 @@ public sealed class FakeProjectActions : IProjectActions
     }
 
     /// <inheritdoc/>
+    public Task OpenFolderAsync(CancellationToken cancellationToken)
+    {
+        Calls.Add("OpenFolder");
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
     public Task OpenDroppedAsync(IReadOnlyList<string> paths, CancellationToken cancellationToken)
     {
         Calls.Add($"OpenDropped:{string.Join(";", paths)}");

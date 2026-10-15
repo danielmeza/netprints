@@ -332,6 +332,14 @@ public sealed class StartPageViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task TheOpenTileOffersAFolderRouteBesideTheProjectRoute()
+    {
+        await new OpenProjectTileViewModel(actions).OpenFolderCommand.ExecuteAsync(null);
+
+        Assert.Equal(["ConfirmUnload", "OpenFolder"], actions.Calls);
+    }
+
+    [Fact]
     public async Task DecliningTheUnloadPromptKeepsTheOpenProjectFromEveryTile()
     {
         actions.AllowUnload = false;

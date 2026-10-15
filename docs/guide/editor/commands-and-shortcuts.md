@@ -62,7 +62,8 @@ two shortcuts lists both. A dash means the command has no shortcut; it is still 
 | Menu | Command | Shortcut | Works in |
 |---|---|---|---|
 | File | New project… | Ctrl+Shift+N | Anywhere |
-| File | Open folder or project… | Ctrl+O | Anywhere |
+| File | Open project… | Ctrl+O | Anywhere |
+| File | Open folder… | – | Anywhere |
 | File | Close project | – | Anywhere |
 | File | New class | – | Anywhere |
 | File | Add existing class… | – | Anywhere |

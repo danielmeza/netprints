@@ -153,6 +153,9 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
     public Task OpenProjectAsync(string? path, CancellationToken cancellationToken) => Loader.OpenProjectAsync(path);
 
     /// <inheritdoc/>
+    public Task OpenFolderAsync(CancellationToken cancellationToken) => Loader.OpenFolderAsync();
+
+    /// <inheritdoc/>
     public Task NewProjectAsync(CancellationToken cancellationToken) => Loader.CreateProjectAsync();
 
     /// <inheritdoc/>
