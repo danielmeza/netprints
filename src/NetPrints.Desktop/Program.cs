@@ -11,7 +11,9 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Logging;
 using Avalonia.Media;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using NetPrints.Desktop.Logging;
 using NetPrints.Editor;
 using NetPrints.Editor.Hosting;
@@ -191,9 +193,22 @@ internal static class Program
         }
 
         ILoggerFactory factory = session is null
-            ? LoggerFactory.Create(builder => builder.AddSimpleConsole().SetMinimumLevel(minimumLevel))
-            : session.CreateLoggerFactory(minimumLevel, builder => builder.AddSimpleConsole());
+            ? LoggerFactory.Create(builder => AddConsole(builder).SetMinimumLevel(minimumLevel))
+            : session.CreateLoggerFactory(minimumLevel, builder => AddConsole(builder));
         return (factory, explicitLevel);
+    }
+
+    /// <summary>
+    /// Adds the simple console logger. Lines at <see cref="LogLevel.Error"/> and above go to stderr, which is all
+    /// <c>EditorProcess.ConnectOrFailFastAsync</c> shows of a failed start (ADR-0033 decision 8); the rest stays on stdout.
+    /// </summary>
+    /// <param name="builder">The builder to add the provider to.</param>
+    /// <returns><paramref name="builder"/>.</returns>
+    internal static ILoggingBuilder AddConsole(ILoggingBuilder builder)
+    {
+        builder.AddSimpleConsole();
+        builder.Services.Configure<ConsoleLoggerOptions>(options => options.LogToStandardErrorThreshold = LogLevel.Error);
+        return builder;
     }
 
     /// <summary>

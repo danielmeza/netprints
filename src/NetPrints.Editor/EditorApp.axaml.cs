@@ -176,9 +176,10 @@ public partial class EditorApp : Application
                 catch (Exception e)
                 {
                     // NETPRINTS_AUTOMATION was asked for and could not be honored: fail loudly and
-                    // fast (stderr, non-zero exit) instead of leaving a caller waiting on a pipe
-                    // that will never accept a connection. This runs before the dispatcher loop
-                    // starts, so it never reaches the unhandled-exception dialog.
+                    // fast (Critical goes to stderr through the Desktop console logger, then a
+                    // non-zero exit) instead of leaving a caller waiting on a pipe that will never
+                    // accept a connection. This runs before the dispatcher loop starts, so it never
+                    // reaches the unhandled-exception dialog.
                     Hosting.Log.AutomationAgentStartFailed(HostServices.LoggerFactory.CreateLogger(nameof(EditorApp)), e, pipeName);
                     throw;
                 }

@@ -1,7 +1,11 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 using NetPrints.Desktop.Logging;
 using NLog.Targets.Wrappers;
+using DesktopProgram = NetPrints.Desktop.Program;
 
 namespace NetPrints.Editor.Tests.Desktop;
 
@@ -132,6 +136,19 @@ public sealed class LoggingConfigurationTests : IDisposable
         Assert.True(File.Exists(foreign));
         Assert.True(File.Exists(lookalike));
         Assert.True(File.Exists(other));
+    }
+
+    [Fact]
+    public void ACriticalLineGoesToStderrAndNormalOutputStaysOnStdout()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging(builder => DesktopProgram.AddConsole(builder));
+        using ServiceProvider provider = services.BuildServiceProvider();
+
+        LogLevel threshold = provider.GetRequiredService<IOptions<ConsoleLoggerOptions>>().Value.LogToStandardErrorThreshold;
+
+        Assert.True(threshold <= LogLevel.Critical, "A Critical line must reach stderr (ADR-0033 decision 8).");
+        Assert.True(threshold > LogLevel.Information, "Normal output must stay on stdout.");
     }
 
     [Fact]
