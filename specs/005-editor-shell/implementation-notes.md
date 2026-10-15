@@ -2985,3 +2985,10 @@ editor was not run with a pipe that cannot be bound.
   target dock; the window removal ran `ShellDockFactory.DockOrphanedPanels`, which saw the pane in transit as missing and docked a new copy at its home.
   Fix: `MoveDockable` and `SwapDockable` run with homing suppressed (`WithoutHoming`). Test: `ToolRedockTests.DockingAFloatedPaneBackKeepsEveryPaneOnceAndTheGroupTogether`
   (red for Errors, Output and C# before the fix: the bottom group listed the pane twice).
+- **OF-2b, the same duplication through every other way of leaving a floating window.** The owner's screenshot shows Output and Errors both as split panes and in
+  the original group. Dock's split (`SplitToolDockable`), global target (`DockDockableIntoRoot`) and tab swap all end in `MoveDockable`/`SwapDockable`, but a
+  per-operation override is the wrong shape: any path that closes the window while the pane is in transit docks a second copy. Fix: the window events no longer
+  home on the spot. `ShellDockFactory` forgets the panes hidden with a closing window at once and docks the orphaned panels from a dispatcher post, after the
+  operation has finished, so a pane in transit is already in its new dock; the two overrides and `WithoutHoming` are gone. Test:
+  `ToolRedockTests.FloatedPanesDroppedAnywhereAppearOnceWhereTheyWereDropped` (a theory over move into the group, swap with a tab, split left/right/top/bottom and the
+  global target, with Output and Errors both floating; red for all seven without any suppression, green now). `AFloatedPaneClosedWithTheOsCloseButtonDocksBackToItsDefaultPlace` still pins the user close.

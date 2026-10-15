@@ -1,3 +1,4 @@
+using Avalonia.Threading;
 using Dock.Model.Controls;
 using Dock.Model.Core;
 using Dock.Model.Mvvm;
@@ -35,6 +36,7 @@ internal sealed class ShellDockFactory : Factory
     private const double DefaultWindowHeight = 400;
 
     private readonly IReadOnlyList<PanelViewModel> panels;
+    private bool homingScheduled;
 
     /// <summary>Creates a factory for the shell's panels.</summary>
     /// <param name="panels">The panels, by default dock and order.</param>
@@ -296,46 +298,46 @@ internal sealed class ShellDockFactory : Factory
     }
 
     /// <inheritdoc/>
-    public override void MoveDockable(IDock sourceDock, IDock targetDock, IDockable sourceDockable, IDockable? targetDockable) =>
-        WithoutHoming(() => base.MoveDockable(sourceDock, targetDock, sourceDockable, targetDockable));
-
-    /// <inheritdoc/>
-    public override void SwapDockable(IDock sourceDock, IDock targetDock, IDockable sourceDockable, IDockable targetDockable) =>
-        WithoutHoming(() => base.SwapDockable(sourceDock, targetDock, sourceDockable, targetDockable));
-
-    /// <summary>Runs a move that takes a pane out of its window and into another dock, so the window closing in between does not dock the pane in transit a second time.</summary>
-    private void WithoutHoming(Action move)
-    {
-        bool suppressed = SuppressHoming;
-        SuppressHoming = true;
-        try
-        {
-            move();
-        }
-        finally
-        {
-            SuppressHoming = suppressed;
-        }
-    }
-
-    /// <inheritdoc/>
     public override void OnWindowClosed(IDockWindow? window)
     {
         base.OnWindowClosed(window);
-        if (!SuppressHoming)
-        {
-            DockOrphanedPanels();
-        }
+        ScheduleHoming();
     }
 
     /// <inheritdoc/>
     public override void OnWindowRemoved(IDockWindow? window)
     {
         base.OnWindowRemoved(window);
-        if (!SuppressHoming)
+        ScheduleHoming();
+    }
+
+    /// <summary>
+    /// Docks the orphaned panels once the current dock operation has finished. A window closes in the middle of every
+    /// operation that takes its last pane out (move, swap, split, global target), while that pane is in transit and
+    /// belongs to no dock; homing on the spot would dock a second copy of it.
+    /// </summary>
+    private void ScheduleHoming()
+    {
+        if (SuppressHoming)
         {
-            DockOrphanedPanels();
+            return;
         }
+
+        ForgetPanesClosedWithTheirWindow();
+        if (homingScheduled)
+        {
+            return;
+        }
+
+        homingScheduled = true;
+        Dispatcher.UIThread.Post(() =>
+        {
+            homingScheduled = false;
+            if (!SuppressHoming)
+            {
+                DockOrphanedPanels();
+            }
+        });
     }
 
     /// <summary>
@@ -349,15 +351,24 @@ internal sealed class ShellDockFactory : Factory
             return;
         }
 
-        foreach (IDockable stale in (layout.HiddenDockables ?? []).Where(hidden => hidden is ShellTool && hidden.OriginalOwner is IDock owner && IsFloating(layout, owner)).ToList())
-        {
-            layout.HiddenDockables?.Remove(stale);
-        }
-
+        ForgetPanesClosedWithTheirWindow();
         HashSet<string> known = [.. Walk(layout).OfType<ShellTool>().Select(tool => tool.Id), .. (layout.HiddenDockables ?? []).Select(hidden => hidden.Id)];
         foreach (PanelViewModel panel in panels.Where(panel => !known.Contains(panel.Id)))
         {
             DockHome(panel);
+        }
+    }
+
+    private void ForgetPanesClosedWithTheirWindow()
+    {
+        if (MainLayout is not { } layout)
+        {
+            return;
+        }
+
+        foreach (IDockable stale in (layout.HiddenDockables ?? []).Where(hidden => hidden is ShellTool && hidden.OriginalOwner is IDock owner && IsFloating(layout, owner)).ToList())
+        {
+            layout.HiddenDockables?.Remove(stale);
         }
     }
 
