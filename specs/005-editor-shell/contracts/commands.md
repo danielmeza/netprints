@@ -55,6 +55,7 @@ Menu order: **File, Edit, View, Go, Build, Help**. Groups inside a menu are sepa
 | `stop` | Stop | Build › run | Shift+F5 | Global | yes (3) |
 | `keyboardShortcuts` | Keyboard shortcuts | Help › help | — | Global | |
 | `startPage` | Start page | Help › help | — | Global | |
+| `help.openLogsFolder` | Open logs folder | Help › help | — | Global | |
 | `about` | About NetPrints | Help › about | — | Global | |
 
 Rules:
