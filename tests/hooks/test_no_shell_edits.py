@@ -45,6 +45,15 @@ ALLOW = [
     "dd if=src/A.cs of=/tmp/a.bak",
     'echo x > "$UNSET/file"',
     "truncate -s 0 /tmp/a.txt",
+    "gh pr comment 12 --body-file notes.md",
+    "echo x > /dev/null 2>&1",
+    "OUT=/tmp/agent; cat >> $OUT/notes.md <<EOF\nx\nEOF",
+    "cat >> $TMPDIR/notes.md <<'EOF'\nx\nEOF",
+    "bash <<EOF\necho x > /tmp/y\nEOF",
+    "git -C /work/repo log --oneline | head -5",
+    "echo x | tee -a /tmp/agent/a.txt",
+    "echo x | sponge /tmp/a.txt",
+    "echo x > /users/dev/notes.md",
 ]
 
 DENY = [
@@ -78,6 +87,18 @@ DENY = [
     "echo x 2> src/err.txt",
     "python3 <<<\"open('a.cs', 'w').close()\"",
     "sed -i 's/a/b/' /work/repo/src/A.cs",
+    "cat >> specs/x.md <<'EOF'\nhi\nEOF",
+    "cat <<'EOF' >> specs/x.md\nhi\nEOF",
+    "cat >>specs/x.md <<EOF\nhi\nEOF",
+    "echo x | tee --append notes.md",
+    "echo x >| notes.md",
+    "{ echo x; } > notes.md",
+    "git -C /work/repo show HEAD:a > src/A.cs",
+    "git -C /work/repo diff >> notes.md",
+    "REPO=/work/repo; cat >> $REPO/notes.md <<EOF\nx\nEOF",
+    "export REPO=/work/repo && echo x > $REPO/notes.md",
+    "bash <<EOF\necho x > notes.md\nEOF",
+    "echo x | sponge notes.md",
 ]
 
 

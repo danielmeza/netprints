@@ -236,6 +236,9 @@ def check_words(words, ctx, depth):
         for idx, a in enumerate(args):
             if re.match(r"^-[a-z]*c[a-z]*$", a) and idx + 1 < len(args):
                 return check(args[idx + 1], ctx, depth + 1)
+        script_args = [a for a in args if not a.startswith("-")]
+        if not script_args:
+            return any(check(body, ctx, depth + 1) for body in ctx["bodies"])
         return False
     if name == "sed":
         if not any(a.startswith("--in-place") or re.match(r"^-[a-zA-Z]*i", a) for a in args if not a.startswith("--") or a.startswith("--in-place")):
@@ -249,7 +252,7 @@ def check_words(words, ctx, depth):
         return any(flagged(f, ctx) for f in (pos if scripted else pos[1:]))
     if PYTHON.match(name):
         return python_writes(args, ctx["bodies"])
-    if name == "tee":
+    if name in ("tee", "sponge"):
         return any(flagged(f, ctx) for f in positionals(args, set())[0])
     if name == "truncate":
         return any(flagged(f, ctx) for f in positionals(args, {"-s", "--size", "-r", "--reference"})[0])
@@ -269,7 +272,12 @@ def check(command, ctx, depth=0):
             if target is not None:
                 ctx["cwd"] = os.path.normpath(os.path.join(ctx["cwd"], target))
             continue
+        assigned = [w for w in (words[1:] if words and words[0] == "export" else words) if re.match(r"^[A-Za-z_]\w*=", w)]
+        if words and assigned and len(assigned) == len(words) - (words[0] == "export"):
+            ctx["env"] = dict(ctx["env"], **{a.split("=", 1)[0]: a.split("=", 1)[1] for a in assigned})
         if words and os.path.basename(words[0]) == "git":
+            if any(flagged(r, ctx) for r in seg.redirs):
+                return True
             continue
         if any(flagged(r, ctx) for r in seg.redirs) or check_words(words, ctx, depth):
             return True
