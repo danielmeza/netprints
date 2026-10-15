@@ -33,7 +33,11 @@
       <ItemsControl x:Name="ReferenceList" ItemsSource="{Binding References}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="edreferences:DeclaredReferenceViewModel">
-            <Grid ColumnDefinitions="*,150,Auto" Margin="2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferenceRow}" AutomationProperties.Name="{Binding DisplayText}">
+            <ctl:ListRow Margin="2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferenceRow}" AutomationProperties.Name="{Binding DisplayText}"
+                         RemoveText="Remove this reference" RemoveAutomationId="{x:Static ed:AutomationIds.ReferenceRemove}"
+                         RemoveCommand="{Binding $parent[ItemsControl].((edreferences:ReferenceListViewModel)DataContext).RemoveCommand}"
+                         RemoveCommandParameter="{Binding}">
+              <Grid ColumnDefinitions="*,150">
               <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
                          FontSize="{StaticResource Font.Body}" ToolTip.Tip="{Binding DisplayText}" />
               <!-- OneWay (R2-10, D10): toggling invokes SetIncludedCommand instead of a property setter
@@ -51,13 +55,8 @@
                   </EventTriggerBehavior>
                 </Interaction.Behaviors>
               </ToggleSwitch>
-              <Button Grid.Column="2" Classes="icon" Width="32" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferenceRemove}" Height="32" CornerRadius="16"
-                      ToolTip.Tip="Remove this reference" AutomationProperties.Name="Remove this reference"
-                      Command="{Binding $parent[ItemsControl].((edreferences:ReferenceListViewModel)DataContext).RemoveCommand}"
-                      CommandParameter="{Binding}">
-                <icons:IconPresenter IconId="{x:Static icons:IconIds.Remove}" />
-              </Button>
-            </Grid>
+              </Grid>
+            </ctl:ListRow>
           </DataTemplate>
         </ItemsControl.ItemTemplate>
       </ItemsControl>

@@ -3011,3 +3011,32 @@ editor was not run with a pipe that cannot be bound.
   five seconds, `Theme: System (Dark|Light)` with the variant the OS resolved to for System (`ThemeStatusText`). Tests (written after the code):
   `ThemeSettingTests.ThePaletteNamesTheThemeCommandsByWhatTheyDo`, `ThemeSettingTests.RunningAThemeFromThePaletteAppliesItAndSaysSoInTheStatusBar` (runs the
   selected palette item for each theme and checks the variant, the stored setting and the status text) and `ThemeStatusTextTests`.
+- **OF-4, the Variables panel is hard to scan.** Cause: each variable was a tall form (round remove button, "Name" label, full-width box, type button; a member also had Getter, Setter and
+  Type graph sub-rows), rows had no boundary, two full-width Add buttons took the height, and the panel was a `*,Auto` grid whose Auto "Method" group (list max 200) took the whole
+  panel, so the Class list was squeezed to about one row and its Add button was drawn over the "Method: Main" header. The empty-looking Class section is that layout bug, not a
+  filter: `ClassVariables` was never filtered. Fix: one `ScrollViewer` holds two sections. Each has a header row with the title and a small "+" icon button at the right
+  (`Variables`, `Local variables: <method>`), and a `ListBox.variableList` of one-line rows (`VariableRowView`: a type chip, the name, the type muted, and the shared remove
+  column). The chip takes the pin family class of the type (`PinTypeFamily`, `StyleClassBehavior`), so it follows the theme tokens; the separator is the new `Row.Separator`
+  token (Dark, Light), hover and selection are the existing list tokens. The remove button shows on hover, selection or keyboard focus. The getter, setter and type graph
+  buttons were already in `VariableInspectorView`, so the list rows lose them. Selecting a row selects the variable: a member shows `VariableInspectorView`, a local shows the new
+  `LocalVariableInspectorView` (name and type), through the shell's `TreeSelection` (the `LocalVariableViewModel` itself is the selection, ignored by the tree and cleared when
+  its row goes away). The panel also follows a selection made in the tree. F2 or a double click renames in place and Enter, Escape and leaving the box commit or cancel like the
+  tree; Delete on the list removes the selected row, and neither runs while the box is being edited. `VariableRowViewModel` is the new base of the member and local row view
+  models (name, type, family class, inline rename, refused-name message, `Remove` as the one remove command). One undo step per rename and per removal, as before.
+  Drag of the name onto the canvas is unchanged (`VariableDragSourceBehavior` is now on the name text of both kinds). The two views `MemberVariableView` and `LocalVariableView` are
+  replaced by `VariableRowView`. AutomationIds: removed the unused `VariableGetter` and `VariableSetter`; new `VariableRowRemove`, `VariableRenameBox`, `VariableRenameError`
+  and the local inspector's. Tests (written after the code): `VariableRowTests` (selection to inspector for a local and a member, the rows follow a selection made elsewhere,
+  removing the selected local empties the inspector, rename in place is one undo step for both kinds, a refused name keeps editing with the reason and Escape leaves,
+  Delete is blocked while editing, the chip family), `LocalVariablePanelTests` now renames with F2 and Enter, and the snapshot `VariablesPanelWithSixMembersAndFourLocals`
+  (new baselines `variables-panel-dark|light`). Header text changed from "Method: X" to "Local variables: X" (tests updated). Deviation from D12: the lists live in one
+  `ScrollViewer` and are not virtualized, because a class has tens of variables, not thousands, and one scroll keeps both sections reachable in a short panel.
+  Baselines regenerated, all because the Variables panel is on screen: `editor-shell-main` (+ `-dark|light-1.0|1.5|2.0`) and `search-popup` (the panel now shows "+" headers
+  and no full-width buttons) and `dialog-references` (see OF-5: rows are 24 px, the dialog is 11 px shorter).
+- **OF-5, the remove icon glued to the name and not aligned.** The owner did not say which list. The one that matches the words is the member row of the Variables panel: its Getter and
+  Setter sub-rows put a round remove button directly before "Get" or "Set" with a 4 px gap, in a column that does not line up with the variable's own remove button ("when a method is
+  added", the getter and setter are methods). Those rows are gone with OF-4 (the inspector has Add, Open and Remove getter and setter). The other lists with a name and a remove button
+  were the event entry arguments (`EventEntryInspectorView`) and the references dialog; the tree, class settings and the method inspector have none. All three now use one control,
+  `ListRow` (content, optional `Actions`, and a remove button in a fixed 28 px right column, `Row.RemoveColumnWidth`), styled by its control theme in `EditorStyles.axaml`:
+  the variable rows, the argument rows (move up and down are its `Actions`) and the reference rows. Argument and reference rows looked aligned before and look the same now, apart
+  from the references rows being 24 px tall instead of 32 (button `Margin` 2 and `MinHeight` 32 are cleared for `Button.rowRemove`). No new test beyond OF-4's: the existing
+  event argument and reference tests keep their AutomationIds and pass.
