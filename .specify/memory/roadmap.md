@@ -317,6 +317,47 @@ packages for extension authors. No performance work here (owner decision 2026-09
   - Tests: harness-based install, rejection table, state persistence, round trip of nodes of a disabled extension.
   - Spike first: whether `dotnet restore` and feeds accept the custom package type.
   - Design and prior art: `.agent-archive/2026-10-06-roadmap-gaps/b07-b17-packages-and-extensions.md` (outside this repo).
+- **Samples from remote sources (owner decisions 2026-10-14)** (size M, about 6 days after B17's full v1; about 8 if B17 ships its
+  3-day fallback, which has no download path). Samples are not bundled with the editor; they come from several sources. No
+  separate manager: the start page's Samples gallery browses and installs samples through the shared `NetPrints.Packages` service.
+  - Format: a `.nupkg` with package type `NetPrintsSample` holding the sample folder (project, graphs and generated files, no
+    build output) and `netprints-sample.json`. Installed by download, hash or signature check and extract, with B17's zip-slip and
+    size limits, into `<data>/samples/<id>/<version>/`. No NuGet dependency resolution and no template engine (it adds Edge,
+    RunnableProjects, Newtonsoft.Json and a second NuGet 6.13.2 pin that collides with B7's). The nuspec's package types are
+    checked before install, because some feeds ignore the `packageType` filter.
+  - Sources: `nuget.config` feeds searched with `packageType=NetPrintsSample`, plus per-user index sources: a URL or folder holding
+    `netprints-samples.json` (entries carry the inline manifest, `url`, `sha256` and `size`; relative paths resolve against the
+    configured URL, not the redirected one). The default source is `releases/download/v<editor version>/netprints-samples.json`,
+    falling back to `releases/latest/download/`. The release index is cumulative (all published sample versions, absolute tag
+    URLs); the newest version whose `minNetPrints` the editor meets is offered. The last fetched index is cached.
+  - Extensions can ship samples under `samples/<id>/`; these are listed while the extension is enabled and need no download.
+    Only extensions installed per user can list samples, because the start page has no project loaded.
+  - Manifest v1: `schemaVersion`, `id`, `version`, `title`, `description`, `authors`, `license`, `minNetPrints` and `profile` are
+    required; `tags`, `thumbnail`, `screenshots`, `dotnetSdk`, `dependsOn`, `project`, `open`, `projectUrl` and `localized` are
+    optional. `project` is required when the sample has several `.csproj` files. The hash lives in the index entry (or in NuGet's
+    own hash and signature for feeds), not in the manifest.
+  - Safety (beyond B17): https only (http for loopback only), no scheme change on redirect; references are `https:` or relative,
+    never `file:`, UNC, `//host` or rooted; folder-source and manifest paths must stay inside their root; images relative to the
+    index or on its host, PNG or JPEG only, at most 1 MB, pixel cap checked before decode, loaded when shown; index at most 1 MB;
+    text shown as plain text.
+  - Gallery: search, filters by profile and tag, details with screenshots. Samples whose version, profile or extension does not
+    match are greyed out with the reason. An update badge marks newer versions. Offline, installed samples plus cached entries
+    ("needs network"); an empty state offers Retry, Add folder source and New project. Remove deletes an installed version.
+  - Trust: one install prompt (source, authors, license, hash or signature, "opening runs its build"); on accept the copy's
+    project path is added to `TrustedProjects`, so opening does not prompt again; extension samples inherit the extension's trust.
+  - Open: the FR-043/FR-048 copy-and-open flow, run from the installed folder, then opens `open` or the project.
+  - Migration: HelloWorld gains `netprints-sample.json`, is packed outside `packages/` (the release pushes `packages/*.nupkg` to
+    nuget.org) and attached with the cumulative index to every release. The `Content` item (`NetPrints.Desktop.csproj:48`) and
+    `SampleCatalog.Bundled` are removed; its callers (`ProjectLoader`, `StartPageContributions`, `SamplesAndWhatsNewTests`) take
+    a catalog over the configured sources, and the `SampleCatalogTests` hashes change. CI and the E2E tests already use the
+    checked-in `samples/` and need no change. FR-043 gets a P3 note: samples are installed from a source or come with an
+    extension; none is bundled.
+  - Tests: the index parser (relative URLs, bad hash, id or version that differs from the package), the install rejection table
+    shared with B17, the gallery ViewModel, and one E2E opening a sample from a folder source.
+  - Spike, shared with B17's custom-type spike: whether dual-type `NetPrintsSample;Template` packages work with `dotnet new
+    install` (for B15; not needed for v1), and local-feed `packageType` filtering in B7's NuGet-version spike. If P3 is tight,
+    screenshots, `localized` and the update badge move to v1.1.
+  - Design and prior art: `.agent-archive/2026-10-14-samples-remote/` (outside this repo).
 - **Build configuration selector (gap research 2026-10-06)** (B23): a Debug/Release selector next to the run profile (the Publish dialog is in P6).
 - **Status-bar item contribution kind (gap research 2026-10-06)** (C-15): added to the contribution registry before P3 publishes it; the
   built-in segments (error and warning counts, build glyph, run state, zoom, selection count) use it.
