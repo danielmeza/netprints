@@ -2798,3 +2798,69 @@ tests, 0 failed, 31 skipped (E2E self-skips and `PanCursor`); desktop E2E 50/50 
 - **Guard:** `CiWorkflowTests` fails on a file that asserts a Stopwatch budget without the trait or the env variable, on a project the perf job does not run, and on a blocking job that sets `NETPRINTS_PERF_STRICT`. Three fixed-deadline hang guards (process launcher, crash handler, E2E exit diagnostics) are exempt by name. The guard was written after the code; its first run found the E2E file, which settled the exemption list.
 - **ADR-0037:** decision 6 now names the hybrid (relative `workingDirectory` from the project folder like Visual Studio, an absent one is the project folder like `dotnet run`) and the reason; the roadmap line says the same.
 - **Bash guard:** the hook already denied `cat >`, `>>`, `tee` and `>` into repo paths. Probing found the gaps: a variable assigned earlier in the same command, redirects on `git` commands, a heredoc script fed to a bare `bash`, and `sponge`. All four are closed and pinned in `tests/hooks`. Not covered (the hook stays conservative): `cp`/`mv`/`install` into the repo, `$(pwd)` paths, scripting languages other than Python and Perl.
+
+## Batch H3 (T108-T111, Checkpoint H)
+
+Start: `ef474cd2`. CI on it: run 38676060429 (`CI`), 38676060404 (`CLI (Windows)`), 38676060413 (`Release`), 38676060401 (`Docs`), all success.
+
+### T108: docs site
+
+`scripts/build-docs.sh` exits 0 (DocFX: 0 errors, 6 warnings; Docusaurus has `onBrokenLinks: 'throw'` and `onBrokenMarkdownLinks` and `onBrokenMarkdownImages` set to `throw`, so a broken link or image fails the build; the log has no "broken"). `website/build/guide/editor/` holds the six guides (shell, saving-and-recovery, commands-and-shortcuts, start-page, navigation, event-graphs; 2, 3, 4, 3, 7 and 8 images each), `website/build/img/guide/editor/` holds their PNGs, `website/build/adr/` holds ADR-0018 to ADR-0021, and the pages added this week are there too: ADR-0037, 0038, 0039 and `research/2026-10-14-engine-integration/` (README, `godot`, `unity`). The build left the tree clean.
+
+### T109: quickstart, section by section
+
+Own Xvfb displays (110, 120, 125 and 130, each started and stopped by this batch; `:1`, `:99` and `:105` untouched), `NETPRINTS_STATE_DIR` in a temporary folder, Release build of `ef474cd2`. The sections were driven by the Desktop E2E scenarios (real editor processes on Xvfb with xdotool input) rather than by hand, except the start page of section 5, which was started by hand and looked at in a screenshot.
+
+| Section | Outcome | How |
+|---|---|---|
+| 0 build and test | pass | T110 below |
+| 1 CI and diagnostics | pass, timing not met | `E2EDiagnosticsTests` Passed in two full E2E runs; CI run 38676060429 is green with `Build and test (Linux)` after the legs; `CLI (Windows)` run 38676060404 green. The 60% limit is not met, see SC-006 |
+| 2 one window | pass | `ShellMainFlow` (open, two graphs, break, F7, activate, undo, F5, `Hello, World!`); float, dock and reset layout in `ShellAdapterTests` |
+| 3 never lose work | pass | `UnsavedChangesPromptTests` (cancel, Save all, Close project), `CrashRecoveryTests` (edit, kill, restore, byte-identical) |
+| 4 commands | pass | `KeyboardOnlyTests`; the Edit menu label, the `Undid:` status text and the shortcuts sheet are covered by the UI tests of the suite |
+| 5 start page | pass | by hand: the Desktop editor started without arguments on `:130` shows the start page (Open recent, New project, Open folder or project, Samples, Learn, What's new, version `0.2.1-alpha.0.489`); `StartPageNewProjectTests` and `StartPageLearnTests` in E2E |
+| 6 persistence | pass | `RestoreSessionTests`, `CorruptLayoutTests` (a corrupt layout starts with the defaults) |
+| 7 navigation | pass | `CommandPaletteTests`, `GoToAnythingTests`; back, forward and the tooltip run in the guide scenario |
+| 8 event graphs and entries | pass | `EventEntryInspectorTests` |
+| 9 look | pass | `ThemeSwitchTests` (Light, System, Dark and a restart); `XamlHygieneTests` in the suite, allowlists empty |
+| 10 type-scoped search | pass | `TypeScopedSearchTests` (E2E) and `CompositeReflectionProviderTests` |
+| 11 docs | pass | T108; `GuideScreenshotTests` regenerated the images on `:125`: 11 PNGs differ from the committed ones, 9 of them by at most 0.12% of the pixels (the start page version text, timing of the focus ring; one by 0), and `event-graph-search.png` (20% with a 2% fuzz) and `new-project-dialog.png` (5%) were compared by eye and look the same (translucent overlay). The regenerated files were discarded with `git checkout`, so the tree stays clean |
+
+`git status samples/` was clean after every run.
+
+### T110: whole suite, E2E, format
+
+- Release build from clean (`--no-incremental`): 0 warnings, 0 errors.
+- Whole suite, Release, `--ignore-exit-code 8`: 4031 total, 3998 passed, 33 skipped, 0 failed (15 min 9 s; UITests 15 min 9 s on this machine, Editor.Tests 1 min 41 s, Catalog 52 s, Cli 43 s, Core 39 s). The 33 skips are `HeadlessSmokeTests.PanCursor`, the explicit `ClassInspectorSnapshotRepeatedly` and the 31 desktop scenarios that need `NETPRINTS_E2E=1`.
+- Desktop E2E, `NETPRINTS_E2E=1 --fail-skips on`: run 1 (display start 110) 53 total, 52 passed, 1 skipped (`GuideScreenshotTests`, explicit, as in CI), 0 failed, 2 min 42 s; run 2 (display start 120, `NETPRINTS_STATE_DIR` set) the same, 2 min 49 s.
+- `ShellMainFlow` flake: 0 failures in 2 of 2 full runs; the CI failure of run 38676060429 attempt 1 did not reproduce.
+- `dotnet format NetPrints.slnx --verify-no-changes`: exit 0.
+- `dotnet format analyzers --severity info --verify-no-changes`: exit 2. `--include` did not narrow the run to the 828 changed C# files: the whole solution reported 4464 info lines, 210 of them in `src/` (CA1859 27, S3267 23, S1135 18, S3358 17, S2325 13, CA1822 13 and others). Not fixed: they are suggestion-level hits, not a build gate, and this batch changes no C# code. Which belong to this branch needs a separate triage.
+- SC-006, latest CI run 38676060429 (job seconds): Editor UI shard 1/2 671, shard 2/2 558, Test (Editor) 300, Repository checks 263, Core 207, CLI 135, Catalog 116. The longest, 671 s, is 67% of the 995 s baseline (limit 597 s, 60%): not met. It was 53% in A3, before the UI leg grew with sub-phases C to G (CI-H2 and G7a sharded it). The shared warmed provider that would cut it was dropped from P3a. The `e2e` job (727 s) is outside the SC-006 set.
+
+### Checkpoint H (T111)
+
+Head `ef474cd2` plus this batch's notes. Docs updated in this checkpoint: none; the six guides, ADR-0018 to ADR-0021 and the week's ADRs were written in H1, H2, D-T and D-RP1 to D-RP3, and T108 verifies them.
+
+| SC | Result | Evidence |
+|---|---|---|
+| SC-001 one window in the main flow | pass | `ShellMainFlowTests.ShellMainFlow` (window types `["ShellWindow"]`): Passed in both local E2E runs at `ef474cd2` and in CI run 38676060429 (attempt 2); Checkpoint C table |
+| SC-002 five unload paths and recovery | pass | prompt: `WindowCloseTests`, `ConfirmUnloadTests`, `ProjectCommandsTests.UnloadingCommandsAskBeforeUnloadingAnOpenProject`, `UnloadWhileDirtyTests`, E2E `UnsavedChangesPromptTests`; recovery: `CrashRecoveryTests.RestoreAfterAKillSavesTheContentFromBeforeIt` (byte-identical), Passed in both runs (D3c table). Open project and New project are covered headless and at handler level, not in E2E |
+| SC-003 commands | pass | `BuiltInCommandTableTests` (registry against contracts/commands.md, 0 conflicts), `TestContributionSurfaceTests` (menus and palette), `DefaultShortcutTests` (every FR-034 gesture); the pending list ended with the theme commands in G5b |
+| SC-004 keyboard only | pass | `KeyboardOnlyTests` (E2E, both runs) |
+| SC-005 restart | pass | layout, tabs, zoom, bounds: E2E `RestoreSessionTests`, `DockLayoutRoundTripTests`, `SessionStateTests`, `WindowPlacementTests`; theme: `ThemeSettingTests`, E2E `ThemeSwitchTests`; corrupt or newer state: E2E `CorruptLayoutTests`, `JsonEditorStateStoreTests` |
+| SC-006 diagnostics, timing, Windows | partly met | diagnostics: `E2EDiagnosticsTests` Passed in both runs, files uploaded as `e2e-results` (Checkpoint A, run 36867229176); Windows: `CLI (Windows)` 38676060404 green, `ShowTextconvEncodingTests` in the Cli tests; timing: 67%, above the 60% limit (T110) |
+| SC-007 type-scoped search | pass, one deviation | `CompositeReflectionProviderTests`, E2E `TypeScopedSearchTests`; the deviation is the Checkpoint G one (unchanged output pinned by resolution and the byte-identical goldens) |
+| SC-008 tokens, no VM, hygiene | pass | `ThemeTokenTests` (49 tokens in both variants), `SourceHygieneTests.NoTypeNameEndsInVM`, `XamlHygieneTests`; allowlists empty, E7 holds 16 justified entries (Checkpoint G table); all three classes pass in the full suite above |
+| SC-009 custom event | pass | E2E `EventEntryInspectorTests`; `SetEventArgumentsCommandTests`, golden `EventArguments.Combat.cs` |
+| SC-010 docs site | pass | T108: 0 broken links (the build throws on one), six guides with images, ADR-0018 to ADR-0021 and ADR-0037 to ADR-0039, the engine research pages; CI `Docs` run 38676060401 green |
+
+Roadmap P3a coverage, row by row: every row is met by its tasks (T001 to T108 are ticked and the table's task lists match `tasks.md`) or by its recorded deferral. The one open point inside a met row is the 60% timing goal of "CI and test infrastructure" (SC-006). Work that stays out of P3a is unchanged: user-defined shortcuts, autosave of the original files, the L1 title bar, the status-bar contribution kind, the undo history list, "show all members", mouse back and forward, argument modifiers and the P2 carry-overs.
+
+Deferrals decided this week: the shared warmed provider left P3a; the two-DPI check on Windows is the owner's manual check; the start page PNGs carry the build version and are regenerated before release; the Windows session log is unverified; mid-cable hover misses at fit zoom.
+
+Governance proposals (for the coordinator, not applied):
+1. SC-006: restate the timing criterion against the sharded legs, for example "each Linux test leg takes at most 75% of the 995 s baseline", or accept 67% explicitly and move the shared warmed provider to P3. As written, P3a's own test growth makes it unmeetable.
+2. AGENTS.md batch rules: `dotnet format analyzers --severity info --verify-no-changes` over the changed files did not honour `--include` here (4464 lines solution-wide); say how to scope it, or drop the instruction.
+3. roadmap.md: after the merge, mark P3a complete and move the shared warmed provider, the `format analyzers` triage and the SC-006 decision to P3.
+4. T110/T108 text says "ADR-0018 to ADR-0020" while spec SC-010 says "ADR-0018 to ADR-0021"; the site has all four, so the task text can follow the spec.
