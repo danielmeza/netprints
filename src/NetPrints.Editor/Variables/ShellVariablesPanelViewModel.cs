@@ -18,7 +18,19 @@ public sealed class ShellVariablesPanelViewModel : ActiveClassPanelViewModel<Var
         ProjectSessionViewModel session = context.Shell.Session
             ?? throw new InvalidOperationException("A variables panel item is created only while a project is open.");
         ClassContext classContext = session.ContextFor(cls);
-        return new VariablesPanelViewModel(classContext.Services, classContext.Variables, () => context.Commands.TryRun(EditContributions.AddVariableName), variable => context.Shell.TreeSelection = variable);
+        return new VariablesPanelViewModel(classContext.Services, classContext.Variables, () => context.Commands.TryRun(EditContributions.AddVariableName), variable => context.Shell.TreeSelection = variable, local => SelectLocal(context, local));
+    }
+
+    private static void SelectLocal(PanelContext context, LocalVariableViewModel? local)
+    {
+        if (local is not null)
+        {
+            context.Shell.TreeSelection = local;
+        }
+        else if (context.Shell.TreeSelection is LocalVariableViewModel)
+        {
+            context.Shell.TreeSelection = null;
+        }
     }
 
     /// <inheritdoc/>
@@ -43,6 +55,10 @@ public sealed class ShellVariablesPanelViewModel : ActiveClassPanelViewModel<Var
         if (e.PropertyName is nameof(ShellViewModel.ActiveDocument) or nameof(ShellViewModel.Session))
         {
             FollowGraph();
+        }
+        else if (e.PropertyName == nameof(ShellViewModel.TreeSelection))
+        {
+            Current?.FollowSelection(Context?.Shell.TreeSelection);
         }
     }
 

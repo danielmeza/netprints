@@ -10,8 +10,10 @@ namespace NetPrints.Editor.Variables;
 /// <summary>
 /// A local variable in the Variables panel's "Method: &lt;name&gt;" group (US5, sub-phase H).
 /// </summary>
-public sealed partial class LocalVariableViewModel : ObservableObject, IDisposable
+public sealed partial class LocalVariableViewModel : VariableRowViewModel, IDisposable
 {
+    private const string RefusedNameMessage = "That name is already used in this method or is not a valid identifier.";
+
     private readonly ExecutionGraph graph;
     private readonly ClassEditorServices services;
 
@@ -22,6 +24,7 @@ public sealed partial class LocalVariableViewModel : ObservableObject, IDisposab
     /// <param name="graph">Method or constructor graph the local belongs to.</param>
     /// <param name="services">Narrow services shared with the owning class editor (FR-038).</param>
     public LocalVariableViewModel(LocalVariable local, ExecutionGraph graph, ClassEditorServices services)
+        : base(services)
     {
         Local = local;
         this.graph = graph;
@@ -35,26 +38,36 @@ public sealed partial class LocalVariableViewModel : ObservableObject, IDisposab
     /// <summary>A fresh snapshot of the local's specifier, for drag &amp; drop onto the canvas (PAR-57).</summary>
     public VariableSpecifier Specifier => Local.ToSpecifier();
 
-    /// <summary>The local's type.</summary>
-    public TypeSpecifier Type => Local.Type;
+    /// <summary>Gets a value indicating whether the owning panel has disposed this row, so it no longer stands for a variable of the opened method.</summary>
+    public bool IsDisposed { get; private set; }
+
+    /// <inheritdoc/>
+    public override TypeSpecifier Type => Local.Type;
 
     /// <summary>
     /// The local's name. Setting it renames the local and retargets its existing getter/setter nodes
-    /// (undoable). A name that did not change, or that <see cref="ExecutionGraph.IsLocalNameAvailable"/>
-    /// rejects (a duplicate, a parameter name, or not a valid identifier), is ignored and the display
-    /// reverts to the committed name.
+    /// (undoable). A name that did not change is ignored; one that <see cref="ExecutionGraph.IsLocalNameAvailable"/>
+    /// rejects (a duplicate, a parameter name, or not a valid identifier) leaves the local as it was and sets <see cref="VariableRowViewModel.Error"/>.
     /// </summary>
-    public string Name
+    public override string Name
     {
         get => Local.Name;
         set
         {
-            if (value == Local.Name || !graph.IsLocalNameAvailable(value, Local))
+            if (value == Local.Name)
             {
                 OnPropertyChanged();
                 return;
             }
 
+            if (!graph.IsLocalNameAvailable(value, Local))
+            {
+                Error = RefusedNameMessage;
+                OnPropertyChanged();
+                return;
+            }
+
+            Error = null;
             services.UndoRedo.Do(EditorCommands.RenameLocalVariable(graph, Local, value));
         }
     }
@@ -73,9 +86,8 @@ public sealed partial class LocalVariableViewModel : ObservableObject, IDisposab
         }
     }
 
-    /// <summary>Removes the local variable (undoable); its existing getter/setter nodes are removed too.</summary>
-    [RelayCommand]
-    private void Remove() => services.UndoRedo.Do(EditorCommands.RemoveLocalVariable(graph, Local));
+    /// <inheritdoc/>
+    protected override void RemoveVariable() => services.UndoRedo.Do(EditorCommands.RemoveLocalVariable(graph, Local));
 
     private void OnLocalPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -86,12 +98,16 @@ public sealed partial class LocalVariableViewModel : ObservableObject, IDisposab
                 OnPropertyChanged(nameof(Specifier));
                 break;
             case nameof(Local.Type):
-                OnPropertyChanged(nameof(Type));
+                NotifyTypeChanged();
                 OnPropertyChanged(nameof(Specifier));
                 break;
         }
     }
 
     /// <summary>Unsubscribes from the wrapped local's property-changed event.</summary>
-    public void Dispose() => ((INotifyPropertyChanged)Local).PropertyChanged -= OnLocalPropertyChanged;
+    public void Dispose()
+    {
+        IsDisposed = true;
+        ((INotifyPropertyChanged)Local).PropertyChanged -= OnLocalPropertyChanged;
+    }
 }

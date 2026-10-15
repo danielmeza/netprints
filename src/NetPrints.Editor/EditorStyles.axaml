@@ -105,6 +105,37 @@
           </ControlTemplate>
         </Setter>
       </ControlTheme>
+      <!-- Editable list row: content, optional actions and a remove button in one fixed right-aligned column. -->
+      <GridLength x:Key="Row.RemoveColumnWidth">28</GridLength>
+      <Thickness x:Key="Row.Padding">8,0</Thickness>
+      <x:Double x:Key="VariableChip.Size">10</x:Double>
+      <ControlTheme x:Key="{x:Type ctl:ListRow}" TargetType="ctl:ListRow">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="MinHeight" Value="{StaticResource Density.RowHeight}" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+          <ControlTemplate>
+            <Grid MinHeight="{TemplateBinding MinHeight}">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="{StaticResource Row.RemoveColumnWidth}" />
+              </Grid.ColumnDefinitions>
+              <ContentPresenter Grid.Column="0" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                                HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+              <ContentPresenter Grid.Column="1" Content="{TemplateBinding Actions}" VerticalAlignment="Center" />
+              <Button x:Name="PART_Remove" Grid.Column="2" Classes="icon rowRemove" HorizontalAlignment="Center" VerticalAlignment="Center"
+                      Command="{TemplateBinding RemoveCommand}" CommandParameter="{TemplateBinding RemoveCommandParameter}"
+                      IsVisible="{TemplateBinding IsRemoveVisible}"
+                      ToolTip.Tip="{TemplateBinding RemoveText}" AutomationProperties.Name="{TemplateBinding RemoveText}">
+                <icons:IconPresenter IconId="{x:Static icons:IconIds.Remove}" />
+              </Button>
+            </Grid>
+          </ControlTemplate>
+        </Setter>
+      </ControlTheme>
       <!-- Dialog shell (FR-088): shared widths and the height at which a dialog's list starts to scroll. -->
       <x:Double x:Key="Dialog.MinWidth">360</x:Double>
       <x:Double x:Key="Dialog.MaxWidth">640</x:Double>
@@ -148,6 +179,7 @@
           <SolidColorBrush x:Key="Focus.Ring">#4FC3F7</SolidColorBrush>
           <SolidColorBrush x:Key="State.Hover">#26FFFFFF</SolidColorBrush>
           <SolidColorBrush x:Key="State.Pressed">#3DFFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="Row.Separator">#1AFFFFFF</SolidColorBrush>
           <SolidColorBrush x:Key="Tab.SelectedAccent">#4FC3F7</SolidColorBrush>
           <Color x:Key="GraphGrid.MinorColor">#14FFFFFF</Color>
           <Color x:Key="GraphGrid.MajorColor">#2EFFFFFF</Color>
@@ -213,6 +245,7 @@
           <SolidColorBrush x:Key="Focus.Ring">#0277BD</SolidColorBrush>
           <SolidColorBrush x:Key="State.Hover">#14000000</SolidColorBrush>
           <SolidColorBrush x:Key="State.Pressed">#26000000</SolidColorBrush>
+          <SolidColorBrush x:Key="Row.Separator">#1A000000</SolidColorBrush>
           <SolidColorBrush x:Key="Tab.SelectedAccent">#0277BD</SolidColorBrush>
           <Color x:Key="GraphGrid.MinorColor">#14000000</Color>
           <Color x:Key="GraphGrid.MajorColor">#2E000000</Color>
@@ -594,6 +627,47 @@
   <Style Selector="TreeView TreeViewItem, ListBox.rows ListBoxItem, ListBox.quickPick ListBoxItem">
     <Setter Property="MinHeight" Value="{StaticResource Density.RowHeight}" />
     <Setter Property="Padding" Value="{StaticResource Density.RowPadding}" />
+  </Style>
+
+  <!-- Variable lists: one compact row per item, a hairline between rows, the remove button shown on hover, selection or keyboard focus. -->
+  <Style Selector="ListBox.variableList ListBoxItem">
+    <Setter Property="MinHeight" Value="{StaticResource Density.RowHeight}" />
+    <Setter Property="Padding" Value="{StaticResource Row.Padding}" />
+    <Setter Property="BorderThickness" Value="0,0,0,1" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Row.Separator}" />
+  </Style>
+  <Style Selector="Button.rowRemove">
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="MinWidth" Value="0" />
+  </Style>
+  <Style Selector="ListBoxItem:not(:pointerover):not(:selected) ctl|ListRow /template/ Button#PART_Remove:not(:focus-visible)">
+    <Setter Property="Opacity" Value="0" />
+  </Style>
+  <Style Selector="Ellipse.variableChip">
+    <Setter Property="Width" Value="{StaticResource VariableChip.Size}" />
+    <Setter Property="Height" Value="{StaticResource VariableChip.Size}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Margin" Value="0,0,8,0" />
+  </Style>
+  <Style Selector="Grid.sectionHeaderRow">
+    <Setter Property="Margin" Value="8,0,0,0" />
+  </Style>
+  <Style Selector="Grid.sectionHeaderRow.spaced">
+    <Setter Property="Margin" Value="8,8,0,0" />
+  </Style>
+  <Style Selector="TextBlock.rowType">
+    <Setter Property="Margin" Value="8,0,0,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+  </Style>
+  <Style Selector="Grid.propertyGrid.inspectorRoot">
+    <Setter Property="Margin" Value="{StaticResource Space.XS}" />
+  </Style>
+  <Style Selector="TextBlock.sectionHeader">
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
   </Style>
 
   <!-- Method picker (FR-094): group headers and the current row are semibold, an overridden row is dimmed and, like a header, cannot be selected. -->

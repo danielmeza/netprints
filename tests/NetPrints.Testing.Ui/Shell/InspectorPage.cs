@@ -38,6 +38,9 @@ public sealed class InspectorPage(IUiDriver driver, AutomationQuery window)
     /// <summary>The variable inspector.</summary>
     public UiElement VariableInspector => Find(AutomationIds.VariableInspector);
 
+    /// <summary>The local variable inspector.</summary>
+    public UiElement LocalVariableInspector => Find(AutomationIds.LocalVariableInspector);
+
     /// <summary>The event graph inspector.</summary>
     public UiElement EventGraphInspector => Find(AutomationIds.EventGraphInspector);
 

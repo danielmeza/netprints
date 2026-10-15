@@ -24,7 +24,11 @@ From the top down:
 - **The Inspector**, on the right: the details of what is selected, in the tree or on the canvas (a class, a method,
   a variable, an event entry).
 - **The Variables panel**, below the Inspector: the variables of the class of the active graph and, when the active
-  graph is a method, its local variables.
+  graph is a method, its local variables. Each variable is one row: a coloured dot for the type family, the name and
+  the type. The **+** in a section header adds a variable. Select a row to see the variable in the Inspector, where you
+  change its type, visibility and the rest. Press F2 or double-click the name to rename it in place (Enter keeps the
+  name, Escape cancels), Delete or the **-** at the right of the selected row to remove it, and drag the name onto the
+  canvas to place a getter or setter.
 - **The bottom panels**: **Errors** (the problems found while you edit and in the last build; activate a row to open
   its graph and select the node), **Output** (the build output, then what your program prints) and **C#** (the code
   generated from the active graph's class).

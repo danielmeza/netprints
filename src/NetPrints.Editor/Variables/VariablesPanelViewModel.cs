@@ -18,7 +18,9 @@ public sealed partial class VariablesPanelViewModel : ObservableObject, IDisposa
     private readonly ClassEditorServices services;
     private readonly Action createVariable;
     private readonly Action<Variable>? selectVariable;
+    private readonly Action<LocalVariableViewModel?>? selectLocal;
     private ExecutionGraph? openedGraph;
+    private bool syncingSelection;
 
     /// <summary>
     /// Creates the panel from <paramref name="classVariables"/>, with no method or constructor graph open yet (the owner
@@ -28,16 +30,19 @@ public sealed partial class VariablesPanelViewModel : ObservableObject, IDisposa
     /// <param name="classVariables">View models for the class's variables (the "Class" group).</param>
     /// <param name="createVariable">Adds a variable to the class; run by <see cref="CreateVariableCommand"/>.</param>
     /// <param name="selectVariable">Called when a variable row asks for its inspector; <see langword="null"/> ignores the request.</param>
+    /// <param name="selectLocal">Called with the local variable row that was selected, or <see langword="null"/> when none is; <see langword="null"/> ignores it.</param>
     public VariablesPanelViewModel(
         ClassEditorServices services,
         ObservableViewModelCollection<MemberVariableViewModel, Variable> classVariables,
         Action createVariable,
-        Action<Variable>? selectVariable = null)
+        Action<Variable>? selectVariable = null,
+        Action<LocalVariableViewModel?>? selectLocal = null)
     {
         ArgumentNullException.ThrowIfNull(createVariable);
         this.services = services;
         this.createVariable = createVariable;
         this.selectVariable = selectVariable;
+        this.selectLocal = selectLocal;
         ClassVariables = classVariables;
         services.Messenger.Register<SelectInspectorMessage>(this);
         RebuildMethodGroup();
@@ -55,8 +60,80 @@ public sealed partial class VariablesPanelViewModel : ObservableObject, IDisposa
     /// <summary>Whether the "Method" group has a graph to show.</summary>
     public bool HasMethodGroup => MethodVariables is not null;
 
-    /// <summary>The "Method: &lt;name&gt;" header text, or "" when <see cref="HasMethodGroup"/> is <see langword="false"/>.</summary>
-    public string MethodGroupHeader => openedGraph is { } graph ? $"Method: {GraphName(graph)}" : "";
+    /// <summary>The "Local variables: &lt;name&gt;" header text, or "" when <see cref="HasMethodGroup"/> is <see langword="false"/>.</summary>
+    public string MethodGroupHeader => openedGraph is { } graph ? $"Local variables: {GraphName(graph)}" : "";
+
+    /// <summary>Gets or sets the selected member variable row; selecting one shows its inspector and deselects the local variable.</summary>
+    [ObservableProperty]
+    public partial MemberVariableViewModel? SelectedClassVariable { get; set; }
+
+    /// <summary>Gets or sets the selected local variable row; selecting one shows it in the inspector and deselects the member variable.</summary>
+    [ObservableProperty]
+    public partial LocalVariableViewModel? SelectedLocalVariable { get; set; }
+
+    partial void OnSelectedClassVariableChanged(MemberVariableViewModel? value)
+    {
+        if (syncingSelection || value is null)
+        {
+            return;
+        }
+
+        syncingSelection = true;
+        SelectedLocalVariable = null;
+        syncingSelection = false;
+        selectVariable?.Invoke(value.Variable);
+    }
+
+    partial void OnSelectedLocalVariableChanged(LocalVariableViewModel? value)
+    {
+        if (syncingSelection)
+        {
+            return;
+        }
+
+        if (value is not null)
+        {
+            syncingSelection = true;
+            SelectedClassVariable = null;
+            syncingSelection = false;
+        }
+
+        selectLocal?.Invoke(value);
+    }
+
+    /// <summary>Removes the selected member variable row (Delete), unless there is none or its name is being edited.</summary>
+    [RelayCommand]
+    private void RemoveSelectedClassVariable() => RunOn(SelectedClassVariable?.RemoveCommand);
+
+    /// <summary>Renames the selected member variable row in place (F2).</summary>
+    [RelayCommand]
+    private void RenameSelectedClassVariable() => RunOn(SelectedClassVariable?.BeginRenameCommand);
+
+    /// <summary>Removes the selected local variable row (Delete), unless there is none or its name is being edited.</summary>
+    [RelayCommand]
+    private void RemoveSelectedLocalVariable() => RunOn(SelectedLocalVariable?.RemoveCommand);
+
+    /// <summary>Renames the selected local variable row in place (F2).</summary>
+    [RelayCommand]
+    private void RenameSelectedLocalVariable() => RunOn(SelectedLocalVariable?.BeginRenameCommand);
+
+    private static void RunOn(IRelayCommand? command)
+    {
+        if (command?.CanExecute(null) == true)
+        {
+            command.Execute(null);
+        }
+    }
+
+    /// <summary>Highlights the row of the variable the inspector shows, without asking for the inspector again.</summary>
+    /// <param name="selection">The shell's selection: a variable, a local variable row, or anything else to clear the highlight.</param>
+    public void FollowSelection(object? selection)
+    {
+        syncingSelection = true;
+        SelectedClassVariable = selection is Variable variable ? ClassVariables.FirstOrDefault(row => ReferenceEquals(row.Variable, variable)) : null;
+        SelectedLocalVariable = selection is LocalVariableViewModel { IsDisposed: false } local && MethodVariables?.Contains(local) == true ? local : null;
+        syncingSelection = false;
+    }
 
     private static string GraphName(ExecutionGraph graph) => graph is MethodGraph method ? method.Name : graph.ToString() ?? "";
 
