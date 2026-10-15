@@ -58,7 +58,7 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
             owner.PropertyChanged += OnGraphPropertyChanged;
         }
 
-        Search =new SuggestionListViewModel(this);
+        Search = new SuggestionListViewModel(this);
         GetSetChooser = new GetSetChooserViewModel(this);
 
         RebuildConnections();
