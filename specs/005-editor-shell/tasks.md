@@ -1370,7 +1370,7 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
 
 ### Batch H-M — model: sonnet — T114 (merge preparation)
 
-- [ ] T114 Merge `origin/master` into `005-editor-shell` (a merge commit, no rebase; resolve conflicts keeping both
+- [x] T114 Merge `origin/master` into `005-editor-shell` (a merge commit, no rebase; resolve conflicts keeping both
   sides' intent), whole suite plus the Desktop E2E run, push, and wait until `CI` and `CLI (Windows)` are green. Update
   the PR description (summary, decisions, deferrals, a link to the SC table), then mark the PR ready
   (`gh pr ready 12 --repo danielmeza/netprints`). The owner or the coordinator merges; the roadmap and constitution

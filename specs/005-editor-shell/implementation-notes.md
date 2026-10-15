@@ -2964,3 +2964,9 @@ editor was not run with a pipe that cannot be bound.
 
 - Whole Release suite: 4051 total, 0 failed, 33 skipped. Desktop E2E (`NETPRINTS_E2E=1`, display start 110, `--fail-skips on`): 53 total, 0 failed, 1 skipped (`GuideScreenshotTests.TheGuidesAreIllustrated`, not run by design).
 - `scripts/build-docs.sh` succeeds. T113 is ticked.
+
+## T114 (merge preparation)
+
+- `git fetch`, then `git merge origin/master`: "Already up to date". `origin/master` is still `3a6eafca` (the P2 merge and the merge base), with 0 commits the branch lacks, so no merge commit was made and nothing changed.
+- No suite re-run: the head is still `c2635484`, which T113b ran in full (Release suite 4051 total, 0 failed, 33 skipped; Desktop E2E 53 total, 52 passed, 1 explicit skip, 0 failed). CI run 38694635444 on that head is green (23 passed, 3 skipped).
+- The PR description is updated (H-R4, T112 and T113, the start page entries, 152/152) and the PR is marked ready. T114 is ticked: 152/152 tasks.
