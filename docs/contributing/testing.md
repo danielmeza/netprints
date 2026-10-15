@@ -148,7 +148,8 @@ Artifacts, uploaded even when a job fails:
 
 ### `Performance budgets (non-blocking)` (the `perf` job in `ci.yml`)
 
-Runs the tests with `[Trait("Category", "Performance")]` of `tests/NetPrints.Editor.Tests` with
+Runs the tests with `[Trait("Category", "Performance")]` of `tests/NetPrints.Core.Tests`, `NetPrints.Catalog.Tests`,
+`NetPrints.Editor.Tests` and `NetPrints.Editor.UITests` with
 `NETPRINTS_PERF_STRICT=1`, which switches `ProjectOpenPerformanceTests` from its sanity bound to the SC-005 strict gate
 (3x the spec target, best of three restored runs). It is not a required check and is not in the `build-test` aggregate.
 The blocking `Editor` leg runs the same tests with the sanity bound only, so a slow shared runner cannot fail a pull

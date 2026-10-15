@@ -9,10 +9,14 @@ concurrency group are unchanged.
 | Job id | Name | Needs | Content |
 |---|---|---|---|
 | `checks` | Repository checks (Linux) | — | restore and build `NetPrints.slnx` (Release); graph checks (`regen --check`, `format --check`); `dotnet format --verify-no-changes`; the Desktop E2E smoke step (no display, always-on tests only; `--ignore-exit-code 8`); CLI smoke; sample compile and run; generated files unchanged |
-| `test` | Test (`${{ matrix.name }}`) | — | matrix: `Core`, `Catalog`, `CLI`, `Editor`, `Editor UI (headless) 1/4` to `4/4` (four namespace shards of one project); each leg restores and builds `tests/<project>` in Release, then runs it with `--report-xunit-trx`, `--coverage`, the ADR-0008 settings and the leg's environment (`NETPRINTS_UI_ARTIFACTS` for the UI leg); uploads `test-results-<leg>` (and `ui-headless-<leg>` for the UI shards) and `coverage-<leg>`; `fail-fast: false` |
+| `test` | Test (`${{ matrix.name }}`) | — | matrix: `Core`, `Catalog`, `CLI`, `Editor`, `Editor UI (headless) 1/4` to `4/4` (four namespace shards of one project: 1/4 `Graph`, 2/4 `Shell`, 3/4 `Theming`, `Snapshots` and `Events`, 4/4 the complement of those five, so a new test class lands in exactly one shard); each leg restores and builds `tests/<project>` in Release, then runs it with `--report-xunit-trx`, `--coverage`, the ADR-0008 settings and the leg's environment (`NETPRINTS_UI_ARTIFACTS` for the UI leg); uploads `test-results-<leg>` (and `ui-headless-<leg>` for the UI shards) and `coverage-<leg>`; `fail-fast: false` |
 | `build-test` | **Build and test (Linux)** | `checks`, `test` | `if: always()`; fails unless every needed job succeeded; no other steps |
 | `e2e` | Desktop E2E (Linux, Xvfb) | — | unchanged, plus the diagnostics folder (§3) inside the uploaded `e2e-results` |
 | `packages` | Packages (local feed) | — | unchanged |
+| `perf` | Performance budgets (non-blocking) | — | `continue-on-error`, 20 min; builds Core, Catalog, Editor and Editor.UITests in Release and runs each with `--filter-trait "Category=Performance"` and `NETPRINTS_PERF_STRICT=1` (strict budgets); uploads `test-results-perf`; not in `build-test`'s needs |
+| `trim-readiness` | Trim warnings (non-blocking) | — | `continue-on-error`, 15 min; runs `eng/trim-warnings.sh`, the M4 ratchet that counts the IL2xxx/IL3xxx warnings of `NetPrints.Editor` against `eng/trim-warnings.txt` and fails when the count rises; not in `build-test`'s needs |
+| `desktop-publish` | Self-contained editor smoke (linux-x64) | — | publishes the editor self-contained for linux-x64 and runs `scripts/smoke-desktop.sh` (headless project check); 20 min |
+| `jsonschema` | JSON Schema (metaschema, lint, validate) | — | `eng/validate-schemas.sh`; 10 min |
 
 - Every job uses the existing NuGet cache key and `actions/*` pins, and keeps `timeout-minutes: 30` (`packages`:
   20).
