@@ -296,6 +296,29 @@ internal sealed class ShellDockFactory : Factory
     }
 
     /// <inheritdoc/>
+    public override void MoveDockable(IDock sourceDock, IDock targetDock, IDockable sourceDockable, IDockable? targetDockable) =>
+        WithoutHoming(() => base.MoveDockable(sourceDock, targetDock, sourceDockable, targetDockable));
+
+    /// <inheritdoc/>
+    public override void SwapDockable(IDock sourceDock, IDock targetDock, IDockable sourceDockable, IDockable targetDockable) =>
+        WithoutHoming(() => base.SwapDockable(sourceDock, targetDock, sourceDockable, targetDockable));
+
+    /// <summary>Runs a move that takes a pane out of its window and into another dock, so the window closing in between does not dock the pane in transit a second time.</summary>
+    private void WithoutHoming(Action move)
+    {
+        bool suppressed = SuppressHoming;
+        SuppressHoming = true;
+        try
+        {
+            move();
+        }
+        finally
+        {
+            SuppressHoming = suppressed;
+        }
+    }
+
+    /// <inheritdoc/>
     public override void OnWindowClosed(IDockWindow? window)
     {
         base.OnWindowClosed(window);

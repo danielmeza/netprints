@@ -2970,3 +2970,18 @@ editor was not run with a pipe that cannot be bound.
 - `git fetch`, then `git merge origin/master`: "Already up to date". `origin/master` is still `3a6eafca` (the P2 merge and the merge base), with 0 commits the branch lacks, so no merge commit was made and nothing changed.
 - No suite re-run: the head is still `c2635484`, which T113b ran in full (Release suite 4051 total, 0 failed, 33 skipped; Desktop E2E 53 total, 52 passed, 1 explicit skip, 0 failed). CI run 38694635444 on that head is green (23 passed, 3 skipped).
 - The PR description is updated (H-R4, T112 and T113, the start page entries, 152/152) and the PR is marked ready. T114 is ticked: 152/152 tasks.
+
+## Owner feedback after merge (2026-10-15)
+
+- **OF-1, the exec wire into a rewired node stays at its old position when the node moves.** Root cause: `GraphUtil.ConnectExecPins` raised
+  `NodeOutputExecPin.OutgoingPinChanged` before adding the source to the target's `IncomingPins` (and `DisconnectInputExecPin` cleared the outgoing
+  pins before `IncomingPins`). The pin view model refreshes `IsConnected` inside that event and read the stale collection, so the input pin stayed
+  hollow after a disconnect followed by a reconnect (an insertion that replaces a node's incoming wire, then wiring the node again). Nodify tracks a
+  connector's anchor only while `IsConnected` is true, so the anchor, and with it the wire end, stopped following the node. Fix: update
+  `IncomingPins` first in both methods. Tests: `ExecPinConnectionOrderTests` (Core) and `InsertedNodeWireTests.TheWireIntoANodeRewiredAfterAnInsertionFollowsItWhenItMoves`
+  (red before the fix: the rendered connector reported `IsConnected` false and the anchor did not move), plus
+  `TheWireIntoANodeInsertedFromThePinDragFollowsItWhenItIsDragged` for the pin-drag insertion path, which already worked.
+- **OF-2, docking a floated pane back duplicates it.** Root cause: Dock's `MoveDockable` removes the pane from its floating window before it adds it to the
+  target dock; the window removal ran `ShellDockFactory.DockOrphanedPanels`, which saw the pane in transit as missing and docked a new copy at its home.
+  Fix: `MoveDockable` and `SwapDockable` run with homing suppressed (`WithoutHoming`). Test: `ToolRedockTests.DockingAFloatedPaneBackKeepsEveryPaneOnceAndTheGroupTogether`
+  (red for Errors, Output and C# before the fix: the bottom group listed the pane twice).
