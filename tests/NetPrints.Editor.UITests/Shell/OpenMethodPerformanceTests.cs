@@ -15,11 +15,17 @@ namespace NetPrints.Editor.UITests.Shell;
 /// </summary>
 public class OpenMethodPerformanceTests
 {
-    private const double OpenMainBoundMs = 1500;
+    private const double StrictOpenMainBoundMs = 1500;
+    private const double SanityFactor = 5;
+
+    private static readonly double OpenMainBoundMs = Environment.GetEnvironmentVariable("NETPRINTS_PERF_STRICT") == "1"
+        ? StrictOpenMainBoundMs
+        : StrictOpenMainBoundMs * SanityFactor;
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    [Trait("Category", "Performance")]
     public async Task OpeningMainStaysWithinBudget()
     {
         var output = TestContext.Current.TestOutputHelper

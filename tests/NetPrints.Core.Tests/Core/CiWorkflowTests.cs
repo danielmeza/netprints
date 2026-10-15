@@ -215,6 +215,55 @@ namespace NetPrints.Tests.Core
         }
 
         [Fact]
+        public void NoBlockingJobRunsTheStrictBudgets()
+        {
+            foreach ((string id, object? job) in Jobs().Where(job => job.Key != "perf"))
+            {
+                Assert.True(string.IsNullOrEmpty(Text(Get(job, "env", "NETPRINTS_PERF_STRICT"))), $"Job {id} sets NETPRINTS_PERF_STRICT.");
+                foreach (object? step in Items(Get(job, "steps")))
+                {
+                    Assert.True(string.IsNullOrEmpty(Text(Get(step, "env", "NETPRINTS_PERF_STRICT"))), $"A step of job {id} sets NETPRINTS_PERF_STRICT.");
+                    Assert.DoesNotContain("NETPRINTS_PERF_STRICT", Text(Get(step, "run")), StringComparison.Ordinal);
+                }
+            }
+        }
+
+        // Hang guards with a fixed deadline, not performance budgets.
+        private static readonly string[] HangGuardFiles = ["ProcessLauncherTests.cs", "CrashHandlerTests.cs", "E2EEditorExitDiagnosticsTests.cs"];
+
+        [Fact]
+        public void EveryWallClockBudgetTestIsTaggedRelaxedOutsideThePerfJobAndRunByIt()
+        {
+            string root = SampleProjectFactory.FindRepositoryRoot();
+            string testsRoot = Path.Combine(root, "tests");
+            string perfScript = string.Join('\n', Items(Get(Get(Jobs(), "perf"), "steps")).Select(step => Text(Get(step, "run"))));
+            char[] separators = [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar];
+
+            string[] budgetFiles =
+            [
+                .. Directory.EnumerateFiles(testsRoot, "*.cs", SearchOption.AllDirectories)
+                    .Where(path => !path.Split(separators).Any(part => part is "bin" or "obj"))
+                    .Where(path => Path.GetFileName(path) != nameof(CiWorkflowTests) + ".cs")
+                    .Where(path => !HangGuardFiles.Contains(Path.GetFileName(path)))
+                    .Where(path => BudgetAssertion().IsMatch(File.ReadAllText(path))),
+            ];
+
+            Assert.NotEmpty(budgetFiles);
+            foreach (string path in budgetFiles)
+            {
+                string text = File.ReadAllText(path);
+                string relative = Path.GetRelativePath(root, path);
+                Assert.True(text.Contains("[Trait(\"Category\", \"Performance\")]", StringComparison.Ordinal), $"{relative} asserts a Stopwatch budget without the Performance trait.");
+                Assert.True(text.Contains("NETPRINTS_PERF_STRICT", StringComparison.Ordinal), $"{relative} has no relaxed bound outside the strict perf job.");
+                string project = Path.GetRelativePath(testsRoot, path).Split(separators)[0];
+                Assert.True(perfScript.Contains(project, StringComparison.Ordinal), $"The perf job does not run {project}, which holds {relative}.");
+            }
+        }
+
+        [GeneratedRegex(@"Stopwatch[\s\S]*Assert\.True\([^;]*\s<\s[^;]*;")]
+        private static partial Regex BudgetAssertion();
+
+        [Fact]
         public void TheReaderRejectsAContinuationLineItDoesNotUnderstand()
         {
             string[] lines =
