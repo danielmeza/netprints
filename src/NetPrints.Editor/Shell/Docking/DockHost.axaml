@@ -3,6 +3,13 @@
              xmlns:docking="clr-namespace:NetPrints.Editor.Shell.Docking"
              x:Class="NetPrints.Editor.Shell.Docking.DockHost"
              x:DataType="docking:DockShellAdapter">
-  <!-- InitializeLayout stays off: attaching such a control closes the layout's floating windows (ADR-0018 check 2). -->
-  <DockControl Layout="{Binding Layout}" InitializeFactory="True" />
+  <!-- InitializeLayout stays off: attaching such a control closes the layout's floating windows (ADR-0018 check 2).
+       The template creates the DockControl with its DataContext already set: built directly, Dock's styles bind Layout.* before Layout is assigned and log five "Value is null" warnings. -->
+  <ContentControl Content="{Binding}">
+    <ContentControl.ContentTemplate>
+      <DataTemplate x:DataType="docking:DockShellAdapter">
+        <DockControl Layout="{Binding Layout}" InitializeFactory="True" />
+      </DataTemplate>
+    </ContentControl.ContentTemplate>
+  </ContentControl>
 </UserControl>

@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Data;
 using Avalonia.Logging;
 using Avalonia.Media;
 using Avalonia.Styling;
@@ -375,6 +376,24 @@ public class ShellAdapterTests
             rig.Settle();
             Assert.NotNull(rig.FindOne(ShellRig.Content(A)));
             Assert.NotNull(rig.FindOne(ShellRig.Panel(PanelContributions.ErrorsId)));
+        });
+
+        Assert.Empty(warnings.Warnings);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void TheDockHostBoundThroughTheShellWindowsDataContextLogsNoBindingWarningsAtStartup()
+    {
+        BindingWarningLogSink warnings = RenderLayoutWarnings(rig =>
+        {
+            rig.Ui.Show(new Window
+            {
+                Width = ShellRig.Width,
+                Height = ShellRig.Height,
+                DataContext = rig.Shell,
+                Content = new DockHost { [!StyledElement.DataContextProperty] = new Binding(nameof(ShellViewModel.Layout)) },
+            });
+            rig.Settle();
         });
 
         Assert.Empty(warnings.Warnings);
