@@ -255,7 +255,7 @@ packages for extension authors. No performance work here (owner decision 2026-09
     VB's `My Project/` are ignored.
   - Kinds are an internal table in P3 (`Project`, `Executable`). A public, experimental `AddRunProfileKind` (a new `NPXE` id)
     is added when U3 or NetPrintsUnity needs it, shaped then (build or no build, handled without a process, process
-    lifetime). Planned ADR-0037.
+    lifetime). [ADR-0037](../../docs/adr/0037-run-profile-kinds.md).
   - Trust (owner 2026-10-14): no new prompt (building already trusts the project); the first run of an `Executable` profile
     prints the resolved command line in Output.
   - Stop asks the program to close (close the main window or SIGTERM) and kills the process tree after a timeout; unloading a
