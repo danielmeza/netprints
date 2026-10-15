@@ -425,7 +425,7 @@ packages for extension authors. No performance work here (owner decision 2026-09
     the start of P3).
   - Tests: workspace fixtures (no `LangVersion`, `latest`, `preview`, `10.0`, an unknown `16.0`, multi-target) and a three-writer
     byte-identity test. About 3-5 units. `netprints check` for the target has low priority.
-  - [ADR-0038](../../docs/adr/0038-csharp-target-and-feature-requirements.md) (C# target and feature requirements); planned ADR-0039 (user attributes and their editor extension model).
+  - [ADR-0038](../../docs/adr/0038-csharp-target-and-feature-requirements.md) (C# target and feature requirements) and [ADR-0039](../../docs/adr/0039-user-attributes-and-editor-extension-model.md) (user attributes and their editor extension model).
   - Design and prior art: `.agent-archive/2026-10-14-attributes-langversion/` (outside this repo).
 Done when: also docs updated (guides, API reference, ADRs as applicable).
 
@@ -503,8 +503,8 @@ profiles and P3 extensions use, so custom emitters need no core changes.
   - argument values: constants (through `PrimitiveKinds`, no `decimal`), enums, `typeof`, arrays, `null`, named arguments,
     `params`, and constant and `nameof` references stored by member id; raw C# arguments are deferred to v1.1;
   - a picker driven by `AttributeUsage` and the project's references, hiding `ValidOn` mismatches;
-  - pre-compile checks paired with Roslyn: CS0592, CS0579, CS7046, CS8968 and CS0416; a stale target specifier is a NetPrints
-    error, because Roslyn only warns (CS0657);
+  - pre-compile checks paired with Roslyn: CS0592 (`ValidOn`; CS0404 is retired), CS0579, CS7046, CS8968, CS0416 and CS8423;
+    a stale target specifier is a NetPrints error, because Roslyn only warns (CS0657 and CS0658); `global::` names avoid CS1614;
   - attributes emitted as `global::` names, one per line; feature-owned attributes win on single-use conflicts, with "Promote";
     owner-tagged emitted attributes land with A1 under NPXE0003;
   - ADR-0036's raw metadata list is not the same thing as user attributes. Assembly and module attributes are edited through
@@ -513,7 +513,7 @@ profiles and P3 extensions use, so custom emitters need no core changes.
   Semantic rules for `Obsolete`, `Conditional`, caller-info and `Flags` follow (about 3 units, v1.1 if needed). Delegates, enum
   members, record and primary-constructor parameters, events and type parameters gain slots with their kinds.
 - **Plugin-owned attributes (owner 2026-10-14; ADR-0039)**: the core gives native attributes on every declaration, with a generic
-  editor for constants, enums, `typeof` and arrays. Each plugin (Godot, Unreal, Unity) registers its attribute types and
+  editor for constants, enums, `typeof`, arrays, `null`, named arguments and `params`. Each plugin (Godot, Unreal, Unity) registers its attribute types and
   contributes four things, as Unreal's `IDetailCustomization` and `IPropertyTypeCustomization` do:
   - **attribute descriptors**: per-argument editors such as asset, resource or collision-channel pickers that store the C#
     constant; validation; C# requirements; and a presentation as a row or as its own section;
@@ -522,7 +522,7 @@ profiles and P3 extensions use, so custom emitters need no core changes.
   - **type editors**, shared with R6 default values;
   - **behaviour** through the existing contribution points (nodes, graph rules, commands).
 
-  Unreal flags become views over `[UProperty]` stored in the model; ADR-0039 resolves the ADR-0036 decision 8 conflict. The
+  Unreal flags become views over `[UProperty]` stored in the model; [ADR-0039](../../docs/adr/0039-user-attributes-and-editor-extension-model.md) amends ADR-0036 decisions 6 and 8 (raw `UMetaData` stays in the extension bag). The
   contracts go in P3b with A1-A3 over R6; the implementations ship in each plugin's phase.
 - **Declaration-only partial members** (about 4-5 units): signature-only `partial` methods (C# 9 extended partial methods),
   properties (C# 13) and events and constructors (C# 14), for source generators (`GeneratedRegex`, `LibraryImport`,
@@ -632,7 +632,7 @@ Member defaults and flags ([ADR-0036](../../docs/adr/0036-member-defaults-and-ed
 `PropertyFlags` and MetaTags (`[UiMin]`/`[UiMax]`; `ClampMin`, `ClampMax` and `ExposeOnSpawn` take strings; raw `UMetaData` passes
 through) and adds a CDO smoke test (hot reload, Blueprint children, inherited properties; the constructor-assignment evidence is
 settled), with the Unreal flags section (Instance Editable, Expose on Spawn, Replicated, SaveGame) as views over `[UProperty]` stored in
-the model (ADR-0039 supersedes the extension bag of ADR-0036 decision 8; implemented in the Unreal plugin, about 3 units); U2 adds the FVector, FRotator and FLinearColor defaults and editors (about 3 units). Assets and components stay
+the model ([ADR-0039](../../docs/adr/0039-user-attributes-and-editor-extension-model.md): the flags move into the model and the extension bag of ADR-0036 stays for raw `UMetaData`; implemented in the Unreal plugin, about 3 units); U2 adds the FVector, FRotator and FLinearColor defaults and editors (about 3 units). Assets and components stay
 in Unreal's Details panel.
 Done when (each of U1, U2, U3): also docs updated (guides, API reference, ADRs as applicable).
 

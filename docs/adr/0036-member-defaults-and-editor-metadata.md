@@ -3,7 +3,7 @@
 ## Status
 
 Accepted (owner, 2026-10-13, after a research on object properties and the details panel and its adversarial audit;
-lands in P3 and P3b, with Unreal parts in U1 and U2). It takes the first free number after 0035. Where the owner
+lands in P3 and P3b, with Unreal parts in U1 and U2; decisions 6 and 8 amended by ADR-0039). It takes the first free number after 0035. Where the owner
 delegated a choice ("lo que genere más valor") the choice is recorded as a coordinator default.
 
 ## Context
@@ -56,12 +56,14 @@ delegated a choice ("lo que genere más valor") the choice is recorded as a coor
    - A U1 smoke test replaces the "spike": hot reload, propagation to Blueprint children and inherited properties.
 6. **Unreal-only flags** (Instance Editable, Expose on Spawn, Replicated, SaveGame) live in an Unreal extension section,
    stored per member in an extension data bag. The core model holds only neutral metadata.
+   Amended by ADR-0039: the flags become views over `[UProperty]` attributes stored in the model; the bag stays.
 7. **Plain .NET** emits the metadata attributes only when the profile opts in, written as
    `global::System.ComponentModel.*` (and `DataAnnotations.Range`), one per line, as attributes are emitted today.
 8. **Unreal attribute names** follow the audit: `UProperty` is in `UnrealSharp.Attributes`; the MetaTags and `UMetaData`
    are in `UnrealSharp.Core.Attributes`; `[UiMin]` and `[UiMax]` exist; `ClampMin`, `ClampMax` and `ExposeOnSpawn` take
    strings. There is no curated list of Unreal metadata keys: a small neutral core set, plus raw `UMetaData` entries
    passed through and validated at runtime by the extension.
+   Amended by ADR-0039: raw `UMetaData` stays in the Unreal extension bag.
 9. **Schema v1 stays additive.** New members (`default`, `editor`, the per-member `extensions` bag) are non-positional
    `init` members of the existing records, so the positional-record break is avoided and 0.x already allows hard breaks.
    The extension bag is a new preservation mechanism (data from a missing extension survives a save).
