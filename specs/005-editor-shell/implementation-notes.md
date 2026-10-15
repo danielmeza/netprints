@@ -2933,3 +2933,21 @@ Paths are relative to `src/NetPrints.Editor/` unless they name another folder, a
 
 **Not determined:** how the migration and the session log behave on Windows and macOS. T112-3 was not reproduced: the
 editor was not run with a pipe that cannot be bound.
+
+## Batch T113a (behaviour findings of the final review)
+
+| Finding | Commit | Fix | Red |
+|---|---|---|---|
+| T112-5 | 085bf90e | `CiWorkflowTests` selects budget files with two independent checks (`Stopwatch` in the file, and a `Assert.True(… < …)`); `TheBudgetGateSelectsEveryWallClockBudgetFile` pins the five files | `ProjectOpenPerformanceTests.cs` was missing from the selection |
+| T112-2 | 6bcdd5cc | `ContextMenuTargets.HasSurface`; the registry records an `InvalidDescriptor` issue for a `Node`, `Pin` or `Canvas` item. commands.md §2 drops the Canvas row and says right-click on the canvas opens node search | 3 theory cases (`Node`, `Pin`, `Canvas`) were accepted, plus the consumer test |
+| T112-1 | 8a829126 | `OpenProjectAsync` resolves a folder through `ResolveProjectFile`; new `openFolder` command and `IProjectActions.OpenFolderAsync`; the start page card has Open project and Open folder buttons; `openProject` is relabelled "Open project…" | 4 loader tests failed (a folder was refused as "Unsupported project file") |
+| T112-3 | 782c8162 | `Program.AddConsole` sets `LogToStandardErrorThreshold = Error`; the stale comment in `EditorApp` corrected | the threshold was `Disabled` |
+
+- **Decision:** the stderr threshold is `Error`, not `Critical`: decision 8 needs the start failure (Critical) on stderr, and
+  nothing at Information or below moves.
+- **Decision:** the unsupported-target report reuses `InvalidDescriptor` (no new issue kind), with a message naming the target.
+- **Baselines changed** (start page cards moved): `editor-shell-no-project`, `start-page-narrow-empty`, `start-page-narrow-recent`,
+  `start-page-wide-empty`, `start-page-wide-recent`. `search-popup` also drifted under the update run and was left as it was.
+- The `openFolder` and the T112-1 loader tests were written before the loader change but the plumbing (interface, fakes) first,
+  so their first red was the four behaviour failures above, shown by temporarily disabling the folder branch.
+- T113 is not ticked: the docs findings T112-4 and T112-6 to T112-9 are the next batch.
