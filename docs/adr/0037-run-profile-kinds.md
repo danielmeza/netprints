@@ -38,8 +38,10 @@ as a coordinator default.
    process lifetime hint.
 5. **No new trust prompt.** Building already trusts the project. The first run of an `Executable` profile prints the
    resolved command line in Output, and the Run section shows an argv preview.
-6. **Paths follow Visual Studio.** A `workingDirectory` is relative to the project folder and an absent one is the project
-   folder (the `dotnet run` default). An `executablePath` with a separator is relative to the working directory, and a bare
+6. **Paths follow Visual Studio, except the default working directory, which follows `dotnet run`.** A relative
+   `workingDirectory` is resolved from the project folder, as Visual Studio does. An absent one is the project folder, as
+   `dotnet run` does; Visual Studio would use the output folder. This is a deliberate hybrid: users compare `netprints run`
+   with `dotnet run`, so the case with no setting must behave the same as the command they already know. An `executablePath` with a separator is relative to the working directory, and a bare
    name is looked up on `PATH`. The Run section and `netprints run --help` warn that `dotnet run` resolves a relative
    `workingDirectory` from `Properties/`.
 7. **Variables.** `%NAME%` is expanded from the environment and `$(Name)` from captured project properties, then the string

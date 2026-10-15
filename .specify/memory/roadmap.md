@@ -238,8 +238,9 @@ packages for extension authors. No performance work here (owner decision 2026-09
     `%NAME%` is expanded from the environment and `$(Name)` from captured project properties (`ProjectDir`, `TargetDir`,
     `TargetPath`, `OutDir`, `Configuration`, `TargetFramework`, plus `AddProjectProperty` names), then the result is split.
     Relative paths follow Visual Studio: `workingDirectory` from the project folder, an `executablePath` with a separator
-    from the working directory, a bare name from `PATH`; an absent `workingDirectory` is the project folder (the `dotnet run`
-    default). NetPrints passes the OS an absolute executable path (`PATH` with `.exe` and `.com` on Windows; a macOS `.app`
+    from the working directory, a bare name from `PATH`; the one exception is the default, a hybrid: an absent
+    `workingDirectory` is the project folder as in `dotnet run` (Visual Studio uses the output folder), because users compare
+    `netprints run` with `dotnet run`. NetPrints passes the OS an absolute executable path (`PATH` with `.exe` and `.com` on Windows; a macOS `.app`
     folder resolves to `Contents/MacOS` or is reported). The Run section and `netprints run --help` warn that `dotnet run`
     resolves a relative `workingDirectory` from `Properties/`.
   - An unset `%NAME%` in `executablePath` or `workingDirectory`, an uncaptured property or a missing executable is reported
