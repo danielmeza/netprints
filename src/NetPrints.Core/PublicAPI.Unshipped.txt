@@ -165,3 +165,23 @@ NetPrints.Graph.ExecutionEntryNode.ExecPin.get -> NetPrints.Graph.NodeOutputExec
 NetPrints.Graph.ForLoopNode.ExecPin.get -> NetPrints.Graph.NodeInputExecPin!
 NetPrints.Graph.IfElseNode.ExecPin.get -> NetPrints.Graph.NodeInputExecPin!
 NetPrints.Graph.ReturnNode.ExecPin.get -> NetPrints.Graph.NodeInputExecPin!
+NetPrints.Core.PrimitiveCategory
+NetPrints.Core.PrimitiveCategory.Boolean = 0 -> NetPrints.Core.PrimitiveCategory
+NetPrints.Core.PrimitiveCategory.Character = 3 -> NetPrints.Core.PrimitiveCategory
+NetPrints.Core.PrimitiveCategory.Float = 2 -> NetPrints.Core.PrimitiveCategory
+NetPrints.Core.PrimitiveCategory.Integer = 1 -> NetPrints.Core.PrimitiveCategory
+NetPrints.Core.PrimitiveCategory.Text = 4 -> NetPrints.Core.PrimitiveCategory
+NetPrints.Core.PrimitiveKind
+NetPrints.Core.PrimitiveKind.Category.get -> NetPrints.Core.PrimitiveCategory
+NetPrints.Core.PrimitiveKind.ClrType.get -> System.Type!
+NetPrints.Core.PrimitiveKind.Convert(object! value) -> object!
+NetPrints.Core.PrimitiveKind.DefaultValue.get -> object!
+NetPrints.Core.PrimitiveKind.FullName.get -> string!
+NetPrints.Core.PrimitiveKind.IsNumeric.get -> bool
+NetPrints.Core.PrimitiveKind.Keyword.get -> string!
+NetPrints.Core.PrimitiveKind.LiteralSuffix.get -> string!
+NetPrints.Core.PrimitiveKinds
+abstract NetPrints.Core.PrimitiveKind.Format(object! value) -> string!
+abstract NetPrints.Core.PrimitiveKind.Parse(string! text) -> object!
+static NetPrints.Core.PrimitiveKinds.All.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Core.PrimitiveKind!>!
+static NetPrints.Core.PrimitiveKinds.TryGet(string? fullName, out NetPrints.Core.PrimitiveKind? kind) -> bool

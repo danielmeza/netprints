@@ -15,25 +15,20 @@ public static class MethodSignatureFormatter
     private const string NullableName = "System.Nullable";
     private const string VoidKeyword = "void";
 
-    private static readonly FrozenDictionary<string, string> Keywords = new Dictionary<string, string>(StringComparer.Ordinal)
+    private static readonly FrozenDictionary<string, string> Keywords = BuildKeywords();
+
+    private static FrozenDictionary<string, string> BuildKeywords()
     {
-        ["System.Boolean"] = "bool",
-        ["System.Byte"] = "byte",
-        ["System.SByte"] = "sbyte",
-        ["System.Char"] = "char",
-        ["System.Decimal"] = "decimal",
-        ["System.Double"] = "double",
-        ["System.Single"] = "float",
-        ["System.Int32"] = "int",
-        ["System.UInt32"] = "uint",
-        ["System.Int64"] = "long",
-        ["System.UInt64"] = "ulong",
-        ["System.Int16"] = "short",
-        ["System.UInt16"] = "ushort",
-        ["System.Object"] = "object",
-        ["System.String"] = "string",
-        ["System.Void"] = VoidKeyword,
-    }.ToFrozenDictionary(StringComparer.Ordinal);
+        var keywords = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (PrimitiveKind kind in PrimitiveKinds.All)
+        {
+            keywords.Add(kind.FullName, kind.Keyword);
+        }
+
+        keywords.Add(TypeSpecifier.FromType<object>().Name, "object");
+        keywords.Add(TypeSpecifier.FromType(typeof(void)).Name, VoidKeyword);
+        return keywords.ToFrozenDictionary(StringComparer.Ordinal);
+    }
 
     /// <summary>Formats a method as <c>returnType Name&lt;T&gt;(parameters)</c>.</summary>
     /// <param name="method">The method to format.</param>

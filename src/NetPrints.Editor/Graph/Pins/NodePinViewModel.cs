@@ -285,12 +285,11 @@ public sealed partial class NodePinViewModel : ObservableObject, IDisposable
             }
 
             // Convert to the pin's type when it is a known runtime type; enums use their name.
-            Type? type = Type.GetType(typeSpecifier.Name);
-            if (value is not null && type is not null && !typeSpecifier.IsEnum)
+            if (value is not null && !typeSpecifier.IsEnum && PrimitiveKinds.TryGet(typeSpecifier.Name, out PrimitiveKind? kind))
             {
                 try
                 {
-                    p.UnconnectedValue = Convert.ChangeType(value, type, System.Globalization.CultureInfo.InvariantCulture);
+                    p.UnconnectedValue = kind.Convert(value);
                 }
                 catch (Exception ex) when (ex is InvalidCastException or FormatException or OverflowException)
                 {

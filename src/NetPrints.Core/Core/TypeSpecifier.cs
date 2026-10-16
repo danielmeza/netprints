@@ -104,16 +104,7 @@ namespace NetPrints.Core
         /// </summary>
         public bool IsPrimitive
         {
-            get
-            {
-                return this == FromType<byte>() || this == FromType<char>()
-                    || this == FromType<short>() || this == FromType<ushort>()
-                    || this == FromType<int>() || this == FromType<uint>()
-                    || this == FromType<long>() || this == FromType<ulong>()
-                    || this == FromType<float>() || this == FromType<double>()
-                    || this == FromType<string>() || this == FromType<bool>()
-                    || IsEnum;
-            }
+            get => IsEnum || PrimitiveKinds.TryGet(Name, out _);
         }
 
         /// <summary>

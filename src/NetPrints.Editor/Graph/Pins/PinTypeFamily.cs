@@ -58,25 +58,7 @@ public sealed class PinTypeFamily
     /// <summary>Every family, in the order of the spec.</summary>
     public static IReadOnlyList<PinTypeFamily> All { get; } = [Exec, Type, Bool, Integer, Float, String, Object, ValueType, Delegate, Generic];
 
-    private static FrozenDictionary<string, PinTypeFamily> BuiltInTypes { get; } = new Dictionary<string, PinTypeFamily>
-    {
-        [TypeSpecifier.FromType<bool>().Name] = Bool,
-        [TypeSpecifier.FromType<sbyte>().Name] = Integer,
-        [TypeSpecifier.FromType<byte>().Name] = Integer,
-        [TypeSpecifier.FromType<short>().Name] = Integer,
-        [TypeSpecifier.FromType<ushort>().Name] = Integer,
-        [TypeSpecifier.FromType<int>().Name] = Integer,
-        [TypeSpecifier.FromType<uint>().Name] = Integer,
-        [TypeSpecifier.FromType<long>().Name] = Integer,
-        [TypeSpecifier.FromType<ulong>().Name] = Integer,
-        [TypeSpecifier.FromType<nint>().Name] = Integer,
-        [TypeSpecifier.FromType<nuint>().Name] = Integer,
-        [TypeSpecifier.FromType<float>().Name] = Float,
-        [TypeSpecifier.FromType<double>().Name] = Float,
-        [TypeSpecifier.FromType<decimal>().Name] = Float,
-        [TypeSpecifier.FromType<string>().Name] = String,
-        [TypeSpecifier.FromType<char>().Name] = String,
-    }.ToFrozenDictionary();
+    private static FrozenDictionary<string, PinTypeFamily> BuiltInTypes { get; } = BuildBuiltInTypes();
 
     /// <summary>The family's name, which is also the suffix of its <c>Pin.&lt;Name&gt;</c> token.</summary>
     public string Name { get; }
@@ -86,6 +68,25 @@ public sealed class PinTypeFamily
 
     /// <summary>The key of the family's theme token.</summary>
     public string TokenKey { get; }
+
+    private static FrozenDictionary<string, PinTypeFamily> BuildBuiltInTypes()
+    {
+        var families = new Dictionary<string, PinTypeFamily>(StringComparer.Ordinal);
+        foreach (PrimitiveKind kind in PrimitiveKinds.All)
+        {
+            families.Add(kind.FullName, kind.Category switch
+            {
+                PrimitiveCategory.Boolean => Bool,
+                PrimitiveCategory.Integer => Integer,
+                PrimitiveCategory.Float => Float,
+                _ => String,
+            });
+        }
+
+        families.Add(TypeSpecifier.FromType<nint>().Name, Integer);
+        families.Add(TypeSpecifier.FromType<nuint>().Name, Integer);
+        return families.ToFrozenDictionary(StringComparer.Ordinal);
+    }
 
     /// <summary>Gets the family of a pin.</summary>
     /// <param name="kind">The pin's kind; execution and type pins have a family of their own.</param>

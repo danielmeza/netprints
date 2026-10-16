@@ -489,6 +489,32 @@ kept in `.agent-archive/2026-10-16-p3-m5-spike/` beside the repository.
   Core in Release in `scripts/build-docs.sh` before `docfx` (0 errors). Chosen over loading analyzers in DocFX or pointing
   it at a built assembly: one line, the same build the rest of CI does.
 
+## Batch B6 (T031-T033)
+
+- T031: the overrides B5 left were nine, not fifteen, so eight properties were renamed and one kept. `ExecutionPin` (IfElse, ForLoop,
+  Throw), `ReturnPin`, `InitialExecutionPin` (ExecutionEntry, EventEntry) became `ExecPin`; `DefaultValuePin` became `DefaultPin`;
+  `SuperTypePin` became `BaseTypePin`. `TypeOfNode.InputTypePin` keeps `[Pin("Type")]` because `TypePin` is its output pin.
+  `*REMOVED*` lines and the new getters are in `PublicAPI.Unshipped.txt`; the breaking entry is under a new "Unreleased" heading in
+  `.github/release-notes.md`. The 68 call sites in `src` and `tests` were edited by hand, and `NodePins.Shipped.txt` is untouched.
+- Deviation: the pin layout golden is not byte-identical. It lists the property names, so 12 lines change in the name column only;
+  every slot (`OutputExecPins[0]`, ...) is the same. Regenerated with `NETPRINTS_UPDATE_SNAPSHOTS=1` and the diff checked.
+  The analyzer test samples keep their own `ExecutionPin` names (they are source strings, not the Core nodes).
+- Red/green T031: `PinRenameTests` red 8 of 9 (new names absent, old ones present; the `TypeOfNode` case passed), green 9 of 9.
+- T032: ADR-0025 (index entry added) and the "Declaring pins" section of `docs/guide/extensions.md`.
+- T033: `PrimitiveKinds` (`PrimitiveKind`, `PrimitiveCategory`, `Core/Core/`): one row per primitive (14: bool, the 8 integers, float,
+  double, decimal, char, string); numeric rows are `INumberBase<T>` (`T.Zero`, `T.Parse`, invariant format; `R` for float and double).
+  Replaces `TypeSpecifier.IsPrimitive`, `SignatureChange.PrimitiveDefaults`, the literal suffixes in `TranslatorUtil.ObjectToLiteral`,
+  `TypedValueConverter` (both directions), the default parsing in `SpecifierFactory`, `PinTypeFamily.BuiltInTypes`,
+  `MethodSignatureFormatter.Keywords` and the `Type.GetType` conversion of `NodePinViewModel.UnconnectedValue`.
+- Finding: `sbyte` and `decimal` were missing only from `TypeSpecifier.IsPrimitive`; that kept `UsesUnconnectedValue` false, so such a
+  pin had neither a default nor the text editor. The table fixes that (US2 scenario 7).
+- Deviation: the IL2057 that the table removes is the one in `NodePinViewModel` (`Type.GetType` of the pin type), not the one in
+  `TypedValueConverter.ParseEnum`: that one resolves enum types by name and the table does not cover enums. `eng/trim-warnings.txt` 12 to 11.
+- Decision: `DefaultOperatorSpecifiers.defaultNumericTypes` stays a list. It is a deliberate subset (no `sbyte`, `long`, `ulong`) that
+  decides which operator nodes exist, and widening it would change node search results against the P3a goldens (FR-017).
+- Red/green T033: `PrimitiveKindsTests` written first; red as a compile failure (no `PrimitiveKinds` type), green 7 of 7 after.
+- Suite (Release): 4469 total, 4436 passed, 33 skipped, 0 failed; build 0 warnings; `dotnet format` clean; trim ratchet 11.
+
 ## Pack spike
 
 T026, run on `scripts/pack-local.sh` version `0.1.0-local.20261016141953`, scratch projects outside the repository (the

@@ -1,0 +1,14 @@
+System.Boolean|bool|Boolean|Boolean|false|
+System.Byte|byte|Integer|Byte|0|
+System.SByte|sbyte|Integer|SByte|0|
+System.Int16|short|Integer|Int16|0|
+System.UInt16|ushort|Integer|UInt16|0|
+System.Int32|int|Integer|Int32|0|
+System.UInt32|uint|Integer|UInt32|0|U
+System.Int64|long|Integer|Int64|0|L
+System.UInt64|ulong|Integer|UInt64|0|UL
+System.Single|float|Float|Single|0|F
+System.Double|double|Float|Double|0|D
+System.Decimal|decimal|Float|Decimal|0|M
+System.Char|char|Character|Char|U+0000|
+System.String|string|Text|String||

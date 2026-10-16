@@ -118,29 +118,16 @@ namespace NetPrints.Translator
             {
                 return b ? "true" : "false";
             }
-            else if (type == TypeSpecifier.FromType<float>())
+            else if (PrimitiveKinds.TryGet(type.Name, out PrimitiveKind? kind) && kind.IsNumeric)
             {
-                return obj is float f && NonFiniteLiteral(f, "float") is { } floatLiteral ? floatLiteral : $"{invariant}F";
-            }
-            else if (type == TypeSpecifier.FromType<double>())
-            {
-                return obj is double d && NonFiniteLiteral(d, "double") is { } doubleLiteral ? doubleLiteral : $"{invariant}D";
-            }
-            else if (type == TypeSpecifier.FromType<uint>())
-            {
-                return $"{invariant}U";
-            }
-            else if (type == TypeSpecifier.FromType<long>())
-            {
-                return $"{invariant}L";
-            }
-            else if (type == TypeSpecifier.FromType<ulong>())
-            {
-                return $"{invariant}UL";
-            }
-            else if (type == TypeSpecifier.FromType<decimal>())
-            {
-                return $"{invariant}M";
+                string? nonFinite = obj switch
+                {
+                    float f => NonFiniteLiteral(f, kind.Keyword),
+                    double d => NonFiniteLiteral(d, kind.Keyword),
+                    _ => null,
+                };
+
+                return nonFinite ?? invariant + kind.LiteralSuffix;
             }
             else
             {

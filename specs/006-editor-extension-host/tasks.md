@@ -337,7 +337,7 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
   `docs/adr/0025-declarative-node-pins.md` (typed pins, the convention, pin-key tracking, the 0.4.0 rename policy) and
   the "Declaring pins" section of `docs/guide/extensions.md` (typed properties, the convention, `[Pin]`, `[PinType]`,
   `[NodeBase]`, the `NodePins` files, the NPA rules). ADR index.
-- [ ] T033 [P] [US2] `PrimitiveKinds` (FR-018, research R11, ADR-0034; 1 unit). Test first:
+- [x] T033 [P] [US2] `PrimitiveKinds` (FR-018, research R11, ADR-0034; 1 unit). Test first:
   `tests/NetPrints.Core.Tests/Graph/PrimitiveKindsTests.cs`: a golden of the table; unconnected `sbyte` and `decimal`
   inputs get defaults and the numeric editor, and their values emit valid C# (US2 scenario 7). Then
   `src/NetPrints.Core/Core/PrimitiveKinds.cs` (one `INumberBase<T>` row per primitive) replacing the five scattered
