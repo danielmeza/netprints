@@ -25,6 +25,10 @@ internal static class FixtureExtensions
 
     public const string Native = "fx.native";
 
+    public const string HostConflict = "fx.host-conflict";
+
+    public const string TransitiveConflict = "fx.transitive-conflict";
+
     private static readonly Dictionary<string, string> ProjectFolders = new(System.StringComparer.Ordinal)
     {
         [Alpha] = "Fx.Alpha",
@@ -36,6 +40,8 @@ internal static class FixtureExtensions
         [TypesConsumer] = "Fx.TypesConsumer",
         [Diamond] = "Fx.Diamond",
         [Native] = "Fx.Native",
+        [HostConflict] = "Fx.HostConflict",
+        [TransitiveConflict] = "Fx.TransitiveConflict",
     };
 
     /// <summary>The build output folder of the fixture with manifest id <paramref name="id"/>, in the configuration of the running tests.</summary>

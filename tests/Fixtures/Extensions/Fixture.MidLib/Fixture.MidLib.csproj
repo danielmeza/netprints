@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Fixture.MidLib</AssemblyName>
+    <RootNamespace>Fixture</RootNamespace>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <Version>1.0.0</Version>
+    <MinVerSkip>true</MinVerSkip>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Built against version 2 and never copied: the extension that ships this library gets version 1 from its dependency. -->
+    <ProjectReference Include="..\Fixture.SharedLib.V2\Fixture.SharedLib.V2.csproj" Private="false" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

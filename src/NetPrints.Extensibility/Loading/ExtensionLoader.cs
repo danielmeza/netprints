@@ -314,16 +314,30 @@ public sealed class ExtensionLoader
 
     private static string? OlderDependencyCopy(Assembly assembly, ExtensionLoadContext context)
     {
-        if (context.Dependencies.Count == 0)
+        string root = assembly.GetName().Name ?? string.Empty;
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var pending = new Queue<(string Referrer, AssemblyName Reference)>(assembly.GetReferencedAssemblies().Select(reference => (root, reference)));
+        while (pending.Count > 0)
         {
-            return null;
-        }
-
-        foreach (AssemblyName reference in assembly.GetReferencedAssemblies())
-        {
-            if (reference.Version is { } required && context.FindDependencyVersion(reference) is { } provided && provided < required)
+            (string referrer, AssemblyName reference) = pending.Dequeue();
+            if (reference.Name is null || !seen.Add($"{reference.Name}/{reference.Version}"))
             {
-                return $"it was built against {reference.Name} {required}, but its dependency provides {provided}.";
+                continue;
+            }
+
+            if (context.FindProvided(reference) is { } provided)
+            {
+                if (reference.Version is { } required && provided.Version < required)
+                {
+                    return $"{referrer} was built against {reference.Name} {required}, but {provided.Provider} provides {provided.Version}.";
+                }
+
+                continue;
+            }
+
+            foreach (AssemblyName next in context.ReadPrivateReferences(reference))
+            {
+                pending.Enqueue((reference.Name, next));
             }
         }
 

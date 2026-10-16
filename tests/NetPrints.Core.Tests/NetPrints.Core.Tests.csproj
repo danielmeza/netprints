@@ -79,6 +79,10 @@
     <ProjectReference Include="..\Fixtures\Extensions\Fx.TypesConsumer\Fx.TypesConsumer.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\Fixtures\Extensions\Fx.Diamond\Fx.Diamond.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\Fixtures\Extensions\Fx.Native\Fx.Native.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.HostConflict\Fx.HostConflict.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.TransitiveConflict\Fx.TransitiveConflict.csproj" ReferenceOutputAssembly="false" />
+    <!-- Referenced: the host-conflict test loads version 1 into the test process, which Fx.HostConflict (built against version 2) must then refuse. -->
+    <ProjectReference Include="..\Fixtures\Extensions\Fixture.HostLib.V1\Fixture.HostLib.V1.csproj" />
     <!-- Built first, never referenced: the catalog end-to-end tests reference the DLL from a temporary project. -->
     <ProjectReference Include="..\Fixtures\Catalog\CatalogFixtureLib\CatalogFixtureLib.csproj" ReferenceOutputAssembly="false" />
     <!-- Built first, never referenced: the annotated-library build test references the DLL from a temporary project. -->

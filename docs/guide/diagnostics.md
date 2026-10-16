@@ -105,6 +105,7 @@ These rules check NetPrints' own source. They are not shipped in any package and
 | NPW003 | error | MSBuild evaluation of the project failed. |
 | NPW004 | warning | The project multi-targets; the first target framework is used. |
 | NPW005 | warning | MSBuild reported a diagnostic while opening the project. |
+| NPW009 | warning | A reference of the project could not be read (not a managed assembly, or damaged or locked); the editor skips it and loads the other references. |
 
 ## NPX: extension loader
 
@@ -119,7 +120,7 @@ Extension codes are also described in [Extensions](extensions.md).
 | NPX005 | error | Creating the extension or its `Register` method threw. |
 | NPX006 | warning | A contribution was rejected because of a conflict or inconsistency; the extension stays loaded. |
 | NPX007 | error | The extension assembly is missing or could not be loaded. |
-| NPX008 | error | A dependency provides an older version of an assembly than the extension was built against. |
+| NPX008 | error | The host or a dependency provides an older version of an assembly than the extension, or a private library it ships, was built against. |
 
 ## NPXE: experimental APIs
 

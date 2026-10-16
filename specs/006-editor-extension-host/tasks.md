@@ -207,7 +207,7 @@ trip; Windows CLI tests green; SC-015; R5-0 numbers and the M5 outcome recorded.
   `src/NetPrints.Serialization/Documents/`, the canonical writer, `format`, `show` and the merge driver. Every golden is
   unchanged. `docs/guide/graph-format.md` says unknown members survive a save. This lands before any new document field
   (T035, T067).
-- [ ] T013 [US11] Extension and reference carry-overs (FR-082, FR-083, research R29; 1 unit). Test first: in
+- [x] T013 [US11] Extension and reference carry-overs (FR-082, FR-083, research R29; 1 unit). Test first: in
   `tests/NetPrints.Core.Tests/Extensibility/ExtensionLoaderTests.cs`, an `Fx` fixture under `tests/Fixtures/Extensions/`
   whose private dependency conflicts with a host-provided or a transitive reference produces NPX008 (US11 scenario 1);
   in `tests/NetPrints.Editor.Tests/Reflection/`, a project with an unreadable reference loads the other references and

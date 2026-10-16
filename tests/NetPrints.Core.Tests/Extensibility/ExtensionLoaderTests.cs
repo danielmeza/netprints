@@ -485,6 +485,42 @@ public class ExtensionLoaderTests : IDisposable
         Assert.Equal(["bbb.emitter", "netprints.test/class", "aaa.emitter"], registry.ClassEmitters.Select(e => e.Id));
     }
 
+    // US11 scenario 1 (FR-082): a private reference newer than the host's copy is NPX008, not a later MissingMethodException.
+    [Fact]
+    public async Task AnExtensionBuiltAgainstANewerHostProvidedLibraryFailsWithNpx008()
+    {
+        Assert.Equal("host-lib-v1", Fixture.HostLib.Describe());
+        string folder = MultiExtension.FixtureExtensions.CopyTo(root, MultiExtension.FixtureExtensions.HostConflict);
+
+        await using ExtensionRegistry registry = Load(Options(folders: [folder]));
+
+        ExtensionLoadResult.Failed failure = SingleFailure(registry, MultiExtension.FixtureExtensions.HostConflict);
+        Assert.Equal("NPX008", failure.Code);
+        Assert.Contains("Fixture.HostLib", failure.Reason, StringComparison.Ordinal);
+        Assert.Contains("2.0.0.0", failure.Reason, StringComparison.Ordinal);
+        Assert.Contains("1.0.0.0", failure.Reason, StringComparison.Ordinal);
+        Assert.Empty(registry.NodeKinds);
+    }
+
+    // US11 scenario 1 (FR-082): the reference that conflicts may be one of the extension's own private libraries.
+    [Fact]
+    public async Task APrivateLibraryBuiltAgainstANewerDependencyCopyFailsWithNpx008()
+    {
+        string provider = MultiExtension.FixtureExtensions.CopyTo(root, MultiExtension.FixtureExtensions.LibV1);
+        string consumer = MultiExtension.FixtureExtensions.CopyTo(root, MultiExtension.FixtureExtensions.TransitiveConflict);
+
+        await using ExtensionRegistry registry = Load(Options(folders: [provider, consumer]));
+
+        ExtensionLoadResult.Failed failure = SingleFailure(registry, MultiExtension.FixtureExtensions.TransitiveConflict);
+        Assert.Equal("NPX008", failure.Code);
+        Assert.Contains("Fixture.MidLib", failure.Reason, StringComparison.Ordinal);
+        Assert.Contains("Fixture.SharedLib", failure.Reason, StringComparison.Ordinal);
+        Assert.Contains("2.0.0.0", failure.Reason, StringComparison.Ordinal);
+        Assert.Contains("1.0.0.0", failure.Reason, StringComparison.Ordinal);
+        Assert.DoesNotContain(registry.NodeKinds, kind => kind.Kind == "fx.transitive-conflict/Describe");
+        Assert.Contains(registry.NodeKinds, kind => kind.Kind == "fx.libv1/Describe");
+    }
+
     [Fact]
     public void ACancelledTokenThrowsOperationCanceled()
     {

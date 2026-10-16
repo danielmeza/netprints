@@ -54,4 +54,10 @@ public sealed record ProjectMessage(
     /// (project-system.md §4).
     /// </summary>
     public const string WorkspaceDiagnostic = "NPW005";
+
+    /// <summary>
+    /// A reference of the project could not be read (not a managed assembly, or the file is damaged or locked); the
+    /// editor skips it and loads the others.
+    /// </summary>
+    public const string UnreadableReference = "NPW009";
 }

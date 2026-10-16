@@ -218,8 +218,10 @@ requires that the version provided by a `dependsOn` extension matches or is newe
 If the dependency provides an older version, the extension fails to load with error NPX008, naming the dependency, the
 version your extension expects, and the version the dependency provides. This is an important safety check: if NetPrints
 silently loaded an older version, your extension would crash later with a `MissingMethodException` when it calls a
-method that did not exist in the older version. NetPrints does not yet check versions from host-provided assemblies
-(such as `NetPrints.Core` or standard library packages); that is a planned extension.
+method that did not exist in the older version. The same check covers the assemblies the host provides (such as
+`NetPrints.Core` or standard library packages) and the references of the private libraries your extension ships in its
+own folder: a library built against a newer version than the host or the dependency provides fails the load with
+NPX008, naming the library that asked for it.
 
 **Assembly name resolution**: all assembly resolution is by simple name (no version); NetPrints matches by name only
 and relies on the version check above to catch direct-dependency mismatches. This is the same lookup that the .NET
