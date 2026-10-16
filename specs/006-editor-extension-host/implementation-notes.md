@@ -343,6 +343,7 @@ kept in `.agent-archive/2026-10-16-p3-m5-spike/` beside the repository.
   latest release (v12.1.0.9, 2026-10-13), so no release contains it yet and no bump is possible. FR-007: the round-trip tests above.
   Still to read from PR #20 CI at this head: the Analyzers leg, `CLI (Windows)` run id with the CRLF and `git-install` tests, the
   longest CI job; the R5-0 numbers and the M5 verdict are in their sections above. T016 stays unticked until that CI is green.
+- Checkpoint A, CI at 6aab2555 green (Analyzers leg included): CI run 38906857501, CLI (Windows) run 38906856876, Release run 38906857074, Docs run 38906856885. T016 ticked.
 
 ## Batch B1 (T019-T020)
 
@@ -351,6 +352,19 @@ kept in `.agent-archive/2026-10-16-p3-m5-spike/` beside the repository.
   search) and `filter-{for, write-line, static, netprints-loop, zzz}`. New `NodeSearchInvariantTests` (3): opening the search for five
   pin kinds creates no node and leaves the undo stack alone (US2 scenario 6); filtering and closing change no graph; a second open
   builds the same rows. All 12 pass on the code before SUG1.
+- T020: 13 internal providers in `NodeSearch/Providers/` in the fixed order makeDelegate, nodeKinds, pinVariables, pinMethods,
+  thisVariables, thisMethods, staticMethods, staticVariables, localVariables, types, typePin, eventEntries, extensionNodes (each
+  category's first appearance matches the old switch, so the 9 goldens are unchanged). Owners are built-in kind ids; the two that
+  serve the registry's kinds use `NodeSearchProviders.AnyKind`. `NodeSearchProviderRegistry.For(ExtensionRegistry)` builds the list
+  once per registry (ConditionalWeakTable); the view model takes it through an internal constructor. `NodeSearchEntry` records
+  (method, variable, type, node kind, make delegate, custom event, override) replace `Value`; rows expose an internal `Entry`.
+  Renames done with `git mv`: `Search/` -> `NodeSearch/`, namespace `NetPrints.Editor.NodeSearch`, `NodeSearchViewModel`,
+  `SuggestionRowViewModel`, `NodeSearchViewModelTests`; the xaml-literal ratchet path follows.
+- Deviation: "catalog metadata feeds titles and keywords" is only a seam (`NodeSearchEntry.Keywords`, matched by the row); the editor's
+  reflection provider exposes no catalog node hints yet, so nothing fills it. The skill docs under `.claude/skills` still cite the old
+  `Search/` paths.
+- Red/green: NodeSearchProviderTests red as a compile failure (no provider API), then 4 of 4 green; Editor.Tests search classes 79 of 79.
+  Suite (Release): 4349 total, 4316 passed, 33 skipped, 0 failed; `dotnet format --verify-no-changes` clean; build 0 warnings.
 
 ## Pack spike
 

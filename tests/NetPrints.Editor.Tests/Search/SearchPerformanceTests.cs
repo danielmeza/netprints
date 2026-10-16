@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
-using NetPrints.Editor.Search;
+using NetPrints.Editor.NodeSearch;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Editor.UndoRedo;
@@ -47,7 +47,7 @@ public class SearchPerformanceTests
         var search = graph.Search;
 
         var open = Stopwatch.StartNew();
-        List<SuggestionItem> rows = search.BuildItems(null);
+        List<SuggestionRowViewModel> rows = search.BuildItems(null);
         search.SetItems(rows);
         open.Stop();
 
@@ -66,7 +66,7 @@ public class SearchPerformanceTests
             $"for {rows.Count} rows; worst keystroke {worstMs:F0} ms");
 
         Assert.True(rows.Count > 30_000, $"the full runtime set is searched ({rows.Count} rows)");
-        Assert.Contains(search.Items, i => i.Value is MethodSpecifier { Name: "WriteLine" });
+        Assert.Contains(search.Items, i => i.Entry is MethodEntry { Method.Name: "WriteLine" });
         Assert.True(open.ElapsedMilliseconds < OpenBoundMs, $"first search took {open.ElapsedMilliseconds} ms");
         Assert.True(worstMs < KeystrokeBoundMs, $"a keystroke took {worstMs:F0} ms");
     }

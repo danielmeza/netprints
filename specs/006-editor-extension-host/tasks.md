@@ -224,7 +224,7 @@ trip; Windows CLI tests green; SC-015; R5-0 numbers and the M5 outcome recorded.
   --verify-no-changes --no-restore` over `src/` (210 hits at P3a's final run). For each rule: fix the code (preferred)
   or record the rule in ADR-0003 with its reason. No suppression in code and no severity change. End state: 0
   unrecorded info-level hits in `src/`; the counts per rule before and after in implementation-notes.
-- [ ] T016 **Checkpoint A**. Whole suite plus the E2E pass; CI green, including the Analyzers leg and `CLI (Windows)`.
+- [x] T016 **Checkpoint A**. Whole suite plus the E2E pass; CI green, including the Analyzers leg and `CLI (Windows)`.
   Report the plan's gate A in implementation-notes: 0 NPS violations (the build); every A rule and generator with its
   tests (list); the FR-007 round trip; SC-015 (the Windows run id with the CRLF and `git-install` tests; 0 unrecorded
   info-level hits); the R5-0 numbers and the M5 verdict; the longest CI job; the Dock check. Docs updated: ADR-0024,
@@ -255,7 +255,7 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
   P3a characterization scenario it lacks (exec output, typed input, typed output, canvas, type-scoped search); add
   `NodeSearchInvariantTests.cs`: opening the search creates no node and leaves the graph and the undo stack unchanged
   (US2 scenario 6). All of these pass on today's code; they are the invariants for SUG1–SUG3.
-- [ ] T020 [US2] SUG1: providers by node kind (FR-016, research R10, ADR-0028; 2 units). Test first:
+- [x] T020 [US2] SUG1: providers by node kind (FR-016, research R10, ADR-0028; 2 units). Test first:
   `NodeSearchProviderTests.cs` (each provider is owned by its node kind; the fixed provider order) and a counting
   provider that proves providers are built once per registry, never per open (research R10 "M3"). Then extract
   `SuggestionRows.Build`; about 12 internal providers in `src/NetPrints.Editor/NodeSearch/Providers/`, grouped by the

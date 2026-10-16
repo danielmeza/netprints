@@ -1,31 +1,29 @@
 using NetPrints.Core;
-using NetPrints.Editor.Icons;
-using NetPrints.Extensibility.Nodes;
 using NetPrints.Graph;
 
-namespace NetPrints.Editor.Search;
+namespace NetPrints.Editor.NodeSearch;
 
 /// <summary>
 /// A row of the node search list: either a category header or a suggestion (PAR-52).
 /// Ports the WPF <c>SuggestionListConverter</c> text and icon logic.
 /// </summary>
-public sealed class SuggestionItem
+public sealed class SuggestionRowViewModel
 {
-    private SuggestionItem(string category, object? value, string text, string iconKey, bool isHeader)
+    private SuggestionRowViewModel(string category, NodeSearchEntry? entry, string text, string iconKey, bool isHeader)
     {
         Category = category;
-        Value = value;
+        Entry = entry;
         Text = text;
         IconKey = iconKey;
         IsHeader = isHeader;
-        SearchText = isHeader ? category : $"{category} {text}";
+        SearchText = isHeader || entry is null ? category : $"{category} {text} {string.Join(' ', entry.Keywords)}".TrimEnd();
     }
 
     /// <summary>The category this row belongs to (also this row's own text, for a header row).</summary>
     public string Category { get; }
 
-    /// <summary>The suggested method, variable, type or <see cref="MakeDelegateTypeInfo"/>; null for headers.</summary>
-    public object? Value { get; }
+    /// <summary>The suggestion the row creates a node from; null for headers.</summary>
+    internal NodeSearchEntry? Entry { get; }
 
     /// <summary>Display text for the row.</summary>
     public string Text { get; }
@@ -42,18 +40,12 @@ public sealed class SuggestionItem
     /// <summary>Creates a category header row.</summary>
     /// <param name="category">Category name, shown as the row's text.</param>
     /// <returns>A header row for the category.</returns>
-    public static SuggestionItem Header(string category) => new(category, null, category, "", isHeader: true);
+    public static SuggestionRowViewModel Header(string category) => new(category, null, category, "", isHeader: true);
 
-    /// <summary>Creates a suggestion row, computing its text and icon from <paramref name="value"/>.</summary>
-    /// <param name="category">Category the suggestion belongs to.</param>
-    /// <param name="value">The suggested method, variable, type or <see cref="MakeDelegateTypeInfo"/>.</param>
-    /// <returns>A suggestion row for the value.</returns>
-    /// <exception cref="NotSupportedException"><paramref name="value"/> is not one of the supported kinds.</exception>
-    public static SuggestionItem Create(string category, object value)
-    {
-        var (text, icon) = Describe(value);
-        return new SuggestionItem(category, value, text, icon, isHeader: false);
-    }
+    /// <summary>Creates a suggestion row from an entry.</summary>
+    /// <param name="entry">The suggestion; its category, text and icon become the row's.</param>
+    /// <returns>A suggestion row for the entry.</returns>
+    internal static SuggestionRowViewModel Create(NodeSearchEntry entry) => new(entry.Category, entry, entry.Text, entry.IconKey, isHeader: false);
 
     /// <summary>Whether every search term occurs in <see cref="SearchText"/> (case-insensitive).</summary>
     public bool Matches(IReadOnlyList<string> terms)
@@ -90,16 +82,4 @@ public sealed class SuggestionItem
 
         return text;
     }
-
-    private static (string Text, string Icon) Describe(object value) => value switch
-    {
-        MethodSpecifier method => (FormatMethod(method), OperatorUtil.IsOperator(method) ? IconIds.CategoryOperator : IconIds.CategoryMethod),
-        VariableSpecifier variable => ($"{variable.Type} {variable.Name} : {variable.Type}", IconIds.CategoryProperty),
-        NodeSuggestion suggestion => (suggestion.DisplayName, suggestion.IconKey ?? IconIds.CategoryNone),
-        MakeDelegateTypeInfo makeDelegate => ($"Make Delegate For A Method Of {makeDelegate.Type.ShortName}", IconIds.CategoryDelegate),
-        CustomEventSuggestion => (CustomEventSuggestion.DisplayText, IconIds.CategoryNone),
-        OverrideEventSuggestion overrideEvent => ($"Override {overrideEvent.Method.Name}", IconIds.CategoryMethod),
-        TypeSpecifier type => (type.FullCodeName, IconIds.CategoryType),
-        _ => throw new NotSupportedException($"Unsupported suggestion {value.GetType()}"),
-    };
 }

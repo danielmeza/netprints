@@ -2,27 +2,27 @@ using System.Diagnostics;
 using NetPrints.Core;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Icons;
-using NetPrints.Editor.Search;
+using NetPrints.Editor.NodeSearch;
 using NetPrints.Editor.Tests.Graph;
 using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Graph;
 
 namespace NetPrints.Editor.Tests.Search;
 
-public class SuggestionListViewModelTests : GraphTestBase
+public class NodeSearchViewModelTests : GraphTestBase
 {
-    public SuggestionListViewModelTests(TestEditor editor) : base(editor)
+    public NodeSearchViewModelTests(TestEditor editor) : base(editor)
     {
     }
 
     /// <summary>Types into the search box and lets the throttle window pass in virtual time.</summary>
-    private void Type(SuggestionListViewModel search, string text)
+    private void Type(NodeSearchViewModel search, string text)
     {
         search.SearchText = text;
         Editor.Scheduler.AdvanceBy(search.FilterThrottle.Ticks);
     }
 
-    private static List<string> Categories(IEnumerable<SuggestionItem> rows) =>
+    private static List<string> Categories(IEnumerable<SuggestionRowViewModel> rows) =>
         rows.Where(r => r.IsHeader).Select(r => r.Category).ToList();
 
     [Fact]
@@ -88,7 +88,7 @@ public class SuggestionListViewModelTests : GraphTestBase
         Assert.True(search.Items.Where(i => !i.IsHeader).All(i =>
             i.SearchText.Contains("write", StringComparison.OrdinalIgnoreCase)
             && i.SearchText.Contains("console", StringComparison.OrdinalIgnoreCase)));
-        Assert.True(search.Items.Any(i => i.Value is MethodSpecifier { Name: "WriteLine" }));
+        Assert.True(search.Items.Any(i => i.Entry is MethodEntry { Method.Name: "WriteLine" }));
         Assert.True(search.Items[0].IsHeader, "rows are grouped under category headers");
         Assert.True(search.Items.Where(i => i.IsHeader).All(h => search.Items.Any(i => !i.IsHeader && i.Category == h.Category)), "empty categories are hidden");
 
@@ -101,7 +101,7 @@ public class SuggestionListViewModelTests : GraphTestBase
     {
         await Graph.OpenSearchAsync(new GraphPoint(140, 84), null, TestContext.Current.CancellationToken);
         Type(Graph.Search, "Console WriteLine");
-        var item = Graph.Search.Items.First(i => i.Value is MethodSpecifier { Name: "WriteLine" } m && m.Parameters.Count == 1);
+        var item = Graph.Search.Items.First(i => i.Entry is MethodEntry { Method.Name: "WriteLine" } m && m.Method.Parameters.Count == 1);
 
         await Graph.Search.SelectCommand.ExecuteAsync(item);
 
@@ -130,7 +130,7 @@ public class SuggestionListViewModelTests : GraphTestBase
     public async Task SpecialItemsAskForTypeOrMethod()
     {
         await Graph.OpenSearchAsync(new GraphPoint(0, 0), null, TestContext.Current.CancellationToken);
-        SuggestionItem Item(string text) => Graph.Search.AllSuggestions.First(i => i.Text == text);
+        SuggestionRowViewModel Item(string text) => Graph.Search.AllSuggestions.First(i => i.Text == text);
 
         Editor.Dialogs.TypeAnswer = TypeSpecifier.FromType<List<int>>();
         await Graph.Search.SelectCommand.ExecuteAsync(Item("Construct New Object"));
@@ -153,7 +153,7 @@ public class SuggestionListViewModelTests : GraphTestBase
         // Make Delegate asks for a method.
         var upper = new CallMethodNode(Method, FindMethod(typeof(string), "ToUpperInvariant"));
         await Graph.OpenSearchAsync(new GraphPoint(0, 0), upper.OutputDataPins.First(p => p.Name != "Exception"), TestContext.Current.CancellationToken);
-        var makeDelegate = Graph.Search.AllSuggestions.First(i => i.Value is MakeDelegateTypeInfo);
+        var makeDelegate = Graph.Search.AllSuggestions.First(i => i.Entry is MakeDelegateEntry);
         Assert.StartsWith("Make Delegate For A Method Of", makeDelegate.Text);
         await Graph.Search.SelectCommand.ExecuteAsync(makeDelegate);
         Assert.Equal(1, Editor.Dialogs.SelectMethodCalls);
@@ -165,7 +165,7 @@ public class SuggestionListViewModelTests : GraphTestBase
     public async Task VariableOpensGetSetChooser()
     {
         await Graph.OpenSearchAsync(new GraphPoint(42, 42), null, TestContext.Current.CancellationToken);
-        var property = Graph.Search.AllSuggestions.First(i => i.Value is VariableSpecifier);
+        var property = Graph.Search.AllSuggestions.First(i => i.Entry is VariableEntry);
         Assert.Equal(IconIds.CategoryProperty, property.IconKey);
 
         await Graph.Search.SelectCommand.ExecuteAsync(property);
@@ -180,10 +180,10 @@ public class SuggestionListViewModelTests : GraphTestBase
         var rows = Graph.Search.BuildItems(null);
         Assert.Equal(IconIds.CategoryIf, rows.First(r => r.Text == "If Else").IconKey);
         Assert.Equal(IconIds.CategoryLoop, rows.First(r => r.Text == "For Loop").IconKey);
-        var op = rows.First(r => r.Value is MethodSpecifier m && m.Name == "op_Addition");
+        var op = rows.First(r => r.Entry is MethodEntry m && m.Method.Name == "op_Addition");
         Assert.Equal(IconIds.CategoryOperator, op.IconKey);
         Assert.Contains("Operator", op.Text);
-        Assert.Equal(IconIds.CategoryMethod, rows.First(r => r.Value is MethodSpecifier { Name: "WriteLine" }).IconKey);
+        Assert.Equal(IconIds.CategoryMethod, rows.First(r => r.Entry is MethodEntry { Method.Name: "WriteLine" }).IconKey);
     }
 
     [Fact]
@@ -258,6 +258,6 @@ public class SuggestionListViewModelTests : GraphTestBase
 
         Editor.Scheduler.AdvanceBy(1);
         Assert.True(search.Items.Count < all);
-        Assert.Contains(search.Items, i => i.Value is MethodSpecifier { Name: "WriteLine" });
+        Assert.Contains(search.Items, i => i.Entry is MethodEntry { Method.Name: "WriteLine" });
     }
 }

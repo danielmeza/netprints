@@ -3,9 +3,9 @@
         xmlns:ed="clr-namespace:NetPrints.Editor"
              xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
              xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
-             xmlns:edsearch="clr-namespace:NetPrints.Editor.Search"
-             x:Class="NetPrints.Editor.Search.NodeSearchView"
-             x:DataType="edsearch:SuggestionListViewModel"
+             xmlns:edsearch="clr-namespace:NetPrints.Editor.NodeSearch"
+             x:Class="NetPrints.Editor.NodeSearch.NodeSearchView"
+             x:DataType="edsearch:NodeSearchViewModel"
              Classes="popupFade" Width="700" Height="300" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeSearch}">
   <!-- Node search popup (PAR-52): search box, virtualized grouped list with 16-px icons. The popup removes .shown on close (GraphEditorView), so each open fades in. -->
   <Interaction.Behaviors>
@@ -52,13 +52,13 @@
           </Style>
         </ListBox.Styles>
         <ListBox.ItemTemplate>
-          <DataTemplate x:DataType="edsearch:SuggestionItem">
+          <DataTemplate x:DataType="edsearch:SuggestionRowViewModel">
             <Panel Background="Transparent">
               <!-- Tap selects a result; the VM's own guard skips headers (fits
                    ExecuteCommandOnTappedBehavior plus a VM guard, batch X2b). -->
               <Interaction.Behaviors>
                 <ExecuteCommandOnTappedBehavior
-                  Command="{Binding $parent[ListBox].((edsearch:SuggestionListViewModel)DataContext).SelectCommand}"
+                  Command="{Binding $parent[ListBox].((edsearch:NodeSearchViewModel)DataContext).SelectCommand}"
                   CommandParameter="{Binding}" />
               </Interaction.Behaviors>
               <TextBlock Text="{Binding Category}" IsVisible="{Binding IsHeader}" FontWeight="Bold"

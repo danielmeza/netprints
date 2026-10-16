@@ -7,7 +7,7 @@
              xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
              xmlns:ednodes="clr-namespace:NetPrints.Editor.Graph.Nodes"
              xmlns:edpins="clr-namespace:NetPrints.Editor.Graph.Pins"
-             xmlns:edsearch="clr-namespace:NetPrints.Editor.Search"
+             xmlns:edsearch="clr-namespace:NetPrints.Editor.NodeSearch"
              xmlns:edshell="clr-namespace:NetPrints.Editor.Shell"
              xmlns:nodify="clr-namespace:Nodify.Avalonia;assembly=Nodify.Avalonia"
              xmlns:nc="clr-namespace:Nodify.Avalonia.Connections;assembly=Nodify.Avalonia"

@@ -1,6 +1,6 @@
 using NetPrints.Core;
 
-namespace NetPrints.Editor.Search;
+namespace NetPrints.Editor.NodeSearch;
 
 /// <summary>
 /// Search suggestion (US4) offered on empty canvas of an <see cref="EventGraph"/>: creates a custom
@@ -9,12 +9,12 @@ namespace NetPrints.Editor.Search;
 /// </summary>
 public sealed record CustomEventSuggestion
 {
-    /// <summary>Row text for this suggestion (<see cref="SuggestionItem.Describe"/>).</summary>
+    /// <summary>Row text for this suggestion (<see cref="CustomEventEntry"/>).</summary>
     public const string DisplayText = "Custom Event";
 
     /// <summary>
     /// Base name for the created entry, before <c>NetPrintsUtil.GetUniqueName</c> uniquifies it
-    /// (<see cref="SuggestionListViewModel.SelectAsync"/>).
+    /// (<see cref="NodeSearchViewModel.SelectAsync"/>).
     /// </summary>
     public const string NamePrefix = "CustomEvent";
 }

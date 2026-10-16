@@ -1,6 +1,6 @@
 using System.Globalization;
 using NetPrints.Core;
-using NetPrints.Editor.Search;
+using NetPrints.Editor.NodeSearch;
 
 namespace NetPrints.Editor.Tests.Search;
 

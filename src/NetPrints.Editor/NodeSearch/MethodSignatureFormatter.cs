@@ -2,12 +2,12 @@ using System.Collections.Frozen;
 using System.Text;
 using NetPrints.Core;
 
-namespace NetPrints.Editor.Search;
+namespace NetPrints.Editor.NodeSearch;
 
 /// <summary>
 /// Writes a method or constructor the way C# declares it, for the override and overload pickers (FR-093):
 /// return type, name, then the parameters, with type names without namespaces and C# keywords for built-in types.
-/// The text does not depend on the current culture. Node search keeps <see cref="SuggestionItem.FormatMethod"/>.
+/// The text does not depend on the current culture. Node search keeps <see cref="SuggestionRowViewModel.FormatMethod"/>.
 /// </summary>
 public static class MethodSignatureFormatter
 {

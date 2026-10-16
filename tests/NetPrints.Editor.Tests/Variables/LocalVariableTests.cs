@@ -1,7 +1,7 @@
 using NetPrints.Core;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.ModelSync;
-using NetPrints.Editor.Search;
+using NetPrints.Editor.NodeSearch;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Editor.UndoRedo;
@@ -353,12 +353,12 @@ public class LocalVariableTests : IDisposable
     public void MethodVariablesSearchCategoryListsLocals()
     {
         CreateLocal();
-        using var search = new SuggestionListViewModel(graph);
+        using var search = new NodeSearchViewModel(graph);
 
         var rows = search.BuildItems(null);
 
         Assert.Contains(rows, r => r.IsHeader && r.Category == "Method Variables");
         Assert.Contains(rows, r => !r.IsHeader && r.Category == "Method Variables"
-            && r.Value is VariableSpecifier v && v.Name == "Local" && v.Scope == VariableScope.Local);
+            && r.Entry is VariableEntry { Variable: { Name: "Local", Scope: VariableScope.Local } });
     }
 }

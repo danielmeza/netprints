@@ -2,7 +2,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using NetPrints.Compilation;
 using NetPrints.Core;
-using NetPrints.Editor.Search;
+using NetPrints.Editor.NodeSearch;
 using NetPrints.Reflection;
 
 namespace NetPrints.Editor.Tests.Reflection;

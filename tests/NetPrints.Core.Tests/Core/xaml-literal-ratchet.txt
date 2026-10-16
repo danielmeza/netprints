@@ -12,7 +12,7 @@ Margin src/NetPrints.Editor/Inspectors/MethodInspectorView.axaml 1
 Margin src/NetPrints.Editor/Inspectors/VariableInspectorView.axaml 1
 Margin src/NetPrints.Editor/ProjectTree/ProjectTreePanelView.axaml 1
 Margin src/NetPrints.Editor/References/ReferencesDialog.axaml 1
-Margin src/NetPrints.Editor/Search/NodeSearchView.axaml 2
+Margin src/NetPrints.Editor/NodeSearch/NodeSearchView.axaml 2
 Margin src/NetPrints.Editor/Shell/ShellWindow.axaml 2
 Margin src/NetPrints.Editor/StartPage/LearnTileView.axaml 1
 Margin src/NetPrints.Editor/StartPage/RecentProjectsTileView.axaml 4

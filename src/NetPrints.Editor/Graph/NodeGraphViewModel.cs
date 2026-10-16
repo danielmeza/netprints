@@ -11,7 +11,7 @@ using NetPrints.Editor.Graph.Nodes;
 using NetPrints.Editor.Graph.Pins;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.ModelSync;
-using NetPrints.Editor.Search;
+using NetPrints.Editor.NodeSearch;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.UndoRedo;
 using NetPrints.Editor.Variables;
@@ -58,7 +58,7 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
             owner.PropertyChanged += OnGraphPropertyChanged;
         }
 
-        Search = new SuggestionListViewModel(this);
+        Search = new NodeSearchViewModel(this);
         GetSetChooser = new GetSetChooserViewModel(this);
 
         RebuildConnections();
@@ -89,7 +89,7 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
     public event EventHandler? SelectionChanged;
 
     /// <summary>Node search popup (PAR-52..54).</summary>
-    public SuggestionListViewModel Search { get; }
+    public NodeSearchViewModel Search { get; }
 
     /// <summary>Get/Set chooser for variables (PAR-55, 57).</summary>
     public GetSetChooserViewModel GetSetChooser { get; }

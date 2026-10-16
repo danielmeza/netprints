@@ -20,7 +20,7 @@ using NetPrints.Editor.Commands.CommandPalette;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Dialogs;
-using NetPrints.Editor.Search;
+using NetPrints.Editor.NodeSearch;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.UITests.Commands;
 using NetPrints.Editor.UITests.Driving;

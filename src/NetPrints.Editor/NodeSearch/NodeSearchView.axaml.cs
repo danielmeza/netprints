@@ -1,7 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Threading;
 
-namespace NetPrints.Editor.Search;
+namespace NetPrints.Editor.NodeSearch;
 
 /// <summary>Node search list (PAR-52).</summary>
 public partial class NodeSearchView : UserControl
