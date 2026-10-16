@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using System;
+using System.Collections.Generic;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -7,8 +8,14 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing the creation of an array.
     /// </summary>
-    public class MakeArrayNode : Node
+    public class MakeArrayNode : Node, IPinListEditor, IOverloadableNode
     {
+        /// <summary>The overload that sizes the array up front.</summary>
+        public const string UsePredefinedSizeOverload = "Use predefined size";
+
+        /// <summary>The overload that fills the array from an initializer list.</summary>
+        public const string UseInitializerListOverload = "Use initializer list";
+
         /// <summary>
         /// Whether this node is in predefined-size
         /// or in initializer mode.
@@ -166,6 +173,48 @@ namespace NetPrints.Graph
         public override string ToString()
         {
             return $"Make {ElementType.Name} Array";
+        }
+
+        /// <inheritdoc />
+        bool IPinListEditor.ShowsPinButtons => true;
+
+        /// <inheritdoc />
+        string IPinListEditor.AddPinLabel => "Add array element";
+
+        /// <inheritdoc />
+        string IPinListEditor.RemovePinLabel => "Remove array element";
+
+        /// <inheritdoc />
+        bool IPinListEditor.CanRemovePin => InputDataPins.Count > 0;
+
+        /// <inheritdoc />
+        bool IPinListEditor.ChangesMethodSignature => false;
+
+        /// <inheritdoc />
+        IReadOnlyList<int>? IPinListEditor.SlotsAfterAdd => null;
+
+        /// <inheritdoc />
+        IReadOnlyList<int>? IPinListEditor.SlotsAfterRemove => null;
+
+        /// <inheritdoc />
+        void IPinListEditor.AddPin() => AddElementPin();
+
+        /// <inheritdoc />
+        void IPinListEditor.RemovePin() => RemoveElementPin();
+
+        /// <inheritdoc />
+        object IOverloadableNode.CurrentOverload => UsePredefinedSize ? UsePredefinedSizeOverload : UseInitializerListOverload;
+
+        /// <inheritdoc />
+        Node? IOverloadableNode.ChangeOverload(object overload)
+        {
+            if (overload is not string mode)
+            {
+                throw new ArgumentException("A make-array node switches between its size modes, given as text.", nameof(overload));
+            }
+
+            UsePredefinedSize = string.Equals(mode, UsePredefinedSizeOverload, StringComparison.OrdinalIgnoreCase);
+            return null;
         }
     }
 }

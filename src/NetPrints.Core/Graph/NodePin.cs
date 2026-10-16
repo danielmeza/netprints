@@ -16,6 +16,11 @@ namespace NetPrints.Graph
         public partial string Name { get; set; }
 
         /// <summary>
+        /// What the pin means to its node; <see cref="PinRole.Argument"/> unless the generator or the node says otherwise.
+        /// </summary>
+        public PinRole Role { get; set; } = PinRole.Argument;
+
+        /// <summary>
         /// Node this pin is contained in.
         /// </summary>
         public Node Node

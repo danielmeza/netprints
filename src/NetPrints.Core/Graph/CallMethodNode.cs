@@ -11,8 +11,17 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing a method call.
     /// </summary>
-    public partial class CallMethodNode : ExecNode, IMemberReferencingNode
+    public partial class CallMethodNode : ExecNode, IMemberReferencingNode, IOverloadableNode
     {
+        /// <inheritdoc />
+        object IOverloadableNode.CurrentOverload => MethodSpecifier;
+
+        /// <inheritdoc />
+        Node? IOverloadableNode.ChangeOverload(object overload) =>
+            overload is MethodSpecifier specifier
+                ? new CallMethodNode(Graph, specifier)
+                : throw new ArgumentException("A call node switches between method overloads.", nameof(overload));
+
         private const string ExceptionPinName = "Exception";
         private const string CatchPinName = "Catch";
 

@@ -10,8 +10,17 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing a constructor call.
     /// </summary>
-    public partial class ConstructorNode : ExecNode
+    public partial class ConstructorNode : ExecNode, IOverloadableNode
     {
+        /// <inheritdoc />
+        object IOverloadableNode.CurrentOverload => ConstructorSpecifier;
+
+        /// <inheritdoc />
+        Node? IOverloadableNode.ChangeOverload(object overload) =>
+            overload is ConstructorSpecifier specifier
+                ? new ConstructorNode(Graph, specifier)
+                : throw new ArgumentException("A constructor node switches between constructor overloads.", nameof(overload));
+
         /// <summary>
         /// Always <see langword="true"/>: a constructor node can become pure (no exec pins) since
         /// construction alone is not considered a side effect worth sequencing.

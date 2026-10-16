@@ -134,9 +134,7 @@ public sealed partial class NodePinViewModel : ObservableObject, IDisposable
     public string DisplayName => Pin.ToString();
 
     /// <summary>Editable for method entry outputs and return node inputs (PAR-45).</summary>
-    public bool IsNameEditable =>
-        (Pin.Node is MethodEntryNode && Pin.Node.OutputDataPins.Contains(Pin))
-        || (Pin.Node is ReturnNode && Pin.Node.InputDataPins.Contains(Pin));
+    public bool IsNameEditable => Pin.Node is IPinNameEditor editor && editor.CanRenamePin(Pin);
 
     /// <summary>Whether to show the pin's name as a plain label (not a reroute node pin, not editable).</summary>
     public bool ShowLabel => !IsRerouteNodePin && !IsNameEditable;

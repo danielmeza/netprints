@@ -10,7 +10,7 @@ namespace NetPrints.Graph
     /// Represents a node which returns from a method.
     /// </summary>
     [NodeKind("return")]
-    public sealed partial class ReturnNode : Node
+    public sealed partial class ReturnNode : Node, IPinListEditor, IPinNameEditor
     {
         /// <summary>
         /// Execution pin that returns from the method when executed.
@@ -199,5 +199,35 @@ namespace NetPrints.Graph
 
             return base.GetPinKeyName(pin);
         }
+
+        /// <inheritdoc />
+        bool IPinListEditor.ShowsPinButtons => this == methodGraph.MainReturnNode;
+
+        /// <inheritdoc />
+        string IPinListEditor.AddPinLabel => "Add method return value";
+
+        /// <inheritdoc />
+        string IPinListEditor.RemovePinLabel => "Remove method return value";
+
+        /// <inheritdoc />
+        bool IPinListEditor.CanRemovePin => InputDataPins.Count > 0;
+
+        /// <inheritdoc />
+        bool IPinListEditor.ChangesMethodSignature => true;
+
+        /// <inheritdoc />
+        IReadOnlyList<int>? IPinListEditor.SlotsAfterAdd => null;
+
+        /// <inheritdoc />
+        IReadOnlyList<int>? IPinListEditor.SlotsAfterRemove => null;
+
+        /// <inheritdoc />
+        void IPinListEditor.AddPin() => AddReturnType();
+
+        /// <inheritdoc />
+        void IPinListEditor.RemovePin() => RemoveReturnType();
+
+        /// <inheritdoc />
+        bool IPinNameEditor.CanRenamePin(NodePin pin) => pin is NodeInputDataPin dataPin && InputDataPins.Contains(dataPin);
     }
 }

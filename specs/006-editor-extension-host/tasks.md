@@ -346,7 +346,7 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
 
 ### Batch B7 — model: sonnet — T034–T037 — 5 units
 
-- [ ] T034 [US2] Node capabilities as role interfaces (FR-015, research R11, ADR-0029; 2 units). Test first:
+- [x] T034 [US2] Node capabilities as role interfaces (FR-015, research R11, ADR-0029; 2 units). Test first:
   `tests/NetPrints.Editor.Tests/Graph/NodeCapabilityTests.cs`: node search, navigation and the inspector find nodes by
   role (`IPinListEditor`, `IOverloadableNode`, editable pin names, `IMemberReferencingNode`), not by concrete node type.
   Then the interfaces in Core, their implementations on the node kinds, and the callers in

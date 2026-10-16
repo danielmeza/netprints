@@ -185,3 +185,22 @@ abstract NetPrints.Core.PrimitiveKind.Format(object! value) -> string!
 abstract NetPrints.Core.PrimitiveKind.Parse(string! text) -> object!
 static NetPrints.Core.PrimitiveKinds.All.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Core.PrimitiveKind!>!
 static NetPrints.Core.PrimitiveKinds.TryGet(string? fullName, out NetPrints.Core.PrimitiveKind? kind) -> bool
+const NetPrints.Graph.MakeArrayNode.UseInitializerListOverload = "Use initializer list" -> string!
+const NetPrints.Graph.MakeArrayNode.UsePredefinedSizeOverload = "Use predefined size" -> string!
+NetPrints.Graph.NodePin.Role.get -> NetPrints.Graph.PinRole
+NetPrints.Graph.NodePin.Role.set -> void
+NetPrints.Graph.IPinListEditor
+NetPrints.Graph.IPinListEditor.AddPin() -> void
+NetPrints.Graph.IPinListEditor.AddPinLabel.get -> string!
+NetPrints.Graph.IPinListEditor.CanRemovePin.get -> bool
+NetPrints.Graph.IPinListEditor.ChangesMethodSignature.get -> bool
+NetPrints.Graph.IPinListEditor.RemovePin() -> void
+NetPrints.Graph.IPinListEditor.RemovePinLabel.get -> string!
+NetPrints.Graph.IPinListEditor.ShowsPinButtons.get -> bool
+NetPrints.Graph.IPinListEditor.SlotsAfterAdd.get -> System.Collections.Generic.IReadOnlyList<int>?
+NetPrints.Graph.IPinListEditor.SlotsAfterRemove.get -> System.Collections.Generic.IReadOnlyList<int>?
+NetPrints.Graph.IOverloadableNode
+NetPrints.Graph.IOverloadableNode.ChangeOverload(object! overload) -> NetPrints.Graph.Node?
+NetPrints.Graph.IOverloadableNode.CurrentOverload.get -> object!
+NetPrints.Graph.IPinNameEditor
+NetPrints.Graph.IPinNameEditor.CanRenamePin(NetPrints.Graph.NodePin! pin) -> bool

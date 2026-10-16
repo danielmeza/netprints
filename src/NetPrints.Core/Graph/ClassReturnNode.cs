@@ -14,7 +14,7 @@ namespace NetPrints.Graph
     /// type-inference machinery as any other node.
     /// </summary>
     [NodeKind("classReturn")]
-    public sealed partial class ClassReturnNode : Node
+    public sealed partial class ClassReturnNode : Node, IPinListEditor
     {
         /// <summary>
         /// Input type pin for the class's base type.
@@ -63,5 +63,32 @@ namespace NetPrints.Graph
                 InputTypePins.Remove(interfacePin);
             }
         }
+
+        /// <inheritdoc />
+        bool IPinListEditor.ShowsPinButtons => true;
+
+        /// <inheritdoc />
+        string IPinListEditor.AddPinLabel => "Add interface";
+
+        /// <inheritdoc />
+        string IPinListEditor.RemovePinLabel => "Remove interface";
+
+        /// <inheritdoc />
+        bool IPinListEditor.CanRemovePin => InterfacePins.Any();
+
+        /// <inheritdoc />
+        bool IPinListEditor.ChangesMethodSignature => false;
+
+        /// <inheritdoc />
+        IReadOnlyList<int>? IPinListEditor.SlotsAfterAdd => null;
+
+        /// <inheritdoc />
+        IReadOnlyList<int>? IPinListEditor.SlotsAfterRemove => null;
+
+        /// <inheritdoc />
+        void IPinListEditor.AddPin() => AddInterfacePin();
+
+        /// <inheritdoc />
+        void IPinListEditor.RemovePin() => RemoveInterfacePin();
     }
 }

@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using NetPrints.Core;
 
@@ -9,7 +10,7 @@ namespace NetPrints.Graph
     /// Node representing the initial execution node of a method.
     /// </summary>
     [NodeKind("methodEntry")]
-    public sealed partial class MethodEntryNode : ExecutionEntryNode
+    public sealed partial class MethodEntryNode : ExecutionEntryNode, IPinListEditor, IPinNameEditor
     {
         /// <summary>
         /// Same as the base <see cref="Node.MethodGraph"/>, but non-nullable: the constructor only
@@ -131,5 +132,35 @@ namespace NetPrints.Graph
                 OutputTypePins.Remove(otpToRemove);
             }
         }
+
+        /// <inheritdoc />
+        bool IPinListEditor.ShowsPinButtons => true;
+
+        /// <inheritdoc />
+        string IPinListEditor.AddPinLabel => "Add method parameter";
+
+        /// <inheritdoc />
+        string IPinListEditor.RemovePinLabel => "Remove method parameter";
+
+        /// <inheritdoc />
+        bool IPinListEditor.CanRemovePin => OutputDataPins.Count > 0;
+
+        /// <inheritdoc />
+        bool IPinListEditor.ChangesMethodSignature => true;
+
+        /// <inheritdoc />
+        IReadOnlyList<int>? IPinListEditor.SlotsAfterAdd => [.. Enumerable.Range(0, OutputDataPins.Count), -1];
+
+        /// <inheritdoc />
+        IReadOnlyList<int>? IPinListEditor.SlotsAfterRemove => [.. Enumerable.Range(0, Math.Max(OutputDataPins.Count - 1, 0))];
+
+        /// <inheritdoc />
+        void IPinListEditor.AddPin() => AddArgument();
+
+        /// <inheritdoc />
+        void IPinListEditor.RemovePin() => RemoveArgument();
+
+        /// <inheritdoc />
+        bool IPinNameEditor.CanRenamePin(NodePin pin) => pin is NodeOutputDataPin dataPin && OutputDataPins.Contains(dataPin);
     }
 }
