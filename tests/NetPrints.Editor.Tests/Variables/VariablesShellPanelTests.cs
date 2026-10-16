@@ -70,7 +70,7 @@ public sealed class VariablesShellPanelTests : IAsyncDisposable
         Activate(rig.Shell, MethodDocument(session, cls, method));
         VariablesPanelViewModel panel = Assert.IsType<VariablesPanelViewModel>(rig.Variables.Current);
         Assert.True(panel.HasMethodGroup);
-        Assert.Equal("Method: Greet", panel.MethodGroupHeader);
+        Assert.Equal("Local variables: Greet", panel.MethodGroupHeader);
 
         panel.CreateLocalVariableCommand.Execute(null);
 

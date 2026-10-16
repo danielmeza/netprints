@@ -31,6 +31,9 @@
         <DataTemplate DataType="edvariables:MemberVariableViewModel" x:DataType="edvariables:MemberVariableViewModel">
           <edinspectors:VariableInspectorView />
         </DataTemplate>
+        <DataTemplate DataType="edvariables:LocalVariableViewModel" x:DataType="edvariables:LocalVariableViewModel">
+          <edinspectors:LocalVariableInspectorView />
+        </DataTemplate>
       </ContentControl.DataTemplates>
     </ContentControl>
   </Panel>

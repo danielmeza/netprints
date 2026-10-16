@@ -21,6 +21,10 @@ public sealed class ScopedCommandKeysBehavior : StyledElementBehavior<InputEleme
     public static readonly StyledProperty<CommandScope> ScopeProperty =
         AvaloniaProperty.Register<ScopedCommandKeysBehavior, CommandScope>(nameof(Scope), CommandScope.Graph);
 
+    /// <summary>Identifies <see cref="Parameter"/>.</summary>
+    public static readonly StyledProperty<object?> ParameterProperty =
+        AvaloniaProperty.Register<ScopedCommandKeysBehavior, object?>(nameof(Parameter));
+
     /// <summary>Gets or sets the invoker whose commands are run.</summary>
     public CommandInvoker? Invoker
     {
@@ -33,6 +37,13 @@ public sealed class ScopedCommandKeysBehavior : StyledElementBehavior<InputEleme
     {
         get => GetValue(ScopeProperty);
         set => SetValue(ScopeProperty, value);
+    }
+
+    /// <summary>Gets or sets the command parameter every run receives, such as the selected row of a list; null for none.</summary>
+    public object? Parameter
+    {
+        get => GetValue(ParameterProperty);
+        set => SetValue(ParameterProperty, value);
     }
 
     /// <inheritdoc/>
@@ -58,7 +69,7 @@ public sealed class ScopedCommandKeysBehavior : StyledElementBehavior<InputEleme
 
         foreach (CommandDescriptor command in invoker.CommandsIn(Scope))
         {
-            if (CommandKeyGestures.Of(command).Any(gesture => gesture.Matches(e)) && invoker.TryRun(command, Scope))
+            if (CommandKeyGestures.Of(command).Any(gesture => gesture.Matches(e)) && invoker.TryRun(command, Scope, Parameter))
             {
                 e.Handled = true;
                 return;

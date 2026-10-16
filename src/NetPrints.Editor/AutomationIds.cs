@@ -106,6 +106,18 @@ public static class AutomationIds
     /// <summary>The "Open type graph" button of the variable inspector.</summary>
     public const string VariableInspectorOpenTypeGraph = "Inspectors.Variable.OpenTypeGraph";
 
+    /// <summary>The local variable inspector.</summary>
+    public const string LocalVariableInspector = "Inspectors.LocalVariable";
+
+    /// <summary>The name field of the local variable inspector.</summary>
+    public const string LocalVariableInspectorName = "Inspectors.LocalVariable.Name";
+
+    /// <summary>The type button of the local variable inspector.</summary>
+    public const string LocalVariableInspectorType = "Inspectors.LocalVariable.Type";
+
+    /// <summary>The refused-name message of the local variable inspector.</summary>
+    public const string LocalVariableInspectorError = "Inspectors.LocalVariable.Error";
+
     // Variables list
     /// <summary>
     /// Automation id for a variable list row's name field.
@@ -486,14 +498,14 @@ public static class AutomationIds
     /// Automation id for a variable list row. Its AutomationProperties.Name carries the variable's name.
     /// </summary>
     public const string VariableRow = "Variables.Row";
-    /// <summary>
-    /// Automation id for a variable list row's getter toggle.
-    /// </summary>
-    public const string VariableGetter = "Variables.Getter";
-    /// <summary>
-    /// Automation id for a variable list row's setter toggle.
-    /// </summary>
-    public const string VariableSetter = "Variables.Setter";
+    /// <summary>Automation id for a variable list row's remove button.</summary>
+    public const string VariableRowRemove = "Variables.Row.Remove";
+
+    /// <summary>Automation id for a variable list row's rename box, shown while the row is renamed in place.</summary>
+    public const string VariableRenameBox = "Variables.Row.RenameBox";
+
+    /// <summary>Automation id for the message of a refused name in a variable list row.</summary>
+    public const string VariableRenameError = "Variables.Row.RenameError";
 
     // Graph items (AutomationProperties.Name carries a stable identity)
     /// <summary>

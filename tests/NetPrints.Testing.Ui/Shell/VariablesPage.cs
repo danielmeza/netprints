@@ -17,8 +17,11 @@ public sealed class VariablesPage(IUiDriver driver, AutomationQuery window)
     /// <summary>A local variable row; its automation name is the local's name.</summary>
     public UiElement LocalVariable(string name) => MethodGroup.Find(AutomationIds.VariableRow, name: name);
 
-    /// <summary>The name box of a local variable row.</summary>
-    public UiElement LocalVariableNameBox(string name) => LocalVariable(name).Find(AutomationIds.VariableName);
+    /// <summary>The name text of a local variable row: click it to select the row, double click to rename, drag it onto the canvas.</summary>
+    public UiElement LocalVariableName(string name) => LocalVariable(name).Find(AutomationIds.VariableName);
+
+    /// <summary>The rename box of a local variable row, shown while the row is renamed in place.</summary>
+    public UiElement LocalVariableRenameBox(string name) => LocalVariable(name).Find(AutomationIds.VariableRenameBox);
 
     /// <summary>The names of the local variable rows shown.</summary>
     public async Task<IReadOnlyList<string>> LocalVariableNamesAsync(CancellationToken cancellationToken) =>

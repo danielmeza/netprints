@@ -104,7 +104,7 @@ public class RegistrySurfaceTests
 
         MenuItem[] choices = [.. theme.GetLogicalChildren().OfType<MenuItem>()];
 
-        Assert.Equal(["Dark", "Light", "System"], choices.Select(choice => Assert.IsType<string>(Avalonia.Automation.AutomationProperties.GetName(choice))));
+        Assert.Equal(["Dark", "Light", "System (follow OS)"], choices.Select(choice => Assert.IsType<string>(Avalonia.Automation.AutomationProperties.GetName(choice))));
         Assert.Equal(Ids("theme.dark", "theme.light", "theme.system").Select(MenuId), choices.Select(choice => AutomationProperties_Id(choice) ?? ""));
         Assert.All(choices, choice => Assert.Equal(MenuItemToggleType.Radio, choice.ToggleType));
         Assert.Equal([true, false, false], choices.Select(choice => choice.IsChecked));

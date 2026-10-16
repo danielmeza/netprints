@@ -15,6 +15,7 @@ internal static class ShortcutGuide
     private const string Anywhere = "Anywhere";
     private const string GraphCanvas = "Graph canvas";
     private const string ProjectTree = "Project tree";
+    private const string VariablesPanel = "Variables panel";
     private const string SubmenuSeparator = " › ";
 
     /// <summary>Builds the table, one row for each registered command, in the order of the keyboard shortcuts sheet.</summary>
@@ -70,6 +71,11 @@ internal static class ShortcutGuide
         if (scope.HasFlag(CommandScope.ProjectTree))
         {
             places.Add(ProjectTree);
+        }
+
+        if (scope.HasFlag(CommandScope.VariablesPanel))
+        {
+            places.Add(VariablesPanel);
         }
 
         return places.Count == 0 ? Anywhere : string.Join(", ", places);

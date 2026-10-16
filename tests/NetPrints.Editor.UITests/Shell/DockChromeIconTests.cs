@@ -50,7 +50,8 @@ public class DockChromeIconTests
         var item = session.Window.GetVisualDescendants().OfType<DocumentTabStripItem>().First();
         var path = item.GetVisualDescendants().OfType<ShapePath>().First(p => p.Bounds.Width > 0);
         var button = path.GetVisualAncestors().OfType<Button>().First();
-        Assert.True(button.Bounds.Width >= ButtonSize, $"tab close hit target {button.Bounds.Size}");
+        Assert.True(item.TryFindResource("Tab.CloseButtonSize", item.ActualThemeVariant, out object? tabButtonSize), "Tab.CloseButtonSize");
+        Assert.True(button.Bounds.Width >= Assert.IsType<double>(tabButtonSize), $"tab close hit target {button.Bounds.Size}");
         Assert.Equal(GlyphBox, path.Bounds.Width, 0.5);
         Assert.Equal(GlyphBox, path.Bounds.Height, 0.5);
         Assert.Equal(Grid, Assert.IsAssignableFrom<Geometry>(path.Data).Bounds.Width, 0.01);

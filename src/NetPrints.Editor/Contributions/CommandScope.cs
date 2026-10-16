@@ -12,4 +12,7 @@ public enum CommandScope
 
     /// <summary>Only while the project tree has focus.</summary>
     ProjectTree = 2,
+
+    /// <summary>Only while the Variables panel's lists have focus; the command acts on the selected row, passed as the command parameter.</summary>
+    VariablesPanel = 4,
 }

@@ -149,8 +149,8 @@ namespace NetPrints.Graph
                 fromPin.OutgoingPin.IncomingPins.Remove(fromPin);
             }
 
-            fromPin.OutgoingPin = toPin;
             toPin.IncomingPins.Add(fromPin);
+            fromPin.OutgoingPin = toPin;
         }
 
         /// <summary>
@@ -334,12 +334,13 @@ namespace NetPrints.Graph
         /// <param name="pin">Pin to disconnect.</param>
         public static void DisconnectInputExecPin(NodeInputExecPin pin)
         {
-            foreach (NodeOutputExecPin incomingPin in pin.IncomingPins)
+            NodeOutputExecPin[] incomingPins = [.. pin.IncomingPins];
+            pin.IncomingPins.Clear();
+
+            foreach (NodeOutputExecPin incomingPin in incomingPins)
             {
                 incomingPin.OutgoingPin = null;
             }
-
-            pin.IncomingPins.Clear();
         }
 
         /// <summary>

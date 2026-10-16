@@ -13,7 +13,7 @@ namespace NetPrints.Editor.Variables;
 /// <summary>
 /// A variable (property) of the edited class (PAR-29, PAR-36).
 /// </summary>
-public sealed partial class MemberVariableViewModel : ObservableObject, IDisposable
+public sealed partial class MemberVariableViewModel : VariableRowViewModel, IDisposable
 {
     private readonly ClassEditorServices services;
     private readonly Action<Variable, string> rename;
@@ -25,6 +25,7 @@ public sealed partial class MemberVariableViewModel : ObservableObject, IDisposa
     /// <param name="services">Narrow services shared with the owning class editor (FR-038).</param>
     /// <param name="rename">Renames the variable together with its getter and setter nodes.</param>
     public MemberVariableViewModel(Variable variable, ClassEditorServices services, Action<Variable, string> rename)
+        : base(services)
     {
         Variable = variable;
         this.services = services;
@@ -35,22 +36,14 @@ public sealed partial class MemberVariableViewModel : ObservableObject, IDisposa
     /// <summary>The wrapped model variable.</summary>
     public Variable Variable { get; }
 
-    /// <summary>The variable's type.</summary>
-    public TypeSpecifier Type => Variable.Type;
+    /// <inheritdoc/>
+    public override TypeSpecifier Type => Variable.Type;
 
     /// <summary>A snapshot of the variable's specifier.</summary>
     public VariableSpecifier Specifier => Variable.Specifier;
 
-    /// <summary>Gets the reason the last name was refused, or null when it was accepted.</summary>
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasError))]
-    public partial string? Error { get; private set; }
-
-    /// <summary>Gets a value indicating whether the last name was refused.</summary>
-    public bool HasError => Error is not null;
-
-    /// <summary>The variable's name. A refused name leaves the variable as it was and sets <see cref="Error"/>.</summary>
-    public string Name
+    /// <inheritdoc/>
+    public override string Name
     {
         get => Variable.Name;
         set
@@ -184,6 +177,9 @@ public sealed partial class MemberVariableViewModel : ObservableObject, IDisposa
                 OnPropertyChanged(nameof(Name));
                 OnPropertyChanged(nameof(Specifier));
                 break;
+            case nameof(Variable.Type):
+                NotifyTypeChanged();
+                break;
             case nameof(Variable.Visibility):
                 OnPropertyChanged(nameof(Visibility));
                 OnPropertyChanged(nameof(Specifier));
@@ -207,9 +203,8 @@ public sealed partial class MemberVariableViewModel : ObservableObject, IDisposa
         }
     }
 
-    /// <summary>Removes the variable (undoable).</summary>
-    [RelayCommand]
-    private void Remove() => services.UndoRedo.Do(EditorCommands.RemoveVariable(Variable.Class, Variable));
+    /// <inheritdoc/>
+    protected override void RemoveVariable() => services.UndoRedo.Do(EditorCommands.RemoveVariable(Variable.Class, Variable));
 
     /// <summary>Shows the variable inspector.</summary>
     [RelayCommand]

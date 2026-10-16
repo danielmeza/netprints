@@ -28,10 +28,13 @@ public class LocalVariablePanelTests
         Assert.Equal("Local", name);
         Assert.Equal(TypeSpecifier.FromType<object>(), method.LocalVariables.Single().Type);
 
-        await session.Page.Variables.LocalVariableNameBox(name).ClickAsync(Token);
+        await session.Page.Variables.LocalVariableName(name).ClickAsync(Token);
+        await session.Page.Inspector.LocalVariableInspector.WaitVisibleAsync(Token);
+        await session.Driver.PressAsync("F2", Token);
+        await session.Page.Variables.LocalVariableRenameBox(name).WaitVisibleAsync(Token);
         await session.Driver.PressAsync("Ctrl+A", Token);
         await session.Driver.TypeAsync("Count", Token);
-        await session.Driver.PressAsync("Tab", Token);
+        await session.Driver.PressAsync("Enter", Token);
         Assert.Equal("Count", method.LocalVariables.Single().Name);
 
         await session.PressUndoAsync(Token);
@@ -49,7 +52,7 @@ public class LocalVariablePanelTests
         Assert.Equal(TypeSpecifier.FromType<int>(), method.LocalVariables.Single().Type);
 
         var at = await session.Graph.EmptyPointAsync(Token);
-        await session.Page.Variables.LocalVariableNameBox(local.Name).DragToAsync(at, Token);
+        await session.Page.Variables.LocalVariableName(local.Name).DragToAsync(at, Token);
 
         await session.Graph.GetSet.WaitOpenAsync(Token);
         await session.Graph.GetSet.SetButton.ClickAsync(Token);
@@ -69,5 +72,83 @@ public class LocalVariablePanelTests
 
         await session.PressRedoAsync(Token);
         Assert.Empty(method.LocalVariables);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task DeleteOnTheSelectedRowRemovesIt()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var method = (ExecutionGraph)session.GraphViewModel.Graph;
+        session.App.Api.ShowPanel(PanelContributions.VariablesId);
+        string name = await session.Page.Variables.AddLocalAsync(Token);
+
+        await session.Page.Variables.LocalVariableName(name).ClickAsync(Token);
+        await session.Driver.PressAsync("Delete", Token);
+        Assert.Empty(method.LocalVariables);
+
+        await session.PressUndoAsync(Token);
+        Assert.Equal(name, method.LocalVariables.Single().Name);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task DoubleClickingTheNameRenamesInPlaceAndStartsNoDrag()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var method = (ExecutionGraph)session.GraphViewModel.Graph;
+        session.App.Api.ShowPanel(PanelContributions.VariablesId);
+        string name = await session.Page.Variables.AddLocalAsync(Token);
+        int nodes = method.Nodes.Count;
+
+        await session.Page.Variables.LocalVariableName(name).DoubleClickAsync(Token);
+        await session.Page.Variables.LocalVariableRenameBox(name).WaitVisibleAsync(Token);
+        Assert.False(await session.Graph.GetSet.IsOpenAsync(Token));
+        Assert.Equal(nodes, method.Nodes.Count);
+
+        await session.Driver.PressAsync("Ctrl+A", Token);
+        await session.Driver.TypeAsync("Count", Token);
+        await session.Driver.PressAsync("Enter", Token);
+        Assert.Equal("Count", method.LocalVariables.Single().Name);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task EnterAndEscapeInTheRenameBoxGiveTheKeyboardBackToTheRow()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var method = (ExecutionGraph)session.GraphViewModel.Graph;
+        session.App.Api.ShowPanel(PanelContributions.VariablesId);
+        string name = await session.Page.Variables.AddLocalAsync(Token);
+
+        await session.Page.Variables.LocalVariableName(name).ClickAsync(Token);
+        await session.Driver.PressAsync("F2", Token);
+        await session.Page.Variables.LocalVariableRenameBox(name).WaitVisibleAsync(Token);
+        await session.Driver.PressAsync("Ctrl+A", Token);
+        await session.Driver.TypeAsync("Count", Token);
+        await session.Driver.PressAsync("Enter", Token);
+        await session.Page.Variables.LocalVariableRenameBox("Count").WaitHiddenAsync(Token);
+
+        await session.Driver.PressAsync("F2", Token);
+        await session.Page.Variables.LocalVariableRenameBox("Count").WaitVisibleAsync(Token);
+        await session.Driver.PressAsync("Escape", Token);
+        await session.Page.Variables.LocalVariableRenameBox("Count").WaitHiddenAsync(Token);
+
+        await session.Driver.PressAsync("Delete", Token);
+        Assert.Empty(method.LocalVariables);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task EscapeLeavesTheRenameBoxWithoutRenaming()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var method = (ExecutionGraph)session.GraphViewModel.Graph;
+        session.App.Api.ShowPanel(PanelContributions.VariablesId);
+        string name = await session.Page.Variables.AddLocalAsync(Token);
+
+        await session.Page.Variables.LocalVariableName(name).ClickAsync(Token);
+        await session.Driver.PressAsync("F2", Token);
+        await session.Page.Variables.LocalVariableRenameBox(name).WaitVisibleAsync(Token);
+        await session.Driver.TypeAsync("Other", Token);
+        await session.Driver.PressAsync("Escape", Token);
+        await session.Page.Variables.LocalVariableRenameBox(name).WaitHiddenAsync(Token);
+        Assert.Equal(name, method.LocalVariables.Single().Name);
     }
 }

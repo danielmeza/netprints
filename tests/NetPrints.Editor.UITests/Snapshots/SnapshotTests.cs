@@ -1,11 +1,16 @@
+using Avalonia;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Styling;
 using NetPrints.Core;
+using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.UITests.Hosting;
 using NetPrints.Editor.UITests.Shell;
+using NetPrints.Editor.Variables;
 using NetPrints.Graph;
 using NetPrints.Testing.Ui.Dialogs;
 using NetPrints.Testing.Ui.Driving;
@@ -145,6 +150,43 @@ public class SnapshotTests
         TestContext.Current.SendDiagnosticMessage($"inspector-class over {runs} runs: {immediate} immediate, {signalled} after the highlighting signal, {settled} stable captures mismatched");
         File.WriteAllText(Path.Combine(Store.OutputDirectory, "repeat.txt"), $"{runs} runs: mismatches immediate {immediate}, after the highlighting signal {signalled}, stable {settled}{Environment.NewLine}");
         Assert.Equal(0, settled);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task VariablesPanelWithSixMembersAndFourLocals()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        session.Window.Height = 1400;
+        for (int i = 0; i < 6; i++)
+        {
+            await session.AddVariableAsync(Token);
+        }
+
+        session.App.Api.ShowPanel(PanelContributions.VariablesId);
+        for (int i = 0; i < 4; i++)
+        {
+            await session.Page.Variables.AddLocalAsync(Token);
+        }
+
+        var panel = Assert.IsType<ShellVariablesPanelViewModel>(session.App.Shell.FindPanel(PanelContributions.VariablesId)?.Content);
+        VariablesPanelViewModel current = panel.Current ?? throw new InvalidOperationException("No class is active.");
+        current.SelectedLocalVariable = (current.MethodVariables ?? throw new InvalidOperationException("No method graph is open."))[1];
+        session.Window.MouseMove(new Point(800, 880));
+        Application application = Application.Current ?? throw new InvalidOperationException("No application.");
+        try
+        {
+            foreach ((string name, ThemeVariant variant) in new[] { ("dark", ThemeVariant.Dark), ("light", ThemeVariant.Light) })
+            {
+                application.RequestedThemeVariant = variant;
+                HeadlessDriver.Pump();
+                await session.WaitForRenderedAsync(Token);
+                await MatchStableAsync($"variables-panel-{name}", session.Page.Variables.ScreenshotAsync);
+            }
+        }
+        finally
+        {
+            application.RequestedThemeVariant = ThemeVariant.Dark;
+        }
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
