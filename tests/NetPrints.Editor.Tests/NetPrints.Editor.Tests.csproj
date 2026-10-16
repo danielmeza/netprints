@@ -38,6 +38,7 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <Using Include="NetPrints.Graph" />
   </ItemGroup>
 
   <ItemGroup>

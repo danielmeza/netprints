@@ -10,6 +10,7 @@ using NetPrints.Editor.Graph.Nodes;
 using NetPrints.Editor.Graph.Pins;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
+using NetPrints.Graph;
 using Nodify.Avalonia.Connections;
 
 namespace NetPrints.Editor.Graph;

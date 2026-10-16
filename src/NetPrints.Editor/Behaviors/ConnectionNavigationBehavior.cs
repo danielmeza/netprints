@@ -7,6 +7,7 @@ using Avalonia.Xaml.Interactivity;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Graph.Nodes;
 using NetPrints.Editor.Graph.Pins;
+using NetPrints.Graph;
 using Nodify.Avalonia;
 using Nodify.Avalonia.Connections;
 

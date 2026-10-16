@@ -1,7 +1,8 @@
-namespace NetPrints.Editor.Graph;
+namespace NetPrints.Graph;
 
 /// <summary>
-/// A point in graph (canvas) coordinates. Replaces UI-toolkit point types in view models.
+/// A point in graph (canvas) coordinates. Replaces UI-toolkit point types in view models; public and stable, so an
+/// extension can position a node without an editor reference.
 /// </summary>
 /// <param name="X">X coordinate, in graph units.</param>
 /// <param name="Y">Y coordinate, in graph units.</param>

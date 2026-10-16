@@ -5,6 +5,7 @@ using Avalonia.VisualTree;
 using Avalonia.Xaml.Interactivity;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Shell;
+using NetPrints.Graph;
 using Nodify.Avalonia;
 
 namespace NetPrints.Editor.Behaviors;

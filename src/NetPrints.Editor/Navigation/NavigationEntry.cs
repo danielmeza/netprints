@@ -1,5 +1,6 @@
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Shell;
+using NetPrints.Graph;
 
 namespace NetPrints.Editor.Navigation;
 

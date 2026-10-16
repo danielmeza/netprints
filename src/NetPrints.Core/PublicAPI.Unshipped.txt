@@ -223,3 +223,22 @@ NetPrints.Graph.IOverloadableNode.ChangeOverload(object! overload) -> NetPrints.
 NetPrints.Graph.IOverloadableNode.CurrentOverload.get -> object!
 NetPrints.Graph.IPinNameEditor
 NetPrints.Graph.IPinNameEditor.CanRenamePin(NetPrints.Graph.NodePin! pin) -> bool
+NetPrints.Graph.GraphPoint
+NetPrints.Graph.GraphPoint.Deconstruct(out double X, out double Y) -> void
+NetPrints.Graph.GraphPoint.Equals(NetPrints.Graph.GraphPoint other) -> bool
+NetPrints.Graph.GraphPoint.GraphPoint(double X, double Y) -> void
+NetPrints.Graph.GraphPoint.GraphPoint() -> void
+NetPrints.Graph.GraphPoint.X.get -> double
+NetPrints.Graph.GraphPoint.X.init -> void
+NetPrints.Graph.GraphPoint.Y.get -> double
+NetPrints.Graph.GraphPoint.Y.init -> void
+~override NetPrints.Graph.GraphPoint.Equals(object obj) -> bool
+override NetPrints.Graph.GraphPoint.GetHashCode() -> int
+override NetPrints.Graph.GraphPoint.ToString() -> string!
+static NetPrints.Graph.GraphPoint.Lerp(NetPrints.Graph.GraphPoint a, NetPrints.Graph.GraphPoint b, double t) -> NetPrints.Graph.GraphPoint
+static NetPrints.Graph.GraphPoint.operator *(NetPrints.Graph.GraphPoint a, double s) -> NetPrints.Graph.GraphPoint
+static NetPrints.Graph.GraphPoint.operator +(NetPrints.Graph.GraphPoint a, NetPrints.Graph.GraphPoint b) -> NetPrints.Graph.GraphPoint
+static NetPrints.Graph.GraphPoint.operator -(NetPrints.Graph.GraphPoint a, NetPrints.Graph.GraphPoint b) -> NetPrints.Graph.GraphPoint
+static NetPrints.Graph.GraphPoint.operator !=(NetPrints.Graph.GraphPoint left, NetPrints.Graph.GraphPoint right) -> bool
+static NetPrints.Graph.GraphPoint.operator ==(NetPrints.Graph.GraphPoint left, NetPrints.Graph.GraphPoint right) -> bool
+static readonly NetPrints.Graph.GraphPoint.Zero -> NetPrints.Graph.GraphPoint
