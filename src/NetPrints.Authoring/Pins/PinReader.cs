@@ -184,7 +184,7 @@ internal static class PinReader
 
         string name = property.Name;
         string resolved = key ?? (name.Length > PinSuffix.Length && name.EndsWith(PinSuffix, StringComparison.Ordinal) ? name.Substring(0, name.Length - PinSuffix.Length) : name);
-        return new PinModel(name, Keyword(property.DeclaredAccessibility), kind, resolved,property.Type.ToDisplayString(TypeFormat), member, defaultExpression);
+        return new PinModel(name, Keyword(property.DeclaredAccessibility), kind, resolved, property.Type.ToDisplayString(TypeFormat), member, defaultExpression);
     }
 
     private static string DefaultExpression(AttributeData attribute, ITypeSymbol? argument)
