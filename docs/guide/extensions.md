@@ -99,6 +99,68 @@ from there. The manifest is copied to the output folder with the assembly
 [`tests/NetPrints.TestExtension`](../../tests/NetPrints.TestExtension) in this repository is a small,
 complete example of this setup.
 
+## Declaring pins
+
+A node kind declares its pins as properties; the compiler and the NetPrints analyzers (shipped inside the `NetPrints.Core`
+package) check them. The rationale is in [ADR-0025](../adr/0025-declarative-node-pins.md).
+
+```csharp
+[NodeKind("myCompany.greet")]
+public sealed partial class GreetNode : Node
+{
+    public partial NodeInputExecPin ExecPin { get; }
+
+    public partial NodeInputDataPin<string> NamePin { get; }
+
+    public partial NodeOutputExecPin ThenPin { get; }
+
+    public GreetNode(NodeGraph graph)
+        : base(graph)
+    {
+        DeclarePins();
+    }
+}
+```
+
+- **Typed properties.** The property type says what the pin is: `NodeInputExecPin`, `NodeOutputExecPin`,
+  `NodeInputDataPin<T>`, `NodeOutputDataPin<T>`, `NodeInputTypePin`. The property is `partial` and get-only; the generator
+  implements it. An unconnected input starts at `default(T)`, or at the value of a `[DefaultValue]` attribute.
+- **The convention.** The pin's key, the name stored in the graph file, is the property name without the `Pin` suffix:
+  `NamePin` stores `Name`. Pins are numbered in declaration order inside their kind (`InputExecPins[0]`, ...). The
+  constructor calls `DeclarePins()` once, before it touches a pin.
+- **`[Pin("key")]`.** Sets the key when the property name cannot (a name that does not end in `Pin`, or one that would clash
+  with another member). It also keeps a key stable when you rename the property later.
+- **`[PinType(nameof(member))]`.** For a data pin whose type is decided at run time, such as a generic result: the member is
+  an `ObservableValue<BaseType>` field of the node, and the pin follows it.
+- **`[NodeBase]`.** Marks an abstract base class whose derived kinds continue the pin lists after the base's pins. A
+  base class never adds pins by hand to a collection it also declares; NPA005 reports it.
+- **Kinds that stay imperative.** A node whose pins depend on constructor arguments can still call `AddInputExecPin(...)` and
+  friends. Declared pins come first: add imperative pins only after `DeclarePins()`.
+
+### The `NodePins` files
+
+An extension project that declares pins lists their keys, one per line, in two additional files next to its project file:
+
+```xml
+<ItemGroup>
+  <AdditionalFiles Include="NodePins.Shipped.txt" />
+  <AdditionalFiles Include="NodePins.Unshipped.txt" />
+</ItemGroup>
+```
+
+`NodePins.Shipped.txt` holds the keys of the released versions; `NodePins.Unshipped.txt` holds new ones. Before a release, move
+the unshipped lines to the shipped file, in the same sorted order. A project without the files is not tracked.
+
+### Rules
+
+| Code | Severity | Meaning |
+|---|---|---|
+| NPA001-NPA009 | error | The declaration is wrong: not `partial`, a duplicate or invalid key, a missing `[PinType]` member, pin properties outside a `[NodeKind]` or `[NodeBase]` class. The code fixes make the class partial, add `[Pin]` or add the marker. |
+| NPA010 | warning | A declared key is not in either file. The fix adds it to `NodePins.Unshipped.txt`. |
+| NPA011 | error | A shipped key is no longer declared; the message names the old and the new key. Keep the key with `[Pin("old")]` on the replacing property, or remove it on purpose with a `*REMOVED*<line>` in the unshipped file. |
+
+The full list is in [Diagnostics](diagnostics.md#npa-authoring).
+
 ## Host channel
 
 A host channel is an optional, extension-provided bidirectional link between the editor and an

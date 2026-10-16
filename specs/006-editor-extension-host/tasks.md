@@ -333,7 +333,7 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
   `src/NetPrints.Core/PublicAPI.Unshipped.txt`, no `[Obsolete]`, and a breaking entry under "Unreleased" in
   `.github/release-notes.md` listing each old and new name. The S0 golden, `NodePins.Shipped.txt`, every
   fixture and every sample graph stay byte-identical (US2 scenario 3; NPA011 proves no stored key moved).
-- [ ] T032 [P] [US2] ADR-0025 and "Declaring pins" (FR-010–FR-012, FR-116, research R8; 1 unit). Write
+- [x] T032 [P] [US2] ADR-0025 and "Declaring pins" (FR-010–FR-012, FR-116, research R8; 1 unit). Write
   `docs/adr/0025-declarative-node-pins.md` (typed pins, the convention, pin-key tracking, the 0.4.0 rename policy) and
   the "Declaring pins" section of `docs/guide/extensions.md` (typed properties, the convention, `[Pin]`, `[PinType]`,
   `[NodeBase]`, the `NodePins` files, the NPA rules). ADR index.

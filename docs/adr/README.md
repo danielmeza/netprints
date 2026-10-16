@@ -35,6 +35,7 @@ instead.
 - [0022: A pre-release editor build writes the latest released SDK version](0022-sdk-version-written-by-pre-release-builds.md)
 - [0023: The editor's base theme and controls are Semi.Avalonia and Ursa.Avalonia](0023-semi-ursa-base-theme.md)
 - [0024: Analyzer and generator infrastructure: four Roslyn projects, four rule families](0024-analyzer-and-generator-infrastructure.md)
+- [0025: Node pins are declared as typed partial properties, and their keys are tracked](0025-declarative-node-pins.md)
 - [0028: Node search providers, node creation and ranking](0028-node-search-providers-and-creation.md)
 - [0031: The editor composes with MS.DI and our own registration generator](0031-editor-composition-and-di.md)
 - [0033: Logging goes through NLog 6 behind `ILogger`, and per-user files live in per-OS folders](0033-logging-and-per-user-folders.md)
