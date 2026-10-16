@@ -169,13 +169,95 @@ and is marked "default pending owner" in tasks.md.
 | Live language switch | no; a language change applies after a restart | T046 |
 | External terminal | Linux detection order behind `run.linuxTerminal`; the Windows console closes at exit; macOS through `open -a Terminal` | T123 |
 
+## Batch A3 (CI fix, T006, T007)
+
+- CI fix (cause): CI builds Release, the local build Debug. `ReferenceAssemblyPackageTests.cs` and
+  `AnnotationsPackageTests.cs` chose the build configuration with `#if DEBUG / #else / #endif`; in Release the inactive
+  `"Debug";` branch and its blank line sit between the field and the next member, and NPS002 reports the next member as
+  missing a blank line. The A2 sweep and its local build ran Debug only. Fix: both read the configuration from
+  `AssemblyConfigurationAttribute` (no preprocessor). Checked: `dotnet build NetPrints.slnx -c Release` is clean (0
+  warnings, 0 errors) and was red on exactly these two sites before the change. The only other conditional compilation
+  under `src/` and `tests/` is `#if NETSTANDARD2_0` in `src/NetPrints.Catalog/Engine/Polyfills.cs` (whole-file wrapper,
+  built by the solution for netstandard2.0, clean). The `<Compile>` items in the projects are unconditional
+  (removals of data folders, linked shared files), so none changes with the configuration.
+- CI at e22e7aa2 (PR #20): red legs were Build and test (Linux), Performance budgets, Repository checks (Linux) and Test
+  (Catalog), all with the two NPS002 errors; every other leg passed.
+
 ## R5-0 baselines
 
-(T006)
+(T006) Both tests carry `[Trait("Category", "Performance")]` and no budget (no bound assertion; only shape checks), so
+`CiWorkflowTests`' budget-file gate does not select them. Numbers go to the test output (`-showLiveOutput`).
+
+- Deviation: M1 is `tests/NetPrints.Editor.UITests/Hosting/ShellStartupPerformanceTests.cs`, not under `Editor.Tests`.
+  The shell host builds a `ShellWindow`, which needs the Avalonia headless platform that only `Editor.UITests` has;
+  `Editor.Tests` has no platform. It is in the perf job's filter (the job runs `Editor.UITests` too). M2 is in
+  `tests/NetPrints.Editor.Tests/Graph/GraphScopePerformanceTests.cs` as planned.
+- M1 (`ShellApp.Start()`: `TestComposition` plus `CreateShellWindow`, the shell view model ready when it returns;
+  headless; 6 runs, the first reported as cold): local Release, AMD Ryzen 9 7950X3D, .NET 10.0.11: cold 756 ms, warm
+  runs 166, 184, 235, 218, 213 ms, median 213 ms, 16.06 MB allocated on the calling thread (stable to 0.1%). Run to run
+  the time varies by about 30%; the C1 gate at +10% needs the perf job's median, not this local figure.
+- M2 (5 runs; a method graph of 1000 call nodes with two parameters, chained by exec pins: 1002 nodes, 5002 pins;
+  `new NodeGraphViewModel(...)`): 81, 45, 15, 13, 13 ms, median 14.8 ms; 35.15 MB, 35,080 bytes per node, 7,027 bytes per
+  pin. Counting fakes (a counting `IMessenger` and a counting `ProjectClasses` accessor, both in
+  `ClassEditorServices`) record 0 messenger calls and 0 project-classes calls while the graph is built: today nothing is
+  resolved per pin, so the C1 "zero per-pin resolutions" gate starts at zero.
+- M4 (trim count of `NetPrints.Editor`): 14 (`eng/trim-warnings.txt`, the ratchet).
+- Perf-job medians with run ids: not available at this commit (the perf leg was red on the NPS002 build error at
+  e22e7aa2). The first green perf run on this branch is the baseline for the +10% gates; the checkpoint report records
+  it with its run id. The local numbers above are the stand-in.
 
 ## M5 spike
 
-(T007)
+(T007) Gate verdict: **PASS** for MS.DI with the registration generator on both ADR-0031 terms. The spike lives outside
+the repository (nothing of it is in the PR); the code, the generated Pure.DI file and the BenchmarkDotNet reports are
+kept in `.agent-archive/2026-10-16-p3-m5-spike/` beside the repository.
+
+- What was composed: a copy of `EditorServices`' constructor and `ShellHost.Create` minus the window (28 container
+  services: dispatcher, windows, dialogs, picker, clipboard, processes, file system, state store, backup options, recent
+  projects, window state, project locations, project system, serializers, format registry, mapper, persistence and its
+  binding, reflection host, code analysis host, run state, `EditorContext`, contribution registry, shell view model,
+  command invoker, plus two session-scoped stand-ins). The Avalonia services are replaced by the `Editor.Tests` fakes,
+  the project system is `NoSdkProjectSystem` (no MSBuild), `StateMigration.Run` is not called. Three compositions of the
+  same graph, with the same host instances (logger factory, extension host, settings, host channel) given to all: hand
+  wired (today), MS.DI 10.0.12 with factory-lambda registrations in the T008 shape, and Pure.DI 2.5.4. The first resolves
+  are `EditorContext`, `ShellViewModel`, `CommandInvoker` and `PersistenceBinding`.
+- Environment: AMD Ryzen 9 7950X3D (16 cores), Linux, .NET SDK 10.0.400, runtime 10.0.11, BenchmarkDotNet 0.15.8,
+  Release, JIT (no ReadyToRun).
+- Composition time, cold (12 launches, 1 invocation each; the host inputs are created before the timed call):
+  hand wired 62.9 ms; MS.DI 75.3 ms (+12.4 ms, +20%); Pure.DI 65.6 ms (+2.6 ms, +4%); MS.DI registration plus
+  `BuildServiceProvider` alone 6.3 ms. Warm (20 iterations): 540 us, 722 us (+0.18 ms), 536 us; the build alone 9.8 us.
+  The M1 gate of 150 ms for the composition including the provider build and the first resolves holds with margin for
+  this graph (75 ms), but this graph has no window and no MSBuild; C1 measures the real one.
+- Allocations per composition: hand wired 465 KB, MS.DI 529 KB (+14%), Pure.DI 466 KB (+0%).
+- Session scope (warm): hand wired `new` of two services 10 ns, 64 B; MS.DI `CreateScope` plus resolve 139 ns, 400 B;
+  Pure.DI child composition 46 ns, 400 B. Per project open, so irrelevant next to the open itself.
+- Generated size: the MS.DI registration file is 130 lines for 28 registrations (4.6 per registration, one line per
+  constructor argument), so the 600-line bound is reached at about 130 registrations in that format, or at about 240 if
+  the generator puts arguments on one line when they fit. The hand-written factory methods that a few registrations
+  point to are 48 lines. Pure.DI generates 1,523 lines (1,182 without comments and blank lines) for the same graph and 5
+  roots, so it fails the size term on its own; it is also the only one that cannot take the shell construction with its
+  cycle without a factory lambda.
+- Shapes the generator must express (all were expressible; the first four need a generator feature):
+  1. a static factory method named on the attribute, for what a constructor call cannot do: the tuple returned by
+     `PersistenceBinding.CreateSerializers`, `ContributionRegistry` (register, then `Freeze`), the shell cycle
+     (`ShellViewModel` and `ShellProjectActions` and `DockShellAdapter` assign each other after construction),
+     `BackupOptions` and `ProjectLocations` (computed from the environment);
+  2. `ILogger<T>` and non-generic `ILogger` parameters resolved with `ILoggerFactory.CreateLogger` (they are not in the
+     collection);
+  3. instances the host provides (`ILoggerFactory`, `ExtensionHost` as `IExtensionHost`, settings, channel, time,
+     scheduler, `Func<IMessenger>`), registered by hand next to `AddEditorServices()`;
+  4. one concrete type registered as several services (a `ShellParts` holder whose members are services); MS.DI
+     disposes a lambda-created `IDisposable` it holds, so a member service that is also owned by the holder is disposed
+     twice unless the holder is the only disposable registration (the generator or the factory must not register the
+     members as owned instances);
+  5. service type different from the implementation (`[Singleton<IFoo>]` on the class), optional constructor
+     parameters passed explicitly (the generator resolves an optional parameter only when it is registered), and
+     scoped services (`AddScoped`) all worked as plain generated lambdas.
+- Not measured: ReadyToRun (ADR-0031 decision 8 measured the delta at about half of the JIT one), the real `ShellWindow`
+  and the Avalonia services, MSBuild, and an extension's own provider. C1 gate M1 measures the real composition.
+- Conclusion for the coordinator: T008 and T053–T055 stand as written. The one addition worth putting in T008 is the
+  factory-method option on the attributes (shape 1 above), which the contract text already hints at ("directly or
+  through a factory").
 
 ## Pack spike
 

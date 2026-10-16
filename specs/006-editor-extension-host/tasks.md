@@ -147,7 +147,7 @@ trip; Windows CLI tests green; SC-015; R5-0 numbers and the M5 outcome recorded.
 
 ### Batch A3 — model: sonnet — T006–T007 — 3 units
 
-- [ ] T006 [US1] R5-0 baselines (FR-004, SC-005, research R4 step 1; 1 unit). Add
+- [x] T006 [US1] R5-0 baselines (FR-004, SC-005, research R4 step 1; 1 unit). Add
   `tests/NetPrints.Editor.Tests/Hosting/ShellStartupPerformanceTests.cs` (M1: composition, the shell host and a ready
   shell view model, headless) and `tests/NetPrints.Editor.Tests/Graph/GraphScopePerformanceTests.cs` (M2: a generated
   graph of 1000 nodes and about 4000 pins; time and allocated bytes; counting fakes that record per-pin resolutions),
@@ -155,7 +155,7 @@ trip; Windows CLI tests green; SC-015; R5-0 numbers and the M5 outcome recorded.
   test output. They pin today's behaviour and carry no budget yet (C1 adds the +10% gates). Record the baselines (the
   median of the perf job's runs, with run ids) and the current M4 trim count under "R5-0 baselines" in
   implementation-notes.
-- [ ] T007 [US1] The M5 spike (FR-004, research R4 step 1, ADR-0031; 2 units; gate; not merged). In a local branch or a
+- [x] T007 [US1] The M5 spike (FR-004, research R4 step 1, ADR-0031; 2 units; gate; not merged). In a local branch or a
   scratch copy that is never pushed to this PR, compose a copy of the editor's composition
   (`src/NetPrints.Editor/Hosting/EditorComposition.cs`) three ways: hand-wired (today), MS.DI with factory registrations
   in the shape the T008 generator will emit, and Pure.DI; measure with BenchmarkDotNet the composition time, the first
