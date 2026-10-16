@@ -196,7 +196,7 @@ ADR-0031, ADR-0033 to ADR-0040.
   - **SUG1**: `SuggestionRows.Build` extracted; about 12 internal providers in a fixed order, grouped by the node kind
     that owns them (CallMethod → methods, Variable get/set → variables, Constructor → constructors, Type → types);
     `NodeSearchEntry` records replace `object Value`; `SuggestionListViewModel` → `NodeSearchViewModel`,
-    `SuggestionItem` → `SuggestionRowViewModel`; catalog metadata feeds titles and keywords.
+    `SuggestionItem` → `SuggestionRowViewModel`; catalog metadata feeding titles and keywords moves to T051 (the editor's reflection provider exposes no catalog node hints yet; `NodeSearchEntry.Keywords` is the seam).
   - **SUG2**: one `INodeCreationService` (clamp, connect, undo in one step), a prompts adapter over the dialogs,
     `Func<NodeGraph, Node>` factories instead of `Activator`/`GetConstructor` (FR-117: the trim ratchet drops by two).
   - **SUG3**: `ISuggestionRanker` with the default ranker equal to the goldens.

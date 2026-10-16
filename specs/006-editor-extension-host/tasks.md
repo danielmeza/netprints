@@ -262,7 +262,7 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
   node kind that owns them (CallMethod → methods, Variable get/set → variables, Constructor → constructors, Type →
   types, …); `NodeSearchEntry` records replace `object Value`; rename `SuggestionListViewModel` → `NodeSearchViewModel`
   and `SuggestionItem` → `SuggestionRowViewModel` (types, files with `git mv`, `.axaml`, page objects, tests; the
-  `src/NetPrints.Editor/Search/` search files move to `NodeSearch/`); catalog metadata feeds titles and keywords. The
+  `src/NetPrints.Editor/Search/` search files move to `NodeSearch/`); the catalog-metadata part (titles and keywords from `CatalogNodeHint`) moved to T051 (AB-10). The
   goldens of T019 stay green.
 
 ### Batch B2 — model: sonnet — T021–T023 — 4 units
@@ -478,7 +478,8 @@ SC-010; US3 scenarios 5–6. **Gate (plan)**: SC-005; SC-010 (the three writers)
   Then move the provider contracts (`INodeSuggestionProvider`, `NodeSearchContext`, `NodeSearchEntry`) to Abstractions
   under NPXE0006, add `AddSuggestionProvider`, and add `CSharpFeature`, `CSharpFeatureId`, `Requires` and `Availability`
   under NPXE0007; both ids in `src/NetPrints.Core/ExperimentalApiIds.cs`. The conformance check for providers lands in
-  T103 (NPK013, NPK015).
+  T103 (NPK013, NPK015). Also fill `NodeSearchEntry.Keywords` and the row titles from the catalog node hints
+  (`CatalogNodeHint` `DisplayName`, `Category`, `Keywords`) once the providers can reach them (moved from T020, AB-10).
 - [ ] T052 [US3] Typed contexts (FR-022, research R14, contracts/extension-api.md §3; 3 units). Test first:
   `tests/NetPrints.Editor.Tests/Contributions/TypedContextTests.cs`: every member of `ICommandContext`,
   `IPanelContext`, `IStartPageContext`, `IStatusBarContext`, `ISettingsPageContext` and `IDialogContext` is non-null in
