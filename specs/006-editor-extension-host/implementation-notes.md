@@ -481,6 +481,14 @@ kept in `.agent-archive/2026-10-16-p3-m5-spike/` beside the repository.
   `NodePinsFileTests` 2 of 2 and one descriptor test added after the analyzer.
 - Suite (Release): 4453 total, 4420 passed, 33 skipped, 0 failed; build 0 warnings; `dotnet format` clean.
 
+## Docs build fix (CI red at 409e74c6)
+
+- The Docs workflow failed with 20 CS9248 errors: DocFX loads Core through MSBuildWorkspace, and the Authoring analyzer
+  (a `ProjectReference` with `OutputItemType="Analyzer"`) only exists once built, so the generated halves of the partial pin
+  properties were missing. Reproduced locally by moving the Authoring `bin/Release` away (20 errors), fixed by building
+  Core in Release in `scripts/build-docs.sh` before `docfx` (0 errors). Chosen over loading analyzers in DocFX or pointing
+  it at a built assembly: one line, the same build the rest of CI does.
+
 ## Pack spike
 
 T026, run on `scripts/pack-local.sh` version `0.1.0-local.20261016141953`, scratch projects outside the repository (the
