@@ -284,7 +284,7 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
 
 ### Batch B3 — model: sonnet — T024–T026 — 4 units
 
-- [ ] T024 [US2] Typed pins and pin attributes (FR-009, FR-010, research R8 S2a; 1 unit). Test first:
+- [x] T024 [US2] Typed pins and pin attributes (FR-009, FR-010, research R8 S2a; 1 unit). Test first:
   `tests/NetPrints.Core.Tests/Graph/TypedPinTests.cs`: `NodeInputDataPin<T>` and `NodeOutputDataPin<T>` default to
   `default(T)`, with no generic-math constraint; untyped pins behave as before. Then the typed pins, `[NodeKind]`,
   `[NodeBase]`, `[Pin("key")]` (with `Role`), `[PinType(nameof(member))]` and `[NodePinLayout]` in

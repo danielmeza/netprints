@@ -105,3 +105,32 @@ static NetPrints.Core.MemberNames.ThrowIfTaken(NetPrints.Core.ClassGraph! cls, s
 static NetPrints.Core.MemberNames.Unique(NetPrints.Core.ClassGraph! cls, string! baseName) -> string!
 NetPrints.Compilation.SharedMetadataReferences
 static NetPrints.Compilation.SharedMetadataReferences.For(NetPrints.Projects.ResolvedAssembly! assembly) -> Microsoft.CodeAnalysis.MetadataReference!
+NetPrints.Graph.NodeBaseAttribute
+NetPrints.Graph.NodeBaseAttribute.NodeBaseAttribute() -> void
+NetPrints.Graph.NodeInputDataPin<T>
+NetPrints.Graph.NodeInputDataPin<T>.NodeInputDataPin(NetPrints.Graph.Node! node, string! name, NetPrints.Graph.ObservableValue<NetPrints.Core.BaseType!>! pinType) -> void
+NetPrints.Graph.NodeInputDataPin<T>.NodeInputDataPin(NetPrints.Graph.Node! node, string! name) -> void
+NetPrints.Graph.NodeKindAttribute
+NetPrints.Graph.NodeKindAttribute.Id.get -> string!
+NetPrints.Graph.NodeKindAttribute.NodeKindAttribute(string! id) -> void
+NetPrints.Graph.NodeOutputDataPin<T>
+NetPrints.Graph.NodeOutputDataPin<T>.NodeOutputDataPin(NetPrints.Graph.Node! node, string! name, NetPrints.Graph.ObservableValue<NetPrints.Core.BaseType!>! pinType) -> void
+NetPrints.Graph.NodeOutputDataPin<T>.NodeOutputDataPin(NetPrints.Graph.Node! node, string! name) -> void
+NetPrints.Graph.NodePinLayoutAttribute
+NetPrints.Graph.NodePinLayoutAttribute.NodePinLayoutAttribute(params string![]! pins) -> void
+NetPrints.Graph.NodePinLayoutAttribute.Pins.get -> string![]!
+NetPrints.Graph.PinAttribute
+NetPrints.Graph.PinAttribute.Key.get -> string?
+NetPrints.Graph.PinAttribute.PinAttribute(string! key) -> void
+NetPrints.Graph.PinAttribute.PinAttribute() -> void
+NetPrints.Graph.PinAttribute.Role.get -> NetPrints.Graph.PinRole
+NetPrints.Graph.PinAttribute.Role.set -> void
+NetPrints.Graph.PinRole
+NetPrints.Graph.PinRole.Argument = 0 -> NetPrints.Graph.PinRole
+NetPrints.Graph.PinRole.Exception = 4 -> NetPrints.Graph.PinRole
+NetPrints.Graph.PinRole.OutParam = 3 -> NetPrints.Graph.PinRole
+NetPrints.Graph.PinRole.Result = 2 -> NetPrints.Graph.PinRole
+NetPrints.Graph.PinRole.Target = 1 -> NetPrints.Graph.PinRole
+NetPrints.Graph.PinTypeAttribute
+NetPrints.Graph.PinTypeAttribute.Member.get -> string!
+NetPrints.Graph.PinTypeAttribute.PinTypeAttribute(string! member) -> void
