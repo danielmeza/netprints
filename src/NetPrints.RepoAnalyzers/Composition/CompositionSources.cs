@@ -26,18 +26,21 @@ internal static class CompositionSources
 #nullable enable
 namespace NetPrints.Composition
 {
+    [global::Microsoft.CodeAnalysis.Embedded]
     [global::System.AttributeUsage(global::System.AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
     internal sealed class SingletonAttribute<TService> : global::System.Attribute
     {
         public string? Factory { get; set; }
     }
 
+    [global::Microsoft.CodeAnalysis.Embedded]
     [global::System.AttributeUsage(global::System.AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
     internal sealed class SessionScopedAttribute<TService> : global::System.Attribute
     {
         public string? Factory { get; set; }
     }
 
+    [global::Microsoft.CodeAnalysis.Embedded]
     [global::System.AttributeUsage(global::System.AttributeTargets.Class, Inherited = false)]
     internal sealed class ScopeFactoryAttribute : global::System.Attribute
     {

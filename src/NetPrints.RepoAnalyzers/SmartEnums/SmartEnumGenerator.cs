@@ -24,6 +24,7 @@ public sealed class SmartEnumGenerator : IIncrementalGenerator
 #nullable enable
 namespace NetPrints.SmartEnums
 {
+    [global::Microsoft.CodeAnalysis.Embedded]
     [global::System.AttributeUsage(global::System.AttributeTargets.Class, Inherited = false)]
     internal sealed class SmartEnumAttribute : global::System.Attribute
     {
