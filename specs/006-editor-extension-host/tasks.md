@@ -136,7 +136,7 @@ trip; Windows CLI tests green; SC-015; R5-0 numbers and the M5 outcome recorded.
   insert a blank line). This commit must build: the rules stay inactive in the repository build until T005 switches
   them on (a `CompilerVisibleProperty` switch, or wiring added in T005; record the choice). Rows in
   `docs/guide/diagnostics.md` and the release files.
-- [ ] T005 [US1] The NPS sweep (FR-002, SC-001, research R3; 1 unit). One mechanical commit: switch the rules on, then
+- [x] T005 [US1] The NPS sweep (FR-002, SC-001, research R3; 1 unit). One mechanical commit: switch the rules on, then
   `dotnet format analyzers NetPrints.slnx --diagnostics NPS001 NPS002 --severity error` over `src/` and `tests/` (about
   274 and 177 sites). The diff holds only attribute line splits and blank lines (check `git diff --stat` and samples);
   goldens and generated files are unchanged. The build reports 0 NPS001 and NPS002; the whole suite is green.

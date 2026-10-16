@@ -105,7 +105,14 @@ Owner-approved 2026-10-16. Docs only; no code.
 - Decision (T004): `RepoAnalyzers.CodeFixes` needs a direct `Microsoft.CodeAnalysis.CSharp` 5.0.0 reference: with the
   Workspaces override alone, central transitive pinning (5.9.0) dropped CSharp and Common from the compile references.
 - Measurement (T004, `dotnet build NetPrints.slnx --no-incremental`, 3 runs): 9.4 to 11.5 s against A1's 9.0 to 9.9 s;
-  the rules are disabled, so this is mostly noise. Re-measured with the rules on in T005.
+  the rules are disabled, so this is mostly noise. Re-measured with the rules on in T005: 9.1 to 10.0 s (no visible cost).
+- T005: the rules are on through a `[{src,tests}/**.cs]` section of `.editorconfig` (NPS001 and NPS002 error, NPS003
+  suggestion). `dotnet format analyzers` changed 59 files (+477 lines, 5 attribute lines moved), fewer than the plan's
+  estimate of about 450 sites; the diff holds only attribute splits and blank lines; goldens, samples and generated
+  files are unchanged. Build: 0 NPS hits and 0 warnings; `dotnet format --verify-no-changes` clean.
+- Red/green: the 36 style tests failed before the analyzers existed (42 after adding the harness, 13 old ones green),
+  then 52 of 52 in Analyzers.Tests. `DiagnosticsGuideTests` was red (NPS section and rows missing), then 6 of 6. Suite
+  (Debug, no E2E pass): 4167 total, 4134 passed, 33 skipped, 0 failed.
 
 ## Owner questions taken by default
 
