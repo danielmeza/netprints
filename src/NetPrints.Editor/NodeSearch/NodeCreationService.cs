@@ -1,10 +1,7 @@
 using NetPrints.Core;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
-using NetPrints.Extensibility.Nodes;
 using NetPrints.Graph;
-using NetPrints.Reflection;
-using NetPrints.Serialization.Documents;
 
 namespace NetPrints.Editor.NodeSearch;
 
@@ -25,6 +22,12 @@ internal interface INodeCreationService
     /// <returns>The new node, or <see langword="null"/> when the prompt was cancelled or the entry opens a chooser instead.</returns>
     Task<Node?> CreateAsync(NodeSearchEntry entry, GraphPoint position, NodePin? pin);
 }
+
+/// <summary>What a search entry may use to create its node.</summary>
+/// <param name="Graph">The graph view model the node is created in.</param>
+/// <param name="Prompts">The questions the entry may ask first.</param>
+/// <param name="Service">The creation service that adds a factory-built node as one undo step.</param>
+internal sealed record NodeCreationContext(NodeGraphViewModel Graph, INodeSearchPrompts Prompts, INodeCreationService Service);
 
 /// <summary>The questions a search entry may ask before it creates its node.</summary>
 internal interface INodeSearchPrompts
@@ -61,11 +64,11 @@ internal sealed class DialogNodeSearchPrompts : INodeSearchPrompts
         context.Dialogs.SelectMethodAsync(methods);
 }
 
-/// <summary>The default <see cref="INodeCreationService"/>: every node is built by a <c>Func&lt;NodeGraph, Node&gt;</c> factory.</summary>
+/// <summary>The default <see cref="INodeCreationService"/>: every entry creates its node through a <c>Func&lt;NodeGraph, Node&gt;</c> factory.</summary>
 internal sealed class NodeCreationService : INodeCreationService
 {
     private readonly NodeGraphViewModel graph;
-    private readonly INodeSearchPrompts prompts;
+    private readonly NodeCreationContext context;
 
     /// <summary>Creates the service for a graph.</summary>
     /// <param name="graph">The graph the nodes are created in.</param>
@@ -75,7 +78,7 @@ internal sealed class NodeCreationService : INodeCreationService
         ArgumentNullException.ThrowIfNull(graph);
         ArgumentNullException.ThrowIfNull(prompts);
         this.graph = graph;
-        this.prompts = prompts;
+        context = new NodeCreationContext(graph, prompts, this);
     }
 
     /// <inheritdoc/>
@@ -83,82 +86,9 @@ internal sealed class NodeCreationService : INodeCreationService
         graph.AddNode(position, pin, factory);
 
     /// <inheritdoc/>
-    public async Task<Node?> CreateAsync(NodeSearchEntry entry, GraphPoint position, NodePin? pin)
+    public Task<Node?> CreateAsync(NodeSearchEntry entry, GraphPoint position, NodePin? pin)
     {
         ArgumentNullException.ThrowIfNull(entry);
-        var context = graph.Context;
-
-        switch (entry)
-        {
-            case NodeKindEntry { Suggestion: var suggestion }:
-                return await CreateKindAsync(suggestion, position, pin).ConfigureAwait(true);
-
-            case MethodEntry { Method: var method }:
-                return Create(position, pin, g => new CallMethodNode(g, method));
-
-            case VariableEntry { Variable: var variable }:
-                graph.GetSetChooser.Open(variable, position, pin);
-                return null;
-
-            case CustomEventEntry:
-                if (graph.Graph is EventGraph { Class: { } eventClass })
-                {
-                    string name = MemberNames.Unique(eventClass, CustomEventSuggestion.NamePrefix);
-                    return graph.AddEventEntry(position, g => new EventEntryNode(g, name));
-                }
-
-                return null;
-
-            case OverrideEventEntry { Method: var overridden }:
-                return graph.AddEventEntry(position, g => new EventEntryNode(g, overridden));
-
-            case MakeDelegateEntry { Info: var makeDelegate }:
-                {
-                    var methods = context.Reflection.Provider.GetMethods(new ReflectionProviderMethodQuery()
-                        .WithType(makeDelegate.Type)
-                        .WithVisibleFrom(makeDelegate.FromType));
-
-                    return await prompts.SelectMethodAsync(methods).ConfigureAwait(true) is { } chosen
-                        ? Create(position, pin, g => new MakeDelegateNode(g, chosen))
-                        : null;
-                }
-
-            case TypeEntry { Type: var type }:
-                return Create(position, pin, g => new TypeNode(g, type));
-
-            default:
-                return null;
-        }
-    }
-
-    private async Task<Node?> CreateKindAsync(NodeSuggestion suggestion, GraphPoint position, NodePin? pin)
-    {
-        var context = graph.Context;
-        string? kind = context.Extensions.Current.NodeKinds.FirstOrDefault(k => k.Suggestions.Contains(suggestion))?.Kind;
-
-        switch (kind)
-        {
-            case BuiltInNodeKinds.Constructor:
-                if (await prompts.SelectTypeAsync().ConfigureAwait(true) is { } constructedType
-                    && context.Reflection.Provider.GetConstructors(constructedType).FirstOrDefault() is { } constructor)
-                {
-                    return Create(position, pin, g => new ConstructorNode(g, constructor));
-                }
-
-                return null;
-
-            case BuiltInNodeKinds.Literal:
-                return await prompts.SelectTypeAsync().ConfigureAwait(true) is { } literalType
-                    ? Create(position, pin, g => new LiteralNode(g, literalType))
-                    : null;
-
-            case BuiltInNodeKinds.Type:
-                return await prompts.SelectTypeAsync().ConfigureAwait(true) is { } nodeType
-                    ? Create(position, pin, g => new TypeNode(g, nodeType))
-                    : null;
-
-            default:
-                return graph.AddNode(position, pin, suggestion);
-        }
+        return entry.CreateAsync(context, position, pin);
     }
 }

@@ -74,6 +74,21 @@ public sealed class NodeCreationServiceTests : FixtureGraphTestBase
         Assert.False(ClassContext.UndoRedo.CanUndo);
     }
 
+    private sealed record OwnFactoryEntry() : NodeSearchEntry("Own", "Own factory", "none")
+    {
+        public override Task<Node?> CreateAsync(NodeCreationContext context, GraphPoint position, NodePin? pin) =>
+            Task.FromResult<Node?>(context.Service.Create(position, pin, g => new IfElseNode(g)));
+    }
+
+    [Fact]
+    public async Task AnEntryOfAnyKindCreatesItsOwnNode()
+    {
+        var node = await Service(new FakePrompts()).CreateAsync(new OwnFactoryEntry(), new GraphPoint(3, 4), null);
+
+        Assert.IsType<IfElseNode>(node);
+        Assert.Contains(node, Method.Nodes);
+    }
+
     [Fact]
     public async Task ATypeEntryCreatesATypeNodeWithoutPrompting()
     {
