@@ -191,7 +191,7 @@ trip; Windows CLI tests green; SC-015; R5-0 numbers and the M5 outcome recorded.
 
 ### Batch A5 — model: sonnet — T011–T016 — 5 units
 
-- [ ] T011 [US1] Settings validators at start (FR-006, research R6, ADR-0040; 1 unit). Test first:
+- [x] T011 [US1] Settings validators at start (FR-006, research R6, ADR-0040; 1 unit). Test first:
   `tests/NetPrints.Editor.Tests/Hosting/SettingsValidationTests.cs`: for each existing settings section (`netprints`,
   `extensions.netprints.editor`), an invalid value makes composition use that section's defaults, log one message
   naming the key and the reason, and still start (US1 scenario 5; quickstart US1 step 4). Then each section becomes a

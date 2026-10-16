@@ -4,6 +4,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NetPrints.Core;
 using NetPrints.Projects;
 
@@ -22,6 +23,8 @@ public sealed class JsonFileSettingsStore : ISettingsStore
     private const string ExtensionsKey = "extensions";
     private const string SchemaVersionKey = "schemaVersion";
     private const int SchemaVersion = 1;
+    private const string NullSectionReason = "the section is null";
+    private const string NotAnObjectReason = "the file is not a JSON object";
 
     private static readonly JsonDocumentOptions DocumentOptions = new()
     {
@@ -192,16 +195,23 @@ public sealed class JsonFileSettingsStore : ISettingsStore
         try
         {
             T? value = section.Deserialize(descriptor.TypeInfo);
-            if (value is not null)
+            if (value is null)
+            {
+                Log.SettingsSectionInvalid(logger, null, descriptor.ExtensionId, filePath, NullSectionReason);
+                return descriptor.Default;
+            }
+
+            ValidateOptionsResult? result = descriptor.Validator?.Invoke(null, value);
+            if (result is null || !result.Failed)
             {
                 return value;
             }
 
-            Log.SettingsSectionInvalid(logger, null, descriptor.ExtensionId, filePath);
+            Log.SettingsSectionInvalid(logger, null, descriptor.ExtensionId, filePath, string.Join("; ", result.Failures ?? []));
         }
         catch (Exception ex) when (ex is JsonException or NotSupportedException or InvalidOperationException)
         {
-            Log.SettingsSectionInvalid(logger, ex, descriptor.ExtensionId, filePath);
+            Log.SettingsSectionInvalid(logger, ex, descriptor.ExtensionId, filePath, ex.Message);
         }
 
         return descriptor.Default;
@@ -223,13 +233,13 @@ public sealed class JsonFileSettingsStore : ISettingsStore
                 return new State(root, values);
             }
 
-            Log.SettingsSectionInvalid(logger, null, FileSection, filePath);
+            Log.SettingsSectionInvalid(logger, null, FileSection, filePath, NotAnObjectReason);
         }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
         {
             // R1-13: a locked or unreadable settings.json (not just malformed JSON) must not be cached
             // by the Lazy above as a permanent failure — every Get would then rethrow from editor startup.
-            Log.SettingsSectionInvalid(logger, ex, FileSection, filePath);
+            Log.SettingsSectionInvalid(logger, ex, FileSection, filePath, ex.Message);
         }
 
         return new State([], values);

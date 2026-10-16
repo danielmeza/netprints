@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization.Metadata;
+using Microsoft.Extensions.Options;
 using NetPrints.Core;
 
 namespace NetPrints.Extensibility.Settings;
@@ -22,4 +23,11 @@ public abstract record ExtensionSettingsDescriptor(string ExtensionId, Type Valu
 /// <param name="Default">The value used when the section is missing or invalid.</param>
 [Experimental(ExperimentalApiIds.Settings, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public sealed record ExtensionSettingsDescriptor<T>(string ExtensionId, JsonTypeInfo<T> TypeInfo, T Default)
-    : ExtensionSettingsDescriptor(ExtensionId, typeof(T));
+    : ExtensionSettingsDescriptor(ExtensionId, typeof(T))
+{
+    /// <summary>
+    /// Gets the validator the settings store runs on a section it has read; a failing section is replaced by
+    /// <see cref="Default"/> and the failures are logged. <see langword="null"/> accepts every value.
+    /// </summary>
+    public Func<string?, T, ValidateOptionsResult>? Validator { get; init; }
+}

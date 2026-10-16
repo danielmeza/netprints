@@ -307,6 +307,8 @@ virtual NetPrints.Extensibility.Loading.ExtensionLoadResult.PrintMembers(System.
 [NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>
 [NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.TypeInfo.init -> void
 [NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.Default.init -> void
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.Validator.get -> System.Func<string?, T, Microsoft.Extensions.Options.ValidateOptionsResult!>?
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.Validator.init -> void
 [NPXE0002]override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.ToString() -> string!
 [NPXE0002]static NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.operator !=(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>? left, NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>? right) -> bool
 [NPXE0002]static NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.operator ==(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>? left, NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>? right) -> bool

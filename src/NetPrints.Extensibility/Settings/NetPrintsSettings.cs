@@ -17,11 +17,13 @@ public sealed record NetPrintsSettings
     /// <summary>
     /// Directories searched for extensions; each immediate subfolder holding a manifest is loaded.
     /// </summary>
+    [NonBlankItems]
     public IReadOnlyList<string> ExtensionPaths { get; init; } = [];
 
     /// <summary>
     /// Full <c>.csproj</c> paths whose <c>NetPrintsExtension</c> items the user allowed.
     /// </summary>
+    [NonBlankItems]
     public IReadOnlyList<string> TrustedProjects { get; init; } = [];
 
     /// <summary>
@@ -39,7 +41,10 @@ public sealed record NetPrintsSettings
     /// </summary>
     [Experimental(ExperimentalApiIds.Settings, UrlFormat = ExperimentalApiIds.UrlFormat)]
     public static ExtensionSettingsDescriptor<NetPrintsSettings> Descriptor { get; } =
-        new(SectionId, NetPrintsSettingsJsonContext.Default.NetPrintsSettings, Empty);
+        new(SectionId, NetPrintsSettingsJsonContext.Default.NetPrintsSettings, Empty)
+        {
+            Validator = new NetPrintsSettingsValidator().Validate,
+        };
 }
 
 /// <summary>
