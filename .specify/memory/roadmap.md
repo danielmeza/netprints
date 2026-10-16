@@ -30,7 +30,7 @@ when it is started.
 | P0.1 | Grid rendering (shader + pixel-identical fallback) | ~3–5 d | P0 | **merged** 2026-09-25 (PR #2, 0e1add1) |
 | P1 | Core refactor + extension points | ~3.5 w | P0 | **merged** 2026-09-29 (PR #6, cc96a93); released `v0.1.0`, `v0.1.1` |
 | P2 | Catalog tooling + Spectre CLI | ~2.5 w | P1 | **merged** 2026-10-01 (PR #9, 3a6eafc); released `v0.2.0` |
-| P3a | Editor shell | ~2–3 w | P0, P1 | in progress (spec and tasks on draft PR #12, `specs/005-editor-shell/`) |
+| P3a | Editor shell | ~2–3 w | P0, P1 | **merged** 2026-10-15 (PR #12, bf3496e9); owner-feedback follow-up PR #19 |
 | P3 | Editor extension host | ~2.5 w | P0, P1, P3a | not started |
 | P3b | Declarations and code style | ~3–4 w | P1, P3a, P3 | not started (owner-approved 2026-09-26) |
 | P4 | VSIX (WpfAvaloniaHost) | ~2 w | P3 | **deferred** by owner (2026-09-24) |
@@ -139,6 +139,9 @@ docs updated (guides, API reference, ADRs as applicable).
 ### P3a — Editor shell (owner-approved 2026-09-25; source: `docs/research/2026-09-25-ux-audit/`)
 Spec: `specs/005-editor-shell/` (decisions: ADR-0018 docking, ADR-0019 CI matrix and Windows CLI leg, ADR-0020
 contribution registry; the rest in its `research.md`).
+**Complete:** merged 2026-10-15 (PR #12, merge commit `bf3496e9`). The owner's visual feedback on the merged shell
+(wire follow, redock duplicates, document tabs, compact Variables panel, theme palette) is follow-up PR #19, not part
+of P3. The items P3a left open moved to P3 ("Carried over from P3a").
 - **CI and test infrastructure** (carried over from P2's final review, done first because P3a adds many Desktop
   E2E scenarios): capture timings, a UI dump, a screenshot, logs and the launched program's state when a Desktop E2E
   test times out or fails (FU-4, the `EditCompileAndRun` flake, issue #11); split the "Build and test (Linux)" job
@@ -221,7 +224,16 @@ contribution registry; the rest in its `research.md`).
 inspector sections, panels, settings pages), sample non-Unreal extension, anything functional
 left beyond P0 parity. Publishes the `NetPrints.Serialization` and `NetPrints.Extensibility`
 packages for extension authors. No performance work here (owner decision 2026-09-25: see P8).
-- **Carried over from P2** (final review findings FU-1, FU-2, FU-5, FU-6): NPX008 should check host-provided and transitive references; the live `ReflectionProvider` should skip unreadable references and log them; info-level analyzer backlog cleanup; decide on editor `ProjectCheck` generation-skip behavior; two Windows defects found in P3a Review A (R13): `catalog --check` compares bytes, so a `.npcat.json` checked out with CRLF (`core.autocrlf=true`, no `.gitattributes` rule) always reads as stale, and `git-install --command` with backslash paths is written verbatim and `sh` drops the backslashes. (The three CI items FU-3, FU-4 and FU-7 moved to P3a.)
+- **Carried over from P3a** (closeout 2026-10-15; P3a final notes):
+  - regenerate the start-page guide images that carry the build version before the next release;
+  - the per-user session log on Windows is unverified (pure resolver tests only; no Desktop code runs on Windows in CI);
+  - a hover on the exact middle of a cable misses it at the fit zoom (2 px off hits);
+  - watch the Desktop E2E `ShellMainFlow` flake (watermark wait); it did not reproduce after one CI retry;
+  - the shared warmed reflection provider for the UI tests left P3a: a P8 candidate, not P3 work;
+  - a Dock binding warning at runtime: `ToolChromeControl` binds `IsPinned` through `ActiveDockable.OriginalOwner`,
+    which is null;
+  - the owner's manual check of the editor on Windows with two monitors at different DPI (R8).
+- **Carried over from P2** (final review findings FU-1, FU-2, FU-5, FU-6): NPX008 should check host-provided and transitive references; the live `ReflectionProvider` should skip unreadable references and log them; info-level analyzer backlog cleanup (the `dotnet format analyzers` triage; 210 info-level hits in `src/` at the P3a final run); decide on editor `ProjectCheck` generation-skip behavior; two Windows defects found in P3a Review A (R13): `catalog --check` compares bytes, so a `.npcat.json` checked out with CRLF (`core.autocrlf=true`, no `.gitattributes` rule) always reads as stale, and `git-install --command` with backslash paths is written verbatim and `sh` drops the backslashes. (The three CI items FU-3, FU-4 and FU-7 moved to P3a.)
 - **Extension testing — author conformance kit (may start in P2; the internal `ExtensionHarness` lands in P2, ADR-0010).** Ship `NetPrints.Extensibility.Testing` (NuGet package) with `ExtensionTest<TExtension>` (declarative `TestState`, `RunAsync`), an `ExtensionHarness` for real or folder-based testing, and a conformance suite with 12 checks (manifest, packaging, type identity, pure/repeatable registration, no issues, node round-trip, translation compilation, deterministic emitters, settings, host channel lifecycle, coexistence with built-ins and a "noisy neighbour", disposal). Optional xUnit adapter. `NetPrints.TestExtension` is tested only through this kit. See research.
 - **Before the first NetPrintsUnreal release:** a `netprints-verify` tool (modelled on IntelliJ Plugin Verifier), a reusable author CI workflow, a nightly job co-loading published extensions, and a `dotnet new netprints-extension` template.
 - **Run profiles, first batch (gap research 2026-10-06; run kinds research 2026-10-14)** (size M, about 7 days). Needs P3a's
