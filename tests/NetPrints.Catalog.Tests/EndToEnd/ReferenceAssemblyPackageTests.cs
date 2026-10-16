@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using NetPrints.Projects;
@@ -43,12 +44,7 @@ public sealed class ReferenceAssemblyPackage : IAsyncLifetime
     private const string PackageId = "AnnotatedRef";
 
     private static readonly string Configuration =
-#if DEBUG
-        "Debug";
-
-#else
-        "Release";
-#endif
+        typeof(ReferenceAssemblyPackage).Assembly.GetCustomAttribute<AssemblyConfigurationAttribute>()?.Configuration ?? "Release";
 
     private readonly string root = Directory.CreateTempSubdirectory("np-refasm-").FullName;
 

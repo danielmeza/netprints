@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Text.RegularExpressions;
@@ -60,12 +61,7 @@ public sealed class AnnotationsPackageTests(AnnotatedSampleBuild build) : IClass
 public sealed class AnnotatedSampleBuild : IAsyncLifetime
 {
     private static readonly string Configuration =
-#if DEBUG
-        "Debug";
-
-#else
-        "Release";
-#endif
+        typeof(AnnotatedSampleBuild).Assembly.GetCustomAttribute<AssemblyConfigurationAttribute>()?.Configuration ?? "Release";
 
     private readonly string root = Directory.CreateTempSubdirectory("np-annotated-").FullName;
 
