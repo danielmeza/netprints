@@ -19,6 +19,9 @@ public sealed class SettingsValidationTests : IDisposable
     [InlineData("""{"netprints":{"extensionPaths":["", "/x"]}}""", "extensionPaths")]
     [InlineData("""{"netprints":{"trustedProjects":["  "]}}""", "trustedProjects")]
     [InlineData("""{"netprints":{"enableAnimations":"maybe"}}""", "enableAnimations")]
+    [InlineData("""{"netprints":{"language":"not a culture"}}""", "language")]
+    [InlineData("""{"netprints":{"language":"zz-ZZ-ZZ-ZZ"}}""", "language")]
+    [InlineData("""{"netprints":{"language":7}}""", "language")]
     public async Task AnInvalidNetPrintsSectionUsesItsDefaultsAndLogsTheKeyAndReason(string json, string key)
     {
         await File.WriteAllTextAsync(SettingsFile, json, TestContext.Current.CancellationToken);
@@ -75,8 +78,22 @@ public sealed class SettingsValidationTests : IDisposable
         Assert.Single(messages);
     }
 
+    [Theory]
+    [InlineData("es")]
+    [InlineData("es-MX")]
+    [InlineData("zh-Hans-CN")]
+    [InlineData("")]
+    public async Task AValidLanguageIsReadAndNothingIsLogged(string language)
+    {
+        await File.WriteAllTextAsync(SettingsFile, "{\"netprints\":{\"language\":\"" + language + "\"}}", TestContext.Current.CancellationToken);
+
+        Assert.Equal(language, CreateStore().Get(NetPrintsSettings.Descriptor).Language);
+        Assert.Empty(messages);
+    }
+
     private static void AssertDefaults(NetPrintsSettings settings)
     {
+        Assert.Equal("", settings.Language);
         Assert.Empty(settings.ExtensionPaths);
         Assert.Empty(settings.TrustedProjects);
         Assert.True(settings.EnableAnimations);

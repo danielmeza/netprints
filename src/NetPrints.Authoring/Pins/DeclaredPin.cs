@@ -41,7 +41,16 @@ internal sealed record DeclaredPin(PinKind Kind, string Key, IPropertySymbol? Pr
     public static string Group(PinKind kind)
     {
         string direction = kind is PinKind.InputExec or PinKind.InputData or PinKind.InputType ? "in" : "out";
-        string collection = kind is PinKind.InputExec or PinKind.OutputExec ? "exec" : kind is PinKind.InputType or PinKind.OutputType ? "type" : "data";
+        string collection = "data";
+        if (kind is PinKind.InputExec or PinKind.OutputExec)
+        {
+            collection = "exec";
+        }
+        else if (kind is PinKind.InputType or PinKind.OutputType)
+        {
+            collection = "type";
+        }
+
         return direction + "." + collection;
     }
 }

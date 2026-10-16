@@ -418,13 +418,13 @@ SC-010; US3 scenarios 5–6. **Gate (plan)**: SC-005; SC-010 (the three writers)
 
 ### Batch C1b — model: sonnet — T043–T046 — 4 units
 
-- [ ] T043 [US3] `LocalizedText` (FR-027, research R13, data-model §11; 1 unit; **default pending owner**: pin labels
+- [x] T043 [US3] `LocalizedText` (FR-027, research R13, data-model §11; 1 unit; **default pending owner**: pin labels
   fall back to the raw key — AOP follow-up question 4, "pin labels"). Test first:
   `tests/NetPrints.Core.Tests/Localization/LocalizedTextTests.cs`: a key with no translation shows its default text
   (US3 scenario 6); the fallback chain (UI culture, its parent, the neutral resx, the default text); a pin label with no
   resource shows the raw key. Then the public `LocalizedText` record struct and its resolver in Core; contribution
   labels become `LocalizedText`; menu ids are separate from labels (`MenuPlacement`).
-- [ ] T044 [US3] Resource files, convention keys and per-pin automation ids (FR-027, research R13; 1 unit; **default
+- [x] T044 [US3] Resource files, convention keys and per-pin automation ids (FR-027, research R13; 1 unit; **default
   pending owner**: the built-in node category stays the single "NetPrints" category — AOP follow-up question 9, "node
   categories"). Test first: every convention key a declaration implies (`Node.<kind>.Title`,
   `Node.<kind>.Pin.<in|out>.<exec|data>.<key>`, `Category.<id>`, `Command.<id>.Label`, `Menu.<menuId>`,
@@ -432,11 +432,11 @@ SC-010; US3 scenarios 5–6. **Gate (plan)**: SC-005; SC-010 (the three writers)
   id. Then `src/NetPrints.Core/Graph/NodeStrings.resx` and `src/NetPrints.Editor/Strings.resx` (MSBuild strongly typed
   resources, `PublicClass=true`), `{x:Static}` for new XAML text, per-pin ids in `AutomationIds`, and
   `IExtensionBuilder.AddStringResources` (NPXE0011) for extension resources. The XAML literal ratchet does not grow.
-- [ ] T045 [US3] NPA040–NPA042 (FR-027, contracts/analyzer-diagnostics.md §3; 1 unit). Test first: one class per rule
+- [x] T045 [US3] NPA040–NPA042 (FR-027, contracts/analyzer-diagnostics.md §3; 1 unit). Test first: one class per rule
   in `tests/NetPrints.Analyzers.Tests/Localization/`. Then the analyzers in `src/NetPrints.Authoring/Localization/`
   (NPA040 is a warning for authors and an error in this repository, set in `.editorconfig` as the contract says); guide
   rows; 0 hits in `src/`.
-- [ ] T046 [US3] The language setting, Semi and Ursa locale, ADR-0027 (FR-027, FR-044, research R13, ADR-0023
+- [x] T046 [US3] The language setting, Semi and Ursa locale, ADR-0027 (FR-027, FR-044, research R13, ADR-0023
   amendment; 1 unit; **default pending owner**: a language change applies after a restart, with no live switch — AOP
   follow-up question 5, "live language switch"). Test first: `netprints.language` (a string; empty means the OS
   culture) sets the UI culture at start, and an invalid value is refused by the section's validator; a headless test

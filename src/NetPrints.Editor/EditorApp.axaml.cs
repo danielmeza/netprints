@@ -1,3 +1,4 @@
+using System.Globalization;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Controls;
@@ -10,6 +11,8 @@ using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.State;
 using NetPrints.Extensibility.Settings;
+using Semi.Avalonia;
+using Ursa.Themes.Semi;
 
 namespace NetPrints.Editor;
 
@@ -28,6 +31,8 @@ public partial class EditorApp : Application
         [EditorTheme.Light] = ThemeVariant.Light,
         [EditorTheme.System] = ThemeVariant.Default,
     };
+
+    private static readonly CultureInfo FallbackLocale = CultureInfo.GetCultureInfo("en-US");
 
     private static EditorHostServices? hostServices;
 
@@ -108,6 +113,39 @@ public partial class EditorApp : Application
         }
     }
 
+    /// <summary>Applies the language stored in the settings file; the operating system's culture when none is.</summary>
+    /// <param name="settings">The settings to read the language from.</param>
+    public void ApplyLanguageSetting(ISettingsStore settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        string language = settings.Get(NetPrintsSettings.Descriptor).Language;
+        CultureInfo culture = language.Length == 0 ? CultureInfo.InstalledUICulture : CultureInfo.GetCultureInfo(language);
+        CultureInfo.DefaultThreadCurrentUICulture = culture;
+        CultureInfo.CurrentUICulture = culture;
+        foreach (IStyle style in Styles)
+        {
+            if (style is SemiTheme semi)
+            {
+                semi.Locale = culture;
+                if (!IsLocale(semi.Locale, culture))
+                {
+                    semi.Locale = FallbackLocale;
+                }
+            }
+            else if (style is UrsaSemiTheme ursa)
+            {
+                ursa.Locale = culture;
+                if (!IsLocale(ursa.Locale, culture))
+                {
+                    ursa.Locale = FallbackLocale;
+                }
+            }
+        }
+    }
+
+    private static bool IsLocale(CultureInfo? locale, CultureInfo culture) =>
+        string.Equals(locale?.Name, culture.Name, StringComparison.OrdinalIgnoreCase);
+
     /// <summary>Switches the application to a theme (FR-082); <see cref="EditorTheme.System"/> follows the operating system.</summary>
     /// <param name="theme">The theme to switch to.</param>
     public void ApplyTheme(EditorTheme theme) => RequestedThemeVariant = Variants[theme];
@@ -130,6 +168,7 @@ public partial class EditorApp : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            ApplyLanguageSetting(HostServices.Settings);
             ApplyAnimationSetting(HostServices.Settings);
             ApplyThemeSetting(HostServices.Settings);
 

@@ -36,6 +36,7 @@ instead.
 - [0023: The editor's base theme and controls are Semi.Avalonia and Ursa.Avalonia](0023-semi-ursa-base-theme.md)
 - [0024: Analyzer and generator infrastructure: four Roslyn projects, four rule families](0024-analyzer-and-generator-infrastructure.md)
 - [0025: Node pins are declared as typed partial properties, and their keys are tracked](0025-declarative-node-pins.md)
+- [0027: Localization keys and display text](0027-localization-keys-and-display-text.md)
 - [0028: Node search providers, node creation and ranking](0028-node-search-providers-and-creation.md)
 - [0029: Node capabilities are role interfaces, and pins carry roles that decide purity](0029-node-capabilities-and-pin-roles.md)
 - [0030: The Extensibility package is split into Abstractions and host, with the editor as a facet](0030-extensibility-split-and-editor-facet.md)
@@ -49,6 +50,6 @@ instead.
 - [0039: User attributes and their editor extension model](0039-user-attributes-and-editor-extension-model.md)
 - [0040: Editor settings: one store, typed sections, generated pages and user key bindings](0040-editor-settings-pages-and-key-bindings.md)
 
-Numbers 0026, 0027 and 0032 are reserved by the roadmap for ADRs not yet written (node kinds,
-localization, graph rules); 0031 and later were written first. Declarative pins
-(0025), node search (0028), node capabilities (0029) and the Extensibility split (0030) are written.
+Numbers 0026 and 0032 are reserved by the roadmap for ADRs not yet written (node kinds,
+graph rules); 0031 and later were written first. Declarative pins
+(0025), localization (0027), node search (0028), node capabilities (0029) and the Extensibility split (0030) are written.

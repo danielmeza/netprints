@@ -94,7 +94,8 @@ public class JsonFileSettingsStoreTests : IDisposable
                 "trustedProjects": [
                   "/p/a.csproj"
                 ],
-                "enableAnimations": true
+                "enableAnimations": true,
+                "language": ""
               },
               "extensions": {
                 "test.other": {

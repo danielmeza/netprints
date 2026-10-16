@@ -18,9 +18,11 @@ internal sealed record ResxEntry(string Value, Location Location);
 /// <summary>A resx file among the additional files: its entries, and whether it is the neutral file or a satellite of one.</summary>
 internal sealed class ResxFile
 {
-    private static readonly Regex CulturePattern = new("^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$", RegexOptions.CultureInvariant);
+    private static readonly TimeSpan MatchTimeout = TimeSpan.FromSeconds(1);
 
-    private static readonly Regex PlaceholderPattern = new(@"\{(\d+)(?:[,:][^}]*)?\}", RegexOptions.CultureInvariant);
+    private static readonly Regex CulturePattern = new("^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$", RegexOptions.CultureInvariant, MatchTimeout);
+
+    private static readonly Regex PlaceholderPattern = new(@"\{(\d+)(?:[,:][^}]*)?\}", RegexOptions.CultureInvariant, MatchTimeout);
 
     private ResxFile(string path, string directory, string baseName, bool isNeutral, Dictionary<string, ResxEntry> entries)
     {

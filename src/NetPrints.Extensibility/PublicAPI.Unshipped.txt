@@ -152,3 +152,5 @@ virtual NetPrints.Extensibility.Loading.ExtensionLoadResult.PrintMembers(System.
 [NPXE0002]NetPrints.Extensibility.Settings.JsonFileSettingsStore.SetAsync<T>(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>! descriptor, T value, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
 NetPrints.Extensibility.Settings.NetPrintsSettings.EnableAnimations.get -> bool
 NetPrints.Extensibility.Settings.NetPrintsSettings.EnableAnimations.init -> void
+NetPrints.Extensibility.Settings.NetPrintsSettings.Language.get -> string!
+NetPrints.Extensibility.Settings.NetPrintsSettings.Language.init -> void

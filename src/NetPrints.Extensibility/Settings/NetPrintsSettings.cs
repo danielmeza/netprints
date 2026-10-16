@@ -32,6 +32,12 @@ public sealed record NetPrintsSettings
     public bool EnableAnimations { get; init; } = true;
 
     /// <summary>
+    /// The UI language as a culture name such as <c>es-MX</c>; empty means the operating system's culture. A change applies after a restart.
+    /// </summary>
+    [CultureName]
+    public string Language { get; init; } = "";
+
+    /// <summary>
     /// The default: no extension paths and no trusted projects, animations enabled.
     /// </summary>
     public static NetPrintsSettings Empty { get; } = new();

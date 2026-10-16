@@ -164,9 +164,9 @@ and is marked "default pending owner" in tasks.md.
 | Question | Default | Task |
 |---|---|---|
 | The blank-line rule: may `internal` and `protected` fields group? | yes, every non-public field and const may group | T004 |
-| Pin labels with no resource | the raw key | T043 |
-| Node categories | one "NetPrints" category for the built-ins | T044 |
-| Live language switch | no; a language change applies after a restart | T046 |
+| Pin labels with no resource | the raw key | T043 (applied in C1b, still pending the owner) |
+| Node categories | one "NetPrints" category for the built-ins | T044 (applied in C1b, still pending the owner) |
+| Live language switch | no; a language change applies after a restart | T046 (applied in C1b, still pending the owner) |
 | External terminal | Linux detection order behind `run.linuxTerminal`; the Windows console closes at exit; macOS through `open -a Terminal` | T123 |
 | Search order: This Methods before This Variables (the old canvas search showed variables first per base type) | This Methods first, as the default ranker's fixed order says; one ranker constant to flip | T022 |
 
@@ -612,6 +612,38 @@ consumers restore from `local-packages/` plus a scratch feed and build with `-p:
   as a compile failure (the type was not in Core, so the arithmetic test could not bind); green after the move, 2 of 2.
 - T042: ADR-0030 with the split, the references, the Options decision, analyzer delivery and an empty Facet section for T072; the
   index no longer reserves 0030.
+
+## Batch C1b (T043-T046)
+
+- T043: `LocalizedText(Key, DefaultText)` in `NetPrints.Core` (`Localization/`), `Resolve(ResourceManager | IEnumerable<ResourceManager>, culture)`;
+  the framework's `ResourceManager` walks culture, parent, neutral; then default text, then raw key. `CommandDescriptor.Label` and
+  `PanelDescriptor.Title` are `LocalizedText`; a literal takes `Command.<id>.Label` / `Panel.<id>.Title` (`ConventionKeys`), an explicit
+  text keeps its key; `DisplayLabel`/`DisplayTitle` resolve through `Strings`. `MenuPlacement.Path` stays the menu id, `Label` is
+  `Menu.<id>`; `MenuViewModel.Title` is the shown header and the shell binds it.
+- T044: `NodeStrings.resx` (72 keys: 23 kind titles, 46 shipped pins, `Category.netprints`) and `Strings.resx` (6 menus, 6 panels,
+  54 commands, category). Per-pin id `Graph.Pin.<In|Out>.<Exec|Data|Type>.<key>` on a wrapper panel around each pin (the existing
+  `Graph.Pin` id and name stay on the pin itself); the id comes from a style setter because E4 allows only `x:Static` attributes.
+  `AddStringResources` (NPXE0011) reaches `ExtensionRegistry.StringResources`.
+- T045: `ResourceKeyAnalyzer` (NPA040 to NPA042) and `ResxFile` in `NetPrints.Authoring/Localization/`; the pin collection logic of the key
+  tracking analyzer moved to `DeclaredPin` so both share it. NPA040 is an error in `src/**.cs` through `.editorconfig`; Core lists
+  `NodeStrings.resx` as an additional file. Checked by deleting `Node.throw.Title`: `ThrowNode.cs` reports NPA040. 0 hits in `src/`.
+- T046: `NetPrintsSettings.Language` with `[CultureName]` (empty or a predefined culture); `EditorApp.ApplyLanguageSetting` at start sets the UI
+  culture and the Semi and Ursa locales; ADR-0027 and the ADR-0023 amendment.
+- Defaults taken, each still pending the owner: pin labels with no resource show the raw key (T043); the built-in node category stays the
+  single "NetPrints" one (T044); a language change applies after a restart, no live switch (T046).
+- Decision: Core's `NodeStrings` is internal behind `CoreStrings.Resources`: a public generated class puts one `PublicAPI` line per key
+  (and RS0041 oblivious-type errors) into Core's API files. Deviation from "PublicClass=true" for Core only; `Strings` in the editor is public.
+- Decision: Semi and Ursa expose no supported-locale list (`TryGetLocaleResource` is private), so the editor sets the app culture and, when
+  the theme reads back another locale, sets `en-US`. Semi has 16 locales and Ursa 7 at the pinned versions.
+- Deviation: the display of node titles, pin labels, category names and extension resources is not switched to the resources yet (keys exist,
+  are checked, and `AddStringResources` collects); command labels, panel titles and menu headers resolve through `Strings`. ADR-0027 says so.
+- Deviation: NPA042 only looks at `Node.<kind>.*` keys of kinds with `[NodeKind]` in the project; `Command.*`, `Menu.*`, `Panel.*`, `Category.*`
+  and `Settings.*` keys are declared in code the analyzer does not evaluate.
+- Red/green. T043: `LocalizedTextTests` 4 of 8 red on assertions with the lookup stubbed out, 8 of 8 green. T044: `NodeStringKeyTests` 2 of 2 red
+  (resx without the keys), `ConventionKeyTests` 3 of 6 red, then green after the resx were filled from the failure lists; `PinAutomationIdTests`
+  red on the pin lookup without the XAML wrapper, green with it. `StringResourcesTests` (2) was written after the code. T045: 8 of 15 red on assertions
+  with no analyzer, 15 of 15 green. T046: `LanguageSettingTests` 4 of 4 red with a no-op `ApplyLanguageSetting`, 5 of 5 green (one case added after a
+  run showed Ursa reading back `zh-CN` for an unsupported culture); `SettingsValidationTests` 2 of 14 red (invalid language accepted), 14 of 14 green.
 
 ## Build-time budget (ADR-0024, S2a; B-F3)
 

@@ -49,3 +49,11 @@ dictionaries" choice in `specs/005-editor-shell/research.md` for the base theme;
   `EditorStyles.axaml` re-points its brushes at the Fluent resources.
 - Sources, all read on 2026-10-07: the NuGet pages of the three packages and the GitHub pages of Semi.Avalonia and
   Ursa.Avalonia (irihitech).
+
+## Amendment 1: the theme locales follow the app culture (2026-10-16, P3 T046, ADR-0027)
+
+`EditorApp.axaml` still starts both themes with `Locale="en-US"`. At start the editor reads `netprints.language`, sets the
+UI culture and sets the `Locale` of `SemiTheme` and `UrsaSemiTheme` to it. A theme that has no resource for the culture
+reads back a different locale; the editor then sets `en-US`. Semi ships 16 locales and Ursa 7 at the pinned versions, so a
+culture such as `es-MX` shows English in the theme's own controls. A language change applies after a restart, with no live
+switch (default pending the owner).
