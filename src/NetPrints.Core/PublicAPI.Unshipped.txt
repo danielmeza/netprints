@@ -264,3 +264,75 @@ static NetPrints.Core.LocalizedText.FromLiteral(string! text) -> NetPrints.Core.
 static NetPrints.Core.LocalizedText.implicit operator NetPrints.Core.LocalizedText(string! text) -> NetPrints.Core.LocalizedText
 static NetPrints.Core.LocalizedText.operator !=(NetPrints.Core.LocalizedText left, NetPrints.Core.LocalizedText right) -> bool
 static NetPrints.Core.LocalizedText.operator ==(NetPrints.Core.LocalizedText left, NetPrints.Core.LocalizedText right) -> bool
+const NetPrints.Projects.ProjectMessage.LanguageVersionNewerThanFramework = "NPW007" -> string!
+const NetPrints.Projects.ProjectMessage.LanguageVersionResolved = "NPW006" -> string!
+const NetPrints.Projects.ProjectMessage.LanguageVersionUnknown = "NPW008" -> string!
+NetPrints.Core.Project.CSharpTarget.get -> NetPrints.Projects.CSharpTarget!
+NetPrints.Projects.CSharpFrameworkInput
+NetPrints.Projects.CSharpFrameworkInput.<Clone>$() -> NetPrints.Projects.CSharpFrameworkInput!
+NetPrints.Projects.CSharpFrameworkInput.CSharpFrameworkInput(string! Framework, string? LangVersion, string? MaxSupportedLangVersion) -> void
+NetPrints.Projects.CSharpFrameworkInput.Deconstruct(out string! Framework, out string? LangVersion, out string? MaxSupportedLangVersion) -> void
+NetPrints.Projects.CSharpFrameworkInput.Equals(NetPrints.Projects.CSharpFrameworkInput? other) -> bool
+NetPrints.Projects.CSharpFrameworkInput.Framework.get -> string!
+NetPrints.Projects.CSharpFrameworkInput.Framework.init -> void
+NetPrints.Projects.CSharpFrameworkInput.LangVersion.get -> string?
+NetPrints.Projects.CSharpFrameworkInput.LangVersion.init -> void
+NetPrints.Projects.CSharpFrameworkInput.MaxSupportedLangVersion.get -> string?
+NetPrints.Projects.CSharpFrameworkInput.MaxSupportedLangVersion.init -> void
+NetPrints.Projects.CSharpLanguageVersion
+NetPrints.Projects.CSharpLanguageVersion.CompareTo(NetPrints.Projects.CSharpLanguageVersion other) -> int
+NetPrints.Projects.CSharpLanguageVersion.CSharpLanguageVersion(int Major, int Minor) -> void
+NetPrints.Projects.CSharpLanguageVersion.CSharpLanguageVersion() -> void
+NetPrints.Projects.CSharpLanguageVersion.Deconstruct(out int Major, out int Minor) -> void
+NetPrints.Projects.CSharpLanguageVersion.Equals(NetPrints.Projects.CSharpLanguageVersion other) -> bool
+NetPrints.Projects.CSharpLanguageVersion.Major.get -> int
+NetPrints.Projects.CSharpLanguageVersion.Major.init -> void
+NetPrints.Projects.CSharpLanguageVersion.Minor.get -> int
+NetPrints.Projects.CSharpLanguageVersion.Minor.init -> void
+NetPrints.Projects.CSharpTarget
+NetPrints.Projects.CSharpTarget.Check(NetPrints.Projects.CSharpLanguageVersion required) -> bool
+NetPrints.Projects.CSharpTarget.<Clone>$() -> NetPrints.Projects.CSharpTarget!
+NetPrints.Projects.CSharpTarget.Equals(NetPrints.Projects.CSharpTarget? other) -> bool
+NetPrints.Projects.CSharpTargetResolution
+NetPrints.Projects.CSharpTargetResolution.<Clone>$() -> NetPrints.Projects.CSharpTargetResolution!
+NetPrints.Projects.CSharpTargetResolution.CSharpTargetResolution(NetPrints.Projects.CSharpTarget! Target, System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ProjectMessage!>! Messages) -> void
+NetPrints.Projects.CSharpTargetResolution.Deconstruct(out NetPrints.Projects.CSharpTarget! Target, out System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ProjectMessage!>! Messages) -> void
+NetPrints.Projects.CSharpTargetResolution.Equals(NetPrints.Projects.CSharpTargetResolution? other) -> bool
+NetPrints.Projects.CSharpTargetResolution.Messages.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ProjectMessage!>!
+NetPrints.Projects.CSharpTargetResolution.Messages.init -> void
+NetPrints.Projects.CSharpTargetResolution.Target.get -> NetPrints.Projects.CSharpTarget!
+NetPrints.Projects.CSharpTargetResolution.Target.init -> void
+NetPrints.Projects.CSharpTarget.Specified.get -> string!
+NetPrints.Projects.CSharpTarget.TargetFrameworks.get -> System.Collections.Generic.IReadOnlyList<string!>!
+NetPrints.Projects.CSharpTarget.Version.get -> NetPrints.Projects.CSharpLanguageVersion
+NetPrints.Projects.ProjectSnapshot.CSharpTarget.get -> NetPrints.Projects.CSharpTarget!
+NetPrints.Projects.ProjectSnapshot.CSharpTarget.init -> void
+override NetPrints.Projects.CSharpFrameworkInput.Equals(object? obj) -> bool
+override NetPrints.Projects.CSharpFrameworkInput.GetHashCode() -> int
+override NetPrints.Projects.CSharpFrameworkInput.ToString() -> string!
+~override NetPrints.Projects.CSharpLanguageVersion.Equals(object obj) -> bool
+override NetPrints.Projects.CSharpLanguageVersion.GetHashCode() -> int
+override NetPrints.Projects.CSharpLanguageVersion.ToString() -> string!
+override NetPrints.Projects.CSharpTarget.Equals(object? obj) -> bool
+override NetPrints.Projects.CSharpTarget.GetHashCode() -> int
+override NetPrints.Projects.CSharpTargetResolution.Equals(object? obj) -> bool
+override NetPrints.Projects.CSharpTargetResolution.GetHashCode() -> int
+override NetPrints.Projects.CSharpTargetResolution.ToString() -> string!
+override NetPrints.Projects.CSharpTarget.ToString() -> string!
+static NetPrints.Projects.CSharpFrameworkInput.operator !=(NetPrints.Projects.CSharpFrameworkInput? left, NetPrints.Projects.CSharpFrameworkInput? right) -> bool
+static NetPrints.Projects.CSharpFrameworkInput.operator ==(NetPrints.Projects.CSharpFrameworkInput? left, NetPrints.Projects.CSharpFrameworkInput? right) -> bool
+static NetPrints.Projects.CSharpLanguageVersion.IsKeyword(string? text) -> bool
+static NetPrints.Projects.CSharpLanguageVersion.operator !=(NetPrints.Projects.CSharpLanguageVersion left, NetPrints.Projects.CSharpLanguageVersion right) -> bool
+static NetPrints.Projects.CSharpLanguageVersion.operator <(NetPrints.Projects.CSharpLanguageVersion left, NetPrints.Projects.CSharpLanguageVersion right) -> bool
+static NetPrints.Projects.CSharpLanguageVersion.operator <=(NetPrints.Projects.CSharpLanguageVersion left, NetPrints.Projects.CSharpLanguageVersion right) -> bool
+static NetPrints.Projects.CSharpLanguageVersion.operator ==(NetPrints.Projects.CSharpLanguageVersion left, NetPrints.Projects.CSharpLanguageVersion right) -> bool
+static NetPrints.Projects.CSharpLanguageVersion.operator >(NetPrints.Projects.CSharpLanguageVersion left, NetPrints.Projects.CSharpLanguageVersion right) -> bool
+static NetPrints.Projects.CSharpLanguageVersion.operator >=(NetPrints.Projects.CSharpLanguageVersion left, NetPrints.Projects.CSharpLanguageVersion right) -> bool
+static NetPrints.Projects.CSharpLanguageVersion.TryParse(string? text, out NetPrints.Projects.CSharpLanguageVersion version) -> bool
+static NetPrints.Projects.CSharpTarget.operator !=(NetPrints.Projects.CSharpTarget? left, NetPrints.Projects.CSharpTarget? right) -> bool
+static NetPrints.Projects.CSharpTarget.operator ==(NetPrints.Projects.CSharpTarget? left, NetPrints.Projects.CSharpTarget? right) -> bool
+static NetPrints.Projects.CSharpTargetResolution.operator !=(NetPrints.Projects.CSharpTargetResolution? left, NetPrints.Projects.CSharpTargetResolution? right) -> bool
+static NetPrints.Projects.CSharpTargetResolution.operator ==(NetPrints.Projects.CSharpTargetResolution? left, NetPrints.Projects.CSharpTargetResolution? right) -> bool
+static NetPrints.Projects.CSharpTarget.Resolve(string! projectFilePath, System.Collections.Generic.IReadOnlyList<NetPrints.Projects.CSharpFrameworkInput!>! frameworks) -> NetPrints.Projects.CSharpTargetResolution!
+static NetPrints.Projects.CSharpTarget.Unconstrained.get -> NetPrints.Projects.CSharpTarget!
+static readonly NetPrints.Projects.CSharpLanguageVersion.MaxKnown -> NetPrints.Projects.CSharpLanguageVersion

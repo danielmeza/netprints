@@ -56,6 +56,22 @@ public sealed record ProjectMessage(
     public const string WorkspaceDiagnostic = "NPW005";
 
     /// <summary>
+    /// <c>LangVersion</c> is <c>latest</c>, <c>latestMajor</c>, <c>preview</c> or <c>default</c>; it resolved to a fixed
+    /// version, and the message suggests pinning <c>&lt;LangVersion&gt;</c> (ADR-0038).
+    /// </summary>
+    public const string LanguageVersionResolved = "NPW006";
+
+    /// <summary>
+    /// <c>LangVersion</c> is newer than the target framework's default; it is kept (ADR-0038).
+    /// </summary>
+    public const string LanguageVersionNewerThanFramework = "NPW007";
+
+    /// <summary>
+    /// <c>LangVersion</c> is unknown or newer than <c>CSharpLanguageVersion.MaxKnown</c>; <c>MaxKnown</c> is used (ADR-0038).
+    /// </summary>
+    public const string LanguageVersionUnknown = "NPW008";
+
+    /// <summary>
     /// A reference of the project could not be read (not a managed assembly, or the file is damaged or locked); the
     /// editor skips it and loads the others.
     /// </summary>

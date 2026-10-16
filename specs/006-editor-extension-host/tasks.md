@@ -446,7 +446,7 @@ SC-010; US3 scenarios 5–6. **Gate (plan)**: SC-005; SC-010 (the three writers)
 
 ### Batch C1c — model: sonnet — T047–T050 — 4 units
 
-- [ ] T047 [US9] `CSharpLanguageVersion` and `CSharpTarget` (FR-028, FR-070, FR-071, research R19, data-model §6; 1
+- [x] T047 [US9] `CSharpLanguageVersion` and `CSharpTarget` (FR-028, FR-070, FR-071, research R19, data-model §6; 1
   unit). Test first: `tests/NetPrints.Core.Tests/Projects/CSharpTargetTests.cs`: parsing `latest`, `latestMajor`,
   `preview`, `default`, `major.minor` and unknown values; `latest`, `preview` and `default` resolve to the smaller of
   the framework's maximum and `MaxKnown` (US9 scenario 1); a multi-targeted project uses the minimum version and the

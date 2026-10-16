@@ -84,7 +84,11 @@ namespace NetPrints.Core
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(TargetFramework))]
         [NotifyPropertyChangedFor(nameof(ProfileId))]
+        [NotifyPropertyChangedFor(nameof(CSharpTarget))]
         public partial ProjectSnapshot Snapshot { get; set; }
+
+        /// <summary>The C# language the project compiles with, from <see cref="Snapshot"/> (ADR-0038).</summary>
+        public CSharpTarget CSharpTarget => Snapshot.CSharpTarget;
 
         /// <summary>Target framework moniker of <see cref="Snapshot"/> (e.g. <c>"net10.0"</c>).</summary>
         public string TargetFramework => Snapshot.TargetFramework;
