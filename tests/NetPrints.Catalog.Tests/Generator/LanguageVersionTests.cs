@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis.CSharp;
+using NetPrints.Testing.Roslyn;
 using Xunit;
 
 namespace NetPrints.Catalog.Tests.Generator;

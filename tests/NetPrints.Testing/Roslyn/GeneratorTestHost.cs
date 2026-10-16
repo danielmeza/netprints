@@ -13,13 +13,13 @@ using Microsoft.CodeAnalysis.Text;
 using AnnotationsGenerator = Annotations::NetPrints.Annotations.CatalogGenerator;
 using RoslynCompilation = Microsoft.CodeAnalysis.Compilation;
 
-namespace NetPrints.Catalog.Tests.Generator;
+namespace NetPrints.Testing.Roslyn;
 
 /// <summary>An embedded catalog read back from the compiled assembly's <c>NetPrintsEmbeddedCatalogAttribute</c>.</summary>
-internal sealed record EmbeddedCatalog(string Id, int SchemaVersion, string Json);
+public sealed record EmbeddedCatalog(string Id, int SchemaVersion, string Json);
 
 /// <summary>The additional files and build properties a generator run sees (what the MSBuild targets of the package provide).</summary>
-internal sealed class GeneratorInputs
+public sealed class GeneratorInputs
 {
     private const string DocumentationMetadata = "build_metadata.AdditionalFiles.NetPrintsReferenceDocumentation";
 
@@ -82,7 +82,7 @@ internal sealed class GeneratorInputs
 }
 
 /// <summary>Runs <see cref="AnnotationsGenerator"/> over in-memory sources against reference assemblies.</summary>
-internal static class GeneratorTestHost
+public static class GeneratorTestHost
 {
     private const string EmbeddedCatalogAttributeName = "NetPrintsEmbeddedCatalogAttribute";
 
