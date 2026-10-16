@@ -83,7 +83,7 @@
       <!-- Compact tab content: Dock's template keeps 2 px margins around the label and the close button, so these paddings come on top of them. The selected body keeps one more pixel under its content for the strip border it covers, so every label shares a baseline. -->
       <Thickness x:Key="Tab.BodyPadding">7,0,2,0</Thickness>
       <Thickness x:Key="Tab.SelectedBodyPadding">7,0,2,1</Thickness>
-      <x:Double x:Key="Tab.Height">38</x:Double>
+      <x:Double x:Key="Tab.Height">28</x:Double>
       <x:Double x:Key="Tab.CloseButtonSize">20</x:Double>
       <Thickness x:Key="Tab.AccentThickness">0,2,0,0</Thickness>
       <x:Double x:Key="Tab.InactiveOpacity">0.7</x:Double>

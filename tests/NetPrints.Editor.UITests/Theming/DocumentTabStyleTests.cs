@@ -27,6 +27,7 @@ public class DocumentTabStyleTests
     private const string Hover = "hover";
     private const double CenterTolerance = 1;
     private const double DockContentMargin = 2;
+    private const double MaxStripHeight = 30;
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
@@ -234,6 +235,11 @@ public class DocumentTabStyleTests
             Assert.Equal(20, buttonSize);
             Assert.Equal(16, iconSize);
 
+            DocumentTabStrip strip = window.GetVisualDescendants().OfType<DocumentTabStrip>().Single(candidate => candidate.IsEffectivelyVisible);
+            double tabHeight = NumberOf(window, "Tab.Height", variant);
+            Assert.InRange(tabHeight, 1, MaxStripHeight);
+            Assert.Equal(tabHeight, strip.Bounds.Height);
+
             var labelTops = new List<double>();
             var labelHeights = new List<double>();
             var labelLefts = new List<double>();
@@ -257,6 +263,7 @@ public class DocumentTabStyleTests
                 Assert.Equal(padding.Right + border.Right + DockContentMargin, tabBox.Right - closeBox.Right);
                 Assert.Equal(NumberOf(window, "Tab.Height", variant), tabBox.Height);
                 Assert.InRange(Math.Abs(tabBox.Center.Y - closeBox.Center.Y), 0, CenterTolerance);
+                Assert.InRange(Math.Abs(tabBox.Center.Y - labelBox.Center.Y), 0, CenterTolerance);
 
                 labelTops.Add(labelBox.Top);
                 labelHeights.Add(labelBox.Height);
