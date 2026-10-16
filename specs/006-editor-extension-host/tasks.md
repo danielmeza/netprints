@@ -364,7 +364,7 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
 - [x] T036 [US2] ADR-0029 (FR-013–FR-015, research R9, R11; 1 unit). Write
   `docs/adr/0029-node-capabilities-and-pin-roles.md`: role interfaces, pin roles and the purity rule (owner decisions
   11–13). ADR index.
-- [ ] T037 **Checkpoint B**. Whole suite plus the E2E pass; CI green. Report the plan's gate B: SC-002 (fixture and
+- [x] T037 **Checkpoint B**. Whole suite plus the E2E pass; CI green. Report the plan's gate B: SC-002 (fixture and
   sample graphs byte-identical across the renames; the golden changes limited to the `out`/`ref` list; the search
   goldens apart from the recorded order change); the FR-017 budget (the `SearchPerformanceTests` numbers); the trim
   count against the start of the phase (down by at least 2); the pack spike's outcome; the longest CI job; the Dock

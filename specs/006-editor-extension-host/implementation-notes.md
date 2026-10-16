@@ -552,7 +552,7 @@ kept in `.agent-archive/2026-10-16-p3-m5-spike/` beside the repository.
   build 0 warnings; `dotnet format --verify-no-changes` clean. Trim ratchet 11 (R5-0 start of the phase was 12 before T033, so down
   by 1 from T033 alone; the second drop the plan expects from the FR-117 factories is not in this batch's numbers: read it from the
   trim job). Still to read from PR #20 CI at this head: the longest CI job, `SearchPerformanceTests` numbers from the perf job, the pack
-  spike (see "Pack spike": passed), the Dock check (pin stays 12.1.0.6, see Checkpoint A). T037 stays unticked until CI is green.
+  spike (see "Pack spike": passed), the Dock check (pin stays 12.1.0.6, see Checkpoint A). T037 ticked after CI went green at 0a37ba60: CI run 38934517919, CLI (Windows) run 38934517781, Release run 38934517593, Docs run 38934517619.
 
 ## Pack spike
 
@@ -596,8 +596,15 @@ NPS, NPA003/NPA005/NPA011 and the STJ extension-data shapes.
 
 - AB-1 major `docs/guide/graph-format.md:105`: the editor's open and save drop unknown members (`DocumentMapper.cs:91`, `:250`,
   `:267`; `ProjectPersistence.cs:163`, `:245`); FR-007 and US1 scenario 6 hold only for `format`, `show` and `merge`.
+  Fixed in 240a07c7 (B-F1): the mapper remembers the unknown members against the model object each record became
+  (`PreservedMembers`, a weak side table, no change to Core) and writes them back; `UnknownMembersEditorRoundTripTests` loads
+  four fixtures with a member on every record through `ProjectPersistence`, marks the class dirty, saves and compares bytes
+  (red first on the byte comparison).
 - AB-2 major `src/NetPrints.Authoring/Pins/PinSymbols.cs:41`: NPA003/NPA005 miss `AddInputDataPin`/`AddOutputDataPin`;
   `PinRulesAnalyzer.cs:140` never checks a kind whose pins all come from a `[NodeBase]`.
+  Fixed in e8876357 (B-F1): the two data methods are in the add list and the constructor check covers inherited layouts; one
+  test per case (red first). Detection stays by name inside the constructor; a helper that adds pins is not seen (said in
+  the extensions guide), the semantic-model resolution was not worth the cost.
 - AB-3 minor `src/NetPrints.Authoring.CodeFixes/Pins/NpaSyntax.cs:58`: S1905 here and S3459 at `MakeArrayTypeNode.cs:18` are
   unrecorded info-level rules; no gate keeps SC-015 at zero.
 - AB-4 minor `docs/adr/0003-analyzer-promotion-and-string-literal-discipline.md:405`: the S1135 and S1144 (:431) reasons do
@@ -606,6 +613,10 @@ NPS, NPA003/NPA005/NPA011 and the STJ extension-data shapes.
   0.3.0 section stays in the release body (`release.yml:214`).
 - AB-6 minor `src/NetPrints.Serialization/Documents/UnknownMembers.cs:14`: the reference records (`Refs.cs:18-82`) drop
   unknown members.
+  Fixed in 927f836e (B-F1): the six reference records carry `ExtensionData`, so `format`, `show` and `merge` keep what is
+  inside them. The editor's save still writes references from the model's own types, so it drops them there; FR-007,
+  data-model section 7, ADR-0038 decision 10 and the graph-format guide now say so (the T012 note above that excluded the refs
+  because they are compared as keys was wrong: `UnknownMembers` has value equality).
 - AB-7 minor `specs/006-editor-extension-host/spec.md:654`: recorded deviations not amended (13/2 counts, S0 golden, IL2057,
   `default(T)` resets, NPI003 wording, NodePins line format).
 - AB-8 minor `docs/adr/0029-node-capabilities-and-pin-roles.md:44`: the overload button is unreachable through
