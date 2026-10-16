@@ -87,6 +87,15 @@ creates that many arguments typed `object`. This means **an older editor drops c
 when it saves the graph**: it reads the entry with untyped arguments and writes it back without the
 `arguments` array. An override entry never writes `arguments`; its arguments come from the base method.
 
+## Calls with `out` and `ref` parameters
+
+A call node gets one output data pin for each `out` or `ref` parameter of its method, after the pins for the
+return values. The pin is keyed by the parameter name (`out.data.<parameterName>`) and carries the parameter's
+value after the call. The pins are derived from the method when the graph loads, so the file format is unchanged
+and version 1 stays additive: a graph that wires nothing to the new pins is written exactly as before, and a
+connection to one is an ordinary connection entry. A void method with an `out` parameter can be pure; an `out`
+or `ref` input still needs a variable connected to it.
+
 ## Unknown members
 
 A member this build does not know, at any level of a graph file (the class, a graph, a method, a node, a

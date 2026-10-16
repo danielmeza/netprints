@@ -351,7 +351,7 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
   role (`IPinListEditor`, `IOverloadableNode`, editable pin names, `IMemberReferencingNode`), not by concrete node type.
   Then the interfaces in Core, their implementations on the node kinds, and the callers in
   `src/NetPrints.Editor/NodeSearch/`, `Navigation/` and `Inspectors/`; the header role falls back by convention.
-- [ ] T035 [US2] Pin roles, `out` and `ref` output pins, purity (FR-013, FR-014, SC-002, research R9; 2 units). Test
+- [x] T035 [US2] Pin roles, `out` and `ref` output pins, purity (FR-013, FR-014, SC-002, research R9; 2 units). Test
   first: `tests/NetPrints.Core.Tests/Graph/PinRoleTests.cs` (roles set by the generator and by `CallMethodNode`;
   `CanSetPure` is true exactly when an output data pin has the `Result` or `OutParam` role; the Exception pin never
   counts — US2 scenario 5), `OutRefPinTests.cs` (every `out` and `ref` parameter gets the output data pin
@@ -361,7 +361,7 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
   `Node.CanSetPure`, validation and the translator. Changed goldens (graphs with `out`/`ref` calls; the generated C# of
   a pure call with `out` parameters) are updated with `NETPRINTS_UPDATE_GOLDENS=1` and listed with the reason in
   implementation-notes (SC-002's exception). Schema v1 stays additive (`docs/guide/graph-format.md`).
-- [ ] T036 [US2] ADR-0029 (FR-013–FR-015, research R9, R11; 1 unit). Write
+- [x] T036 [US2] ADR-0029 (FR-013–FR-015, research R9, R11; 1 unit). Write
   `docs/adr/0029-node-capabilities-and-pin-roles.md`: role interfaces, pin roles and the purity rule (owner decisions
   11–13). ADR index.
 - [ ] T037 **Checkpoint B**. Whole suite plus the E2E pass; CI green. Report the plan's gate B: SC-002 (fixture and
