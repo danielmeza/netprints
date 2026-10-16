@@ -31,18 +31,13 @@ public sealed class ShellViewModelTests : IAsyncDisposable
         await editor.DisposeAsync();
     }
 
-    private sealed class NoServices : IServiceProvider
-    {
-        public object? GetService(Type serviceType) => null;
-    }
-
     private ShellViewModel CreateShell(Action<IContributionRegistry>? extra = null)
     {
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         BuiltInContributions.Register(registry);
         extra?.Invoke(registry);
         registry.Freeze();
-        return new ShellViewModel(registry, new NoServices(), time, new InlineDispatcher());
+        return new ShellViewModel(registry, PanelFactoryContext.Detached, time, new InlineDispatcher());
     }
 
     private async Task<ProjectSessionViewModel> OpenSessionAsync()
@@ -74,17 +69,17 @@ public sealed class ShellViewModelTests : IAsyncDisposable
     [Fact]
     public void APanelFromAnotherContributionIsListedWithItsContentFromItsFactory()
     {
-        IServiceProvider? received = null;
+        IPanelContext? received = null;
         var content = new object();
-        using ShellViewModel shell = CreateShell(registry => registry.AddPanel(new PanelDescriptor("acme.panel.notes", "Notes", services =>
+        using ShellViewModel shell = CreateShell(registry => registry.AddPanel(new PanelDescriptor("acme.panel.notes", "Notes", panelContext =>
         {
-            received = services;
+            received = panelContext;
             return content;
         }, PanelDock.Right, 5)));
 
         PanelViewModel notes = Assert.IsType<PanelViewModel>(shell.FindPanel("acme.panel.notes"));
         Assert.Same(content, notes.Content);
-        Assert.IsType<NoServices>(received);
+        Assert.Same(PanelFactoryContext.Detached, received);
         Assert.Equal(7, shell.Panels.Count);
         Assert.Equal("acme.panel.notes", shell.Panels[2].Id);
         Assert.Null(shell.FindPanel("acme.panel.missing"));

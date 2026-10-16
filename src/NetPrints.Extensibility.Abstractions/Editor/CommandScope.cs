@@ -1,4 +1,4 @@
-namespace NetPrints.Editor.Contributions;
+namespace NetPrints.Extensibility.Editor;
 
 /// <summary>Where a command's gestures are active; a command may name several scopes (<c>Graph | ProjectTree</c>).</summary>
 [Flags]

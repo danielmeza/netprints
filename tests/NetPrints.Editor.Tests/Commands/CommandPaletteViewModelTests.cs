@@ -14,9 +14,9 @@ public sealed class CommandPaletteViewModelTests
 
         public int Runs { get; private set; }
 
-        public bool CanExecute(CommandContext context) => Enabled;
+        public bool CanExecute(ICommandContext context) => Enabled;
 
-        public Task ExecuteAsync(CommandContext context, CancellationToken cancellationToken)
+        public Task ExecuteAsync(ICommandContext context, CancellationToken cancellationToken)
         {
             Runs++;
             return Task.CompletedTask;

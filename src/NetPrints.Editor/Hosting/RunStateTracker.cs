@@ -67,6 +67,14 @@ public sealed class RunStateTracker : IDisposable
         }
     }
 
+    /// <summary>Shows a line in the Output panel without touching the state of the run (an extension writes through this).</summary>
+    /// <param name="text">The line, without its line ending.</param>
+    public void WriteLine(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        LineAppended?.Invoke(this, new RunOutputLine(ProcessStream.Output, text));
+    }
+
     /// <summary>The current state.</summary>
     /// <returns>A snapshot that later events do not change.</returns>
     public RunStateSnapshot Snapshot()

@@ -10,9 +10,9 @@ public class ContributionRegistryTests
 {
     private sealed class NoopHandler : ICommandHandler
     {
-        public bool CanExecute(CommandContext context) => true;
+        public bool CanExecute(ICommandContext context) => true;
 
-        public Task ExecuteAsync(CommandContext context, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task ExecuteAsync(ICommandContext context, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private readonly CollectingLogger<ContributionRegistry> logger = new();

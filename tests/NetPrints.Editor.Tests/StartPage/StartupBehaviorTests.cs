@@ -250,13 +250,9 @@ public sealed class StartupBehaviorTests : IDisposable
     {
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         BuiltInContributions.Register(registry);
-        var services = new StartPageServices().Add<IProjectActions>(new Shell.FakeProjectActions()).Add(recent);
-        if (withStore is not null)
-        {
-            services.Add(withStore);
-        }
+        var services = new StartPageContext(new Shell.FakeProjectActions(), PanelFactoryContext.Detached, recent, withStore);
 
-        return new StartPageViewModel(new ShellViewModel(registry, services, new FakeTimeProvider(), new InlineDispatcher()), services);
+        return new StartPageViewModel(new ShellViewModel(registry, PanelFactoryContext.Detached, new FakeTimeProvider(), new InlineDispatcher()), services);
     }
 
     [Fact]

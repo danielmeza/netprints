@@ -12,7 +12,7 @@ namespace NetPrints.Editor.Contributions;
 public sealed record PanelDescriptor(
     string Id,
     LocalizedText Title,
-    Func<IServiceProvider, object> CreateViewModel,
+    Func<IPanelContext, object> CreateViewModel,
     PanelDock DefaultDock,
     int Order,
     string? IconId = null)

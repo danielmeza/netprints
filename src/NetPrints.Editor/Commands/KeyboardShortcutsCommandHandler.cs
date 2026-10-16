@@ -4,7 +4,7 @@ using NetPrints.Editor.Shell;
 namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>keyboardShortcuts</c> command: shows every registered command with its shortcuts.</summary>
-public sealed class KeyboardShortcutsCommandHandler : ICommandHandler
+public sealed class KeyboardShortcutsCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => true;

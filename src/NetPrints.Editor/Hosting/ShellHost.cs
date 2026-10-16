@@ -23,9 +23,9 @@ internal sealed class ShellHost : IDisposable
     private readonly ShellStatePersistence? persistence;
     private readonly StartPageController startPage;
 
-    private sealed class NoServices : IServiceProvider
+    private sealed class ComposedShell
     {
-        public object? GetService(Type serviceType) => null;
+        public IShell? Api { get; set; }
     }
 
     private ShellHost(ShellProjectActions actions, IContributionRegistry registry, ShellViewModel shell, DockShellAdapter adapter, CommandInvoker invoker, ShellWindow window, ILogger logger, ShellStatePersistence? persistence)
@@ -73,26 +73,24 @@ internal sealed class ShellHost : IDisposable
         GoToProviderContributions.Register(registry, () => shell?.Session);
         registry.Freeze();
 
-        shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, context.Dispatcher);
+        var composed = new ComposedShell();
+        var panelContext = new PanelFactoryContext(
+            new EditorShellFacade(() => composed.Api ?? throw new InvalidOperationException("The shell is not composed yet.")),
+            new EditorDialogService(context.Dialogs),
+            new EditorOutput(context.RunState),
+            EmptyServiceProvider.Instance);
+        shell = new ShellViewModel(registry, panelContext, TimeProvider.System, context.Dispatcher);
         shell.WindowStateService = context.WindowStateService;
         var actions = new ShellProjectActions(context, shell);
-        var startPageServices = new StartPageServices().Add<IProjectActions>(actions).Add<IClipboardService>(context.Clipboard).Add<IFolderLauncher>(new ShellFolderLauncher()).Add(TimeProvider.System);
-        if (context.StateStore is { } stateStore)
-        {
-            startPageServices.Add(stateStore);
-        }
+        var startPageContext = new StartPageContext(actions, panelContext, context.Recent, context.StateStore, context.Clipboard, new ShellFolderLauncher());
 
-        if (context.Recent is { } recent)
-        {
-            startPageServices.Add(recent);
-        }
-
-        var adapter = new DockShellAdapter(shell, actions, id => OpenDocument(id, shell, context, startPageServices), context.LoggerFactory.CreateLogger<DockShellAdapter>());
+        var adapter = new DockShellAdapter(shell, actions, id => OpenDocument(id, shell, context, startPageContext), context.LoggerFactory.CreateLogger<DockShellAdapter>());
+        composed.Api = adapter;
         actions.Api = adapter;
         shell.Layout = adapter;
         shell.Projects = actions;
 
-        var invoker = new CommandInvoker(registry, new ShellCommandContextProvider(shell, adapter),
+        var invoker = new CommandInvoker(registry, new ShellCommandContextProvider(shell, adapter, context),
             exception => context.Dispatcher.Post(() => context.Dialogs.ShowErrorAsync("The command failed", exception.ToString()).Forget(logger)));
         shell.AttachCommands(invoker);
 
@@ -116,11 +114,11 @@ internal sealed class ShellHost : IDisposable
         Actions.Dispose();
     }
 
-    private static DocumentViewModel? OpenDocument(DocumentId id, ShellViewModel shell, EditorContext context, IServiceProvider startPageServices)
+    private static DocumentViewModel? OpenDocument(DocumentId id, ShellViewModel shell, EditorContext context, StartPageContext startPageContext)
     {
         if (id.Kind == DocumentKind.StartPage)
         {
-            return new StartPageViewModel(shell, startPageServices);
+            return new StartPageViewModel(shell, startPageContext);
         }
 
         if (shell.Session is not { } session)

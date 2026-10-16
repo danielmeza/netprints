@@ -27,13 +27,13 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
 
     /// <summary>Creates the shell state; every registered panel's view model is created now.</summary>
     /// <param name="registry">The registry the panels come from.</param>
-    /// <param name="services">The services panel view models are created with.</param>
+    /// <param name="panelContext">The context panel view models are created with.</param>
     /// <param name="timeProvider">The clock of the status message expiry.</param>
     /// <param name="dispatcher">Brings the status message expiry to the UI thread.</param>
-    public ShellViewModel(IContributionRegistry registry, IServiceProvider services, TimeProvider timeProvider, IUiDispatcher dispatcher)
+    public ShellViewModel(IContributionRegistry registry, IPanelContext panelContext, TimeProvider timeProvider, IUiDispatcher dispatcher)
     {
         ArgumentNullException.ThrowIfNull(registry);
-        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(panelContext);
         ArgumentNullException.ThrowIfNull(timeProvider);
         ArgumentNullException.ThrowIfNull(dispatcher);
         this.registry = registry;
@@ -41,7 +41,7 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         [.. registry.Panels
             .OrderBy(panel => panel.DefaultDock)
             .ThenBy(panel => panel.Order)
-            .Select(panel => new PanelViewModel(panel, panel.CreateViewModel(services)))];
+            .Select(panel => new PanelViewModel(panel, panel.CreateViewModel(panelContext)))];
         StatusBar = new StatusBarViewModel(timeProvider, dispatcher);
         StatusBar.PropertyChanged += OnStatusBarChanged;
         Documents.CollectionChanged += (_, _) => OnPropertyChanged(nameof(Title));

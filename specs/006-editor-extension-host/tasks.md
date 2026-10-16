@@ -472,7 +472,7 @@ SC-010; US3 scenarios 5–6. **Gate (plan)**: SC-005; SC-010 (the three writers)
 
 ### Batch C1d — model: sonnet — T051–T052 — 5 units
 
-- [ ] T051 [US3] SUG4: public node search providers (FR-021, FR-028, FR-030, research R10, R16; 2 units). Test first:
+- [x] T051 [US3] SUG4: public node search providers (FR-021, FR-028, FR-030, research R10, R16; 2 units). Test first:
   an `Fx` extension that registers a provider with `AddSuggestionProvider` gets its rows in node search; a provider id
   without the manifest prefix is NPX013 and a duplicate id NPX004; an entry's `Requires` carries a `CSharpFeature`.
   Then move the provider contracts (`INodeSuggestionProvider`, `NodeSearchContext`, `NodeSearchEntry`) to Abstractions
@@ -480,7 +480,7 @@ SC-010; US3 scenarios 5–6. **Gate (plan)**: SC-005; SC-010 (the three writers)
   under NPXE0007; both ids in `src/NetPrints.Core/ExperimentalApiIds.cs`. The conformance check for providers lands in
   T103 (NPK013, NPK015). Also fill `NodeSearchEntry.Keywords` and the row titles from the catalog node hints
   (`CatalogNodeHint` `DisplayName`, `Category`, `Keywords`) once the providers can reach them (moved from T020, AB-10).
-- [ ] T052 [US3] Typed contexts (FR-022, research R14, contracts/extension-api.md §3; 3 units). Test first:
+- [x] T052 [US3] Typed contexts (FR-022, research R14, contracts/extension-api.md §3; 3 units). Test first:
   `tests/NetPrints.Editor.Tests/Contributions/TypedContextTests.cs`: every member of `ICommandContext`,
   `IPanelContext`, `IStartPageContext`, `IStatusBarContext`, `ISettingsPageContext` and `IDialogContext` is non-null in
   the editor host; a context-menu item whose `AppliesTo` is false is hidden, not disabled; handlers are stateless and
@@ -507,7 +507,17 @@ SC-010; US3 scenarios 5–6. **Gate (plan)**: SC-005; SC-010 (the three writers)
   project session scope (the gate). Then extract `ProjectSessionScope` from `ProjectLoader`; backups, recovery and
   templates become `[SessionScoped<T>]`; one container per project session, disposed with it.
 
-### Batch C1f — model: sonnet — T055–T057 — 3 units
+### Batch C1f — model: sonnet — T055–T057, T171 — 5 units
+
+- [ ] T171 [US3] Display of node titles, pin labels, category names and extension resources through the resx (FR-027,
+  research R13, ADR-0027; 2 units; added after C1d: C1b and C1c left the display on the C# strings, and no task owned
+  it). Test first: with the UI culture set to a culture that has a translation of `Node.<kind>.Title`, a built-in
+  node's header, a shipped pin's label and the `Category.netprints` search header show the translation; an extension
+  that adds a `ResourceManager` with `AddStringResources` has its node title, pin label and category resolved through it;
+  a key with no translation shows the default text. Then switch `NodeViewModel` titles, `NodePinViewModel` labels, the
+  node search categories and `NodeSuggestion.DisplayName` to `LocalizedText.Resolve` over `CoreStrings.Resources` and
+  `ExtensionRegistry.StringResources`; the XAML literal ratchet does not grow and the goldens of T019 stay green (the
+  default text is the current text). Remove the "not switched yet" deviation from ADR-0027.
 
 - [ ] T055 [US1] Composition step 3: classes and graphs (FR-003, FR-004, SC-005, research R4 step 5, gate M2; 2 units).
   Red/green: T006's M2 test with counting fakes. The generated `ClassContextFactory` and `GraphScopeFactory`
@@ -1396,7 +1406,7 @@ batch runs after sub-phase H (Checkpoint H, T169).
 |---|---|---|---|
 | A — foundation | 16 (T001–T016); T017, T018 merged | A1 4, A2 3, A3 3, A4 4, A5 5 = 19 | into B-R, B-F (A+B) |
 | B — node model and search | 21 (T019–T039) | B1 3, B2 4, B3 4, B4 3, B5 4, B6 3, B7 5 = 26 | B-R (T038), B-F (T039) |
-| C1 — public contracts | 18 (T040–T057); T058, T059 merged | C1a 4, C1b 4, C1c 4, C1d 5, C1e 4, C1f 3 = 24 | into C2-R, C2-F (C1+C2) |
+| C1 — public contracts | 18 (T040–T057); T058, T059 merged | C1a 4, C1b 4, C1c 4, C1d 5, C1e 4, C1f 5 = 26 | into C2-R, C2-F (C1+C2) |
 | C2 — facets and the publish gate | 19 (T060–T078) | C2a 4, C2b 4, C2c 4, C2d 3, C2e 4, C2f 3 = 22 | C2-R (T077), C2-F (T078) |
 | D1 — extension host in the editor | 20 (T079–T098); T099, T100 merged | D1a 4, D1b 4, D1c 3, D1d 4, D1e 4, D1f 3, D1g 4 = 26 | into D2-R, D2-F (D1+D2) |
 | D2 — author kit and the Godot sample | 12 (T101–T112) | D2a 4, D2b 4, D2c 4, D2d 3 = 15 | D2-R (T111), D2-F (T112) |
@@ -1445,7 +1455,7 @@ P3c and have no task (T152 marks them as moved).
 | FR-024 | T063 |
 | FR-025 | T066 |
 | FR-026 | T067 |
-| FR-027 | T043, T044, T045, T046 |
+| FR-027 | T043, T044, T045, T046, T171 |
 | FR-028 | T047, T051 |
 | FR-029 | T069, T145 |
 | FR-030 | T051, T056, T072, T073 |

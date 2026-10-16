@@ -21,10 +21,16 @@ public sealed class CommandInvoker(IContributionRegistry registry, ICommandConte
     /// <summary>Gets the commands the context-menu items of a target run, in item order.</summary>
     /// <param name="target">The item a context menu opens on.</param>
     /// <returns>The commands; an item naming an unregistered command is left out.</returns>
-    public IReadOnlyList<CommandDescriptor> ContextMenuCommands(ContextMenuTarget target) =>
+    public IReadOnlyList<CommandDescriptor> ContextMenuCommands(ContextMenuTarget target) => ContextMenuCommands(target, null);
+
+    /// <summary>Gets the commands the context-menu items of a target run for the context of the open menu.</summary>
+    /// <param name="target">The item a context menu opens on.</param>
+    /// <param name="context">The context of the open menu; an item whose <see cref="ContextMenuItemDescriptor.AppliesTo"/> rejects it is left out (hidden, not disabled). <see langword="null"/> applies no filter.</param>
+    /// <returns>The commands; an item naming an unregistered command is left out.</returns>
+    public IReadOnlyList<CommandDescriptor> ContextMenuCommands(ContextMenuTarget target, ICommandContext? context) =>
     [
         .. registry.ContextMenuItems
-            .Where(item => item.Target == target)
+            .Where(item => item.Target == target && (context is null || item.AppliesTo is null || item.AppliesTo(context)))
             .OrderBy(item => item.Order)
             .Select(item => registry.Commands.FirstOrDefault(command => command.Id == item.CommandId))
             .OfType<CommandDescriptor>(),

@@ -4,7 +4,7 @@ using NetPrints.Editor.Shell;
 namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>run</c> command: builds the open project, then starts the program; disabled while a build is in flight or a program runs (Stop takes its place).</summary>
-public sealed class RunCommandHandler : ICommandHandler
+public sealed class RunCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => context.Session is { IsRunning: false, IsBuilding: false, Project.CanCompileAndRun: true };

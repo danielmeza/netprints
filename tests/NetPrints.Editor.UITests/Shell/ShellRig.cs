@@ -92,11 +92,6 @@ internal sealed class ShellRig : IDisposable
 
     public const int Height = 1000;
 
-    private sealed class NoServices : IServiceProvider
-    {
-        public object? GetService(Type serviceType) => null;
-    }
-
     private sealed class ImmediateDispatcher : IUiDispatcher
     {
         public void Post(Action action) => action();
@@ -133,7 +128,7 @@ internal sealed class ShellRig : IDisposable
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         BuiltInContributions.Register(registry);
         registry.Freeze();
-        var shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, new ImmediateDispatcher());
+        var shell = new ShellViewModel(registry, PanelFactoryContext.Detached, TimeProvider.System, new ImmediateDispatcher());
         var adapter = new DockShellAdapter(shell, new NoProjectActions(), documents ?? (id => new TestDocumentViewModel(id, id.GraphKey ?? id.ToString())), logger ?? NullLogger.Instance);
         shell.Layout = adapter;
         var ui = HeadlessUi.Create();

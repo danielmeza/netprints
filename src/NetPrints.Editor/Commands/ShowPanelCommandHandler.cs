@@ -5,7 +5,7 @@ namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>showPanel.&lt;panel&gt;</c> commands.</summary>
 /// <param name="panelId">The panel to show.</param>
-public sealed class ShowPanelCommandHandler(string panelId) : ICommandHandler
+public sealed class ShowPanelCommandHandler(string panelId) : IEditorCommandHandler
 {
     /// <summary>Gets the id of the panel this command shows.</summary>
     public string PanelId => panelId;

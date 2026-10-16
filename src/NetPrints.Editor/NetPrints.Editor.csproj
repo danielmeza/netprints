@@ -9,8 +9,10 @@
   <ItemGroup>
     <NetPrintsExperimentalOptIn Include="NPXE0001" />
     <NetPrintsExperimentalOptIn Include="NPXE0002" />
+    <NetPrintsExperimentalOptIn Include="NPXE0005" />
     <NetPrintsExperimentalOptIn Include="NPXE0006" />
     <NetPrintsExperimentalOptIn Include="NPXE0007" />
+    <Using Include="NetPrints.Extensibility.Editor" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Irihi.Ursa" />

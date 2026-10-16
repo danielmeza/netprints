@@ -18,9 +18,9 @@ public class CommandPaletteTests
     {
         public int Runs { get; private set; }
 
-        public bool CanExecute(CommandContext context) => enabled;
+        public bool CanExecute(ICommandContext context) => enabled;
 
-        public Task ExecuteAsync(CommandContext context, CancellationToken cancellationToken)
+        public Task ExecuteAsync(ICommandContext context, CancellationToken cancellationToken)
         {
             Runs++;
             return Task.CompletedTask;

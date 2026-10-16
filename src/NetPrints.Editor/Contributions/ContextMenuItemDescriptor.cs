@@ -6,4 +6,5 @@ namespace NetPrints.Editor.Contributions;
 /// <param name="CommandId">The id of the command the entry runs.</param>
 /// <param name="Group">The group within the menu.</param>
 /// <param name="Order">The position within the group.</param>
-public sealed record ContextMenuItemDescriptor(string Id, ContextMenuTarget Target, string CommandId, string Group, int Order);
+/// <param name="AppliesTo">Tells whether the entry is shown for the context of the open menu; <see langword="null"/> shows it always. An entry it rejects is hidden, not disabled.</param>
+public sealed record ContextMenuItemDescriptor(string Id, ContextMenuTarget Target, string CommandId, string Group, int Order, Func<ICommandContext, bool>? AppliesTo = null);

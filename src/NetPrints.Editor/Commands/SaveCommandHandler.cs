@@ -5,7 +5,7 @@ using NetPrints.Editor.Shell;
 namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>save</c> command: saves the file of the active graph's class; with no graph document active it saves every unsaved file.</summary>
-public sealed class SaveCommandHandler : ICommandHandler
+public sealed class SaveCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => context.Session is not null;

@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.State;
 
@@ -17,16 +18,16 @@ internal sealed partial class StartPageViewModel : DocumentViewModel
 
     /// <summary>Creates the page from the registered tiles.</summary>
     /// <param name="shell">The shell, whose registry lists the tiles and whose <c>StartPageError</c> the page shows.</param>
-    /// <param name="services">What the tiles' factories ask for.</param>
-    public StartPageViewModel(ShellViewModel shell, IServiceProvider services)
+    /// <param name="context">What the tiles' factories are given.</param>
+    internal StartPageViewModel(ShellViewModel shell, StartPageContext context)
         : base(DocumentId.StartPage, "Start")
     {
         ArgumentNullException.ThrowIfNull(shell);
-        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(context);
         this.shell = shell;
-        Tiles = [.. shell.Registry.DashboardTiles.OrderBy(tile => tile.Order).Select(tile => tile.CreateViewModel(services))];
+        Tiles = [.. shell.Registry.DashboardTiles.OrderBy(tile => tile.Order).Select(tile => tile.CreateViewModel(context))];
         shell.PropertyChanged += OnShellChanged;
-        if (services.GetService(typeof(IEditorStateStore)) is IEditorStateStore stateStore)
+        if (context.StateStore is { } stateStore)
         {
             ReopenLastProject = stateStore.LoadStart()?.StartupBehavior == StartupBehavior.ReopenLastProject;
             store = stateStore;

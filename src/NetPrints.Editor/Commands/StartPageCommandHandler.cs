@@ -4,7 +4,7 @@ using NetPrints.Editor.Shell;
 namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>startPage</c> command: opens the start page document, with or without a project open.</summary>
-public sealed class StartPageCommandHandler : ICommandHandler
+public sealed class StartPageCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => true;

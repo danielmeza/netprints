@@ -1,7 +1,5 @@
-using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.StartPage;
-using NetPrints.Editor.State;
 
 namespace NetPrints.Editor.Contributions.BuiltIn;
 
@@ -16,23 +14,30 @@ public static class StartPageContributions
 
         registry.AddDashboardTile(new DashboardTileDescriptor(
             ContributionIds.TilePrefix + "recent", "Recent projects", 0,
-            services => new RecentProjectsTileViewModel(
-                services.GetService(typeof(RecentProjects)) as RecentProjects, StartPageServices.Require<IProjectActions>(services),
-                services.GetService(typeof(TimeProvider)) as TimeProvider, services.GetService(typeof(IClipboardService)) as IClipboardService, services.GetService(typeof(IFolderLauncher)) as IFolderLauncher)));
+            context => RecentOf(StartPageContext.From(context))));
         registry.AddDashboardTile(new DashboardTileDescriptor(
             ContributionIds.TilePrefix + "open", "Open folder or project", 1,
-            services => new OpenProjectTileViewModel(StartPageServices.Require<IProjectActions>(services))));
+            context => new OpenProjectTileViewModel(StartPageContext.From(context).ProjectActions)));
         registry.AddDashboardTile(new DashboardTileDescriptor(
             ContributionIds.TilePrefix + "new", "New project", 2,
-            services => new NewProjectTileViewModel(StartPageServices.Require<IProjectActions>(services))));
+            context => new NewProjectTileViewModel(StartPageContext.From(context).ProjectActions)));
         registry.AddDashboardTile(new DashboardTileDescriptor(
             ContributionIds.TilePrefix + "samples", "Samples", 3,
-            services => new SamplesTileViewModel(services.GetService(typeof(SampleCatalog)) as SampleCatalog ?? SampleCatalog.Bundled, StartPageServices.Require<IProjectActions>(services))));
+            context => SamplesOf(StartPageContext.From(context))));
         registry.AddDashboardTile(new DashboardTileDescriptor(
             ContributionIds.TilePrefix + "learn", "Learn", 4,
-            services => new LearnTileViewModel(StartPageServices.Require<IProjectActions>(services), services.GetService(typeof(IUrlLauncher)) as IUrlLauncher ?? new ShellUrlLauncher())));
+            context => LearnOf(StartPageContext.From(context))));
         registry.AddDashboardTile(new DashboardTileDescriptor(
             ContributionIds.TilePrefix + "whatsNew", "What's new", 5,
-            services => new WhatsNewTileViewModel(WhatsNewResource.Read(), services.GetService(typeof(IUrlLauncher)) as IUrlLauncher ?? new ShellUrlLauncher())));
+            context => new WhatsNewTileViewModel(WhatsNewResource.Read(), StartPageContext.From(context).UrlLauncher)));
     }
+
+    private static RecentProjectsTileViewModel RecentOf(StartPageContext context) =>
+        new(context.Recent, context.ProjectActions, context.Time, context.Clipboard, context.FolderLauncher);
+
+    private static SamplesTileViewModel SamplesOf(StartPageContext context) =>
+        new(context.Samples, context.ProjectActions);
+
+    private static LearnTileViewModel LearnOf(StartPageContext context) =>
+        new(context.ProjectActions, context.UrlLauncher);
 }

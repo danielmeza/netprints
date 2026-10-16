@@ -5,7 +5,7 @@ using NetPrints.Editor.Shell;
 namespace NetPrints.Editor.Commands;
 
 /// <summary>Base of the commands that act on one class: the tree selection's class, else the active document's.</summary>
-public abstract class ClassCommandHandler : ICommandHandler
+public abstract class ClassCommandHandler : IEditorCommandHandler
 {
     private readonly Func<IProjectActions, ClassGraph, CancellationToken, Task> act;
 

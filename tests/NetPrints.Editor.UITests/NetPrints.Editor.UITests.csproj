@@ -12,6 +12,8 @@
   <ItemGroup>
     <NetPrintsExperimentalOptIn Include="NPXE0001" />
     <NetPrintsExperimentalOptIn Include="NPXE0002" />
+    <NetPrintsExperimentalOptIn Include="NPXE0005" />
+    <Using Include="NetPrints.Extensibility.Editor" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="xunit.v3" />

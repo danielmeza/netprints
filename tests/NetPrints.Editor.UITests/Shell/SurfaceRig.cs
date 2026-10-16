@@ -15,11 +15,6 @@ namespace NetPrints.Editor.UITests.Shell;
 /// <summary>The shell window over the real registry, the real command context provider and, optionally, an open project session.</summary>
 internal sealed class SurfaceRig : IDisposable
 {
-    private sealed class NoServices : IServiceProvider
-    {
-        public object? GetService(Type serviceType) => null;
-    }
-
     private sealed class ImmediateDispatcher : IUiDispatcher
     {
         public void Post(Action action) => action();
@@ -64,7 +59,7 @@ internal sealed class SurfaceRig : IDisposable
         BuiltInContributions.Register(registry);
         extra?.Invoke(registry);
         registry.Freeze();
-        var shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, new ImmediateDispatcher());
+        var shell = new ShellViewModel(registry, PanelFactoryContext.Detached, TimeProvider.System, new ImmediateDispatcher());
         var adapter = new DockShellAdapter(shell, new NoProjectActions(), id => new TestDocumentViewModel(id, id.GraphKey ?? id.ToString()), NullLogger.Instance);
         shell.Layout = adapter;
         var faults = new List<Exception>();

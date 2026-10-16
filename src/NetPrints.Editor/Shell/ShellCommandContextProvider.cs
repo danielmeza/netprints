@@ -1,5 +1,6 @@
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Graph;
+using NetPrints.Editor.Hosting;
 
 namespace NetPrints.Editor.Shell;
 
@@ -11,7 +12,8 @@ namespace NetPrints.Editor.Shell;
 /// </summary>
 /// <param name="shell">The shell state.</param>
 /// <param name="services">The shell services of the context.</param>
-public sealed class ShellCommandContextProvider(ShellViewModel shell, IShell services) : ICommandContextProvider
+/// <param name="host">The editor services the typed dialogs and output of the context wrap; <see langword="null"/> in a host that has none.</param>
+public sealed class ShellCommandContextProvider(ShellViewModel shell, IShell services, EditorContext? host = null) : ICommandContextProvider
 {
     private EventHandler? handlers;
     private NodeGraphViewModel? watchedGraph;
@@ -44,7 +46,7 @@ public sealed class ShellCommandContextProvider(ShellViewModel shell, IShell ser
     {
         NodeGraphViewModel? graph = ActiveGraph();
         var selection = new CommandSelection(graph is null ? [] : [.. graph.SelectedNodes], shell.TreeSelection);
-        return new CommandContext(services, shell.Session, shell.ActiveDocument?.Id, graph, selection, parameter, scope);
+        return new CommandContext(services, shell.Session, shell.ActiveDocument?.Id, graph, selection, parameter, scope, host);
     }
 
     private NodeGraphViewModel? ActiveGraph() => (shell.ActiveDocument as GraphDocumentViewModel)?.Graph;

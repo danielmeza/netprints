@@ -4,7 +4,7 @@ using NetPrints.Editor.Shell;
 namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>closeTab</c> command.</summary>
-public sealed class CloseTabCommandHandler : ICommandHandler
+public sealed class CloseTabCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => context.ActiveDocument is not null;

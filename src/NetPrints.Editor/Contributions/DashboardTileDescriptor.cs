@@ -5,4 +5,4 @@ namespace NetPrints.Editor.Contributions;
 /// <param name="Title">The non-empty tile title.</param>
 /// <param name="Order">The position on the start page.</param>
 /// <param name="CreateViewModel">Creates the tile's view model; its view is found by data template.</param>
-public sealed record DashboardTileDescriptor(string Id, string Title, int Order, Func<IServiceProvider, object> CreateViewModel);
+public sealed record DashboardTileDescriptor(string Id, string Title, int Order, Func<IStartPageContext, object> CreateViewModel);

@@ -20,9 +20,9 @@ public partial class IconRegistryTests
 
     private sealed class NoopHandler : ICommandHandler
     {
-        public bool CanExecute(CommandContext context) => true;
+        public bool CanExecute(ICommandContext context) => true;
 
-        public Task ExecuteAsync(CommandContext context, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task ExecuteAsync(ICommandContext context, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     [GeneratedRegex(@"^[a-z0-9]+(\.[a-zA-Z0-9]+)+$")]

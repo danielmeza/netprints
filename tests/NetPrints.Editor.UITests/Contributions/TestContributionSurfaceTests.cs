@@ -40,9 +40,9 @@ public class TestContributionSurfaceTests
 
     private sealed class HelloHandler : ICommandHandler
     {
-        public bool CanExecute(CommandContext context) => true;
+        public bool CanExecute(ICommandContext context) => true;
 
-        public Task ExecuteAsync(CommandContext context, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task ExecuteAsync(ICommandContext context, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private sealed class ImmediateDispatcher : IUiDispatcher
@@ -190,8 +190,8 @@ public class TestContributionSurfaceTests
     public void ATestTileIsOnTheStartPageAfterTheBuiltInTiles()
     {
         ContributionRegistry registry = NewRegistry(withTestContributions: true);
-        var shell = new ShellViewModel(registry, new StartPageServices(), TimeProvider.System, new ImmediateDispatcher());
-        var services = new StartPageServices().Add<IProjectActions>(new NoProjectActions());
+        var shell = new ShellViewModel(registry, PanelFactoryContext.Detached, TimeProvider.System, new ImmediateDispatcher());
+        var services = new StartPageContext(new NoProjectActions(), PanelFactoryContext.Detached);
         using var page = new StartPageViewModel(shell, services);
         using var ui = HeadlessUi.Create();
 

@@ -11,7 +11,7 @@ namespace NetPrints.Editor.Commands;
 /// the parameter, or, without one, the only connection on the relevant side (incoming for source, outgoing for target) of the single selected node.
 /// </summary>
 /// <param name="end">The end to go to.</param>
-public sealed class GoToConnectionEndCommandHandler(ConnectionEnd end) : ICommandHandler
+public sealed class GoToConnectionEndCommandHandler(ConnectionEnd end) : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) =>

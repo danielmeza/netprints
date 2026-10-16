@@ -685,6 +685,37 @@ consumers restore from `local-packages/` plus a scratch feed and build with `-p:
 - Not owned by C1c: the display of node titles, pin labels, category names and extension resources still does not use the resx (see C1b deviation);
   no task in T047 to T050 covers it, so it stays open for the batch that owns the editor's node views.
 
+## Batch C1d (T051-T052, T171 added)
+
+- T051: `INodeSuggestionProvider`, `NodeSearchContext`, `NodeSearchEntry` and `INodeCreationContext` are in Abstractions (`NetPrints.Extensibility.Nodes`,
+  NPXE0006); `CSharpFeature`, `CSharpFeatureId`, `Availability` and `NodeSearchEntry.Requires` are NPXE0007 (`Check(target, typeExists)` compares the
+  C# version and, when asked, the required types). `IExtensionBuilder.AddSuggestionProvider`; `RegistryBuilder` drops a provider whose id does not start
+  with `<manifest id>.` or `<manifest id>/` (NPX013, new `ExtensionDiagnosticCodes.IdPrefix`) or repeats an id (NPX004); `ExtensionRegistry.SuggestionProviders`.
+  The editor's own providers keep an internal `INodeSearchProvider : INodeSuggestionProvider` (owner kind); its entries derive from `EditorSearchEntry`,
+  which receives the editor's `NodeCreationContext` (narrowed from the public `INodeCreationContext` in one place). The registry adds the
+  extensions' providers after the editor's, built once for each registry.
+- AB-10 done: `INodeHintSource`/`NodeHint` in Reflection; `CatalogTypeCatalog` implements it from `[NetPrintsNode]`/`[NetPrintsType]`, the composite and
+  memoized providers forward. `NodeSearchHints.Apply` gives a method or type entry its display name as text and its keywords; the category is not
+  changed (it would move rows between the goldens' groups). Only entries of cataloged members are touched.
+- Decision: `Availability` is a record (`IsAvailable`, `Reason`, `Fixes` as quick-fix ids) with `Available`/`Unavailable(reason, fixes)`; no filtering of
+  entries by `Requires` yet (that is sub-phase F).
+- T052: contexts in Abstractions, `NetPrints.Extensibility.Editor` (NPXE0005): `ICommandContext`, `IPanelContext`, `IStartPageContext`,
+  `IStatusBarContext`, `ISettingsPageContext`, `IDialogContext`, `IProjectSession`, `IGraphEditor`, `IEditorShell`, `IDialogService`, `IEditorOutput`,
+  `IEditorUndo`, `ICommandHandler`, `CommandScope`, `CommandSelection`. The editor's `CommandContext` implements `ICommandContext` explicitly over its
+  view models (facades in `Contributions/Facades/`, built only when an extension asks); built-in handlers implement `IEditorCommandHandler`, which maps
+  the typed members to their `CommandContext` methods once. `PanelDescriptor.CreateViewModel` takes `IPanelContext`, `DashboardTileDescriptor.CreateViewModel`
+  takes `IStartPageContext`; `StartPageServices` and the `NoServices` doubles are gone (`StartPageContext`, `PanelFactoryContext`). `ContextMenuItemDescriptor.AppliesTo`
+  with `CommandInvoker.ContextMenuCommands(target, context)`: a rejected item is left out, not disabled.
+- Deviation: `CommandSelection.Nodes` stays `IReadOnlyList<object>` (the editor's view models); the model nodes are `IGraphEditor.SelectedNodes`.
+- Deviation: `IProjectSession.Services` and `ICommandContext.Services` are an empty provider until the per-extension providers of C2 (research R15).
+- Deviation: the status bar, settings page and dialog contexts exist as interfaces and one host class (`EditorContexts`); their descriptors come with C2.
+- Not owned by T051 or T052: the display of node titles, pin labels, category names and extension resources through the resx. Added as T171 to batch C1f (FR-027).
+- Red/green. T051: `SuggestionProviderTests` (4), `CSharpFeatureTests` (4) and `ExtensionProviderTests` (4) red as compile failures (types absent), green;
+  `NodeHintTests` (4) written with the code (its types did not exist either), green. T052: `TypedContextTests` (4) red as a compile failure, green after
+  one failure on an unloaded reflection provider (the test now waits for `ReloadAsync`, as a project open does). `DiagnosticsGuideTests` failed once on the
+  missing NPX013 row; the row was added.
+- Suite (Release, solution-wide, `--ignore-exit-code 8`): 4636 total, 4602 passed, 33 skipped, 1 failed (the guide row above, fixed and re-run green).
+
 ## Build-time budget (ADR-0024, S2a; B-F3)
 
 - `dotnet build NetPrints.slnx -c Release --no-incremental`, warm compile server, 6 runs at the end of B: 24.2, 19.1 and 12.2 s

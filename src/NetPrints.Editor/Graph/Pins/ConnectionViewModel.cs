@@ -96,7 +96,7 @@ public sealed partial class ConnectionViewModel : ObservableObject, IDisposable
         List<CommandEntryViewModel> entries = [];
         if (Source.Node.Graph.Commands is { } invoker)
         {
-            foreach (CommandDescriptor command in invoker.ContextMenuCommands(ContextMenuTarget.Connection))
+            foreach (CommandDescriptor command in invoker.ContextMenuCommands(ContextMenuTarget.Connection, invoker.CreateContext(CommandScope.Graph, this)))
             {
                 entries.Add(new CommandEntryViewModel(command, invoker, AutomationIds.ConnectionMenuPrefix, CommandScope.Graph, this));
             }
