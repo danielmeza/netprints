@@ -38,5 +38,5 @@ public sealed class KeyboardShortcutsViewModel
     }
 
     private static ShortcutRow Row(CommandDescriptor command) =>
-        new(command.Id, command.Label, string.Join(", ", (command.DefaultGestures ?? []).Select(gesture => gesture.Display)));
+        new(command.Id, command.DisplayLabel, string.Join(", ", (command.DefaultGestures ?? []).Select(gesture => gesture.Display)));
 }

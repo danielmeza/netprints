@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Resources;
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
 using NetPrints.Catalog;
@@ -36,6 +37,7 @@ public sealed class ExtensionRegistry : IAsyncDisposable
         IReadOnlyList<IHostChannelFactory> hostChannels,
         IReadOnlyList<ExtensionSettingsDescriptor> settings,
         IReadOnlyList<CatalogProfile> catalogProfiles,
+        IReadOnlyList<ResourceManager> stringResources,
         IReadOnlyList<ExtensionContributionIssue> issues,
         TranslationEnvironment translation,
         NodeDocumentConverterRegistry nodeConverters,
@@ -54,6 +56,7 @@ public sealed class ExtensionRegistry : IAsyncDisposable
         HostChannels = hostChannels;
         Settings = settings;
         CatalogProfiles = catalogProfiles;
+        StringResources = stringResources;
         Issues = issues;
         Translation = translation;
         NodeConverters = nodeConverters;
@@ -125,6 +128,12 @@ public sealed class ExtensionRegistry : IAsyncDisposable
     /// </summary>
     [Experimental(ExperimentalApiIds.CatalogProfiles, UrlFormat = ExperimentalApiIds.UrlFormat)]
     public IReadOnlyList<CatalogProfile> CatalogProfiles { get; }
+
+    /// <summary>
+    /// The string resources extensions contributed, in registry order; a <see cref="LocalizedText"/> resolves through them.
+    /// </summary>
+    [Experimental(ExperimentalApiIds.StringResources, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    public IReadOnlyList<ResourceManager> StringResources { get; }
 
     /// <summary>
     /// The contributions that were rejected (<c>NPX006</c>) while their extension stayed loaded.

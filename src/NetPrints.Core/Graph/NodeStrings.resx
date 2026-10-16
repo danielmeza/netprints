@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Category.netprints" xml:space="preserve">
+    <value>NetPrints</value>
+  </data>
+  <data name="Node.await.Title" xml:space="preserve">
+    <value>Await</value>
+  </data>
+  <data name="Node.callMethod.Title" xml:space="preserve">
+    <value>Call Method</value>
+  </data>
+  <data name="Node.classReturn.Title" xml:space="preserve">
+    <value>Class Return</value>
+  </data>
+  <data name="Node.constructor.Title" xml:space="preserve">
+    <value>Construct New Object</value>
+  </data>
+  <data name="Node.constructorEntry.Title" xml:space="preserve">
+    <value>Constructor Entry</value>
+  </data>
+  <data name="Node.default.Title" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="Node.eventEntry.Title" xml:space="preserve">
+    <value>Event Entry</value>
+  </data>
+  <data name="Node.explicitCast.Title" xml:space="preserve">
+    <value>Explicit Cast</value>
+  </data>
+  <data name="Node.forLoop.Title" xml:space="preserve">
+    <value>For Loop</value>
+  </data>
+  <data name="Node.ifElse.Title" xml:space="preserve">
+    <value>If Else</value>
+  </data>
+  <data name="Node.literal.Title" xml:space="preserve">
+    <value>Literal</value>
+  </data>
+  <data name="Node.makeArray.Title" xml:space="preserve">
+    <value>Make Array</value>
+  </data>
+  <data name="Node.makeArrayType.Title" xml:space="preserve">
+    <value>Make Array Type</value>
+  </data>
+  <data name="Node.makeDelegate.Title" xml:space="preserve">
+    <value>Make Delegate</value>
+  </data>
+  <data name="Node.methodEntry.Title" xml:space="preserve">
+    <value>Method Entry</value>
+  </data>
+  <data name="Node.reroute.Title" xml:space="preserve">
+    <value>Reroute</value>
+  </data>
+  <data name="Node.return.Title" xml:space="preserve">
+    <value>Return</value>
+  </data>
+  <data name="Node.ternary.Title" xml:space="preserve">
+    <value>Ternary</value>
+  </data>
+  <data name="Node.throw.Title" xml:space="preserve">
+    <value>Throw</value>
+  </data>
+  <data name="Node.type.Title" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Node.typeOf.Title" xml:space="preserve">
+    <value>Type Of</value>
+  </data>
+  <data name="Node.typeReturn.Title" xml:space="preserve">
+    <value>Type Return</value>
+  </data>
+  <data name="Node.variableGetter.Title" xml:space="preserve">
+    <value>Get Variable</value>
+  </data>
+  <data name="Node.variableSetter.Title" xml:space="preserve">
+    <value>Set Variable</value>
+  </data>
+  <data name="Node.await.Pin.in.data.Task" xml:space="preserve">
+    <value>Task</value>
+  </data>
+  <data name="Node.await.Pin.in.exec.Exec" xml:space="preserve">
+    <value>Exec</value>
+  </data>
+  <data name="Node.await.Pin.out.exec.Exec" xml:space="preserve">
+    <value>Exec</value>
+  </data>
+  <data name="Node.classReturn.Pin.in.type.BaseType" xml:space="preserve">
+    <value>BaseType</value>
+  </data>
+  <data name="Node.constructorEntry.Pin.out.exec.Exec" xml:space="preserve">
+    <value>Exec</value>
+  </data>
+  <data name="Node.default.Pin.in.type.Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Node.default.Pin.out.data.Default" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="Node.eventEntry.Pin.out.exec.Exec" xml:space="preserve">
+    <value>Exec</value>
+  </data>
+  <data name="Node.explicitCast.Pin.in.data.Object" xml:space="preserve">
+    <value>Object</value>
+  </data>
+  <data name="Node.explicitCast.Pin.in.exec.Exec" xml:space="preserve">
+    <value>Exec</value>
+  </data>
+  <data name="Node.explicitCast.Pin.in.type.Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Node.explicitCast.Pin.out.data.CastObject" xml:space="preserve">
+    <value>CastObject</value>
+  </data>
+  <data name="Node.explicitCast.Pin.out.exec.Failure" xml:space="preserve">
+    <value>Failure</value>
+  </data>
+  <data name="Node.explicitCast.Pin.out.exec.Success" xml:space="preserve">
+    <value>Success</value>
+  </data>
+  <data name="Node.forLoop.Pin.in.data.InitialIndex" xml:space="preserve">
+    <value>InitialIndex</value>
+  </data>
+  <data name="Node.forLoop.Pin.in.data.MaxIndex" xml:space="preserve">
+    <value>MaxIndex</value>
+  </data>
+  <data name="Node.forLoop.Pin.in.exec.Continue" xml:space="preserve">
+    <value>Continue</value>
+  </data>
+  <data name="Node.forLoop.Pin.in.exec.Exec" xml:space="preserve">
+    <value>Exec</value>
+  </data>
+  <data name="Node.forLoop.Pin.out.data.Index" xml:space="preserve">
+    <value>Index</value>
+  </data>
+  <data name="Node.forLoop.Pin.out.exec.Completed" xml:space="preserve">
+    <value>Completed</value>
+  </data>
+  <data name="Node.forLoop.Pin.out.exec.Loop" xml:space="preserve">
+    <value>Loop</value>
+  </data>
+  <data name="Node.ifElse.Pin.in.data.Condition" xml:space="preserve">
+    <value>Condition</value>
+  </data>
+  <data name="Node.ifElse.Pin.in.exec.Exec" xml:space="preserve">
+    <value>Exec</value>
+  </data>
+  <data name="Node.ifElse.Pin.out.exec.False" xml:space="preserve">
+    <value>False</value>
+  </data>
+  <data name="Node.ifElse.Pin.out.exec.True" xml:space="preserve">
+    <value>True</value>
+  </data>
+  <data name="Node.literal.Pin.in.data.Value" xml:space="preserve">
+    <value>Value</value>
+  </data>
+  <data name="Node.literal.Pin.out.data.Value" xml:space="preserve">
+    <value>Value</value>
+  </data>
+  <data name="Node.makeArray.Pin.in.type.ElementType" xml:space="preserve">
+    <value>ElementType</value>
+  </data>
+  <data name="Node.makeArray.Pin.out.data.Array" xml:space="preserve">
+    <value>Array</value>
+  </data>
+  <data name="Node.makeArrayType.Pin.in.type.ElementType" xml:space="preserve">
+    <value>ElementType</value>
+  </data>
+  <data name="Node.makeArrayType.Pin.out.type.ArrayType" xml:space="preserve">
+    <value>ArrayType</value>
+  </data>
+  <data name="Node.methodEntry.Pin.out.exec.Exec" xml:space="preserve">
+    <value>Exec</value>
+  </data>
+  <data name="Node.return.Pin.in.exec.Exec" xml:space="preserve">
+    <value>Exec</value>
+  </data>
+  <data name="Node.ternary.Pin.in.data.Condition" xml:space="preserve">
+    <value>Condition</value>
+  </data>
+  <data name="Node.ternary.Pin.in.data.False" xml:space="preserve">
+    <value>False</value>
+  </data>
+  <data name="Node.ternary.Pin.in.data.True" xml:space="preserve">
+    <value>True</value>
+  </data>
+  <data name="Node.ternary.Pin.in.exec.Exec" xml:space="preserve">
+    <value>Exec</value>
+  </data>
+  <data name="Node.ternary.Pin.in.type.Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Node.ternary.Pin.out.data.Output" xml:space="preserve">
+    <value>Output</value>
+  </data>
+  <data name="Node.ternary.Pin.out.exec.Exec" xml:space="preserve">
+    <value>Exec</value>
+  </data>
+  <data name="Node.throw.Pin.in.data.Exception" xml:space="preserve">
+    <value>Exception</value>
+  </data>
+  <data name="Node.throw.Pin.in.exec.Exec" xml:space="preserve">
+    <value>Exec</value>
+  </data>
+  <data name="Node.type.Pin.out.type.OutputType" xml:space="preserve">
+    <value>OutputType</value>
+  </data>
+  <data name="Node.typeOf.Pin.in.type.Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Node.typeOf.Pin.out.data.Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Node.typeReturn.Pin.in.type.Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+</root>

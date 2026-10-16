@@ -18,6 +18,9 @@ public static class ExperimentalApiIds
     /// <summary>The catalog engine and profile API.</summary>
     public const string CatalogProfiles = "NPXE0004";
 
+    /// <summary>The extension string resources API: <c>IExtensionBuilder.AddStringResources</c> and the registry's <c>StringResources</c>.</summary>
+    public const string StringResources = "NPXE0011";
+
     /// <summary>The guide section that explains the stability promise and how to opt in; the diagnostics link to it.</summary>
     public const string UrlFormat = "https://danielmeza.github.io/netprints/guide/extensions#api-stability";
 }

@@ -19,11 +19,11 @@
     <Menu DockPanel.Dock="Top" ItemsSource="{Binding MenuBar.Menus}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellMenuBar}">
       <Menu.Styles>
         <Style Selector="Menu > MenuItem" x:DataType="shell:MenuViewModel">
-          <Setter Property="Header" Value="{Binding Header}" />
+          <Setter Property="Header" Value="{Binding Title}" />
           <Setter Property="ItemsSource" Value="{Binding Items}" />
           <Setter Property="IsEnabled" Value="{Binding HasItems}" />
           <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
-          <Setter Property="AutomationProperties.Name" Value="{Binding Header}" />
+          <Setter Property="AutomationProperties.Name" Value="{Binding Title}" />
         </Style>
         <Style Selector="Menu > MenuItem MenuItem" x:DataType="shell:CommandEntryViewModel">
           <Setter Property="Header" Value="{Binding}" />

@@ -1,5 +1,6 @@
 using System.Globalization;
 using NetPrints.Editor;
+using NetPrints.Editor.Graph.Pins;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Testing.Ui.Driving;
 
@@ -23,6 +24,9 @@ public sealed class NodeObject(IUiDriver driver, AutomationQuery query) : UiElem
 
     /// <summary>An output pin by name.</summary>
     public PinObject Output(string pin) => Pin("out:" + pin);
+
+    /// <summary>A pin by its per-pin automation id: direction, kind and key, independent of its label and position.</summary>
+    public PinObject PinById(bool isInput, PinKind kind, string key) => new(Driver, new AutomationQuery(AutomationIds.ForPin(isInput, kind, key)) { Within = Query });
 
     /// <summary>A pin by its full automation name, as <see cref="PinNamesAsync"/> returns it ("in:Exec", "out:Exec", …).</summary>
     public PinObject Pin(string fullName) => new(Driver, new AutomationQuery(AutomationIds.Pin) { Within = Query, Name = fullName });

@@ -136,6 +136,15 @@
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="ednodes:PinRowViewModel">
               <Grid ColumnDefinitions="*,*" MinHeight="32">
+                <Grid.Styles>
+                  <Style Selector="Panel.pinLeft" x:DataType="ednodes:PinRowViewModel">
+                    <Setter Property="AutomationProperties.AutomationId" Value="{Binding Left.PinAutomationId}" />
+                  </Style>
+                  <Style Selector="Panel.pinRight" x:DataType="ednodes:PinRowViewModel">
+                    <Setter Property="AutomationProperties.AutomationId" Value="{Binding Right.PinAutomationId}" />
+                  </Style>
+                </Grid.Styles>
+                <Panel Classes="pinLeft">
                 <nn:NodeInput x:DataType="edpins:NodePinViewModel" DataContext="{Binding Left}" Theme="{StaticResource NetPrints.NodeInput}"
                               IsVisible="{Binding Converter={x:Static conv:ObjectConverters.IsNotNull}}"
                               AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Pin}" AutomationProperties.Name="{Binding AutomationName}" Header="{Binding}" ToolTip.Tip="{Binding ToolTip}"
@@ -147,7 +156,9 @@
                     <edbehaviors:StyleClassBehavior ClassName="{Binding FamilyClass}" />
                   </Interaction.Behaviors>
                 </nn:NodeInput>
-                <nn:NodeOutput Grid.Column="1" x:DataType="edpins:NodePinViewModel" DataContext="{Binding Right}" Theme="{StaticResource NetPrints.NodeOutput}"
+                </Panel>
+                <Panel Grid.Column="1" Classes="pinRight">
+                <nn:NodeOutput x:DataType="edpins:NodePinViewModel" DataContext="{Binding Right}" Theme="{StaticResource NetPrints.NodeOutput}"
                                IsVisible="{Binding Converter={x:Static conv:ObjectConverters.IsNotNull}}"
                                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Pin}" AutomationProperties.Name="{Binding AutomationName}" Header="{Binding}" ToolTip.Tip="{Binding ToolTip}"
                                HeaderTemplate="{StaticResource PinHeaderTemplate}"
@@ -158,6 +169,7 @@
                     <edbehaviors:StyleClassBehavior ClassName="{Binding FamilyClass}" />
                   </Interaction.Behaviors>
                 </nn:NodeOutput>
+                </Panel>
               </Grid>
             </DataTemplate>
           </ItemsControl.ItemTemplate>

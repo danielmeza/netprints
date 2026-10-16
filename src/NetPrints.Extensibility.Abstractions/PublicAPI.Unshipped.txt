@@ -14,6 +14,7 @@ NetPrints.Extensibility.Hosting.HostLaunchContext.Settings.init -> void
 NetPrints.Extensibility.Hosting.HostMessageTypes
 NetPrints.Extensibility.IExtensionBuilder
 [NPXE0004]NetPrints.Extensibility.IExtensionBuilder.AddCatalogProfile(NetPrints.Catalog.CatalogProfile! profile) -> NetPrints.Extensibility.IExtensionBuilder!
+[NPXE0011]NetPrints.Extensibility.IExtensionBuilder.AddStringResources(System.Resources.ResourceManager! resources) -> NetPrints.Extensibility.IExtensionBuilder!
 NetPrints.Extensibility.IExtensionBuilder.AddJsonTypeInfoResolver(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver! resolver) -> NetPrints.Extensibility.IExtensionBuilder!
 NetPrints.Extensibility.IExtensionBuilder.AddNodeLibrary(NetPrints.Extensibility.Nodes.INodeLibrary! library) -> NetPrints.Extensibility.IExtensionBuilder!
 NetPrints.Extensibility.IExtensionBuilder.AddProjectProfile(NetPrints.Core.IProjectProfile! profile) -> NetPrints.Extensibility.IExtensionBuilder!

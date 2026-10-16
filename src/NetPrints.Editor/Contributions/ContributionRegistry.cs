@@ -51,7 +51,7 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
     {
         ArgumentNullException.ThrowIfNull(command);
         ThrowIfFrozen();
-        if (!TryAccept(command.Id, !IsBlank(command.Label) && command.Handler is not null, "a label and a handler", commands.Select(c => c.Id)))
+        if (!TryAccept(command.Id, !IsBlank(command.Label.Text) && command.Handler is not null, "a label and a handler", commands.Select(c => c.Id)))
         {
             return;
         }
@@ -99,7 +99,7 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
     {
         ArgumentNullException.ThrowIfNull(panel);
         ThrowIfFrozen();
-        if (TryAccept(panel.Id, !IsBlank(panel.Title) && panel.CreateViewModel is not null, "a title and a view model factory", panels.Select(p => p.Id)))
+        if (TryAccept(panel.Id, !IsBlank(panel.Title.Text) && panel.CreateViewModel is not null, "a title and a view model factory", panels.Select(p => p.Id)))
         {
             panels.Add(panel);
         }

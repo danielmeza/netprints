@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Resources;
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
 using NetPrints.Catalog;
@@ -109,4 +110,13 @@ public interface IExtensionBuilder
     /// <returns>This builder.</returns>
     [Experimental(ExperimentalApiIds.CatalogProfiles, UrlFormat = ExperimentalApiIds.UrlFormat)]
     IExtensionBuilder AddCatalogProfile(CatalogProfile profile);
+
+    /// <summary>
+    /// Adds the extension's string resources. A <see cref="LocalizedText"/> the extension contributes (a label, a title, a
+    /// node title or pin label by convention key) resolves through these resources for the UI culture, then falls back to its default text.
+    /// </summary>
+    /// <param name="resources">The resources, usually the strongly typed <c>ResourceManager</c> of the extension's resx.</param>
+    /// <returns>This builder.</returns>
+    [Experimental(ExperimentalApiIds.StringResources, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    IExtensionBuilder AddStringResources(ResourceManager resources);
 }

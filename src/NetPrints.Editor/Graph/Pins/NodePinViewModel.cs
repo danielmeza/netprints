@@ -81,6 +81,9 @@ public sealed partial class NodePinViewModel : ObservableObject, IDisposable
     /// <summary>Stable identity of the pin within its node for UI automation: "in:&lt;name&gt;" or "out:&lt;name&gt;".</summary>
     public string AutomationName => $"{(IsInput ? "in" : "out")}:{Pin.Name}";
 
+    /// <summary>Per-pin automation id: direction, kind and the pin's key (research R13), see <see cref="AutomationIds.ForPin"/>.</summary>
+    public string PinAutomationId => AutomationIds.ForPin(IsInput, Kind, Pin.Name);
+
     /// <summary>Exec pins are squares (PAR-43).</summary>
     public bool ShowRectangle => Kind == PinKind.Exec;
 

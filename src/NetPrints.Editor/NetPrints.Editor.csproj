@@ -61,6 +61,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Update="Strings.resx">
+      <Generator>MSBuild:Compile</Generator>
+      <StronglyTypedFileName>$(IntermediateOutputPath)Strings.g.cs</StronglyTypedFileName>
+      <StronglyTypedLanguage>CSharp</StronglyTypedLanguage>
+      <StronglyTypedNamespace>NetPrints.Editor</StronglyTypedNamespace>
+      <StronglyTypedClassName>Strings</StronglyTypedClassName>
+      <PublicClass>true</PublicClass>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
     <EmbeddedResource Include="StartPage\WhatsNew.md" LogicalName="NetPrints.Editor.StartPage.WhatsNew.md" />
     <EmbeddedResource Include="Graph\GridShader.sksl" LogicalName="NetPrints.Editor.Graph.GridShader.sksl" />

@@ -18,6 +18,7 @@ const NetPrints.Core.ExperimentalApiIds.CatalogProfiles = "NPXE0004" -> string!
 const NetPrints.Core.ExperimentalApiIds.Emitters = "NPXE0003" -> string!
 const NetPrints.Core.ExperimentalApiIds.HostChannel = "NPXE0001" -> string!
 const NetPrints.Core.ExperimentalApiIds.Settings = "NPXE0002" -> string!
+const NetPrints.Core.ExperimentalApiIds.StringResources = "NPXE0011" -> string!
 const NetPrints.Core.ExperimentalApiIds.UrlFormat = "https://danielmeza.github.io/netprints/guide/extensions#api-stability" -> string!
 *REMOVED*NetPrints.Translator.TranslationEnvironment.ClassEmitters.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IClassEmitter!>!
 *REMOVED*NetPrints.Translator.TranslationEnvironment.ClassEmitters.init -> void
@@ -242,3 +243,24 @@ static NetPrints.Graph.GraphPoint.operator -(NetPrints.Graph.GraphPoint a, NetPr
 static NetPrints.Graph.GraphPoint.operator !=(NetPrints.Graph.GraphPoint left, NetPrints.Graph.GraphPoint right) -> bool
 static NetPrints.Graph.GraphPoint.operator ==(NetPrints.Graph.GraphPoint left, NetPrints.Graph.GraphPoint right) -> bool
 static readonly NetPrints.Graph.GraphPoint.Zero -> NetPrints.Graph.GraphPoint
+NetPrints.Core.CoreStrings
+static NetPrints.Core.CoreStrings.Resources.get -> System.Resources.ResourceManager!
+NetPrints.Core.LocalizedText
+NetPrints.Core.LocalizedText.DefaultText.get -> string?
+NetPrints.Core.LocalizedText.DefaultText.init -> void
+NetPrints.Core.LocalizedText.Deconstruct(out string! Key, out string? DefaultText) -> void
+NetPrints.Core.LocalizedText.Equals(NetPrints.Core.LocalizedText other) -> bool
+NetPrints.Core.LocalizedText.Key.get -> string!
+NetPrints.Core.LocalizedText.Key.init -> void
+NetPrints.Core.LocalizedText.LocalizedText() -> void
+NetPrints.Core.LocalizedText.LocalizedText(string! Key, string? DefaultText = null) -> void
+NetPrints.Core.LocalizedText.Resolve(System.Collections.Generic.IEnumerable<System.Resources.ResourceManager!>! resources, System.Globalization.CultureInfo? culture) -> string!
+NetPrints.Core.LocalizedText.Resolve(System.Resources.ResourceManager? resources, System.Globalization.CultureInfo? culture) -> string!
+NetPrints.Core.LocalizedText.Text.get -> string!
+~override NetPrints.Core.LocalizedText.Equals(object obj) -> bool
+override NetPrints.Core.LocalizedText.GetHashCode() -> int
+override NetPrints.Core.LocalizedText.ToString() -> string!
+static NetPrints.Core.LocalizedText.FromLiteral(string! text) -> NetPrints.Core.LocalizedText
+static NetPrints.Core.LocalizedText.implicit operator NetPrints.Core.LocalizedText(string! text) -> NetPrints.Core.LocalizedText
+static NetPrints.Core.LocalizedText.operator !=(NetPrints.Core.LocalizedText left, NetPrints.Core.LocalizedText right) -> bool
+static NetPrints.Core.LocalizedText.operator ==(NetPrints.Core.LocalizedText left, NetPrints.Core.LocalizedText right) -> bool

@@ -114,7 +114,7 @@ public class BuiltInCommandTableTests
         Row row = Table.Single(candidate => candidate.Id == id);
         CommandDescriptor command = Assert.Single(Registered().Commands, candidate => candidate.Id == FullId(id));
 
-        Assert.Equal(row.Label, command.Label);
+        Assert.Equal(row.Label, command.Label.Text);
         Assert.Equal(row.Menu, command.Menu?.Path);
         Assert.Equal(row.Group, command.Menu?.Group);
         Assert.Equal(row.Gestures.Select(Canonical), (command.DefaultGestures ?? []).Select(gesture => gesture.ToString()));

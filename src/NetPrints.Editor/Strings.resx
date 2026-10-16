@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Category.netprints" xml:space="preserve">
+    <value>NetPrints</value>
+  </data>
+  <data name="Menu.File" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="Menu.Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Menu.View" xml:space="preserve">
+    <value>View</value>
+  </data>
+  <data name="Menu.Go" xml:space="preserve">
+    <value>Go</value>
+  </data>
+  <data name="Menu.Build" xml:space="preserve">
+    <value>Build</value>
+  </data>
+  <data name="Menu.Help" xml:space="preserve">
+    <value>Help</value>
+  </data>
+  <data name="Panel.netprints.panel.projectTree.Title" xml:space="preserve">
+    <value>Project</value>
+  </data>
+  <data name="Panel.netprints.panel.inspector.Title" xml:space="preserve">
+    <value>Inspector</value>
+  </data>
+  <data name="Panel.netprints.panel.variables.Title" xml:space="preserve">
+    <value>Variables</value>
+  </data>
+  <data name="Panel.netprints.panel.errors.Title" xml:space="preserve">
+    <value>Errors</value>
+  </data>
+  <data name="Panel.netprints.panel.output.Title" xml:space="preserve">
+    <value>Output</value>
+  </data>
+  <data name="Panel.netprints.panel.csharp.Title" xml:space="preserve">
+    <value>C#</value>
+  </data>
+  <data name="Command.netprints.command.newProject.Label" xml:space="preserve">
+    <value>New project…</value>
+  </data>
+  <data name="Command.netprints.command.openProject.Label" xml:space="preserve">
+    <value>Open project…</value>
+  </data>
+  <data name="Command.netprints.command.openFolder.Label" xml:space="preserve">
+    <value>Open folder…</value>
+  </data>
+  <data name="Command.netprints.command.closeProject.Label" xml:space="preserve">
+    <value>Close project</value>
+  </data>
+  <data name="Command.netprints.command.newClass.Label" xml:space="preserve">
+    <value>New class</value>
+  </data>
+  <data name="Command.netprints.command.addExistingClass.Label" xml:space="preserve">
+    <value>Add existing class…</value>
+  </data>
+  <data name="Command.netprints.command.save.Label" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Command.netprints.command.saveAll.Label" xml:space="preserve">
+    <value>Save all</value>
+  </data>
+  <data name="Command.netprints.command.projectSettings.Label" xml:space="preserve">
+    <value>Project settings</value>
+  </data>
+  <data name="Command.netprints.command.references.Label" xml:space="preserve">
+    <value>References…</value>
+  </data>
+  <data name="Command.netprints.command.exit.Label" xml:space="preserve">
+    <value>Exit</value>
+  </data>
+  <data name="Command.netprints.command.undo.Label" xml:space="preserve">
+    <value>Undo</value>
+  </data>
+  <data name="Command.netprints.command.redo.Label" xml:space="preserve">
+    <value>Redo</value>
+  </data>
+  <data name="Command.netprints.command.delete.Label" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Command.netprints.command.rename.Label" xml:space="preserve">
+    <value>Rename</value>
+  </data>
+  <data name="Command.netprints.command.selectAll.Label" xml:space="preserve">
+    <value>Select all</value>
+  </data>
+  <data name="Command.netprints.command.cancel.Label" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Command.netprints.command.nodeSearch.Label" xml:space="preserve">
+    <value>Add node…</value>
+  </data>
+  <data name="Command.netprints.command.classSettings.Label" xml:space="preserve">
+    <value>Class settings</value>
+  </data>
+  <data name="Command.netprints.command.addMethod.Label" xml:space="preserve">
+    <value>Add method</value>
+  </data>
+  <data name="Command.netprints.command.addConstructor.Label" xml:space="preserve">
+    <value>Add constructor</value>
+  </data>
+  <data name="Command.netprints.command.addVariable.Label" xml:space="preserve">
+    <value>Add variable</value>
+  </data>
+  <data name="Command.netprints.command.addEventGraph.Label" xml:space="preserve">
+    <value>Add event graph</value>
+  </data>
+  <data name="Command.netprints.command.overrideMethod.Label" xml:space="preserve">
+    <value>Override method…</value>
+  </data>
+  <data name="Command.netprints.command.frameSelection.Label" xml:space="preserve">
+    <value>Frame selection</value>
+  </data>
+  <data name="Command.netprints.command.fitAll.Label" xml:space="preserve">
+    <value>Fit all</value>
+  </data>
+  <data name="Command.netprints.command.showPanel.projectTree.Label" xml:space="preserve">
+    <value>Project</value>
+  </data>
+  <data name="Command.netprints.command.showPanel.inspector.Label" xml:space="preserve">
+    <value>Inspector</value>
+  </data>
+  <data name="Command.netprints.command.showPanel.variables.Label" xml:space="preserve">
+    <value>Variables</value>
+  </data>
+  <data name="Command.netprints.command.showPanel.errors.Label" xml:space="preserve">
+    <value>Errors</value>
+  </data>
+  <data name="Command.netprints.command.showPanel.output.Label" xml:space="preserve">
+    <value>Output</value>
+  </data>
+  <data name="Command.netprints.command.showPanel.csharp.Label" xml:space="preserve">
+    <value>C#</value>
+  </data>
+  <data name="Command.netprints.command.floatDocument.Label" xml:space="preserve">
+    <value>Float tab</value>
+  </data>
+  <data name="Command.netprints.command.dockDocument.Label" xml:space="preserve">
+    <value>Dock tab</value>
+  </data>
+  <data name="Command.netprints.command.resetLayout.Label" xml:space="preserve">
+    <value>Reset layout</value>
+  </data>
+  <data name="Command.netprints.command.theme.dark.Label" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="Command.netprints.command.theme.light.Label" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="Command.netprints.command.theme.system.Label" xml:space="preserve">
+    <value>System (follow OS)</value>
+  </data>
+  <data name="Command.netprints.command.commandPalette.Label" xml:space="preserve">
+    <value>Command palette…</value>
+  </data>
+  <data name="Command.netprints.command.goToAnything.Label" xml:space="preserve">
+    <value>Go to anything…</value>
+  </data>
+  <data name="Command.netprints.command.navigateBack.Label" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="Command.netprints.command.navigateForward.Label" xml:space="preserve">
+    <value>Forward</value>
+  </data>
+  <data name="Command.netprints.command.nextTab.Label" xml:space="preserve">
+    <value>Next tab</value>
+  </data>
+  <data name="Command.netprints.command.previousTab.Label" xml:space="preserve">
+    <value>Previous tab</value>
+  </data>
+  <data name="Command.netprints.command.closeTab.Label" xml:space="preserve">
+    <value>Close tab</value>
+  </data>
+  <data name="Command.netprints.command.goToSource.Label" xml:space="preserve">
+    <value>Go to source</value>
+  </data>
+  <data name="Command.netprints.command.goToTarget.Label" xml:space="preserve">
+    <value>Go to target</value>
+  </data>
+  <data name="Command.netprints.command.compile.Label" xml:space="preserve">
+    <value>Compile</value>
+  </data>
+  <data name="Command.netprints.command.run.Label" xml:space="preserve">
+    <value>Run</value>
+  </data>
+  <data name="Command.netprints.command.stop.Label" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="Command.netprints.command.keyboardShortcuts.Label" xml:space="preserve">
+    <value>Keyboard shortcuts</value>
+  </data>
+  <data name="Command.netprints.command.startPage.Label" xml:space="preserve">
+    <value>Start page</value>
+  </data>
+  <data name="Command.netprints.command.help.openLogsFolder.Label" xml:space="preserve">
+    <value>Open logs folder</value>
+  </data>
+  <data name="Command.netprints.command.about.Label" xml:space="preserve">
+    <value>About NetPrints</value>
+  </data>
+  <data name="Command.netprints.command.openGraph.Label" xml:space="preserve">
+    <value>Open</value>
+  </data>
+</root>

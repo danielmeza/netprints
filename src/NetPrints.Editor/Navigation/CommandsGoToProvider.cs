@@ -15,8 +15,8 @@ public sealed class CommandsGoToProvider(IContributionRegistry registry) : IGoTo
         ArgumentNullException.ThrowIfNull(text);
         string query = text.Trim();
         return registry.Commands
-            .Where(command => MatchRanking.Rank(command.Label, query) != MatchRanking.NoMatch)
-            .Select(command => new GoToItem(Kind, command.Label, Detail(command), null, command.Id))
+            .Where(command => MatchRanking.Rank(command.DisplayLabel, query) != MatchRanking.NoMatch)
+            .Select(command => new GoToItem(Kind, command.DisplayLabel, Detail(command), null, command.Id))
             .ToAsyncEnumerable();
     }
 

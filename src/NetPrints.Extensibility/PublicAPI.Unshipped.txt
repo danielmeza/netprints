@@ -61,6 +61,7 @@ NetPrints.Extensibility.Loading.ExtensionLoaderOptions.SearchDirectories.get -> 
 NetPrints.Extensibility.Loading.ExtensionLoaderOptions.SearchDirectories.init -> void
 NetPrints.Extensibility.Loading.ExtensionRegistry
 [NPXE0004]NetPrints.Extensibility.Loading.ExtensionRegistry.CatalogProfiles.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogProfile!>!
+[NPXE0011]NetPrints.Extensibility.Loading.ExtensionRegistry.StringResources.get -> System.Collections.Generic.IReadOnlyList<System.Resources.ResourceManager!>!
 NetPrints.Extensibility.Loading.ExtensionRegistry.DisposeAsync() -> System.Threading.Tasks.ValueTask
 NetPrints.Extensibility.Loading.ExtensionRegistry.FindProfile(string! id) -> NetPrints.Core.IProjectProfile?
 NetPrints.Extensibility.Loading.ExtensionRegistry.Issues.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Loading.ExtensionContributionIssue!>!

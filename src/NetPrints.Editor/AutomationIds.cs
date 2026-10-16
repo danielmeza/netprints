@@ -1,3 +1,5 @@
+using NetPrints.Editor.Graph.Pins;
+
 namespace NetPrints.Editor;
 
 /// <summary>
@@ -604,6 +606,21 @@ public static class AutomationIds
     /// Automation id for a node pin. Its AutomationProperties.Name is "in:&lt;pin&gt;" or "out:&lt;pin&gt;".
     /// </summary>
     public const string Pin = "Graph.Pin";
+
+    /// <summary>
+    /// Builds the automation id of one pin of a node: <c>Graph.Pin.&lt;In|Out&gt;.&lt;Exec|Data|Type&gt;.&lt;key&gt;</c>. A test finds
+    /// the pin inside its node by this id, with no dependence on the pin's position or its translated label.
+    /// </summary>
+    /// <param name="isInput">Whether the pin is an input pin.</param>
+    /// <param name="kind">The pin's kind.</param>
+    /// <param name="key">The pin's key within its node.</param>
+    /// <returns>The automation id.</returns>
+    public static string ForPin(bool isInput, PinKind kind, string key)
+        => string.Join('.', Pin, isInput ? PinInput : PinOutput, kind, key);
+
+    private const string PinInput = "In";
+
+    private const string PinOutput = "Out";
 
     /// <summary>
     /// Automation id for a pin's connector handle.

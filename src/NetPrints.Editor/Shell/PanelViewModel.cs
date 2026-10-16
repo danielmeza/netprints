@@ -12,7 +12,7 @@ public sealed partial class PanelViewModel : ObservableObject
     public PanelViewModel(PanelDescriptor descriptor, object content)
     {
         Id = descriptor.Id;
-        Title = descriptor.Title;
+        Title = descriptor.DisplayTitle;
         IconId = descriptor.IconId;
         DefaultDock = descriptor.DefaultDock;
         Order = descriptor.Order;

@@ -1,4 +1,5 @@
 using System;
+using System.Resources;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
@@ -41,6 +42,7 @@ internal sealed class RegistryBuilder(ILogger logger)
     private readonly HashSet<string> settingsIds = new(StringComparer.Ordinal);
     private readonly List<CatalogProfile> catalogProfiles = [];
     private readonly HashSet<string> catalogProfileIds = new(BuiltInCatalogProfiles.Ids, StringComparer.Ordinal);
+    private readonly List<ResourceManager> stringResources = [];
     private readonly List<object> owned = [];
     private readonly List<ExtensionContributionIssue> issues = [];
 
@@ -142,6 +144,8 @@ internal sealed class RegistryBuilder(ILogger logger)
             }
         }
 
+        stringResources.AddRange(contributions.StringResources);
+
         foreach (string property in contributions.ProjectProperties)
         {
             if (!projectProperties.Contains(property, StringComparer.OrdinalIgnoreCase))
@@ -184,6 +188,7 @@ internal sealed class RegistryBuilder(ILogger logger)
             hostChannels,
             settings,
             catalogProfiles,
+            stringResources,
             issues,
             translation,
             converters,
