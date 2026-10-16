@@ -134,6 +134,9 @@ public sealed class MsBuildProjectSystem : IProjectSystem
                 extraProperties[propertyName] = evaluated.GetPropertyValue(propertyName);
             }
 
+            CSharpTargetResolution cSharpTarget = CSharpTarget.Resolve(projectFilePath, ReadFrameworkInputs(projectFilePath, evaluated, retargetedFramework));
+            messages.AddRange(cSharpTarget.Messages);
+
             var snapshot = new ProjectSnapshot(
                 ProjectFilePath: projectFilePath,
                 Name: evaluated.GetPropertyValue("MSBuildProjectName"),
@@ -156,7 +159,10 @@ public sealed class MsBuildProjectSystem : IProjectSystem
                 OtherSources: await BuildOtherSourcesAsync(roslynProject, cancellationToken).ConfigureAwait(false),
                 CompilationOptionsJson: BuildCompilationOptionsJson(roslynProject, evaluated),
                 Properties: extraProperties,
-                Messages: messages);
+                Messages: messages)
+            {
+                CSharpTarget = cSharpTarget.Target,
+            };
 
             Log.Loaded(logger, projectFilePath);
             return snapshot;
@@ -381,6 +387,29 @@ public sealed class MsBuildProjectSystem : IProjectSystem
             collection.Dispose();
         }
     }
+
+    private static List<CSharpFrameworkInput> ReadFrameworkInputs(string projectFilePath, MSBuildProject evaluated, string? retargetedFramework)
+    {
+        if (retargetedFramework is null)
+        {
+            return [ReadFrameworkInput(evaluated.GetPropertyValue(TargetFrameworkProperty), evaluated)];
+        }
+
+        var inputs = new List<CSharpFrameworkInput> { ReadFrameworkInput(retargetedFramework, evaluated) };
+        string[] frameworks = evaluated.GetPropertyValue("TargetFrameworks")
+            .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        foreach (string framework in frameworks.Where(framework => !string.Equals(framework, retargetedFramework, StringComparison.Ordinal)))
+        {
+            using var collection = new ProjectCollection();
+            MSBuildProject project = EvaluateOrThrow(projectFilePath, new Dictionary<string, string> { [TargetFrameworkProperty] = framework }, collection);
+            inputs.Add(ReadFrameworkInput(framework, project));
+        }
+
+        return inputs;
+    }
+
+    private static CSharpFrameworkInput ReadFrameworkInput(string framework, MSBuildProject evaluated) =>
+        new(framework, evaluated.GetPropertyValue("LangVersion"), evaluated.GetPropertyValue("MaxSupportedLangVersion"));
 
     private static MSBuildProject EvaluateOrThrow(string projectFilePath, IDictionary<string, string>? globalProperties, ProjectCollection collection)
     {

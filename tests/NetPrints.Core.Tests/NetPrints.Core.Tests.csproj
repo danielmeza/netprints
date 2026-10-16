@@ -54,6 +54,8 @@
     <Compile Remove="Fixtures/**/*.cs" />
     <None Include="Fixtures/AllNodes/AllNodes.csproj" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Fixtures/HelloWorld/HelloWorld.csproj" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The C# target fixtures (T048): copied to a temp folder by each test, since the repository's props would set LangVersion. -->
+    <None Include="../Fixtures/CSharpTarget/**" LinkBase="Fixtures/CSharpTarget" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

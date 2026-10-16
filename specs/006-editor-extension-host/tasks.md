@@ -454,7 +454,7 @@ SC-010; US3 scenarios 5–6. **Gate (plan)**: SC-005; SC-010 (the three writers)
   newer than `MaxKnown` resolves to `MaxKnown`. Then the stable types in `src/NetPrints.Core/Projects/`, the `MaxKnown`
   constant, `Unconstrained`, and the target on `ProjectSnapshot` (a non-positional `init` member) reached through
   `Project`.
-- [ ] T048 [US9] Evaluation capture and NPW006–NPW008 (FR-070, FR-071; 1 unit). Test first: six workspace fixtures in
+- [x] T048 [US9] Evaluation capture and NPW006–NPW008 (FR-070, FR-071; 1 unit). Test first: six workspace fixtures in
   `tests/Fixtures/CSharpTarget/` (no `LangVersion`, `latest`, `preview`, `10.0`, `16.0`, multi-target) with workspace
   tests asserting each target and info message (the `16.0` edge case says the editor's maximum is used). Then capture
   `LangVersion`, `MaxSupportedLangVersion` and `TargetFramework(s)` in `src/NetPrints.Workspace/MsBuildProjectSystem.cs`;

@@ -136,6 +136,9 @@ These rules check NetPrints' own source. They are not shipped in any package and
 | NPW003 | error | MSBuild evaluation of the project failed. |
 | NPW004 | warning | The project multi-targets; the first target framework is used. |
 | NPW005 | warning | MSBuild reported a diagnostic while opening the project. |
+| NPW006 | info | `LangVersion` is `latest`, `latestMajor`, `preview` or `default`; it resolved to the smaller of the framework's maximum and the newest version NetPrints knows. Pin `<LangVersion>` so the generated code does not change with the SDK. |
+| NPW007 | info | `LangVersion` is newer than the target framework's default; it is kept. |
+| NPW008 | info | `LangVersion` is unknown or newer than the newest version NetPrints knows; that version is used. |
 | NPW009 | warning | A reference of the project could not be read (not a managed assembly, or damaged or locked); the editor skips it and loads the other references. |
 
 ## NPX: extension loader
