@@ -2,9 +2,9 @@ using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
-using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
 using NetPrints.Editor.Contributions;
+using NetPrints.Editor.Contributions.BuiltIn;
 
 namespace NetPrints.Editor.Hosting;
 
@@ -15,6 +15,11 @@ namespace NetPrints.Editor.Hosting;
 public static class ViewResourceLoader
 {
     private static readonly ConditionalWeakTable<Application, HashSet<string>> Applied = new();
+
+    private static readonly Dictionary<string, Func<object>> Compiled = new(StringComparer.Ordinal)
+    {
+        [BuiltInContributions.BuiltInViewsUri] = () => new BuiltInViews(),
+    };
 
     private static readonly ViewResourceTarget[] Targets = [new TemplatesTarget(), new DictionaryTarget(), new StylesTarget()];
 
@@ -34,7 +39,9 @@ public static class ViewResourceLoader
                 continue;
             }
 
-            object document = AvaloniaXamlLoader.Load(new Uri(declaration.Uri));
+            object document = Compiled.TryGetValue(declaration.Uri, out Func<object>? create)
+                ? create()
+                : throw new NotSupportedException($"'{declaration.Uri}' of '{declaration.Owner}' is not a compiled view resource; extension view resources load with the dynamic extension groups.");
             ViewResourceTarget target = Array.Find(Targets, candidate => candidate.Accepts(document))
                 ?? throw new InvalidOperationException($"'{declaration.Uri}' of '{declaration.Owner}' is not a DataTemplates, ResourceDictionary or Styles document.");
             target.Add(application, document);

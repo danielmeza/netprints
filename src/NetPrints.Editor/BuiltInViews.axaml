@@ -1,5 +1,6 @@
 <DataTemplates xmlns="https://github.com/avaloniaui"
                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+               x:Class="NetPrints.Editor.BuiltInViews"
                xmlns:ed="clr-namespace:NetPrints.Editor"
                xmlns:docking="clr-namespace:NetPrints.Editor.Shell.Docking"
                xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
