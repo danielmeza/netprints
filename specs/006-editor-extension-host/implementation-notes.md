@@ -438,6 +438,49 @@ kept in `.agent-archive/2026-10-16-p3-m5-spike/` beside the repository.
 - Suite (Release): 4426 total, 4393 passed, 33 skipped, 0 failed; build 0 warnings; `dotnet format` clean.
 - Not covered: NPA010 and NPA011 (shipped pin key files, S4) and the NPA02x-NPA04x families (later batches).
 
+## Batch B5 (T029-T030)
+
+- T029: eleven kinds declare their pins by convention: `IfElseNode`, `ForLoopNode`, `ThrowNode`, `TypeReturnNode`,
+  `TypeOfNode`, `DefaultNode`, `MakeArrayTypeNode`, `ClassReturnNode`, `ReturnNode`, `EventEntryNode` and the entry family
+  (`ExecutionEntryNode` is `[NodeBase]`; `MethodEntryNode` and `ConstructorEntryNode` are `[NodeKind]` and inherit its pin).
+  Kind ids are the `BuiltInNodeKinds` strings; `BuiltInNodeDeclarationTests` ties them to those constants.
+- Decision: kinds that stay imperative, pinned by `BuiltInNodeDeclarationTests.EveryOtherBuiltInKindIsListedAsImperative`:
+  `AwaitNode`, `ExplicitCastNode`, `TernaryNode`, `CallMethodNode`, `ConstructorNode` (purity toggling removes and re-adds the
+  `ExecNode` exec pins, so a fixed index would be wrong), `LiteralNode`, `MakeArrayNode`, `MakeDelegateNode`, `TypeNode`,
+  `VariableGetterNode`, `VariableSetterNode` (pin keys or counts come from the constructor arguments) and `RerouteNode` (all pins
+  dynamic). T031's rename counts therefore come from the overrides below, not from a full conversion; these kinds move when
+  their pins can be declared (R2, G).
+- Decision: the converted classes are `sealed`, so the generated `DeclarePins` is private and no protected API appears; the four
+  `HandleInputTypeChanged` overrides leave the API (`*REMOVED*`), as do the old untyped getters of `ConditionPin`, `InitialIndexPin`,
+  `MaxIndexPin`, `IndexPin`, `ExceptionPin` and `TypePin` (`TypeOfNode`), now `NodeInputDataPin<T>`/`NodeOutputDataPin<T>`. The
+  protected `ExecutionEntryNode.DeclarePins` is the only new API. The generator now documents a protected `DeclarePins` (CS1591).
+- Decision: a typed primitive input pin starts at `default(T)`, which would have saved `false`/`0` for `IfElseNode.ConditionPin` and
+  `ForLoopNode.MaxIndexPin`; both constructors set `UnconnectedValue = null` so the golden and every stored graph stay
+  byte-identical (`InitialIndexPin` keeps its `0`).
+- Decision: pins that had no property (`ThrowNode` exec) are `internal` partial properties; the golden lists public properties only.
+- `[Pin("...")]` overrides T029 left (property name differs from the stored key; T031 derives its renames from this list):
+  `IfElseNode.ExecutionPin`, `ForLoopNode.ExecutionPin`, `ThrowNode.ExecutionPin` (all `Exec`), `ReturnNode.ReturnPin` (`Exec`),
+  `ExecutionEntryNode.InitialExecutionPin` and `EventEntryNode.InitialExecutionPin` (`Exec`), `TypeOfNode.InputTypePin` (`Type`),
+  `DefaultNode.DefaultValuePin` (`Default`), `ClassReturnNode.SuperTypePin` (`BaseType`).
+- Red/green T029: `BuiltInNodeDeclarationTests` red 14 of 14 (no attribute on any kind), green 14 of 14 after (the imperative list
+  needed `TypeNode`). `NodePinLayoutTests` (the S0 golden) green before and after, golden untouched. The generator snapshot for a
+  protected `DeclarePins` was edited in the same step: Core cannot build until the generator emits the summary, and the test
+  project references Core, so that one was not run red.
+- T030: `PinKeyTrackingAnalyzer` (`NetPrints.Authoring/Pins/`) reads the `NodePins.*.txt` additional files; a project without them
+  is not tracked. NPA010 is a warning (contract), NPA011 an error. A shipped key that is missing is paired, in order, with a declared
+  key of the same direction and collection that is not recorded; the pair is reported once, at the new property (NPA011 names both
+  keys and NPA010 is not repeated), otherwise at the class. A `*REMOVED*<line>` in the unshipped file lets a key go. Shipped kinds the
+  compilation does not declare are ignored. The research text swaps the NPA010/NPA011 meanings; the contract is followed.
+- T030 fixes: `PinKeyTrackingCodeFix` offers "Record the pin key in NodePins.Unshipped.txt" (NPA010), "Keep the shipped pin key"
+  (`[Pin("old")]` on the replacing property, replacing an existing key) and "Remove the shipped pin key on purpose" (NPA011); no fix-all.
+- `NodePins.Shipped.txt` is seeded from the golden's default variants, only keys that do not depend on node contents (46 lines,
+  including the imperative kinds' fixed pins); `NodePinsFileTests` checks order, uniqueness, known kinds and that each key is in the
+  golden. A temporary bogus shipped line failed the Core build with NPA011, then was reverted. The release step is in
+  `docs/contributing/releasing.md`, the codes in `docs/guide/diagnostics.md`.
+- Red/green T030: `PinKeyTrackingTests` red 6 of 10 (the four negative cases passed against no analyzer), green 10 of 10;
+  `NodePinsFileTests` 2 of 2 and one descriptor test added after the analyzer.
+- Suite (Release): 4453 total, 4420 passed, 33 skipped, 0 failed; build 0 warnings; `dotnet format` clean.
+
 ## Pack spike
 
 T026, run on `scripts/pack-local.sh` version `0.1.0-local.20261016141953`, scratch projects outside the repository (the
