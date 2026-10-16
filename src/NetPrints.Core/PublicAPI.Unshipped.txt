@@ -185,6 +185,11 @@ abstract NetPrints.Core.PrimitiveKind.Format(object! value) -> string!
 abstract NetPrints.Core.PrimitiveKind.Parse(string! text) -> object!
 static NetPrints.Core.PrimitiveKinds.All.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Core.PrimitiveKind!>!
 static NetPrints.Core.PrimitiveKinds.TryGet(string? fullName, out NetPrints.Core.PrimitiveKind? kind) -> bool
+*REMOVED*override NetPrints.Graph.TernaryNode.CanSetPure.get -> bool
+*REMOVED*override NetPrints.Graph.CallMethodNode.CanSetPure.get -> bool
+*REMOVED*override NetPrints.Graph.ConstructorNode.CanSetPure.get -> bool
+*REMOVED*override NetPrints.Graph.ExplicitCastNode.CanSetPure.get -> bool
+NetPrints.Graph.CallMethodNode.OutParamPins.get -> System.Collections.Generic.IList<NetPrints.Graph.NodeOutputDataPin!>!
 const NetPrints.Graph.MakeArrayNode.UseInitializerListOverload = "Use initializer list" -> string!
 const NetPrints.Graph.MakeArrayNode.UsePredefinedSizeOverload = "Use predefined size" -> string!
 NetPrints.Graph.NodePin.Role.get -> NetPrints.Graph.PinRole

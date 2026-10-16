@@ -55,9 +55,9 @@ namespace NetPrints.Tests.Core
         }
 
         [Fact]
-        public void VoidCallWithOnlyAnOutArgumentCannotBePure()
+        public void VoidCallWithOnlyAnOutArgumentCanBePure()
         {
-            Assert.False(new CallMethodNode(new MethodGraph("M"), VoidWithOut()).CanSetPure);
+            Assert.True(new CallMethodNode(new MethodGraph("M"), VoidWithOut()).CanSetPure);
         }
 
         [Fact]

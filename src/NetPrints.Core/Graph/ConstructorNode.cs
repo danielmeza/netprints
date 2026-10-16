@@ -22,15 +22,6 @@ namespace NetPrints.Graph
                 : throw new ArgumentException("A constructor node switches between constructor overloads.", nameof(overload));
 
         /// <summary>
-        /// Always <see langword="true"/>: a constructor node can become pure (no exec pins) since
-        /// construction alone is not considered a side effect worth sequencing.
-        /// </summary>
-        public override bool CanSetPure
-        {
-            get => true;
-        }
-
-        /// <summary>
         /// Specifier for the constructor.
         /// </summary>
         [ObservableProperty]
@@ -89,6 +80,7 @@ namespace NetPrints.Graph
             }
 
             AddOutputDataPin(ConstructorSpecifier.DeclaringType.ShortName, ConstructorSpecifier.DeclaringType);
+            OutputDataPins[^1].Role = PinRole.Result;
 
             // TODO: Set the correct types to begin with.
             UpdateTypes();

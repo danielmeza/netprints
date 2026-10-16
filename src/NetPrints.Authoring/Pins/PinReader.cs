@@ -162,12 +162,14 @@ internal static class PinReader
         string member = string.Empty;
         string? key = null;
         string defaultExpression = string.Empty;
+        string role = string.Empty;
         foreach (AttributeData attribute in property.GetAttributes())
         {
             switch (attribute.AttributeClass?.ToDisplayString())
             {
                 case PinAttribute:
                     key = attribute.ConstructorArguments.Length == 1 ? attribute.ConstructorArguments[0].Value as string : null;
+                    role = RoleName(attribute);
                     break;
                 case PinTypeAttribute:
                     member = attribute.ConstructorArguments.Length == 1 ? attribute.ConstructorArguments[0].Value as string ?? string.Empty : string.Empty;
@@ -186,7 +188,26 @@ internal static class PinReader
 
         string name = property.Name;
         string resolved = key ?? (name.Length > PinSuffix.Length && name.EndsWith(PinSuffix, StringComparison.Ordinal) ? name.Substring(0, name.Length - PinSuffix.Length) : name);
-        return new PinModel(name, Keyword(property.DeclaredAccessibility), kind, resolved, property.Type.ToDisplayString(TypeFormat), member, defaultExpression);
+        return new PinModel(name, Keyword(property.DeclaredAccessibility), kind, resolved, property.Type.ToDisplayString(TypeFormat), member, defaultExpression, kind is PinKind.InputData or PinKind.OutputData ? role : string.Empty);
+    }
+
+    private static string RoleName(AttributeData attribute)
+    {
+        foreach (KeyValuePair<string, TypedConstant> argument in attribute.NamedArguments)
+        {
+            if (argument.Key == "Role" && argument.Value.Type is INamedTypeSymbol { TypeKind: TypeKind.Enum } type)
+            {
+                foreach (ISymbol member in type.GetMembers())
+                {
+                    if (member is IFieldSymbol { HasConstantValue: true } field && Equals(field.ConstantValue, argument.Value.Value))
+                    {
+                        return field.Name;
+                    }
+                }
+            }
+        }
+
+        return string.Empty;
     }
 
     private static string DefaultExpression(AttributeData attribute, ITypeSymbol? argument)

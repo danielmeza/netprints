@@ -264,6 +264,17 @@ internal static class BuiltInNodeTranslators
             }
         }
 
+        // Carry the out and ref values to their output pins
+        IList<NodeOutputDataPin> outParamPins = node.OutParamPins;
+        int outIndex = 0;
+        for (int i = 0; i < argumentNames.Count && outIndex < outParamPins.Count; i++)
+        {
+            if (node.ArgumentPins[i].Role == PinRole.OutParam && argumentNames[i] is { } variableName)
+            {
+                context.AppendLine($"{context.GetOrCreatePinName(outParamPins[outIndex++])} = {variableName};");
+            }
+        }
+
         // Set the exception to null on success if catch pin is connected
         if (node.HandlesExceptions)
         {
@@ -313,7 +324,8 @@ internal static class BuiltInNodeTranslators
     {
         foreach ((NodeInputDataPin pin, MethodParameter parameter) in pins.Zip(parameters, Tuple.Create))
         {
-            if (parameter.PassType is MethodParameterPassType.Out or MethodParameterPassType.Reference && pin.IncomingPin is null)
+            bool byReference = pin.Role == PinRole.OutParam || parameter.PassType is MethodParameterPassType.Out or MethodParameterPassType.Reference;
+            if (byReference && pin.IncomingPin is null)
             {
                 string kind = parameter.PassType == MethodParameterPassType.Out ? "out" : "ref";
                 throw new TranslationException(TranslationDiagnosticCodes.UnsetRequiredInput,

@@ -11,16 +11,6 @@ namespace NetPrints.Graph
     public class ExplicitCastNode : Node
     {
         /// <summary>
-        /// Always <see langword="true"/>: casting alone is not considered a side effect worth
-        /// sequencing, provided its failure/success branching is not needed (a pure cast node has no
-        /// <see cref="CastSuccessPin"/>/<see cref="CastFailedPin"/> and throws on a failed cast).
-        /// </summary>
-        public override bool CanSetPure
-        {
-            get => true;
-        }
-
-        /// <summary>
         /// Pin for the object to cast to another type.
         /// </summary>
         public NodeInputDataPin ObjectToCast
@@ -79,6 +69,7 @@ namespace NetPrints.Graph
             AddInputTypePin("Type");
             AddInputDataPin("Object", TypeSpecifier.FromType<object>());
             AddOutputDataPin("CastObject", CastType);
+            OutputDataPins[^1].Role = PinRole.Result;
             AddExecPins();
         }
 

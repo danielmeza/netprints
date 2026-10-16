@@ -331,6 +331,7 @@
     "Name": [
       "Name"
     ],
+    "Role": [],
     "UnconnectedValue": "\u003Cthrows\u003E",
     "UsesExplicitDefaultValue": [
       "UsesExplicitDefaultValue"
@@ -339,7 +340,8 @@
   "NetPrints.Graph.NodeInputExecPin": {
     "Name": [
       "Name"
-    ]
+    ],
+    "Role": []
   },
   "NetPrints.Graph.NodeInputTypePin": {
     "IncomingPin": [
@@ -348,12 +350,14 @@
     ],
     "Name": [
       "Name"
-    ]
+    ],
+    "Role": []
   },
   "NetPrints.Graph.NodeOutputDataPin": {
     "Name": [
       "Name"
-    ]
+    ],
+    "Role": []
   },
   "NetPrints.Graph.NodeOutputExecPin": {
     "Name": [
@@ -361,12 +365,14 @@
     ],
     "OutgoingPin": [
       "OutgoingPin"
-    ]
+    ],
+    "Role": []
   },
   "NetPrints.Graph.NodeOutputTypePin": {
     "Name": [
       "Name"
-    ]
+    ],
+    "Role": []
   },
   "NetPrints.Graph.RerouteNode": {
     "IsPure": "\u003Cthrows\u003E",

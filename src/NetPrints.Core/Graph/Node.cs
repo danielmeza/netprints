@@ -108,13 +108,15 @@ namespace NetPrints.Graph
         }
 
         /// <summary>
-        /// Whether <see cref="IsPure"/> can be set on this node type. <see langword="false"/> by
-        /// default; a node type that can toggle purity (adding or removing its exec pins) overrides
-        /// this to <see langword="true"/> together with <see cref="SetPurity"/>.
+        /// Whether <see cref="IsPure"/> can be set on this node. True exactly when an output data pin has the
+        /// <see cref="PinRole.Result"/> or <see cref="PinRole.OutParam"/> role: a pure node runs only when a consumer
+        /// needs one of its outputs, so a node without one would vanish from the generated code. The
+        /// <see cref="PinRole.Exception"/> pin never counts. A node type that can toggle purity (adding or removing its
+        /// exec pins) overrides <see cref="SetPurity"/>.
         /// </summary>
         public virtual bool CanSetPure
         {
-            get => false;
+            get => OutputDataPins.Any(pin => pin.Role is PinRole.Result or PinRole.OutParam);
         }
 
         /// <summary>

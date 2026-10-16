@@ -115,7 +115,10 @@ public sealed class PinConventionGenerator : IIncrementalGenerator
     private static string Declaration(PinModel pin)
     {
         string member = pin.Member.Length == 0 ? string.Empty : ", " + pin.Member;
-        string initializer = pin.DefaultExpression.Length == 0 ? string.Empty : " { UnconnectedValue = " + pin.DefaultExpression + " }";
+        string role = pin.Role.Length == 0 || pin.Role == "Argument" ? string.Empty : "Role = " + GraphPrefix + "PinRole." + pin.Role;
+        string unconnected = pin.DefaultExpression.Length == 0 ? string.Empty : "UnconnectedValue = " + pin.DefaultExpression;
+        string assignments = unconnected.Length > 0 && role.Length > 0 ? unconnected + ", " + role : unconnected + role;
+        string initializer = assignments.Length == 0 ? string.Empty : " { " + assignments + " }";
         string key = Quote(pin.Key);
         switch (pin.Kind)
         {
@@ -130,7 +133,7 @@ public sealed class PinConventionGenerator : IIncrementalGenerator
             case PinKind.InputData:
                 return "InputDataPins.Add(new " + pin.TypeName + "(this, " + key + member + ")" + initializer + ");";
             default:
-                return "OutputDataPins.Add(new " + pin.TypeName + "(this, " + key + member + "));";
+                return "OutputDataPins.Add(new " + pin.TypeName + "(this, " + key + member + ")" + initializer + ");";
         }
     }
 

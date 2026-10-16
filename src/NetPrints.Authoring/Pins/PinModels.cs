@@ -53,7 +53,8 @@ internal readonly record struct PinCounts(int InputExec, int OutputExec, int Inp
 /// <param name="TypeName">The property type, fully qualified.</param>
 /// <param name="Member">The <c>[PinType]</c> member name, or empty.</param>
 /// <param name="DefaultExpression">The unconnected value expression from a BCL <c>[DefaultValue]</c>, or empty.</param>
-internal sealed record PinModel(string Name, string Accessibility, PinKind Kind, string Key, string TypeName, string Member, string DefaultExpression);
+/// <param name="Role">The name of the <c>PinRole</c> member from <c>[Pin(Role = ...)]</c>, or empty for the default role.</param>
+internal sealed record PinModel(string Name, string Accessibility, PinKind Kind, string Key, string TypeName, string Member, string DefaultExpression, string Role);
 
 /// <summary>A node class and the pins it declares, as the pipeline holds it.</summary>
 /// <param name="Namespace">The containing namespace, or an empty string.</param>

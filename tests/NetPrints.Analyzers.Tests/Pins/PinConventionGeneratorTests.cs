@@ -167,7 +167,7 @@ public class PinConventionGeneratorTests
                 {
                     private void DeclarePins()
                     {
-                        OutputDataPins.Add(new global::NetPrints.Graph.NodeOutputDataPin<object>(this, "Value"));
+                        OutputDataPins.Add(new global::NetPrints.Graph.NodeOutputDataPin<object>(this, "Value") { Role = global::NetPrints.Graph.PinRole.Result });
                     }
 
                     public partial global::NetPrints.Graph.NodeOutputDataPin<object> ResultPin => (global::NetPrints.Graph.NodeOutputDataPin<object>)OutputDataPins[0];
@@ -176,6 +176,41 @@ public class PinConventionGeneratorTests
 
             """,
             Normalize(run.Source("NodePins.Sample.ResultNode.g.cs")));
+    }
+
+    [Fact]
+    public void ARoleIsCombinedWithTheUnconnectedValue()
+    {
+        const string Source = """
+            using System.ComponentModel;
+            using NetPrints.Core;
+            using NetPrints.Graph;
+
+            namespace Sample;
+
+            [NodeKind("sample.roles")]
+            public sealed partial class RolesNode : Node
+            {
+                public RolesNode(NodeGraph graph) : base(graph)
+                {
+                    DeclarePins();
+                }
+
+                [Pin(Role = PinRole.OutParam)]
+                [DefaultValue(3)]
+                public partial NodeInputDataPin<int> CountPin { get; }
+
+                [Pin(Role = PinRole.Target)]
+                public partial NodeInputDataPin<string> TextPin { get; }
+            }
+            """;
+
+        GeneratorRun run = AuthoringHarness.Run(Source);
+
+        Assert.Empty(run.Diagnostics);
+        string text = Normalize(run.Source("NodePins.Sample.RolesNode.g.cs"));
+        Assert.Contains("""new global::NetPrints.Graph.NodeInputDataPin<int>(this, "Count") { UnconnectedValue = (int)3, Role = global::NetPrints.Graph.PinRole.OutParam }""", text);
+        Assert.Contains("""new global::NetPrints.Graph.NodeInputDataPin<string>(this, "Text") { Role = global::NetPrints.Graph.PinRole.Target }""", text);
     }
 
     [Fact]
