@@ -38,6 +38,7 @@ instead.
 - [0025: Node pins are declared as typed partial properties, and their keys are tracked](0025-declarative-node-pins.md)
 - [0028: Node search providers, node creation and ranking](0028-node-search-providers-and-creation.md)
 - [0029: Node capabilities are role interfaces, and pins carry roles that decide purity](0029-node-capabilities-and-pin-roles.md)
+- [0030: The Extensibility package is split into Abstractions and host, with the editor as a facet](0030-extensibility-split-and-editor-facet.md)
 - [0031: The editor composes with MS.DI and our own registration generator](0031-editor-composition-and-di.md)
 - [0033: Logging goes through NLog 6 behind `ILogger`, and per-user files live in per-OS folders](0033-logging-and-per-user-folders.md)
 - [0034: Smart enums keep behaviour in each member; generic math builds the primitive table](0034-smart-enums-and-generic-math.md)
@@ -48,6 +49,6 @@ instead.
 - [0039: User attributes and their editor extension model](0039-user-attributes-and-editor-extension-model.md)
 - [0040: Editor settings: one store, typed sections, generated pages and user key bindings](0040-editor-settings-pages-and-key-bindings.md)
 
-Numbers 0026, 0027, 0030 and 0032 are reserved by the roadmap for ADRs not yet written (node kinds,
-localization, the Extensibility Stairway split, graph rules); 0031 and later were written first. Declarative pins
-(0025), node search (0028) and node capabilities (0029) are written.
+Numbers 0026, 0027 and 0032 are reserved by the roadmap for ADRs not yet written (node kinds,
+localization, graph rules); 0031 and later were written first. Declarative pins
+(0025), node search (0028), node capabilities (0029) and the Extensibility split (0030) are written.

@@ -588,6 +588,31 @@ consumers restore from `local-packages/` plus a scratch feed and build with `-p:
 
 (T016, T037, T057, T076, T098, T110, T126, T133, T170, T169; the SC table is T152 in PR-P)
 
+## Batch C1a (T040-T042)
+
+- T040: `src/NetPrints.Extensibility.Abstractions/` holds `INetPrintsExtension`, `IExtensionBuilder`, `ExtensionApi`,
+  `ExtensionManifest`, `ExtensionManifestException`, `ExtensionDiagnosticCodes`, the node library contracts (`INodeLibrary`,
+  `NodeKindDescriptor`, `NodeSuggestion`, `GraphKinds`, `NodeGraphKinds`), `ExtensionSettingsDescriptor` and `ISettingsStore`,
+  and the host channel contracts including `InMemoryHostChannel`; `git mv` kept the history, namespaces and no forwards. The
+  host keeps the loader, load contexts, registry, built-ins, `NetPrintsSettings`, `JsonFileSettingsStore` and `NullHostChannel`.
+  The `PublicAPI.Unshipped.txt` files were split by declaring type; the 12 fixtures and `TestExtension` reference Abstractions only.
+- Decision: `ExtensionSettingsDescriptor<T>.Validator` is `Func<T, IReadOnlyList<string>>` instead of returning
+  `ValidateOptionsResult`, because `Microsoft.Extensions.Options` is not in the allowed Abstractions references. `NetPrintsSettings`
+  and `EditorSettings` adapt their generated validators with a private `Validate`. Experimental and unreleased, so no break.
+- Decision: `InMemoryHostChannel` and `ExtensionDiagnosticCodes` moved too (the fixtures build channel pairs; the manifest
+  exception throws the codes). Abstractions therefore still sees `System.Reactive` through Serialization; the test pins
+  `System.Runtime.Loader`, `Microsoft.Extensions.Options` and the host assembly as absent, not Rx.
+- Decision: the Core reference of Abstractions has `PrivateAssets="none"` already; the pack spike (S2a, later) verifies delivery.
+- Red/green T040: `AbstractionsReferenceTests` 4 of 4 red on assertions (project file missing, assembly name still
+  `NetPrints.Extensibility`, host not referencing Abstractions, fixtures not referencing it); 4 of 4 green after the split.
+  `PublicApiTrackingTests`, `AssemblyReferenceGateTests` and the `SourceHygieneTests` path list gained the new project; the
+  `cli-windows` workflow path filters include it.
+- T041: `GraphPoint` is in `src/NetPrints.Core/Graph/` (`NetPrints.Graph`), 19 lines in Core's `PublicAPI.Unshipped.txt`; the editor
+  files gained `using NetPrints.Graph;` and the two editor test projects a global `<Using>`. Red/green: `GraphPointTests` was red
+  as a compile failure (the type was not in Core, so the arithmetic test could not bind); green after the move, 2 of 2.
+- T042: ADR-0030 with the split, the references, the Options decision, analyzer delivery and an empty Facet section for T072; the
+  index no longer reserves 0030.
+
 ## Build-time budget (ADR-0024, S2a; B-F3)
 
 - `dotnet build NetPrints.slnx -c Release --no-incremental`, warm compile server, 6 runs at the end of B: 24.2, 19.1 and 12.2 s

@@ -399,7 +399,7 @@ SC-010; US3 scenarios 5–6. **Gate (plan)**: SC-005; SC-010 (the three writers)
 
 ### Batch C1a — model: sonnet — T040–T042 — 4 units
 
-- [ ] T040 [US3] The Abstractions split (FR-019, research R12, ADR-0030; 2 units). Test first:
+- [x] T040 [US3] The Abstractions split (FR-019, research R12, ADR-0030; 2 units). Test first:
   `tests/NetPrints.Core.Tests/Architecture/AbstractionsReferenceTests.cs`: `NetPrints.Extensibility.Abstractions`
   references only Core, Serialization, Reflection, Catalog, `Microsoft.Extensions.Logging.Abstractions` and
   `Microsoft.Extensions.DependencyInjection.Abstractions` (10.0.12, added to `Directory.Packages.props`) and holds no
@@ -410,9 +410,9 @@ SC-010; US3 scenarios 5–6. **Gate (plan)**: SC-005; SC-010 (the three writers)
   `NetPrints.Extensibility` keeps the host (loader, load contexts, `ExtensionHost`, `ExtensionRegistry`,
   `RegistryBuilder`, `BuiltInExtension`, `JsonFileSettingsStore`). Split the `PublicAPI.*.txt` files; add the project to
   `NetPrints.slnx`.
-- [ ] T041 [US3] `GraphPoint` to Core (research R14, R31; 1 unit). Move `GraphPoint` to `src/NetPrints.Core/Graph/`
+- [x] T041 [US3] `GraphPoint` to Core (research R14, R31; 1 unit). Move `GraphPoint` to `src/NetPrints.Core/Graph/`
   (namespace `NetPrints.Graph`), public and stable from 0.4.0; update its callers and the API files.
-- [ ] T042 [P] [US3] ADR-0030, the split (FR-019, FR-116, research R12; 1 unit). Write
+- [x] T042 [P] [US3] ADR-0030, the split (FR-019, FR-116, research R12; 1 unit). Write
   `docs/adr/0030-extensibility-split-and-editor-facet.md`: the package split, the allowed references, analyzer delivery
   through `PrivateAssets="none"` on the Core reference, and a "Facet" section that T072 fills. ADR index.
 
