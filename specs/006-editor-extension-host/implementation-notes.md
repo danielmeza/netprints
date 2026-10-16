@@ -607,6 +607,8 @@ NPS, NPA003/NPA005/NPA011 and the STJ extension-data shapes.
   the extensions guide), the semantic-model resolution was not worth the cost.
 - AB-3 minor `src/NetPrints.Authoring.CodeFixes/Pins/NpaSyntax.cs:58`: S1905 here and S3459 at `MakeArrayTypeNode.cs:18` are
   unrecorded info-level rules; no gate keeps SC-015 at zero.
+  Fixed in 8d91ea34 (B-F2): the cast is gone and S3459 is a row in the ADR-0003 table (the generator supplies the getter). The
+  gate for the info pass is not added; the batch rule's `dotnet format analyzers --severity info --include` run stays the check.
 - AB-4 minor `docs/adr/0003-analyzer-promotion-and-string-literal-discipline.md:405`: the S1135 and S1144 (:431) reasons do
   not hold.
 - AB-5 minor `.github/release-notes.md:3`: typed getters, sealed node classes and removed overrides missing; the shipped
@@ -623,19 +625,35 @@ NPS, NPA003/NPA005/NPA011 and the STJ extension-data shapes.
   `IOverloadableNode` (`NodeViewModel.cs:230`, `:240-243`); the role interfaces have no stability class (R16).
 - AB-9 minor `src/NetPrints.Editor/NodeSearch/NodeCreationService.cs:91`: two switches (also `:139`) against ADR-0028:39 and
   data-model §8.
+  Fixed in 979ba06f (B-F2): each entry has `CreateAsync` over a `NodeCreationContext`; the prompted built-in kinds are one
+  `NodeKindCreation` subclass each; the service has no switch. Test: an entry of a test-only kind creates its own node
+  (red as a compile failure, the member did not exist; the existing creation tests are the invariants).
 - AB-10 minor `src/NetPrints.Editor/NodeSearch/NodeSearchEntry.cs:17`: titles and keywords from catalog metadata not filled,
   no follow-up.
+  Fixed in 46820b0d (B-F2) by moving it, not filling it: the editor's reflection provider reaches no `CatalogNodeHint`, so the
+  work is in T051 (SUG4) and T020, research R10 and plan B say so.
 - AB-11 minor `docs/adr/0024-analyzer-and-generator-infrastructure.md:82`: the S2a build-time budget was not measured.
 - AB-12 nit `src/NetPrints.Authoring/Pins/PinKeyTrackingAnalyzer.cs:50`: tracking silently off without the NodePins files.
+  Fixed in 5d8dfe62 (B-F2): new NPA012 (info) on a `[NodeKind]` class with declared pins when neither file exists; ADR-0025,
+  the contract table and the guide say so (red: the old "nothing is tracked" test now expects NPA012).
 - AB-13 nit `src/NetPrints.Editor/NodeSearch/SuggestionRanker.cs:23`: the This Methods / This Variables direction is not in
   "Owner questions taken by default".
 - AB-14 nit `src/NetPrints.Authoring.CodeFixes/Pins/AddNodeMarkerCodeFix.cs:51`: the NPA009 fix writes the class name as
   the kind id.
+  Fixed in 828f2314 (B-F2): the fix writes `[NodeKind("TODO.kindId")]` and its title says the id is a placeholder (guide row
+  reworded in 5d8dfe62); red on the fixed-text assertion.
 - AB-15 nit `src/Shared/Roslyn/DiagnosticHelpLinks.cs:12`: help links point to `#npaNNN` anchors the guide lacks.
+  Fixed in 5d8dfe62 (B-F2): one `<span id>` per help-linked NPA, NPI and NPS code above its table; `DiagnosticsGuideTests`
+  checks every help-linked code has its anchor (red on 22 missing anchors).
 - AB-16 nit `specs/006-editor-extension-host/implementation-notes.md:515`: red-first for the sbyte/decimal defect was a
   compile failure (also B2, :386).
 - AB-17 nit `docs/adr/README.md:51`: leftovers (reserved-number sentence, ADR-0003:393 date, trim baseline at :552, checkpoint
   A longest job).
 - AB-18 nit `src/NetPrints.Core/Graph/CallMethodNode.cs:261`: an out/ref parameter named `Exception` takes the exception
   pin's stored key.
+  Fixed in c11763f8 (B-F2): the exception pin is found by its role, and an out/ref pin named `Exception` is keyed
+  `out.data.param:Exception`; the test failed because the exception pin was never added next to such a parameter. A
+  parameter named like a return pin (`Boolean`) keeps `Boolean~2` (stored keys stay stable); said in the commit, not changed.
 - AB-19 nit `src/NetPrints.Core/Graph/ForLoopNode.cs:9`: kind ids repeat the `BuiltInNodeKinds` literals (a test ties them).
+  Fixed in c11763f8 (B-F2): `NodeKindIds` in Core, `[NodeKind]` uses it, `BuiltInNodeKinds` forwards it; a hygiene test rejects a
+  literal (red on the assertion).
