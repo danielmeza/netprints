@@ -18,7 +18,7 @@ Down in the search box highlights the first result (a VM decision) and moves foc
 No single behavior does both, so a trigger runs two actions in order.
 
 ```xml
-<!-- src/NetPrints.Editor/Search/NodeSearchView.axaml -->
+<!-- src/NetPrints.Editor/NodeSearch/NodeSearchView.axaml -->
 <KeyTrigger Key="Down">
   <InvokeCommandAction Command="{Binding HighlightFirstCommand}" />
   <FocusControlAction TargetControl="ResultList" />
