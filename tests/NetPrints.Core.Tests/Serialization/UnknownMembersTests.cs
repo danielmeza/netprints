@@ -83,6 +83,30 @@ namespace NetPrints.Tests.Serialization
             Assert.Equal("dashed", (string?)Graph(saved)["connections"]?[0]?["style"]);
         }
 
+        // FR-007 "every document record" (AB-6): the reference records keep unknown members too.
+        [Fact]
+        public async Task UnknownMembersInReferencesSurviveALoadAndSave()
+        {
+            JsonObject root = Fixture();
+            JsonObject method = Call(root)["method"]?.AsObject() ?? throw new InvalidOperationException("No method ref.");
+            method["nullability"] = "annotated";
+            method["declaringType"]?.AsObject().Add("target", "net10");
+            JsonObject parameter = method["parameters"]?[0]?.AsObject() ?? throw new InvalidOperationException("No parameter ref.");
+            parameter["hint"] = 1;
+            parameter["type"]?.AsObject().Add("nullable", true);
+            Call(root)["pins"]?[0]?["value"]?.AsObject().Add("format", "text");
+
+            string written = await WriteAsync(await ReadAsync(root));
+
+            JsonObject savedMethod = Call(JsonNode.Parse(written)?.AsObject() ?? throw new InvalidOperationException("Not an object."))["method"]?.AsObject()
+                ?? throw new InvalidOperationException("No method ref.");
+            Assert.Equal("annotated", (string?)savedMethod["nullability"]);
+            Assert.Equal("net10", (string?)savedMethod["declaringType"]?["target"]);
+            Assert.Equal(1, (int?)savedMethod["parameters"]?[0]?["hint"]);
+            Assert.True((bool?)savedMethod["parameters"]?[0]?["type"]?["nullable"]);
+            Assert.Equal("text", (string?)Call(JsonNode.Parse(written)?.AsObject() ?? throw new InvalidOperationException("Not an object."))["pins"]?[0]?["value"]?["format"]);
+        }
+
         // The unknown members come after the known ones, in ordinal key order.
         [Fact]
         public async Task UnknownMembersAreWrittenAfterTheKnownOnesInOrdinalKeyOrder()

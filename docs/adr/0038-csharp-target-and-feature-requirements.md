@@ -60,7 +60,9 @@ research differ, the audit wins. Where the owner delegated a choice the choice i
      follows the version.
    - Hosts without MSBuild evaluation (Unity) get an `ICSharpTargetProvider`.
 10. **Unknown document members are preserved on save** (`[JsonExtensionData]` on every document record, in canonical order,
-    opaque to `format`, `show` and the merge driver), before any new document field ships.
+    opaque to `format`, `show` and the merge driver), before any new document field ships. The editor's open and save keep
+    them on every record that has a model object; the reference records (type, method, variable, value) keep them in
+    `format`, `show` and `merge` only, since the editor writes references from the model's own types.
 11. **Diagnostics.** NPT010: feature unavailable (error). NPT011: fallback used (info).
 12. **Styles declare their requirements.** A style names the features it needs and an optional fallback style; the order is
     `.editorconfig`, then profile, then per-class override, then target gating, and an unavailable preferred style falls back

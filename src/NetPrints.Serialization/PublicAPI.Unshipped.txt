@@ -924,6 +924,12 @@ NetPrints.Serialization.Documents.ConstructorDocument.ExtensionData -> NetPrints
 NetPrints.Serialization.Documents.EventGraphDocument.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
 NetPrints.Serialization.Documents.GraphDocument.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
 NetPrints.Serialization.Documents.LocalVariableDocument.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
+NetPrints.Serialization.Documents.ConstructorRef.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
+NetPrints.Serialization.Documents.MethodRef.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
+NetPrints.Serialization.Documents.ParameterRef.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
+NetPrints.Serialization.Documents.TypeRef.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
+NetPrints.Serialization.Documents.TypedValue.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
+NetPrints.Serialization.Documents.VariableRef.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
 NetPrints.Serialization.Documents.MethodDocument.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
 NetPrints.Serialization.Documents.NodeDocument.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
 NetPrints.Serialization.Documents.PinStateDocument.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?

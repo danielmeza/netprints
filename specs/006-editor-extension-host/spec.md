@@ -638,7 +638,9 @@ preset lists while the extension is loaded.
   (ADR-0040).
 - **FR-007**: Every document record MUST preserve members it does not know on save, in canonical order, and `format`,
   `show` and the merge driver MUST treat them as opaque; this MUST land before any new document field ships
-  (ADR-0038 decision 10, ADR-0039 decision 14).
+  (ADR-0038 decision 10, ADR-0039 decision 14). The editor's open and save keep them on every record that has an
+  object in the model; inside a type, method, variable or value reference only `format`, `show` and the merge driver
+  keep them, because the editor writes those references from the model's own types.
 - **FR-008**: Every generator MUST have snapshot tests of its output and every analyzer rule a positive and a negative
   test; the docs MUST list each NetPrints diagnostic prefix (NPS, NPA, NPH and the rest) with its rules.
 

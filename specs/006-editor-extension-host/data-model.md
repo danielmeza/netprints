@@ -242,7 +242,7 @@ version newer than the framework's default is allowed with NPW007; an unknown or
 | `out`/`ref` output pin | key `out.data.<parameterName>` | carries the value after the call; the input must connect to a variable |
 | Pin-key tracking | `NodePins.Shipped.txt`, `NodePins.Unshipped.txt` per project | one line per `<kind> <direction>.<exec|data>.<key>`; NPA010, NPA011 |
 | `kindVersion` (new, optional) | int on a node document | written only when the kind's `DataVersion` > 0; migrations run from it (absent = 0) |
-| Unknown members | `[JsonExtensionData]` on every document record | written after the known members, ordinal key order; opaque to `format`, `show` and `merge` |
+| Unknown members | `[JsonExtensionData]` on every document record | written after the known members, ordinal key order; opaque to `format`, `show` and `merge`; the editor's open and save keep them on every record with a model object, not inside the reference records (type, method, variable, value), which it writes from the model's types |
 
 The 13 renamed properties and the 2 overrides change no stored key; the S0 pin-layout golden stays byte-identical.
 

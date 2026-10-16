@@ -103,7 +103,9 @@ pin, a connection), survives a load and save of the document. It is kept as an o
 the known members of its object and in ordinal key order. `netprints format` keeps it, `netprints show`
 prints it as `unknown <key> <value>`, and the merge driver takes the change of whichever side changed it,
 or reports a conflict when both sides changed the same member to different values. This lets a newer
-editor, or an extension, add a field without an older editor discarding it.
+editor, or an extension, add a field without an older editor discarding it. Inside a type, method, variable or
+value reference, `format`, `show` and the merge driver keep an unknown member, but the editor rewrites those
+references from its own types, so its save drops it.
 
 ## Version control
 
