@@ -31,7 +31,7 @@ when it is started.
 | P1 | Core refactor + extension points | ~3.5 w | P0 | **merged** 2026-09-29 (PR #6, cc96a93); released `v0.1.0`, `v0.1.1` |
 | P2 | Catalog tooling + Spectre CLI | ~2.5 w | P1 | **merged** 2026-10-01 (PR #9, 3a6eafc); released `v0.2.0` |
 | P3a | Editor shell | ~2–3 w | P0, P1 | **merged** 2026-10-15 (PR #12, bf3496e9); owner-feedback follow-up PR #19 |
-| P3 | Editor extension host | ~2.5 w | P0, P1, P3a | not started |
+| P3 | Editor extension host | ~2.5 w (re-estimated in the P3 plan) | P0, P1, P3a | in progress (spec in `specs/006-editor-extension-host/`) |
 | P3b | Declarations and code style | ~3–4 w | P1, P3a, P3 | not started (owner-approved 2026-09-26) |
 | P4 | VSIX (WpfAvaloniaHost) | ~2 w | P3 | **deferred** by owner (2026-09-24) |
 | P5 | VS Code extension + browser build + sidecar | ~2.5–3 w | P3 | not started |
@@ -400,7 +400,7 @@ packages for extension authors. No performance work here (owner decision 2026-09
     - **R7 + N1**: `IExtensionBuilder.Services` (experimental, `IServiceCollection`), one provider per extension, `HostExports` as an allow-list, the conformance kit validates providers, ADR-0020 amendment;
     - **later, with hot enable/disable**: collectible load contexts and the unload test, the extension-seams item (core services are replaced only through declared seams, added on demand), the "restart required" rule;
     - **shrink `EditorContext`** as consumers are touched.
-  - **Options and configuration**: the configuration binding generator and `[OptionsValidator]` validators now (ADR-0031); the composition calls the startup validator itself (no generic host), moving to `IAsyncStartupValidator` at .NET 11. Its relation to `JsonFileSettingsStore` is settled in the P3 spec.
+  - **Options and configuration**: the configuration binding generator and `[OptionsValidator]` validators now (ADR-0031); the composition calls the startup validator itself (no generic host), moving to `IAsyncStartupValidator` at .NET 11. Its relation to `JsonFileSettingsStore` is settled in the P3 spec: the store stays the only source, with typed and validated sections and no binding generator for settings ([ADR-0040](../../docs/adr/0040-editor-settings-pages-and-key-bindings.md)).
   - **ReadyToRun** per assembly with `DisableDynamicEngine=true` for Desktop releases (measured: start page 1034 to 519 ms, +38% install size; ADR-0031). The publishing work stays in P8.
   - **Smart enums and generic math** ([ADR-0034](../../docs/adr/0034-smart-enums-and-generic-math.md), owner decisions 2026-10-08):
     - **P3 S1**: `CommandKey` as an abstract class with private nested sealed members (behaviour per member, no switches), the companion `CommandKeyId` enum for attributes, and our internal `[SmartEnum]` generator emitting only `CommandKeyId` and `All`; `ISpanParsable`/`ISpanFormattable` implemented directly; `ISmartEnum<TSelf>` waits for the second smart enum;

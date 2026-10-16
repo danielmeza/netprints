@@ -84,6 +84,9 @@ earlier plan of a hand-written composition root with no container, which was the
    `RequiresUnreferencedCode`). There is no generic host, so the composition calls the startup validator itself.
    How `IConfiguration` relates to `JsonFileSettingsStore` (settings stay JSON files in the config folder) is settled
    in the P3 spec; smart enums are never bound through `IConfiguration` (ADR-0034).
+   Amended by [ADR-0040](0040-editor-settings-pages-and-key-bindings.md): the settings store stays the only source,
+   sections are typed and validated by the `[OptionsValidator]` validators, and the configuration binding generator is
+   not used for settings.
 8. **ReadyToRun.** Desktop releases are published ReadyToRun per assembly with `DisableDynamicEngine=true`.
    Measured on the real editor: the start page goes from 1034 to 519 ms (-50%) and opening a project from 2688 to
    1869 ms (-30%), for +38% install size. `DisableDynamicEngine` stops MS.DI from emitting IL after the second call

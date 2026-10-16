@@ -42,6 +42,7 @@ instead.
 - [0037: Run profile kinds](0037-run-profile-kinds.md)
 - [0038: The C# target and feature requirements](0038-csharp-target-and-feature-requirements.md)
 - [0039: User attributes and their editor extension model](0039-user-attributes-and-editor-extension-model.md)
+- [0040: Editor settings: one store, typed sections, generated pages and user key bindings](0040-editor-settings-pages-and-key-bindings.md)
 
 Numbers 0024-0030 and 0032 are reserved by the roadmap for ADRs not yet written (analyzer and generator
 infrastructure, declarative pins, node kinds, localization, node search, node capabilities, the Extensibility
