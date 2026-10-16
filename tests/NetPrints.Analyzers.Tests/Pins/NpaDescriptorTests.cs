@@ -20,6 +20,15 @@ public class NpaDescriptorTests
         "NPA009",
     };
 
+    [Fact]
+    public void KeyTrackingRulesCarryTheirContractSeverities()
+    {
+        Assert.Equal(DiagnosticSeverity.Warning, PinAnalyzerHarness.Descriptor("NPA010").DefaultSeverity);
+        Assert.Equal(DiagnosticSeverity.Error, PinAnalyzerHarness.Descriptor("NPA011").DefaultSeverity);
+        Assert.EndsWith("#npa010", PinAnalyzerHarness.Descriptor("NPA010").HelpLinkUri);
+        Assert.EndsWith("#npa011", PinAnalyzerHarness.Descriptor("NPA011").HelpLinkUri);
+    }
+
     [Theory]
     [MemberData(nameof(Codes))]
     public void EachRuleIsAnErrorOnByDefaultWithAGuideAnchor(string id)

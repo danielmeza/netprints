@@ -14,3 +14,5 @@ NPA006 | Authoring | Error | A DefaultValue does not convert to the pin's type
 NPA007 | Authoring | Error | The PinType member is missing or has the wrong type
 NPA008 | Authoring | Error | A pin property name does not end in Pin and has no Pin attribute
 NPA009 | Authoring | Error | Pin properties in a class without NodeKind or NodeBase
+NPA010 | Authoring | Warning | A declared pin key is in neither NodePins.Shipped.txt nor NodePins.Unshipped.txt
+NPA011 | Authoring | Error | A shipped pin key is no longer declared; the old and the new key are named

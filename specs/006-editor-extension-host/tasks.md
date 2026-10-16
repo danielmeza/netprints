@@ -318,7 +318,7 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
   give the stored key (no rename yet). List those overrides in implementation-notes: they are the 13 renames and the 2
   overrides of T031 (research R8). Every fixture and sample graph loads and saves byte-identically; the generated C#
   goldens are unchanged.
-- [ ] T030 [US2] Pin-key tracking (FR-011, research R8 S4; 2 units). Test first:
+- [x] T030 [US2] Pin-key tracking (FR-011, research R8 S4; 2 units). Test first:
   `tests/NetPrints.Analyzers.Tests/Pins/PinKeyTrackingTests.cs`: NPA010 for a declared key not recorded; NPA011 naming
   the old and the new key when a shipped key disappears (US2 scenario 2); the "keep key" and "remove on purpose" fixes.
   Then `NodePins.Shipped.txt` (seeded from the S0 golden, one line per `<kind> <direction>.<exec|data>.<key>`) and

@@ -51,6 +51,14 @@ The docs site (this site, plus the [API reference](https://danielmeza.github.io/
 the wiki build the same way, from `.github/workflows/docs.yml` and `.github/workflows/wiki.yml`, but
 publish independently of package releases — see the owner steps below.
 
+### Release step: pin keys
+
+Before tagging a release of a project that tracks pin keys (`NetPrints.Core`: `src/NetPrints.Core/NodePins.*.txt`),
+move the lines of `NodePins.Unshipped.txt` into `NodePins.Shipped.txt`, in the same sorted order: a line
+`<kind> <direction>.<exec|data|type>.<key>` is added, and a `*REMOVED*<line>` line deletes the matching shipped line.
+Leave only the header comment in the unshipped file. Commit it with the version bump, so the next release starts with
+every key it ships recorded (NPA010) and none missing (NPA011).
+
 ## Owner one-time steps
 
 None of these are needed to open or merge a PR: every workflow tolerates them being undone. The

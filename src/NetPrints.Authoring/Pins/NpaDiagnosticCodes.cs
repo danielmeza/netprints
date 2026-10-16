@@ -30,6 +30,12 @@ internal static class NpaDiagnosticCodes
     /// <summary>Pin properties in a class without <c>[NodeKind]</c> or <c>[NodeBase]</c>.</summary>
     public const string MissingMarker = "NPA009";
 
+    /// <summary>A declared pin key is in neither <c>NodePins.Shipped.txt</c> nor <c>NodePins.Unshipped.txt</c>.</summary>
+    public const string UnrecordedKey = "NPA010";
+
+    /// <summary>A shipped pin key is no longer declared.</summary>
+    public const string ShippedKeyGone = "NPA011";
+
     /// <summary>The category of every NPA diagnostic.</summary>
     public const string Category = "Authoring";
 }

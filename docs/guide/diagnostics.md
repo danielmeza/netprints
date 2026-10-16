@@ -32,6 +32,10 @@ These rules check the node classes whose pins the convention generator declares 
 | NPA007 | error | An untyped data pin or an output type pin has no `[PinType]`, or its member is missing or is not an `ObservableValue<BaseType>`. |
 | NPA008 | error | A pin property name does not end in `Pin` and has no `[Pin]` attribute. The fix adds `[Pin("Name")]` with the current name as the key. |
 | NPA009 | error | A partial pin property in a class with neither `[NodeKind]` nor `[NodeBase]`. The fix adds `[NodeBase]` to an abstract class or `[NodeKind("ClassName")]` to a concrete one. |
+| NPA010 | warning | A declared pin key is in neither `NodePins.Shipped.txt` nor `NodePins.Unshipped.txt`. The fix records it in the unshipped file. |
+| NPA011 | error | A shipped pin key is no longer declared; the message names the old key and, when a new key took its place, the new one. The fixes keep the shipped key with `[Pin("old")]`, or remove it on purpose with a `*REMOVED*` line in the unshipped file. |
+
+The pin key files are `AdditionalFiles` of the project (`NodePins.Shipped.txt` and `NodePins.Unshipped.txt`), one `<kind> <direction>.<exec|data|type>.<key>` line per pin; a project without them is not tracked.
 
 ## NPC: catalogs
 

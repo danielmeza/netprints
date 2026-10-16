@@ -22,6 +22,10 @@
     <None Include="..\NetPrints.Authoring.CodeFixes\bin\$(Configuration)\netstandard2.0\NetPrints.Authoring.CodeFixes.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>
   <ItemGroup>
+    <AdditionalFiles Include="NodePins.Shipped.txt" />
+    <AdditionalFiles Include="NodePins.Unshipped.txt" />
+  </ItemGroup>
+  <ItemGroup>
     <!-- The document mapper sets Node.Id and member ids (internal set) from a loaded document. -->
     <InternalsVisibleTo Include="NetPrints.Serialization" />
     <InternalsVisibleTo Include="NetPrints.Core.Tests" />
