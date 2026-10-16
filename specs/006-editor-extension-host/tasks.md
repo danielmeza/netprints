@@ -303,10 +303,10 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
 
 ### Batch B4 — model: sonnet — T027–T028 — 3 units
 
-- [ ] T027 [US2] NPA001–NPA009 (FR-010, SC-001, contracts/analyzer-diagnostics.md §3; 2 units). Test first:
+- [x] T027 [US2] NPA001–NPA009 (FR-010, SC-001, contracts/analyzer-diagnostics.md §3; 2 units). Test first:
   `tests/NetPrints.Analyzers.Tests/Pins/` one class per rule, failing and passing at exact spans. Then the analyzers in
   `src/NetPrints.Authoring/Pins/` with `NpaDiagnosticCodes`, the release files and the guide rows.
-- [ ] T028 [US2] NPA code fixes (FR-010; 1 unit). Test first: before/after tests for "make partial" (NPA001), "add
+- [x] T028 [US2] NPA code fixes (FR-010; 1 unit). Test first: before/after tests for "make partial" (NPA001), "add
   `[Pin]`" (NPA008) and "add the marker" (NPA009). Then `src/NetPrints.Authoring.CodeFixes/Pins/`.
 
 ### Batch B5 — model: sonnet — T029–T030 — 4 units

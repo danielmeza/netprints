@@ -410,6 +410,34 @@ kept in `.agent-archive/2026-10-16-p3-m5-spike/` beside the repository.
   Analyzers.Tests 97 of 97.
 - Suite (Release): 4380 total, 4347 passed, 33 skipped, 0 failed; build 0 warnings.
 
+## Batch B4 (T027-T028)
+
+- T027: `PinRulesAnalyzer` in `NetPrints.Authoring/Pins/` reports NPA001-NPA009 (errors, on by default), with
+  `NpaDiagnosticCodes`, `PinSymbols` (shared helpers), the release rows and the guide section (the prefix list in
+  `DiagnosticsGuideTests` gains NPA). B3's gaps are NPA001 (class not partial), NPA008 (name without the suffix) and NPA007
+  (untyped data pin or output type pin without `[PinType]`).
+- Decision: the rules apply to `[NodeKind]` and `[NodeBase]` classes; only NPA009 looks at other classes, and only at partial
+  pin-typed properties, so ordinary get-only pin accessors stay free. Partial properties with `[ObservableProperty]` are not pin
+  properties: the Core pin classes (`IncomingPin`, `OutgoingPin`) hit NPA009 the first time Core built with the analyzer.
+- Decision: NPA001 also covers `[Pin]` on a property that is no pin and `[PinType]` on a pin that takes no member (exec pins,
+  input type pins, typed data pins). NPA003 is checked on `[NodeKind]` classes only, skips constructors that chain to `this(...)`,
+  and sees pin additions by name (`AddInputExecPin` and friends, `InputExecPins.Add`), without the semantic model.
+- Decision: NPA005 is a compilation-end check: an imperative addition in a `[NodeBase]` constructor is reported when the base or
+  any class derived from it declares pins in that collection. Its descriptor carries the `CompilationEnd` tag (RS1037).
+- Decision: the NPA008 fix adds `[Pin("Name")]` with the current name, so the key does not change; the rule is met by any
+  `[Pin]`. The NPA009 fix adds `[NodeBase]` to an abstract class and `[NodeKind("ClassName")]` to a concrete one (the id is a
+  placeholder for the author), fully qualified when `NetPrints.Graph` is not imported; it offers no fix-all.
+- T028: `MakePartialCodeFix` (NPA001: class and containing types, or a property rewritten as partial get-only),
+  `AddPinAttributeCodeFix` (NPA008), `AddNodeMarkerCodeFix` (NPA009) in `NetPrints.Authoring.CodeFixes/Pins/`. The project
+  gained the `Microsoft.CodeAnalysis.CSharp` reference (it had only the Workspaces one and no code yet) and links
+  `NpaDiagnosticCodes.cs`.
+- Test seam: `PinAnalyzerHarness` (analyzer and fix over samples compiled against the real Core, like `AuthoringHarness`).
+- Red/green: the new tests were written first and run against the empty analyzer: 33 of 52 `Pins` tests failed (all the
+  new rule and fix tests; the 19 passing were B3's and the negative cases). Green after: 53 of 53 (one more test for the
+  `[ObservableProperty]` case, added after the Core build showed the false positive).
+- Suite (Release): 4426 total, 4393 passed, 33 skipped, 0 failed; build 0 warnings; `dotnet format` clean.
+- Not covered: NPA010 and NPA011 (shipped pin key files, S4) and the NPA02x-NPA04x families (later batches).
+
 ## Pack spike
 
 T026, run on `scripts/pack-local.sh` version `0.1.0-local.20261016141953`, scratch projects outside the repository (the

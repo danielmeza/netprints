@@ -6,6 +6,7 @@ This page lists every code. The tests keep it in step with the sources: a code t
 
 | Prefix | Reported by |
 |---|---|
+| NPA | The authoring analyzers of node classes (shipped in the `NetPrints.Core` package) |
 | NPC | The catalog generator and reader |
 | NPD | The graph document reader |
 | NPE | The editor |
@@ -15,6 +16,22 @@ This page lists every code. The tests keep it in step with the sources: a code t
 | NPW | The project system (project evaluation and restore) |
 | NPX | The extension loader |
 | NPXE | The experimental extension APIs |
+
+## NPA: authoring
+
+These rules check the node classes whose pins the convention generator declares (`[NodeKind]` and `[NodeBase]` classes with `partial` pin properties). They ship with the `NetPrints.Core` package and report as errors.
+
+| Code | Severity | Cause |
+|---|---|---|
+| NPA001 | error | A pin property or its class is not `partial`, the property is not get-only, or `[Pin]` or `[PinType]` sits on a property that cannot take it. The fix makes the class and the property partial. |
+| NPA002 | error | Two pins with the same key in one collection, counting the pins of base classes. |
+| NPA003 | error | A constructor does not call `DeclarePins()` exactly once, or adds pins to a declared collection before it. |
+| NPA004 | error | A pin key is empty or contains `.`, `/` or `~`. |
+| NPA005 | error | A `[NodeBase]` class adds pins imperatively to a collection in which the convention declares pins (the offsets would be wrong). |
+| NPA006 | error | A `[DefaultValue]` on a typed input data pin does not convert to the pin's type. |
+| NPA007 | error | An untyped data pin or an output type pin has no `[PinType]`, or its member is missing or is not an `ObservableValue<BaseType>`. |
+| NPA008 | error | A pin property name does not end in `Pin` and has no `[Pin]` attribute. The fix adds `[Pin("Name")]` with the current name as the key. |
+| NPA009 | error | A partial pin property in a class with neither `[NodeKind]` nor `[NodeBase]`. The fix adds `[NodeBase]` to an abstract class or `[NodeKind("ClassName")]` to a concrete one. |
 
 ## NPC: catalogs
 

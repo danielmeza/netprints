@@ -6,10 +6,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" VersionOverride="5.0.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" VersionOverride="5.0.0" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Include="..\Shared\Roslyn\**\*.cs" Link="Shared\Roslyn\%(Filename)%(Extension)" />
+    <Compile Include="..\NetPrints.Authoring\Pins\NpaDiagnosticCodes.cs" Link="Pins\NpaDiagnosticCodes.cs" />
   </ItemGroup>
 </Project>

@@ -15,7 +15,7 @@ internal static class AuthoringHarness
 {
     private const string Authoring = "NetPrints.Authoring";
 
-    private static readonly ImmutableArray<MetadataReference> References =
+    internal static readonly ImmutableArray<MetadataReference> References =
     [
         .. GeneratorHarness.References,
         MetadataReference.CreateFromFile(typeof(Node).Assembly.Location),

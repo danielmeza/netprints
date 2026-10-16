@@ -12,19 +12,21 @@ namespace NetPrints.Authoring.Pins;
 /// <summary>Reads node classes and their pin properties into pipeline models.</summary>
 internal static class PinReader
 {
-    private const string GraphNamespace = "NetPrints.Graph";
+    internal const string GraphNamespace = "NetPrints.Graph";
 
-    private const string NodeKindAttribute = "NetPrints.Graph.NodeKindAttribute";
+    internal const string NodeKindAttribute = "NetPrints.Graph.NodeKindAttribute";
 
-    private const string PinAttribute = "NetPrints.Graph.PinAttribute";
+    internal const string NodeBaseAttribute = "NetPrints.Graph.NodeBaseAttribute";
 
-    private const string PinTypeAttribute = "NetPrints.Graph.PinTypeAttribute";
+    internal const string PinAttribute = "NetPrints.Graph.PinAttribute";
 
-    private const string LayoutAttribute = "NetPrints.Graph.NodePinLayoutAttribute";
+    internal const string PinTypeAttribute = "NetPrints.Graph.PinTypeAttribute";
 
-    private const string DefaultValueAttribute = "System.ComponentModel.DefaultValueAttribute";
+    internal const string LayoutAttribute = "NetPrints.Graph.NodePinLayoutAttribute";
 
-    private const string PinSuffix = "Pin";
+    internal const string DefaultValueAttribute = "System.ComponentModel.DefaultValueAttribute";
+
+    internal const string PinSuffix = "Pin";
 
     private static readonly SymbolDisplayFormat TypeFormat = SymbolDisplayFormat.FullyQualifiedFormat
         .AddMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
@@ -209,7 +211,7 @@ internal static class PinReader
         return argument.SpecialType == SpecialType.System_String ? literal : "(" + argument.ToDisplayString(TypeFormat) + ")" + literal;
     }
 
-    private static bool TryClassify(ITypeSymbol type, out PinKind kind, out bool generic, out ITypeSymbol? argument)
+    internal static bool TryClassify(ITypeSymbol type, out PinKind kind, out bool generic, out ITypeSymbol? argument)
     {
         kind = default;
         generic = false;
