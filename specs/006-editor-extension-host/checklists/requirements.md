@@ -39,3 +39,7 @@
 - The roadmap's size for P3 is stale; the scope rule (Clarifications, question 1) bounds what may be cut and where.
 - Validated in one iteration on 2026-10-15; the clarify session's five answers are in the spec's Clarifications, and
   the two architectural ones in ADR-0040.
+- Revalidated on 2026-10-16 after the owner moved the package work to roadmap phase P3c (Clarifications, session
+  2026-10-16): User Stories 12 to 14, FR-089 to FR-106 and SC-012 to SC-014 remain as "moved to P3c" entries so their
+  IDs stay valid, the boundary calls with the stories that stay are in the spec's Assumptions, and every item above
+  still passes.

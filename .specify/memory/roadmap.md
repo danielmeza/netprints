@@ -32,6 +32,7 @@ when it is started.
 | P2 | Catalog tooling + Spectre CLI | ~2.5 w | P1 | **merged** 2026-10-01 (PR #9, 3a6eafc); released `v0.2.0` |
 | P3a | Editor shell | ~2–3 w | P0, P1 | **merged** 2026-10-15 (PR #12, bf3496e9); owner-feedback follow-up PR #19 |
 | P3 | Editor extension host | ~2.5 w (re-estimated in the P3 plan) | P0, P1, P3a | in progress (spec in `specs/006-editor-extension-host/`) |
+| P3c | Packages and extension manager | ~4.5 w (about 23 days; re-estimated in its plan) | P3 | not started (split from P3, owner-approved 2026-10-16) |
 | P3b | Declarations and code style | ~3–4 w | P1, P3a, P3 | not started (owner-approved 2026-09-26) |
 | P4 | VSIX (WpfAvaloniaHost) | ~2 w | P3 | **deferred** by owner (2026-09-24) |
 | P5 | VS Code extension + browser build + sidecar | ~2.5–3 w | P3 | not started |
@@ -224,14 +225,24 @@ of P3. The items P3a left open moved to P3 ("Carried over from P3a").
 inspector sections, panels, settings pages), sample non-Unreal extension, anything functional
 left beyond P0 parity. Publishes the `NetPrints.Serialization` and `NetPrints.Extensibility`
 packages for extension authors. No performance work here (owner decision 2026-09-25: see P8).
+The package service, the NuGet package manager (B7), the extension manager (B17) and samples from remote sources moved
+to P3c on 2026-10-16 (see there). P3 keeps what those need from the host: loading extensions from local folders, the
+extension package format that the author kit packs and verifies, and the start page's existing samples tile.
 - **Carried over from P3a** (closeout 2026-10-15; P3a final notes):
   - regenerate the start-page guide images that carry the build version before the next release;
   - the per-user session log on Windows is unverified (pure resolver tests only; no Desktop code runs on Windows in CI);
   - a hover on the exact middle of a cable misses it at the fit zoom (2 px off hits);
   - watch the Desktop E2E `ShellMainFlow` flake (watermark wait); it did not reproduce after one CI retry;
   - the shared warmed reflection provider for the UI tests left P3a: a P8 candidate, not P3 work;
-  - a Dock binding warning at runtime: `ToolChromeControl` binds `IsPinned` through `ActiveDockable.OriginalOwner`,
-    which is null;
+  - Dock binding warnings at runtime (updated 2026-10-16):
+    - the capability "Value is null" warnings: P3a works around wieslawsoltes/Dock#1157 by filling empty
+      `DockCapabilityPolicy` and `DockCapabilityOverrides` objects in `src/NetPrints.Editor/Shell/Docking/ShellDockables.cs`
+      and `ShellDockFactory.cs`. The upstream fix, Dock#1191, merged on 2026-10-16, but the latest release
+      (12.1.0.9) does not include it. When a Dock release includes it, bump Dock from 12.1.0.6, drop the workaround, and
+      confirm that the capability "Value is null" warnings stay gone (the startup warnings test);
+    - `ToolChromeControl` binds `IsPinned` through `ActiveDockable.OriginalOwner`, which is null ("Value is null"). Dock#1191
+      does not cover it (Dock master still binds it at `ToolChromeControl.axaml:142`); an upstream issue awaits the owner's
+      OK;
   - the owner's manual check of the editor on Windows with two monitors at different DPI (R8).
 - **Carried over from P2** (final review findings FU-1, FU-2, FU-5, FU-6): NPX008 should check host-provided and transitive references; the live `ReflectionProvider` should skip unreadable references and log them; info-level analyzer backlog cleanup (the `dotnet format analyzers` triage; 210 info-level hits in `src/` at the P3a final run); decide on editor `ProjectCheck` generation-skip behavior; two Windows defects found in P3a Review A (R13): `catalog --check` compares bytes, so a `.npcat.json` checked out with CRLF (`core.autocrlf=true`, no `.gitattributes` rule) always reads as stale, and `git-install --command` with backslash paths is written verbatim and `sh` drops the backslashes. (The three CI items FU-3, FU-4 and FU-7 moved to P3a.)
 - **Extension testing — author conformance kit (may start in P2; the internal `ExtensionHarness` lands in P2, ADR-0010).** Ship `NetPrints.Extensibility.Testing` (NuGet package) with `ExtensionTest<TExtension>` (declarative `TestState`, `RunAsync`), an `ExtensionHarness` for real or folder-based testing, and a conformance suite with 12 checks (manifest, packaging, type identity, pure/repeatable registration, no issues, node round-trip, translation compilation, deterministic emitters, settings, host channel lifecycle, coexistence with built-ins and a "noisy neighbour", disposal). Optional xUnit adapter. `NetPrints.TestExtension` is tested only through this kit. See research.
@@ -292,85 +303,7 @@ packages for extension authors. No performance work here (owner decision 2026-09
   - Design and prior art: `.agent-archive/2026-10-14-run-profile-kinds/` (outside this repo).
 - **Interactive stdin / external terminal (gap research 2026-10-06)** (B5): an input line in Output and a "Run in external terminal"
   profile option; today stdin is not redirected, so `Console.ReadLine()` sees EOF.
-- **NuGet package manager (gap research 2026-10-06)** (B7, size M, about 6 days after the shared package service of about 5 days).
-  A Packages tab in the References dialog; one `NetPrints.Packages` service shared with B17.
-  - Service: sources and credentials come from the `nuget.config` hierarchy and the NuGet credential plugins (the same ones
-    `dotnet restore` uses), search and versions through `NuGet.Protocol`, prerelease toggle, 5-minute cache, offline fallback to
-    the global packages folder. No secrets in NetPrints state; source URLs are redacted in logs.
-  - Edits: new `ProjectEdit` records (`AddPackageReference`, `SetPackageVersion`, `RemovePackageReference`). Aware of Central
-    Package Management (`Directory.Packages.props`), `VersionOverride`, ranges and conditional items; comments and order are
-    preserved; `NetPrints.Sdk` can be updated but not removed.
-  - Apply: write, restore through `LoadAsync`, and on a restore failure put the exact bytes back (csproj and props), then
-    refresh the reflection provider and re-validate graphs. Removal first lists the nodes that use the package; they stay as
-    unresolved nodes if the user proceeds.
-  - UI: Installed, Browse and Updates tabs, source drop-down and panel, version picker with a compatibility filter,
-    deprecated and vulnerable badges, transitive packages read-only.
-  - CLI (v1.1): `netprints package list|add|remove|search|update` (exit codes per ADR-0015, `--format json`).
-  - Tests: fixture CPM and plain projects, golden comparison with `dotnet package add`, rollback and cancellation, impact scan,
-    local-folder feed; one E2E class.
-  - Spike first: the `NuGet.*` version to pin and the credential plugin hooks (no `NuGet.*` package is referenced yet).
-  - Design and prior art: `.agent-archive/2026-10-06-roadmap-gaps/b07-b17-packages-and-extensions.md` (outside this repo).
 - **`netprints new` and `dotnet new` templates (gap research 2026-10-06)** (B15): the CLI gains `new`, using the project template registry.
-- **Extension manager (gap research 2026-10-06)** (B17, size M, about 6 days for v1; needs the shared package service of B7
-  and the extension template). A separate Extensions dialog (palette `extensions.manage`), not a Packages tab. If P3 is tight,
-  v1 shrinks to a list, folder install, enable/disable and the trust list (about 3 days).
-  - Package format: a `NetPrintsExtension` package type holding the folder the loader already reads (manifest, assembly,
-    private dependencies); installed by download and extract, with no NuGet dependency resolution. Stored per user in
-    `<data>/extensions/<id>/<version>/`; project scope and "dev" folders later.
-  - List and details: Installed, Browse and Updates tabs; state badges (Enabled, Disabled, Failed with NPX code, Restart
-    needed, Incompatible); load results and contribution counts; the built-in extension cannot be disabled.
-  - Enable, disable, install, update and uninstall apply after a restart ("Restart to apply" bar), because load contexts are
-    not collectible; hot enable and disable follow once the contribution registry proves disposal. Documents using a disabled
-    extension keep their nodes as unknown nodes.
-  - Trust: an install prompt (publisher, source, signature, API compatibility; "always trust this publisher" for
-    author-signed packages) and the existing per-project prompt, plus a revoke list. `nuget.config` signature mode is honoured.
-  - Safety: nupkg hash and signature checks, zip-slip and size limits, extract to a temp folder and move, uninstall at next start.
-  - Conformance: load diagnostics NPX001-NPX008 now; display of a `netprints-verify` report carried in the package later.
-  - CLI (v1.1): `netprints extension list|install|uninstall|enable|disable|verify` (`--yes` to skip the prompt; exit 2 without it).
-  - Tests: harness-based install, rejection table, state persistence, round trip of nodes of a disabled extension.
-  - Spike first: whether `dotnet restore` and feeds accept the custom package type.
-  - Design and prior art: `.agent-archive/2026-10-06-roadmap-gaps/b07-b17-packages-and-extensions.md` (outside this repo).
-- **Samples from remote sources (owner decisions 2026-10-14)** (size M, about 6 days after B17's full v1; about 8 if B17 ships its
-  3-day fallback, which has no download path). Samples are not bundled with the editor; they come from several sources. No
-  separate manager: the start page's Samples gallery browses and installs samples through the shared `NetPrints.Packages` service.
-  - Format: a `.nupkg` with package type `NetPrintsSample` holding the sample folder (project, graphs and generated files, no
-    build output) and `netprints-sample.json`. Installed by download, hash or signature check and extract, with B17's zip-slip and
-    size limits, into `<data>/samples/<id>/<version>/`. No NuGet dependency resolution and no template engine (it adds Edge,
-    RunnableProjects, Newtonsoft.Json and a second NuGet 6.13.2 pin that collides with B7's). The nuspec's package types are
-    checked before install, because some feeds ignore the `packageType` filter.
-  - Sources: `nuget.config` feeds searched with `packageType=NetPrintsSample`, plus per-user index sources: a URL or folder holding
-    `netprints-samples.json` (entries carry the inline manifest, `url`, `sha256` and `size`; relative paths resolve against the
-    configured URL, not the redirected one). The default source is `releases/download/v<editor version>/netprints-samples.json`,
-    falling back to `releases/latest/download/`. The release index is cumulative (all published sample versions, absolute tag
-    URLs); the newest version whose `minNetPrints` the editor meets is offered. The last fetched index is cached.
-  - Extensions can ship samples under `samples/<id>/`; these are listed while the extension is enabled and need no download.
-    Only extensions installed per user can list samples, because the start page has no project loaded.
-  - Manifest v1: `schemaVersion`, `id`, `version`, `title`, `description`, `authors`, `license`, `minNetPrints` and `profile` are
-    required; `tags`, `thumbnail`, `screenshots`, `dotnetSdk`, `dependsOn`, `project`, `open`, `projectUrl` and `localized` are
-    optional. `project` is required when the sample has several `.csproj` files. The hash lives in the index entry (or in NuGet's
-    own hash and signature for feeds), not in the manifest.
-  - Safety (beyond B17): https only (http for loopback only), no scheme change on redirect; references are `https:` or relative,
-    never `file:`, UNC, `//host` or rooted; folder-source and manifest paths must stay inside their root; images relative to the
-    index or on its host, PNG or JPEG only, at most 1 MB, pixel cap checked before decode, loaded when shown; index at most 1 MB;
-    text shown as plain text.
-  - Gallery: search, filters by profile and tag, details with screenshots. Samples whose version, profile or extension does not
-    match are greyed out with the reason. An update badge marks newer versions. Offline, installed samples plus cached entries
-    ("needs network"); an empty state offers Retry, Add folder source and New project. Remove deletes an installed version.
-  - Trust: one install prompt (source, authors, license, hash or signature, "opening runs its build"); on accept the copy's
-    project path is added to `TrustedProjects`, so opening does not prompt again; extension samples inherit the extension's trust.
-  - Open: the FR-043/FR-048 copy-and-open flow, run from the installed folder, then opens `open` or the project.
-  - Migration: HelloWorld gains `netprints-sample.json`, is packed outside `packages/` (the release pushes `packages/*.nupkg` to
-    nuget.org) and attached with the cumulative index to every release. The `Content` item (`NetPrints.Desktop.csproj:48`) and
-    `SampleCatalog.Bundled` are removed; its callers (`ProjectLoader`, `StartPageContributions`, `SamplesAndWhatsNewTests`) take
-    a catalog over the configured sources, and the `SampleCatalogTests` hashes change. CI and the E2E tests already use the
-    checked-in `samples/` and need no change. FR-043 gets a P3 note: samples are installed from a source or come with an
-    extension; none is bundled.
-  - Tests: the index parser (relative URLs, bad hash, id or version that differs from the package), the install rejection table
-    shared with B17, the gallery ViewModel, and one E2E opening a sample from a folder source.
-  - Spike, shared with B17's custom-type spike: whether dual-type `NetPrintsSample;Template` packages work with `dotnet new
-    install` (for B15; not needed for v1), and local-feed `packageType` filtering in B7's NuGet-version spike. If P3 is tight,
-    screenshots, `localized` and the update badge move to v1.1.
-  - Design and prior art: `.agent-archive/2026-10-14-samples-remote/` (outside this repo).
 - **Build configuration selector (gap research 2026-10-06)** (B23): a Debug/Release selector next to the run profile (the Publish dialog is in P6).
 - **Status-bar item contribution kind (gap research 2026-10-06)** (C-15): added to the contribution registry before P3 publishes it; the
   built-in segments (error and warning counts, build glyph, run state, zoom, selection count) use it.
@@ -415,7 +348,7 @@ packages for extension authors. No performance work here (owner decision 2026-09
   - **CLI trust**: project-declared extensions load in the CLI without a trust check, the same as analyzers and build tasks; the guide and the ADR say so.
   - **M4 trimming ratchet**: a non-blocking CI step (`eng/trim-warnings.txt`) counts the IL2xxx/IL3xxx warnings of `NetPrints.Editor`; the count may only go down. Prepares P5.
   - Planned ADRs (0024–0027 above): 0028 (node search providers and node creation), 0029 (node capabilities as role interfaces, including `IMemberReferencingNode`), 0030 (Extensibility Stairway split and the editor facet), 0031 (editor composition and DI; written 2026-10-08), 0032 (graph rules). Also written, with unreserved numbers: 0033 (logging and per-user folders), 0034 (smart enums and generic math). Planned amendments: ADR-0020 (typed descriptor contexts, per-session contribution groups, `AppliesTo`, new contribution kinds), ADR-0021 (extension icon ids), ADR-0026 (`PrepareFromSearchAsync`, offers from typed pins), ADR-0010 (conformance checks for providers, rules and contributions).
-  - **Editor themes** ([ADR-0035](../../docs/adr/0035-editor-themes-are-data.md), owner 2026-10-13): every visual element is a token a theme can set; themes are data and never run code. **B0** (about 4-5 units): the token catalogue in product code with the contrast math, a per-variant overlay in `Application.Resources.ThemeDictionaries[Dark|Light]`, `darkPreset`/`lightPreset` string settings, embedded presets (NetPrints Dark, NetPrints Light, Classic Dark, High contrast on Semi's own HC variants), wire opacity and thickness tokens, a theme settings page, the reserved manifest `themes` field before the publish gate, and a test of the overlay precedence. **B1** (about 9 more): user `*.nptheme.json` files, validation messages, Reload and Duplicate. **C** (themes declared by ordinary extensions, via B17). B1 and C go in P3 if capacity allows, otherwise P6. Contrast: warn and apply; the built-in presets are gated by tests. Semi keys are passed through and validated at runtime, never curated.
+  - **Editor themes** ([ADR-0035](../../docs/adr/0035-editor-themes-are-data.md), owner 2026-10-13): every visual element is a token a theme can set; themes are data and never run code. **B0** (about 4-5 units): the token catalogue in product code with the contrast math, a per-variant overlay in `Application.Resources.ThemeDictionaries[Dark|Light]`, `darkPreset`/`lightPreset` string settings, embedded presets (NetPrints Dark, NetPrints Light, Classic Dark, High contrast on Semi's own HC variants), wire opacity and thickness tokens, a theme settings page, the reserved manifest `themes` field before the publish gate, and a test of the overlay precedence. **B1** (about 9 more): user `*.nptheme.json` files, validation messages, Reload and Duplicate. **C** (themes declared by ordinary extensions, via B17; since the 2026-10-16 split, P3 offers the themes of loaded extensions, and their distribution through B17's Browse tab follows in P3c). B1 and C go in P3 if capacity allows, otherwise P6. Contrast: warn and apply; the built-in presets are gated by tests. Semi keys are passed through and validated at runtime, never curated.
   - **Value-editor contract** ([ADR-0036](../../docs/adr/0036-member-defaults-and-editor-metadata.md)): R6's `PinEditorDescriptor` widens into a value-editor contract shared by pins, variable and parameter defaults and grid rows (no extra cost while experimental). The model-driven grid with plugin-contributed editors (c, about 13-15 units) lands at the P3 tail if it fits, otherwise in P3b.
 - **C# target (owner 2026-10-14; ADR-0038)**: one stable `CSharpTarget` per project, carried by `ProjectSnapshot` and reached through
   `Project` and `IProjectSession`.
@@ -441,6 +374,125 @@ packages for extension authors. No performance work here (owner decision 2026-09
   - [ADR-0038](../../docs/adr/0038-csharp-target-and-feature-requirements.md) (C# target and feature requirements) and [ADR-0039](../../docs/adr/0039-user-attributes-and-editor-extension-model.md) (user attributes and their editor extension model).
   - Design and prior art: `.agent-archive/2026-10-14-attributes-langversion/` (outside this repo).
 Done when: also docs updated (guides, API reference, ADRs as applicable).
+
+### P3c — Packages and extension manager (owner-approved 2026-10-16)
+Split out of P3. On 2026-10-16 the coordinator asked whether to move the package work (the package service, the Packages
+tab, the extension manager and the remote samples, about 23 days) into its own phase, and recommended it. The owner
+answered "continua con P3 como recomiendas" ("go on with P3 as you recommend"). The same answer settled P3's process
+questions with the recommended defaults: one spec and one PR for P3, core first, and the same batch and review process as
+P3a. P3c follows the same process: one spec, one branch, one PR.
+- **Scope:** one `NetPrints.Packages` service (about 5 days) and the three features built on it:
+  - NuGet packages in the References dialog (B7, about 6 days);
+  - the extension manager (B17, about 6 days for v1, or the 3-day fallback): browse, install, update, enable, disable and
+    uninstall per-user extensions from feeds and folders, with trust and integrity checks;
+  - samples from remote sources (about 6 days, or 8 after B17's fallback): the start page gallery over the release index,
+    NuGet feeds, folder sources and extension samples; no sample is bundled with the editor any more.
+  The details are below, as P3 held them before the split.
+- **Depends on P3:**
+  - the published Extensibility packages and the extension package format: P3's `dotnet new netprints-extension` template
+    packs an extension as a `.nupkg` of package type `NetPrintsExtension`, and `netprints extension verify` reads it; P3c
+    installs that package. If B17's spike finds that feeds reject the custom package type, P3c changes the format, the
+    template and `verify` together;
+  - the app contribution group: P3 loads per-user extensions at start only from the configured extension directories
+    (`netprints.extensionPaths`, `NETPRINTS_EXTENSION_PATH`). P3c adds the managed per-user folder
+    `<data>/extensions/<id>/<version>/` as one more source, with an enabled or disabled state per extension;
+  - the settings pages and the "Restart to apply" bar (ADR-0040), which gain the package sources and the publisher trust
+    revoke list; contribution groups and failure isolation; project templates with files (N3); the load diagnostics
+    NPX001-NPX008; and the P3a start page (samples tile, New project, copy-and-open, `TrustedProjects`);
+  - `--profile`: P3 filters New project and the template list; filtering the samples gallery comes here, with the sample
+    manifest's `profile`.
+- **Moved here from P3's spec** (`specs/006-editor-extension-host/spec.md`; the IDs stay there marked "moved to P3c" and
+  are not reused): User Stories 12 to 14, FR-089 to FR-106, SC-012 to SC-014, their edge cases (a restore that fails or is
+  cancelled during a package change, feeds that ignore the package type filter, sample index and image limits, disabled
+  and Incompatible extensions) and entities (package source, sample, sample index). Also the sample Godot extension's own
+  sample under `samples/<id>/` (spec 006 FR-037) and the samples gallery's `--profile` filter (FR-036). The text as
+  drafted before the split is in commit `2e1a350a` of that file, and is the starting point for `/speckit-specify`.
+- **Later, not in P3c:** the `netprints package` verbs and the `netprints extension` verbs other than `verify` (v1.1);
+  project-scope and "dev" extension folders; hot enable and disable; dual-type `NetPrintsSample;Template` packages for
+  `dotnet new install`; theme-only packages without an assembly; a hosted gallery.
+- **NuGet package manager (gap research 2026-10-06)** (B7, size M, about 6 days after the shared package service of about 5 days).
+  A Packages tab in the References dialog; one `NetPrints.Packages` service shared with B17.
+  - Service: sources and credentials come from the `nuget.config` hierarchy and the NuGet credential plugins (the same ones
+    `dotnet restore` uses), search and versions through `NuGet.Protocol`, prerelease toggle, 5-minute cache, offline fallback to
+    the global packages folder. No secrets in NetPrints state; source URLs are redacted in logs.
+  - Edits: new `ProjectEdit` records (`AddPackageReference`, `SetPackageVersion`, `RemovePackageReference`). Aware of Central
+    Package Management (`Directory.Packages.props`), `VersionOverride`, ranges and conditional items; comments and order are
+    preserved; `NetPrints.Sdk` can be updated but not removed.
+  - Apply: write, restore through `LoadAsync`, and on a restore failure put the exact bytes back (csproj and props), then
+    refresh the reflection provider and re-validate graphs. Removal first lists the nodes that use the package; they stay as
+    unresolved nodes if the user proceeds.
+  - UI: Installed, Browse and Updates tabs, source drop-down and panel, version picker with a compatibility filter,
+    deprecated and vulnerable badges, transitive packages read-only.
+  - CLI (v1.1): `netprints package list|add|remove|search|update` (exit codes per ADR-0015, `--format json`).
+  - Tests: fixture CPM and plain projects, golden comparison with `dotnet package add`, rollback and cancellation, impact scan,
+    local-folder feed; one E2E class.
+  - Spike first: the `NuGet.*` version to pin and the credential plugin hooks (no `NuGet.*` package is referenced yet).
+  - Design and prior art: `.agent-archive/2026-10-06-roadmap-gaps/b07-b17-packages-and-extensions.md` (outside this repo).
+- **Extension manager (gap research 2026-10-06)** (B17, size M, about 6 days for v1; needs the shared package service of B7
+  and P3's extension template). A separate Extensions dialog (command `manageExtensions`), not a Packages tab. If P3c is
+  tight, v1 shrinks to a list, folder install, enable/disable and the trust list (about 3 days).
+  - Package format (P3's, see above): a `NetPrintsExtension` package type holding the folder the loader already reads
+    (manifest, assembly, private dependencies); installed by download and extract, with no NuGet dependency resolution.
+    Stored per user in `<data>/extensions/<id>/<version>/`; project scope and "dev" folders later.
+  - List and details: Installed, Browse and Updates tabs; state badges (Enabled, Disabled, Failed with NPX code, Restart
+    needed, Incompatible); load results and contribution counts; the built-in extension cannot be disabled.
+  - Enable, disable, install, update and uninstall apply after a restart ("Restart to apply" bar), because load contexts are
+    not collectible; hot enable and disable follow once the contribution registry proves disposal. Documents using a disabled
+    extension keep their nodes as unknown nodes.
+  - Trust: an install prompt (publisher, source, signature, API compatibility; "always trust this publisher" for
+    author-signed packages) and the existing per-project prompt, plus a revoke list. `nuget.config` signature mode is honoured.
+  - Safety: nupkg hash and signature checks, zip-slip and size limits, extract to a temp folder and move, uninstall at next start.
+  - Conformance: load diagnostics NPX001-NPX008 now; display of a `netprints extension verify` report (P3) carried in the
+    package later.
+  - CLI (v1.1): `netprints extension list|install|uninstall|enable|disable` (`--yes` to skip the prompt; exit 2 without it);
+    `verify` ships in P3.
+  - Tests: harness-based install, rejection table, state persistence, round trip of nodes of a disabled extension.
+  - Spike first: whether `dotnet restore` and feeds accept the custom package type.
+  - Design and prior art: `.agent-archive/2026-10-06-roadmap-gaps/b07-b17-packages-and-extensions.md` (outside this repo).
+- **Samples from remote sources (owner decisions 2026-10-14)** (size M, about 6 days after B17's full v1; about 8 if B17 ships its
+  3-day fallback, which has no download path). Samples are not bundled with the editor; they come from several sources. No
+  separate manager: the start page's Samples gallery browses and installs samples through the shared `NetPrints.Packages` service.
+  - Format: a `.nupkg` with package type `NetPrintsSample` holding the sample folder (project, graphs and generated files, no
+    build output) and `netprints-sample.json`. Installed by download, hash or signature check and extract, with B17's zip-slip and
+    size limits, into `<data>/samples/<id>/<version>/`. No NuGet dependency resolution and no template engine (it adds Edge,
+    RunnableProjects, Newtonsoft.Json and a second NuGet 6.13.2 pin that collides with B7's). The nuspec's package types are
+    checked before install, because some feeds ignore the `packageType` filter.
+  - Sources: `nuget.config` feeds searched with `packageType=NetPrintsSample`, plus per-user index sources: a URL or folder holding
+    `netprints-samples.json` (entries carry the inline manifest, `url`, `sha256` and `size`; relative paths resolve against the
+    configured URL, not the redirected one). The default source is `releases/download/v<editor version>/netprints-samples.json`,
+    falling back to `releases/latest/download/`. The release index is cumulative (all published sample versions, absolute tag
+    URLs); the newest version whose `minNetPrints` the editor meets is offered. The last fetched index is cached.
+  - Extensions can ship samples under `samples/<id>/`; these are listed while the extension is enabled and need no download.
+    Only extensions installed per user can list samples, because the start page has no project loaded. The sample Godot
+    extension of P3 gains its sample here.
+  - Manifest v1: `schemaVersion`, `id`, `version`, `title`, `description`, `authors`, `license`, `minNetPrints` and `profile` are
+    required; `tags`, `thumbnail`, `screenshots`, `dotnetSdk`, `dependsOn`, `project`, `open`, `projectUrl` and `localized` are
+    optional. `project` is required when the sample has several `.csproj` files. The hash lives in the index entry (or in NuGet's
+    own hash and signature for feeds), not in the manifest.
+  - Safety (beyond B17): https only (http for loopback only), no scheme change on redirect; references are `https:` or relative,
+    never `file:`, UNC, `//host` or rooted; folder-source and manifest paths must stay inside their root; images relative to the
+    index or on its host, PNG or JPEG only, at most 1 MB, pixel cap checked before decode, loaded when shown; index at most 1 MB;
+    text shown as plain text.
+  - Gallery: search, filters by profile and tag, details with screenshots. Samples whose version, profile or extension does not
+    match are greyed out with the reason. An update badge marks newer versions. Offline, installed samples plus cached entries
+    ("needs network"); an empty state offers Retry, Add folder source and New project. Remove deletes an installed version.
+  - Trust: one install prompt (source, authors, license, hash or signature, "opening runs its build"); on accept the copy's
+    project path is added to `TrustedProjects`, so opening does not prompt again; extension samples inherit the extension's trust.
+  - Open: P3a's FR-043/FR-048 copy-and-open flow, run from the installed folder, then opens `open` or the project.
+  - Migration: HelloWorld gains `netprints-sample.json`, is packed outside `packages/` (the release pushes `packages/*.nupkg` to
+    nuget.org) and attached with the cumulative index to every release. The `Content` item (`NetPrints.Desktop.csproj:48`) and
+    `SampleCatalog.Bundled` are removed; its callers (`ProjectLoader`, `StartPageContributions`, `SamplesAndWhatsNewTests`) take
+    a catalog over the configured sources, and the `SampleCatalogTests` hashes change. CI and the E2E tests already use the
+    checked-in `samples/` and need no change. P3a's FR-043 gets a P3c note: samples are installed from a source or come with
+    an extension; none is bundled.
+  - Tests: the index parser (relative URLs, bad hash, id or version that differs from the package), the install rejection table
+    shared with B17, the gallery ViewModel, and one E2E opening a sample from a folder source.
+  - Spike, shared with B17's custom-type spike: whether dual-type `NetPrintsSample;Template` packages work with `dotnet new
+    install` (for B15; not needed for v1), and local-feed `packageType` filtering in B7's NuGet-version spike. If P3c is tight,
+    screenshots, `localized` and the update badge move to v1.1.
+  - Design and prior art: `.agent-archive/2026-10-14-samples-remote/` (outside this repo).
+Done when: the phase's features work end to end and the docs are updated (the packages, extensions and samples guides, the
+CLI reference, ADRs as applicable).
 
 ### P3b — Declarations and code style (owner-approved 2026-09-26)
 One extensible engine for what NetPrints can declare and how it writes C#. It is **extensible from the

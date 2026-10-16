@@ -19,6 +19,11 @@ this spec cites them and does not reopen them."
 **Roadmap phase**: P3 (depends on P0, P1 and P3a; P3a merged 2026-10-15 as PR #12, `bf3496e9`). **Done when**
 (roadmap): the phase's features work end to end and the docs are updated (guides, API reference, ADRs).
 
+**Scope split (owner, 2026-10-16)**: the package service, NuGet packages in the References dialog, the extension
+manager and samples from remote sources moved to roadmap phase P3c (Clarifications, session 2026-10-16). Their IDs
+(User Stories 12 to 14, FR-089 to FR-106, SC-012 to SC-014) stay below, marked "moved to P3c", and are not reused; the
+boundary calls are in the Assumptions.
+
 **Sources reused**: the roadmap's P3 section, including "Carried over from P2" and "Carried over from P3a"; the
 deferrals of the P3a spec (`specs/005-editor-shell/spec.md`: Assumptions and the deferred lines after FR-089) and its
 final notes; constitution 1.2.4; ADR-0010, ADR-0017, ADR-0020, ADR-0021, ADR-0023, ADR-0031 and ADR-0033 to ADR-0039;
@@ -81,6 +86,21 @@ ADRs; the reason follows each answer. Answers 3 and 4 are architectural and are 
   start page unfiltered with a message naming the id and the known ids. Reason: a launcher (U3's Unreal plugin, a
   Godot shortcut) can start the editor ready for its engine without a second settings set; a VS Code-style "profile"
   (separate settings and extension sets) is a larger feature no owner decision asked for.
+
+### Session 2026-10-16
+
+The owner answered the two questions the coordinator asked after the spec was written.
+
+- Q: Should the package work (the package service, the Packages tab, the extension manager and the remote samples,
+  about 23 days) move to its own phase, as the coordinator recommends? → A: Yes. The owner: "continua con P3 como
+  recomiendas" ("go on with P3 as you recommend"). It is roadmap phase P3c. User Stories 12 to 14, FR-089 to FR-106 and
+  SC-012 to SC-014, with their edge cases and entities, moved there; their IDs are kept, marked "moved to P3c". This
+  narrows three earlier answers. Answer 1: B17's 3-day v1 and the gallery's v1.1 items are no longer P3 cut lines, and
+  Checkpoint E applies no scope rule. Answer 2: in P3 the per-user extensions are those in the configured extension
+  directories; the per-user folder the extension manager installs into comes with P3c. Answer 5: `--profile` filters
+  New project and the template list; the samples gallery filter moves to P3c with the sample manifest's `profile`.
+- Q: Are the coordinator's process defaults (one spec and one PR, core first, the P3a batch and review process)
+  confirmed? → A: Yes, by the same answer; the Planning Notes record them.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -190,10 +210,10 @@ project references), and load it in the editor; package validation and the publi
 
 ### User Story 4 - Extensions contribute to the editor (Priority: P1)
 
-A user opens a project that declares an extension, or has an extension installed for their user, and its commands,
-menu items, shortcuts, panels, context-menu items, tooltips, go-to results, start page tiles, project templates,
-status-bar items and settings pages appear next to the built-in ones, marked with the extension's name. Closing the
-project removes that project's contributions. A failing extension does not take the editor down.
+A user opens a project that declares an extension, or has an extension in their user extension directories, and its
+commands, menu items, shortcuts, panels, context-menu items, tooltips, go-to results, start page tiles, project
+templates, status-bar items and settings pages appear next to the built-in ones, marked with the extension's name.
+Closing the project removes that project's contributions. A failing extension does not take the editor down.
 
 **Why this priority**: It is the purpose of the phase: P3a's contribution registry is internal, and P3 opens it.
 
@@ -214,8 +234,9 @@ appears; close the project: none remains; a throwing extension shows its diagnos
 5. **Given** two extensions that register the same command id, or the same gesture in the same scope, **When** they
    load, **Then** the first registration wins, the second is reported as an extension diagnostic, and built-in
    contributions always register first.
-6. **Given** `NetPrints.Desktop --profile godot` and the sample Godot extension installed, **When** the editor starts,
-   **Then** New project preselects the Godot profile and the template list and samples gallery are filtered to it.
+6. **Given** `NetPrints.Desktop --profile godot` and the sample Godot extension in a user extension directory, **When**
+   the editor starts, **Then** New project preselects the Godot profile and the template list is filtered to it (the
+   samples gallery filter moved to P3c).
 7. **Given** a project created from the sample extension's Godot template, **When** it opens, **Then** it builds and
    the run profile button lists its game and Godot editor profiles.
 
@@ -414,83 +435,24 @@ are listed for the owner.
 
 ---
 
-### User Story 12 - NuGet packages in the References dialog (Priority: P3)
+### User Story 12 - NuGet packages in the References dialog (moved to P3c)
 
-A developer browses, adds, updates and removes NuGet packages from a Packages tab in the References dialog, with the
-sources and credentials `dotnet restore` uses, and a failed change leaves the project files exactly as they were.
-
-**Why this priority**: B7 (gap research 2026-10-06); it also builds the package service the extension manager and the
-samples gallery share.
-
-**Independent Test**: In a Central Package Management fixture and a plain fixture, add and update a package from a
-local feed: the files match what `dotnet package add` writes; make the restore fail: the files are byte-identical to
-before.
-
-**Acceptance Scenarios**:
-
-1. **Given** the Packages tab, **When** the user searches a source, **Then** results show with versions, a prerelease
-   switch, and deprecated and vulnerable badges.
-2. **Given** a project that uses Central Package Management, **When** the user adds a package, **Then** the version goes
-   to `Directory.Packages.props` (or a `VersionOverride` when the user picks one) and the reference to the project file,
-   with comments and order preserved.
-3. **Given** a change whose restore fails, **When** the failure is reported, **Then** the project and props files are
-   restored to their exact bytes.
-4. **Given** a package that graph nodes use, **When** the user removes it, **Then** the nodes that use it are listed
-   first; proceeding keeps them as unresolved nodes.
-5. **Given** no network, **When** the tab opens, **Then** installed packages and the global packages folder are still
-   listed, marked offline.
+Moved to roadmap phase P3c on 2026-10-16 (Clarifications, session 2026-10-16), with FR-089 to FR-093 and SC-012.
 
 ---
 
-### User Story 13 - Extension manager (Priority: P3)
+### User Story 13 - Extension manager (moved to P3c)
 
-A user lists, installs, updates, enables, disables and uninstalls extensions for their user from an Extensions dialog,
-with a trust prompt, integrity checks and a restart to apply.
-
-**Why this priority**: B17 (gap research 2026-10-06); per-user extensions are how most users will get engine support,
-and samples from extensions depend on it.
-
-**Independent Test**: Install the sample extension from a local folder feed, restart: it loads; disable it, restart:
-it does not load, and a document using its nodes keeps them as unknown nodes; a tampered package is refused.
-
-**Acceptance Scenarios**:
-
-1. **Given** the Extensions dialog, **When** it opens, **Then** Installed, Browse and Updates tabs list extensions with
-   their state (Enabled, Disabled, Failed with its NPX code, Restart needed, Incompatible) and contribution counts.
-2. **Given** an extension package from an untrusted publisher, **When** the user installs it, **Then** a prompt shows
-   the publisher, source, signature and API compatibility, and nothing is extracted unless the user accepts.
-3. **Given** a package whose hash or signature does not match, or that holds a path escaping its folder, **When** it is
-   installed, **Then** it is refused with the reason and nothing is written to the extensions folder.
-4. **Given** an install, update, enable, disable or uninstall, **When** it completes, **Then** a "Restart to apply" bar
-   appears and the change takes effect after the restart.
-5. **Given** the built-in extension, **When** the list shows, **Then** it cannot be disabled or uninstalled.
+Moved to roadmap phase P3c on 2026-10-16, with FR-094 to FR-098 and SC-013. P3 keeps loading per-user extensions from
+the configured extension directories and the extension package format that the author kit packs and verifies
+(Assumptions).
 
 ---
 
-### User Story 14 - Samples from remote sources (Priority: P3)
+### User Story 14 - Samples from remote sources (moved to P3c)
 
-A user browses samples on the start page from the NetPrints release index, NuGet feeds, folders and installed
-extensions, installs one after a trust prompt, and opens a copy. No sample is bundled with the editor.
-
-**Why this priority**: Owner decisions 2026-10-14; it depends on the package service (US12) and the extension manager's
-download, verify and extract path (US13).
-
-**Independent Test**: Configure a folder source holding an index and one sample package: the gallery lists it; install
-and open it: a copy opens and builds; an index entry with a wrong hash is refused.
-
-**Acceptance Scenarios**:
-
-1. **Given** the default source and network, **When** the gallery opens, **Then** it lists the newest version of each
-   sample whose `minNetPrints` the editor meets, from the cumulative release index.
-2. **Given** a sample whose profile or required extension does not match, **When** it is listed, **Then** it is greyed
-   out with the reason.
-3. **Given** the user installs a sample, **When** they accept the prompt (source, authors, license, hash or signature,
-   "opening runs its build"), **Then** it is extracted to the per-user samples folder, its copy is trusted, and opening
-   it does not prompt again.
-4. **Given** an enabled extension that ships `samples/<id>/`, **When** the gallery opens, **Then** those samples are
-   listed and need no download.
-5. **Given** no network, **When** the gallery opens, **Then** installed samples and cached entries ("needs network")
-   show, and an empty state offers Retry, Add folder source and New project.
+Moved to roadmap phase P3c on 2026-10-16, with FR-099 to FR-106 and SC-014. The start page keeps P3a's samples tile and
+bundled sample until P3c replaces them.
 
 ---
 
@@ -539,15 +501,15 @@ conformance tests cover all three.
 
 ### User Story 17 - Themes from users and extensions (Priority: P4)
 
-A user duplicates a preset into a theme file, edits it, reloads it, and installs extensions that ship themes. Themes
-are data and never run code.
+A user duplicates a preset into a theme file, edits it, reloads it, and adds extensions that ship themes to their user
+extension directories. Themes are data and never run code.
 
 **Why this priority**: B1 and C of ADR-0035; the owner wants community themes as plugins, and both move to P6 if P3 has
-no room.
+no room. Distributing theme extensions through the extension manager's Browse tab comes with P3c.
 
 **Independent Test**: Duplicate NetPrints Dark, change two tokens and a Semi key in the file, Reload: the editor shows
 the change; a token with a bad value keeps the base value and is warned about; an extension's theme appears in the
-preset lists while the extension is enabled.
+preset lists while the extension is loaded.
 
 **Acceptance Scenarios**:
 
@@ -556,8 +518,8 @@ preset lists while the extension is enabled.
 2. **Given** a theme file with an unknown token, a bad value, a newer schema or a failing contrast pair, **When** it is
    loaded, **Then** the unknown token is ignored with a warning, the bad value keeps the base value with a warning, the
    newer file is skipped with a message, and a contrast failure applies with a warning naming the pairs.
-3. **Given** an enabled extension whose manifest lists themes, **When** the Appearance page opens, **Then** those
-   themes are offered under the extension's name.
+3. **Given** a loaded per-user extension whose manifest lists themes, **When** the Appearance page opens, **Then**
+   those themes are offered under the extension's name.
 
 ---
 
@@ -581,21 +543,13 @@ preset lists while the extension is enabled.
   option starts it detached from Output, which then shows only start and exit.
 - An engine started by an `Executable` profile runs its own `dotnet build`: the MSBuild variables that NetPrints' own
   MSBuild locator set are not passed to it; values the user set before starting NetPrints are passed.
-- A restore fails halfway through a package change, or the user cancels it: the project and props files are put back
-  byte-identical, and the reflection provider is not reloaded.
-- A feed ignores the `packageType` filter: a package whose nuspec does not declare `NetPrintsExtension` (or
-  `NetPrintsSample`) is not offered and is refused if installed by id.
-- A sample index is larger than 1 MB, uses `http` on a non-loopback host, redirects to another scheme, or names a
-  `file:`, UNC, `//host` or rooted path: the source is reported and nothing from it is listed.
-- A sample image is not PNG or JPEG, is larger than 1 MB, or exceeds the pixel cap: the image is not shown; the sample
-  is still listed.
-- An extension is disabled while a project's documents use its nodes: the documents load with those nodes as unknown
-  nodes, saving keeps them, and enabling the extension again restores them.
-- An extension's package targets a newer `netprintsApi` than the host: it is shown as Incompatible and is not loaded.
 - The editor is started with `--profile` and a project path: the project opens and the profile is ignored, with an
   info message.
 - A project's `LangVersion` names a version newer than the editor's compiler knows (`16.0`): the editor's maximum is
   used and an info message says so.
+- Moved to P3c on 2026-10-16: a restore that fails or is cancelled during a package change, a feed that ignores the
+  package type filter, sample index and image limits, an extension disabled while documents use its nodes, and an
+  extension package shown as Incompatible.
 
 ## Requirements *(mandatory)*
 
@@ -716,14 +670,15 @@ preset lists while the extension is enabled.
 - **FR-035**: Registry issues (duplicate ids, gesture conflicts in a scope, a contribution naming an unknown id) MUST
   become extension diagnostics shown in Errors and logged; the first registration wins and built-in contributions
   always register first (ADR-0020).
-- **FR-036**: `NetPrints.Desktop --profile <id>` MUST behave as the Clarifications define; with a project path as well,
-  the project opens and the profile is ignored with an info message.
+- **FR-036**: `NetPrints.Desktop --profile <id>` MUST behave as the Clarifications define (answer 5, narrowed on
+  2026-10-16: the samples gallery filter moved to P3c); with a project path as well, the project opens and the profile
+  is ignored with an info message.
 - **FR-037**: A sample non-Unreal extension for Godot MUST live in the repository, build only against the packed
   packages, pass the conformance kit, and contribute: a project profile `godot`; a Godot project template whose
   `launchSettings.json` holds
   `Executable` profiles for the game and the Godot editor (`%GODOT4%`, `--path .`), labelled with the stale-assembly
-  note for Release builds; a command; a settings page; a status-bar item; and a sample under `samples/<id>/`. It needs
-  no Godot installation to build or test, and it is not published to nuget.org in P3.
+  note for Release builds; a command; a settings page; and a status-bar item. Its sample under `samples/<id>/` moved to
+  P3c with FR-105. It needs no Godot installation to build or test, and it is not published to nuget.org in P3.
 - **FR-038**: Project-declared extensions MUST keep loading in the CLI and the build without a trust check, as
   analyzers and build tasks do; the extension guide and ADR-0030 MUST say so.
 
@@ -850,10 +805,13 @@ preset lists while the extension is enabled.
 - **FR-078**: `NetPrints.TestExtension` MUST be tested only through the kit, and each conformance check MUST have a
   fixture extension that fails it.
 - **FR-079**: A `dotnet new netprints-extension` template MUST create an extension project and its test project that
-  build and pass the kit with no edits.
+  build and pass the kit with no edits; `dotnet pack` of the extension project MUST produce the extension package of
+  FR-080.
 - **FR-080**: `netprints extension verify <folder|package>` MUST run the checks that need no test code (manifest,
   packaging, type identity, API compatibility: every host member the extension references exists in the host's API
-  version) and write a report as text or `--format json`, with ADR-0015 exit codes.
+  version) and write a report as text or `--format json`, with ADR-0015 exit codes. An extension package is a `.nupkg`
+  of package type `NetPrintsExtension` holding the folder the loader reads; installing it from a feed or a file is
+  P3c's (FR-095).
 - **FR-081**: A reusable author CI workflow MUST build an extension, run its kit tests and `verify`, and be used by the
   sample Godot extension's CI.
 
@@ -872,74 +830,36 @@ preset lists while the extension is enabled.
 - **FR-087**: `netprints git-install --command` MUST write a command that `sh` runs with the path intact on Windows; a
   Windows CI test MUST pin it.
 - **FR-088**: The P3a open items MUST be closed: the Dock `IsPinned` binding warning at runtime is gone (the startup
-  warnings test covers it), a hover on the middle of a cable hits it at the fit zoom (a test pins it), the start-page
-  guide images that carry the build version are regenerated before the release, and the `ShellMainFlow` E2E test is
-  watched (a new failure is fixed in the batch that sees it).
+  warnings test covers it; Dock#1191 does not fix it, and an upstream issue awaits the owner's OK), a hover on the
+  middle of a cable hits it at the fit zoom (a test pins it), the start-page guide images that carry the build version
+  are regenerated before the release, and the `ShellMainFlow` E2E test is watched (a new failure is fixed in the batch
+  that sees it). If a Dock release that includes wieslawsoltes/Dock#1191 ships during P3, Dock MUST be bumped from
+  12.1.0.6 and the workaround that fills empty capability objects removed, with the capability binding warnings still
+  absent (the same startup warnings test).
 
-**NuGet packages (US12)**
+**NuGet packages (US12), extension manager (US13), samples from remote sources (US14): moved to P3c**
 
-- **FR-089**: One package service (`NetPrints.Packages`) MUST serve the Packages tab, the extension manager and the
-  samples gallery: sources and credentials from the `nuget.config` hierarchy and the NuGet credential plugins, search
-  and versions, a prerelease switch, a 5-minute cache, and an offline fallback to the global packages folder. No secret
-  MUST be stored in NetPrints state, and source URLs MUST be redacted in logs. A spike MUST first pin the NuGet library
-  version and the credential plugin hooks.
-- **FR-090**: Package changes MUST be project edits (`AddPackageReference`, `SetPackageVersion`,
-  `RemovePackageReference`) aware of Central Package Management, `VersionOverride`, version ranges and conditional items,
-  preserving comments and order; `NetPrints.Sdk` can be updated but not removed.
-- **FR-091**: Applying a change MUST write the files, restore through the project load, and on failure or cancellation
-  put the project and props files back byte-identical; on success the reflection provider is refreshed and the graphs
-  re-validated.
-- **FR-092**: Removing a package MUST first list the nodes that use it; if the user proceeds they stay as unresolved
-  nodes.
-- **FR-093**: The Packages tab MUST have Installed, Browse and Updates tabs, a source drop-down, a version picker with a
-  compatibility filter, deprecated and vulnerable badges, and transitive packages shown read-only.
+These IDs moved to roadmap phase P3c on 2026-10-16 and are not reused in P3.
 
-**Extension manager (US13)**
-
-- **FR-094**: An Extensions dialog (command `manageExtensions`) MUST list installed extensions in Installed, Browse and
-  Updates tabs with state badges (Enabled, Disabled, Failed with its NPX code, Restart needed, Incompatible), load
-  results and contribution counts. If the scope rule applies, v1 is the list, folder install, enable and disable and
-  the trust list.
-- **FR-095**: An extension package MUST be a `.nupkg` of package type `NetPrintsExtension` holding the folder the loader
-  reads, installed by download, check and extract into the per-user folder `<data>/extensions/<id>/<version>/`, with no
-  NuGet dependency resolution; a spike MUST first check that restore and feeds accept the custom package type.
-- **FR-096**: Install MUST check the package hash and signature (honouring the `nuget.config` signature mode), reject
-  paths that escape the folder and packages over the size limit, extract to a temporary folder and move; uninstall
-  completes at the next start.
-- **FR-097**: Installing MUST prompt with the publisher, source, signature and API compatibility, with "always trust
-  this publisher" for author-signed packages, and Settings MUST offer a list to revoke trust.
-- **FR-098**: Every change MUST apply after a restart, announced by the "Restart to apply" bar; the built-in extension
-  MUST NOT be disabled or uninstalled; documents that use a disabled extension keep its nodes as unknown nodes.
-
-**Samples from remote sources (US14)**
-
-- **FR-099**: A sample MUST be a `.nupkg` of package type `NetPrintsSample` holding the sample folder (no build output)
-  and `netprints-sample.json`; its nuspec package types MUST be checked before install; it installs with the
-  extension manager's checks into `<data>/samples/<id>/<version>/`, with no NuGet dependency resolution and no template
-  engine.
-- **FR-100**: Sources MUST be the `nuget.config` feeds searched by package type, per-user index sources (a URL or folder
-  holding `netprints-samples.json`; relative paths resolve against the configured URL, not a redirected one), and the
-  default release source (`releases/download/v<editor version>/netprints-samples.json`, falling back to
-  `releases/latest/download/`); the newest version whose `minNetPrints` the editor meets is offered, and the last
-  fetched index is cached.
-- **FR-101**: The sample manifest v1 MUST require `schemaVersion`, `id`, `version`, `title`, `description`, `authors`,
-  `license`, `minNetPrints` and `profile`, and allow `tags`, `thumbnail`, `screenshots`, `dotnetSdk`, `dependsOn`,
-  `project` (required with several `.csproj` files), `open`, `projectUrl` and `localized`; the hash lives in the index
-  entry or in NuGet's own hash and signature.
-- **FR-102**: Index and image safety MUST follow the roadmap: https only (http for loopback), no scheme change on
-  redirect, references `https:` or relative only, paths inside their root, images PNG or JPEG of at most 1 MB with the
-  pixel cap checked before decoding and loaded when shown, an index of at most 1 MB, and text shown as plain text.
-- **FR-103**: The start page's Samples gallery MUST offer search, profile and tag filters, details with screenshots,
-  greyed-out entries with the reason, an update badge, offline entries marked "needs network", Remove, and an empty
-  state with Retry, Add folder source and New project.
-- **FR-104**: Installing MUST prompt once (source, authors, license, hash or signature, "opening runs its build"); on
-  accept the copy's project is added to the trusted projects; samples from an extension inherit its trust; opening
-  runs P3a's copy-and-open flow from the installed folder and opens `open` or the project.
-- **FR-105**: Extensions installed per user MUST be able to list samples under `samples/<id>/` while enabled, with no
-  download.
-- **FR-106**: No sample MUST be bundled with the editor: the HelloWorld sample gains `netprints-sample.json`, is packed
-  outside the `packages/` folder pushed to nuget.org, and is attached with the cumulative index to every release; the
-  bundled catalog and its `Content` item are removed and their callers take a catalog over the configured sources.
+- **FR-089**: Moved to P3c (the `NetPrints.Packages` service and its NuGet spike).
+- **FR-090**: Moved to P3c (package reference edits).
+- **FR-091**: Moved to P3c (apply, restore and roll back a package change).
+- **FR-092**: Moved to P3c (package removal impact).
+- **FR-093**: Moved to P3c (the Packages tab).
+- **FR-094**: Moved to P3c (the Extensions dialog).
+- **FR-095**: Moved to P3c (installing extension packages into the per-user folder; the package format itself stays in
+  P3, FR-080).
+- **FR-096**: Moved to P3c (install integrity checks).
+- **FR-097**: Moved to P3c (the install trust prompt and the trust revoke list).
+- **FR-098**: Moved to P3c (enable, disable and uninstall after a restart).
+- **FR-099**: Moved to P3c (the sample package).
+- **FR-100**: Moved to P3c (sample sources).
+- **FR-101**: Moved to P3c (the sample manifest).
+- **FR-102**: Moved to P3c (index and image safety).
+- **FR-103**: Moved to P3c (the samples gallery).
+- **FR-104**: Moved to P3c (the sample install prompt and open).
+- **FR-105**: Moved to P3c (samples shipped by extensions).
+- **FR-106**: Moved to P3c (no bundled sample).
 
 **New projects from the command line (US15)**
 
@@ -969,15 +889,15 @@ preset lists while the extension is enabled.
 - **FR-114**: A theme MAY set Semi resources; each key MUST be checked against the resources loaded at runtime (unknown
   key: warning) and each value parsed by the type of the resource it replaces; NetPrints MUST NOT keep a list of Semi
   keys, and the theming guide links to Semi's own documentation.
-- **FR-115**: Themes listed in an enabled extension's manifest `themes` field MUST be offered on the Appearance page
-  under the extension's name, with the same validation; a theme never runs code or loads XAML.
+- **FR-115**: Themes listed in a loaded per-user extension's manifest `themes` field MUST be offered on the Appearance
+  page under the extension's name, with the same validation; a theme never runs code or loads XAML.
 
 **Docs, release and CI (all stories)**
 
 - **FR-116**: The docs MUST be updated: an extension authoring guide built on the packages and the kit, the settings
-  and keyboard shortcuts guide, the theming guide, the run profiles guide, the packages, extensions and samples guides,
-  the CLI reference for the new commands, the API reference of the published packages, the ADRs the plan lists, and
-  release notes for the 0.3.0 hard break.
+  and keyboard shortcuts guide, the theming guide, the run profiles guide, the CLI reference for the new commands, the
+  API reference of the published packages, the ADRs the plan lists, and release notes for the 0.3.0 hard break (the
+  packages, extensions and samples guides moved to P3c).
 - **FR-117**: The trimming ratchet (`eng/trim-warnings.txt`) MUST NOT go up; the node creation service removes the two
   warnings of reflection-based node creation.
 - **FR-118**: New Desktop E2E scenarios MUST follow ADR-0006 (one class per scenario, page objects, no sleeps) and run
@@ -987,9 +907,10 @@ preset lists while the extension is enabled.
 ### Key Entities
 
 - **Extension**: an assembly plus `netprints-extension.json` (id, name, version, assembly, `netprintsApi`, `dependsOn`,
-  `themes`), loaded from a trusted project, a user-configured directory or the per-user extensions folder.
-- **Extension package**: a `.nupkg` of type `NetPrintsExtension` holding an extension folder; installed per user by id
-  and version.
+  `themes`), loaded from a trusted project or a user extension directory (`netprints.extensionPaths`,
+  `NETPRINTS_EXTENSION_PATH`); the per-user folder the extension manager installs into comes with P3c.
+- **Extension package**: a `.nupkg` of type `NetPrintsExtension` holding an extension folder, packed from the extension
+  template and read by `netprints extension verify`; installing it per user by id and version comes with P3c.
 - **Contribution**: a descriptor of one of the public kinds (FR-021) with an id, a label key, an owner and an optional
   `AppliesTo` predicate.
 - **Contribution group**: the app group or a project's session group; removed as a whole with its project.
@@ -1004,12 +925,10 @@ preset lists while the extension is enabled.
 - **Theme preset**: an embedded, named set of token values for the Dark or Light variant; **theme file**: a user or
   extension `*.nptheme.json` over a base.
 - **C# target**: a project's language version (as specified and as resolved), target frameworks and capabilities.
-- **Package source**: a `nuget.config` feed or a per-user sample index source.
-- **Sample**: a `.nupkg` of type `NetPrintsSample` or an extension's `samples/<id>/` folder, described by
-  `netprints-sample.json`; **sample index**: `netprints-samples.json` listing sample versions with URL, hash and size.
 - **Conformance check**: one of the kit's checks, with a rule id, a message and a fixture that fails it.
 - **Verify report**: the result of `netprints extension verify`: checks run, failures and missing API members.
 - **Pin role**: the role of a node pin (Result, OutParam, Exception, Target, …) that purity and capabilities use.
+- Moved to P3c on 2026-10-16: **package source**, **sample** and **sample index**.
 
 ## Success Criteria *(mandatory)*
 
@@ -1043,14 +962,9 @@ preset lists while the extension is enabled.
   byte-identical files.
 - **SC-011**: A project created from `dotnet new netprints-extension` builds and passes the kit with 0 edits; each of the
   12 conformance checks has a fixture that fails it with a message naming the rule.
-- **SC-012**: Each package change in the Central Package Management and plain fixtures matches what `dotnet package
-  add` writes for the same change; 100% of forced restore failures and cancellations leave the project and props files
-  byte-identical.
-- **SC-013**: 100% of the rows of the install rejection table (bad hash, bad signature, path escape, oversized package,
-  wrong package type, id or version that differs from the package) are refused with nothing left in the per-user
-  folders.
-- **SC-014**: The Desktop output contains 0 bundled samples; an E2E scenario installs a sample from a folder source and
-  opens a copy that builds and runs.
+- **SC-012**: Moved to P3c on 2026-10-16 (package changes match `dotnet package add` and roll back byte-identical).
+- **SC-013**: Moved to P3c on 2026-10-16 (the install rejection table).
+- **SC-014**: Moved to P3c on 2026-10-16 (no bundled sample; a sample installed from a folder source opens and runs).
 - **SC-015**: The Windows CLI leg passes the CRLF catalog check test and the `git-install` path test; 0 unrecorded
   info-level analyzer hits remain in `src/`.
 - **SC-016**: No CI job takes longer than 15 minutes, and the trimming warning count is at most its value at the start
@@ -1076,6 +990,31 @@ preset lists while the extension is enabled.
 - The roadmap's "anything functional left beyond P0 parity" has no known item: P0 merged at parity with its 60-item
   inventory, and P3a replaced the old windows. A parity gap found during P3 is recorded as a follow-up, not added to
   P3's scope.
+- Boundary calls of the P3c split (2026-10-16). The package work moved out; each remaining story keeps the minimum it
+  needs from the host:
+  - **Per-user extensions (Clarifications answer 2, FR-032, US4, US15, US17)**: the app group loads, at editor start,
+    the extensions in the configured extension directories (`netprints.extensionPaths`, `NETPRINTS_EXTENSION_PATH`),
+    which the editor already reads; the Settings page for extension directories (FR-044) is how a user adds one. The
+    managed per-user folder `<data>/extensions/<id>/<version>/`, its enabled or disabled state and the "Incompatible"
+    display are P3c's.
+  - **Published packages (US3)**: the packages are packed locally and consumed through `dotnet restore` like any NuGet
+    package; nothing in P3 needs the `NetPrints.Packages` service.
+  - **Author kit (US10)**: the extension package format (a `NetPrintsExtension` `.nupkg` holding the loader's folder)
+    stays in P3, because the template packs it and `netprints extension verify` reads it (FR-079, FR-080). Installing
+    it, and the spike on whether remote feeds accept the custom package type, are P3c's; if that spike changes the
+    format, P3c changes the template and `verify` with it.
+  - **Sample Godot extension (FR-037)**: it ships everything except its sample under `samples/<id>/`, which needs the
+    sample manifest and extension samples (FR-101, FR-105) and moved to P3c.
+  - **`--profile` (Clarifications answer 5, FR-036)**: it filters New project and the template list; P3a's bundled
+    samples carry no profile, so the samples gallery filter comes with the sample manifest's `profile` in P3c.
+  - **Start page samples**: P3a's samples tile and its bundled HelloWorld sample stay as they are until P3c replaces
+    them (FR-106).
+  - **Extension themes (US17, ADR-0035 C)**: the Appearance page offers the themes of loaded per-user extensions; their
+    distribution through the extension manager's Browse tab is P3c's.
+  - **Trust**: P3 keeps the per-project trust prompt and the trusted projects setting (FR-044); the per-publisher install
+    trust and its revoke list are P3c's (FR-097).
+  - **Restart to apply**: the bar stays in P3 for settings that need a restart (FR-042); P3c reuses it for extension
+    changes.
 
 ## Out of Scope
 
@@ -1089,6 +1028,9 @@ preset lists while the extension is enabled.
   Tab-to-search, the undo history list, the Self node, keyboard access to every connection (GR-1), mouse back and
   forward, "show all members", the custom title bar, the Publish dialog, live instance inspection; B1, C, S7, SUG5,
   R6, N2 and N5 if the scope rule moves them.
+- **P3c** (split from P3 on 2026-10-16): the `NetPrints.Packages` service, NuGet packages in the References dialog, the
+  extension manager and its per-user folder, samples from remote sources (User Stories 12 to 14, FR-089 to FR-106,
+  SC-012 to SC-014), the sample Godot extension's own sample, and the samples gallery's `--profile` filter.
 - **P7** structured code generation; **P8** performance work, ReadyToRun publishing and the shared warmed reflection
   provider; **P4** VSIX; **P5** VS Code and browser build.
 - **U1 to U3**: the UnrealSharp template and profiles, the Unreal flags section, struct editors, and a public
@@ -1098,16 +1040,16 @@ preset lists while the extension is enabled.
   extensions (once two published extensions exist), dual-type sample and template packages for `dotnet new install`,
   `netprints check` for the C# target, `ICSharpTargetProvider` (NetPrintsUnity), a per-user run environment, detecting
   external file changes, autosaving original files, the multi-project workspace, the Velopack update notice, the logo
-  redesign, and the `netprints package` and `netprints extension` verbs other than `verify` (v1.1).
+  redesign, and the `netprints package` and `netprints extension` verbs other than `verify` (v1.1, after P3c).
 
 ## Planning Notes
 
-### Process (coordinator defaults, 2026-10-15; the owner did not answer within 10 minutes)
+### Process (coordinator defaults, 2026-10-15; confirmed by the owner on 2026-10-16)
 
 - One spec, one branch, one PR, with sub-phases and checkpoints as in P3a.
 - Core first: the analyzer and generator infrastructure and the public contribution API with the extension host land
-  before the features built on them (settings pages, user shortcuts, run profiles, theme presets, packages, samples,
-  the conformance kit).
+  before the features built on them (settings pages, user shortcuts, run profiles, theme presets, the conformance
+  kit).
 - The P3a execution process applies: implementation batches of 2 to 4 tasks run one after another; each sub-phase
   checkpoint gets an adversarial review and a fix batch; the PR gets a light final review; tests go in the existing
   test projects.
@@ -1128,9 +1070,9 @@ preset lists while the extension is enabled.
   workflow; the sample Godot extension. Checkpoint D.
 - **E, run and build**: run profiles in the editor and CLI; the configuration selector; console input and external
   terminal. Checkpoint E.
-- **F, packages**: the package service spike and service; the Packages tab; the extension manager; samples from remote
-  sources; `netprints new` and the `dotnet new` templates. Checkpoint E applies the scope rule to B17 and the gallery,
-  and Checkpoint F applies it to the tail.
+- **F, command-line templates**: `netprints new` and the `dotnet new` templates (US15). The package service, the
+  Packages tab, the extension manager and the remote samples that F held moved to P3c on 2026-10-16. Checkpoint F
+  applies the scope rule to the tail.
 - **G, tail and release preparation**: R6 and the value-editor contract; N2; N5; S7 and SUG5; B1 and C; the
   regenerated guide images; docs. Checkpoint G, then the final review.
 
@@ -1154,7 +1096,7 @@ Each was decided autonomously from the roadmap and the ADRs; the reason follows.
   Godot template and its `Executable` profiles, and Godot needs no core code (ADR-0037). The SmartEnum kind example
   needs P3b's declaration kinds, so it joins the sample extension in P3b.
 - The roadmap's `netprints-verify` tool is the `netprints extension verify` command (FR-080): one CLI, ADR-0015 exit
-  codes, and the extension manager can show its report later. The nightly co-loading job waits for published
+  codes, and the extension manager (P3c) can show its report later. The nightly co-loading job waits for published
   extensions to co-load.
 - Loading a project never writes generated files (FR-085, FU-6): P3a made opening a project side-effect free (backups
   outside the project, never building on open), and the CLI already skips generation.
@@ -1168,13 +1110,13 @@ Each was decided autonomously from the roadmap and the ADRs; the reason follows.
   from the registry's files, so the editor, `netprints new` and `dotnet new` cannot drift.
 - Command ids follow the P3a table's `netprints.command.<camelCase>` style: `openSettings`, `keyboardShortcuts`,
   `selectRunProfile`, `editRunProfiles`, `manageExtensions` (the roadmap's `run.selectProfile`, `run.editProfiles` and
-  `extensions.manage`).
+  `extensions.manage`; `manageExtensions` ships with P3c).
 - Key binding precedence puts built-in defaults before extension defaults (FR-050), matching ADR-0020's "built-ins
   register first".
 
 ### Sizing
 
-The item sizes in the roadmap's P3 section add up to far more than the phases table's "~2.5 w": the package service,
-the Packages tab, the extension manager and the samples alone are about 23 days, the attribute-driven core path about
-25 units, and run profiles about 7 days, before the SOLID shape work, themes, the C# target and the kit. The plan
-re-estimates P3 per sub-phase and updates the phases table.
+The item sizes in the roadmap's P3 section added up to far more than the phases table's "~2.5 w". The package service,
+the Packages tab, the extension manager and the samples, about 23 days, moved to P3c on 2026-10-16. What remains still
+exceeds it: the attribute-driven core path is about 25 units and run profiles about 7 days, before the SOLID shape
+work, themes, the C# target and the kit. The plan re-estimates P3 per sub-phase and updates the phases table.
