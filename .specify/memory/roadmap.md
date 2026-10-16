@@ -30,7 +30,7 @@ when it is started.
 | P0.1 | Grid rendering (shader + pixel-identical fallback) | ~3–5 d | P0 | **merged** 2026-09-25 (PR #2, 0e1add1) |
 | P1 | Core refactor + extension points | ~3.5 w | P0 | **merged** 2026-09-29 (PR #6, cc96a93); released `v0.1.0`, `v0.1.1` |
 | P2 | Catalog tooling + Spectre CLI | ~2.5 w | P1 | **merged** 2026-10-01 (PR #9, 3a6eafc); released `v0.2.0` |
-| P3a | Editor shell | ~2–3 w | P0, P1 | in progress (spec and tasks on draft PR #12, `specs/005-editor-shell/`) |
+| P3a | Editor shell | ~2–3 w | P0, P1 | **merged** 2026-10-15 (PR #12, bf3496e9; owner feedback PR #19, 3d8f403b); released `v0.3.0` |
 | P3 | Editor extension host | ~2.5 w | P0, P1, P3a | not started |
 | P3b | Declarations and code style | ~3–4 w | P1, P3a, P3 | not started (owner-approved 2026-09-26) |
 | P4 | VSIX (WpfAvaloniaHost) | ~2 w | P3 | **deferred** by owner (2026-09-24) |
