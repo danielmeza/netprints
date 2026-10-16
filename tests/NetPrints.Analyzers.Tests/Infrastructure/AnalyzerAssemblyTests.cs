@@ -78,7 +78,7 @@ public class AnalyzerAssemblyTests
         HashSet<string> declared = [.. Analyzers(Load(name)).SelectMany(analyzer => analyzer.SupportedDiagnostics).Select(descriptor => descriptor.Id)];
         IEnumerable<CodeFixProvider> providers = Load(name + CodeFixesSuffix).GetTypes()
             .Where(type => !type.IsAbstract && typeof(CodeFixProvider).IsAssignableFrom(type))
-            .Select(type => Assert.IsAssignableFrom<CodeFixProvider>(Activator.CreateInstance(type)));
+            .Select(type => Assert.IsType<CodeFixProvider>(Activator.CreateInstance(type), exactMatch: false));
 
         foreach (CodeFixProvider provider in providers)
         {
@@ -90,7 +90,7 @@ public class AnalyzerAssemblyTests
     private static IEnumerable<DiagnosticAnalyzer> Analyzers(Assembly assembly) =>
         assembly.GetTypes()
             .Where(type => !type.IsAbstract && typeof(DiagnosticAnalyzer).IsAssignableFrom(type) && type.GetCustomAttribute<DiagnosticAnalyzerAttribute>() is not null)
-            .Select(type => Assert.IsAssignableFrom<DiagnosticAnalyzer>(Activator.CreateInstance(type)));
+            .Select(type => Assert.IsType<DiagnosticAnalyzer>(Activator.CreateInstance(type), exactMatch: false));
 
     private static IReadOnlyList<string> ReleaseTracked(string name) =>
     [

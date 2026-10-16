@@ -87,7 +87,7 @@ trip; Windows CLI tests green; SC-015; R5-0 numbers and the M5 outcome recorded.
 
 ### Batch A1 — model: sonnet — T001–T003 — 4 units
 
-- [ ] T001 [US1] Roslyn projects and wiring (FR-001, FR-008, research R2, ADR-0024; 2 units). Test first: create
+- [x] T001 [US1] Roslyn projects and wiring (FR-001, FR-008, research R2, ADR-0024; 2 units). Test first: create
   `tests/NetPrints.Analyzers.Tests` (xunit.v3, MTP) with `Infrastructure/AnalyzerAssemblyTests.cs`: each new analyzer
   assembly loads into a `CompilationWithAnalyzers` host and reports its supported diagnostics (red: the projects do not
   exist). Move `tests/NetPrints.Catalog.Tests/Generator/GeneratorTestHost.cs` to
@@ -102,12 +102,12 @@ trip; Windows CLI tests green; SC-015; R5-0 numbers and the M5 outcome recorded.
   way and packs both under `analyzers/dotnet/cs`; `tests/Directory.Build.targets` adds Authoring to every test project
   that references Core. A user's NetPrints project builds as before (the CI sample compile step stays green). Measure
   the build with `-p:ReportAnalyzer=true` before and after; record it in implementation-notes (target: under 2%).
-- [ ] T002 [US1] The Analyzers CI leg (FR-001, FR-118, research R28; 1 unit). Test first:
+- [x] T002 [US1] The Analyzers CI leg (FR-001, FR-118, research R28; 1 unit). Test first:
   `tests/NetPrints.Core.Tests/Core/CiWorkflowTests.cs` already requires every test project in the `test` matrix; run it
   and see it name `NetPrints.Analyzers.Tests` (red). Add the `Analyzers` row to the matrix in `.github/workflows/ci.yml`
   (artifacts `test-results-analyzers`, `coverage-analyzers`) under the unchanged "Build and test (Linux)" aggregate.
   Update the project table of `docs/contributing/testing.md`. Green.
-- [ ] T003 [P] [US1] ADR-0024 and the diagnostics guide (FR-008, ADR-0024, contracts/analyzer-diagnostics.md §1; 1
+- [x] T003 [P] [US1] ADR-0024 and the diagnostics guide (FR-008, ADR-0024, contracts/analyzer-diagnostics.md §1; 1
   unit). Write `docs/adr/0024-analyzer-and-generator-infrastructure.md`: the four projects, shipped versus internal
   rules, the families NPS, NPA, NPH and NPI, the test style (snapshot, compile and incrementality tests; exact-span rule
   tests; `AdhocWorkspace` fix tests; no `Microsoft.CodeAnalysis.Testing`), the build-time budget; it amends ADR-0003's

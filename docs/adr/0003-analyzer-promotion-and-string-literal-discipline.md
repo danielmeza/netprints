@@ -101,6 +101,9 @@ files, each fail the test (reverted after verifying).
   amount of pre-existing debt behind them — left as a follow-up.
 - Not proposed here: StyleCop.Analyzers (redundant with `dotnet format`), Meziantou.Analyzer and Roslynator
   (large triage cost, high overlap — see the follow-up draft below for the fuller comparison).
+- Amended by [ADR-0024](0024-analyzer-and-generator-infrastructure.md) (2026-10-16): StyleCop still is not added, but
+  the layout rules `dotnet format` cannot express (attributes on their own line, the blank-line scope rule) are now
+  NetPrints analyzers (NPS001 to NPS003), and the hygiene tests move to NPH analyzers.
 
 ### Severity policy: `error` for a curated set, `suggestion` for the rest — never one global default
 

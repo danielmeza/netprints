@@ -15,6 +15,45 @@ entries; a decision is written as "Decision: …" with its reason. Tasks are in 
 - Decision: the guide and ADR text of each feature lands in the sub-phase that builds it; sub-phase G keeps only the
   release notes, the guide images, the quickstart run and the docs site check.
 
+## Batch A1 (T001-T003)
+
+- Decision: `GeneratorTestHost` moved to `tests/NetPrints.Testing/Roslyn` (namespace `NetPrints.Testing.Roslyn`, types
+  made public). `NetPrints.Testing` references `NetPrints.Annotations` with `Aliases="Annotations"` and
+  `PrivateAssets="all"`, so the alias does not leak to the projects that reference Testing. `NetPrints.Catalog.Tests`
+  now references Testing and keeps its own aliased Annotations reference.
+- Decision: `EquatableArray<T>` moved from `NetPrints.Annotations` to `src/Shared/Roslyn` (namespace `NetPrints.Roslyn`)
+  and is linked into Annotations and the four new projects. A small `DiagnosticHelpLinks` helper (guide URL with the
+  lower-case code as anchor) sits beside it. No descriptor factory: RS2002 tracking needs the `new DiagnosticDescriptor`
+  call sites visible to the release analyzer.
+- Decision: the four projects carry no rules yet, so `AnalyzerAssemblyTests` loads each assembly, checks that every
+  analyzer found declares supported diagnostics tracked in the release files, runs the analyzers in a
+  `CompilationWithAnalyzers` host, and checks every code fix targets a diagnostic of its sibling analyzer assembly.
+  The checks are vacuous until T004 lands NPS001; the test needs no change then.
+- Decision: `tests/Directory.Build.targets` imports `../Directory.Build.targets` first. MSBuild picks the nearest file,
+  and without the import the experimental opt-in target is lost and the UI tests fail with NPXE errors.
+- Decision: the Core package packs the Authoring pair from `..\NetPrints.Authoring*\bin\$(Configuration)\netstandard2.0`;
+  `dotnet pack -c Release` on Core was checked and holds both under `analyzers/dotnet/cs`.
+- Deviation: T001 and T002 are one commit. The new test project makes `CiWorkflowTests` red until the matrix row
+  exists, so the row travels with the project to keep every commit green. `CiWorkflowTests` also needed three edits that
+  the task text does not name: the expected leg list gains "Analyzers" (after "Core"), and `cli-windows.yml` gains the
+  path filters for the new `src/` projects (Annotations became part of the Cli.Tests closure through Testing),
+  `src/Shared/**` and `tests/Directory.Build.targets`.
+- Red/green: `AnalyzerAssemblyTests` was written first and failed 10 of 10 (the four projects did not exist); green 10
+  of 10 after the projects, 13 of 13 with `SharedRoslynTests` (written after the code). `CiWorkflowTests` was red on
+  `TestMatrixCoversEveryTestProjectExactlyOnce` (named `NetPrints.Analyzers.Tests`) and
+  `CliWindowsPathFilterCoversTheCliTestsBuildInputs`, then green. `DiagnosticsGuideTests` failed 6 of 6 (no page), then
+  green 6 of 6.
+- Measurement (build time, `dotnet build NetPrints.slnx --no-incremental`, warm compile server, 3 runs each): 9.0 to
+  9.5 s before, 9.0 to 9.9 s after (about +1%, inside run-to-run noise). The new assemblies hold no analyzers yet, so
+  `ReportAnalyzer` shows nothing for them; repeat at T004 and in S2a.
+- Decision: `docs/guide/diagnostics.md` lists the seven existing prefixes (NPC, NPD, NPE, NPT, NPW, NPX, NPXE).
+  `DiagnosticsGuideTests` requires a row for every code in a `*DiagnosticCodes` class or `AnalyzerReleases.*.md`, a
+  section per prefix, a severity and cause per row, and that each listed code appears quoted in some `src` file or in a
+  release file. NPD, NPW, NPE and NPXE codes live outside `*DiagnosticCodes` classes, so only the last check covers
+  them; consolidating them is a separate cleanup. Severities of NPD, NPW, NPT and NPX were read from the code that
+  reports them.
+- Decision: ADR-0024 written and listed in `docs/adr/README.md`; ADR-0003 gets the amendment line.
+
 ## Owner questions taken by default
 
 The plan left these product questions to the owner (research R3, R13, R23, R31). Each task below applies the default
