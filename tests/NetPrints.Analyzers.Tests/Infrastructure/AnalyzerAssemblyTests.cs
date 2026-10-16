@@ -101,10 +101,7 @@ public class AnalyzerAssemblyTests
             .Where(id => id.Length > 0 && !id.StartsWith('-')),
     ];
 
-    private static Assembly Load(string name) =>
-        Assembly.LoadFrom(Path.Combine(Metadata("SourceRoot"), name, "bin", Metadata("Configuration"), "netstandard2.0", name + ".dll"));
+    private static Assembly Load(string name) => AnalyzerBinaries.Load(name);
 
-    private static string Metadata(string key) =>
-        typeof(AnalyzerAssemblyTests).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>().Single(attribute => attribute.Key == key).Value
-            ?? throw new InvalidOperationException($"Assembly metadata {key} is missing.");
+    private static string Metadata(string key) => AnalyzerBinaries.Metadata(key);
 }

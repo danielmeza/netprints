@@ -85,6 +85,28 @@ Owner-approved 2026-10-16. Docs only; no code.
   reports them.
 - Decision: ADR-0024 written and listed in `docs/adr/README.md`; ADR-0003 gets the amendment line.
 
+## Batch A2 (T004-T005)
+
+- Decision (process): the release preparation (T147-T152) moved out of T157 into its own batch PR-P, just before the
+  final review, so that T155 reviews it; T157 keeps only the merge preparation. This supersedes the P3-S2d note that
+  folded it into T157.
+
+- Deviation (process): the coordinator later said to skip that tasks.md move because the owner is putting sub-phase G
+  back into P3 and a later docs batch restores the section. The edit was already made in A2 and is left as it is.
+- Decision (T004, default pending owner): non-public fields and consts, `internal` and `protected` included, may stay
+  grouped (NPS003 points at them). The owner has not answered yet.
+- Decision (T004): `[A, B]` in one list is not reported by NPS001; only separate lists sharing a line are. NPS001
+  reports at the attribute list, NPS002 and NPS003 at the first token of the second member. A field with braces
+  (a lambda or initializer) counts as a member with braces and needs a blank line.
+- Decision (T004): the rules are off through `isEnabledByDefault: false` (release files list them as Disabled),
+  because `src/Directory.Build.props` and `tests/Directory.Build.props` already reference the analyzer projects since A1.
+  T005 switches them on with `dotnet_diagnostic.NPSnnn.severity` in `.editorconfig`. Tests enable each rule through
+  compilation options at its contract severity.
+- Decision (T004): `RepoAnalyzers.CodeFixes` needs a direct `Microsoft.CodeAnalysis.CSharp` 5.0.0 reference: with the
+  Workspaces override alone, central transitive pinning (5.9.0) dropped CSharp and Common from the compile references.
+- Measurement (T004, `dotnet build NetPrints.slnx --no-incremental`, 3 runs): 9.4 to 11.5 s against A1's 9.0 to 9.9 s;
+  the rules are disabled, so this is mostly noise. Re-measured with the rules on in T005.
+
 ## Owner questions taken by default
 
 The plan left these product questions to the owner (research R3, R13, R23, R31). Each task below applies the default

@@ -9,6 +9,7 @@ This page lists every code. The tests keep it in step with the sources: a code t
 | NPC | The catalog generator and reader |
 | NPD | The graph document reader |
 | NPE | The editor |
+| NPS | The repository style analyzers (NetPrints' own source, not shipped) |
 | NPT | The translator and the code generator |
 | NPW | The project system (project evaluation and restore) |
 | NPX | The extension loader |
@@ -54,6 +55,16 @@ Document issues are reported when a graph file is read; all but NPD008 leave the
 | Code | Severity | Cause |
 |---|---|---|
 | NPE001 | error | The project folder has graph files, but the project system loaded none. |
+
+## NPS: repository style
+
+These rules check NetPrints' own source. They are not shipped in any package and are off unless a repository turns them on in `.editorconfig`; the severities are the ones this repository sets.
+
+| Code | Severity | Cause |
+|---|---|---|
+| NPS001 | error | An attribute list shares a line with its member or with another attribute list. The fix puts each on its own line. |
+| NPS002 | error | No blank line between adjacent members when either is a property, indexer, method, constructor, operator or event, any public member (consts and fields included), or a member with braces, a comment or attributes. Enum members and record parameters are out of scope. The fix inserts a blank line. |
+| NPS003 | suggestion | Non-public fields and consts on one line each, with no comment or attribute, are grouped without a blank line. A hint only; it never fails a build. |
 
 ## NPT: translation and code generation
 

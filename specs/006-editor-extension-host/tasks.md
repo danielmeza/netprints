@@ -125,7 +125,7 @@ trip; Windows CLI tests green; SC-015; R5-0 numbers and the M5 outcome recorded.
 
 ### Batch A2 — model: sonnet — T004–T005 — 3 units
 
-- [ ] T004 [US1] NPS001–NPS003 (FR-002, research R3, contracts/analyzer-diagnostics.md §2; 2 units; **default pending
+- [x] T004 [US1] NPS001–NPS003 (FR-002, research R3, contracts/analyzer-diagnostics.md §2; 2 units; **default pending
   owner**: non-public fields and consts, `internal` and `protected` ones included, may stay grouped — AOP follow-up
   question 8, "the blank-line rule"). Test first: `tests/NetPrints.Analyzers.Tests/Style/Nps001Tests.cs`,
   `Nps002Tests.cs` and `Nps003Tests.cs` with a failing and a passing case at exact spans for every row of the contract
@@ -1092,13 +1092,38 @@ and P3b plans them with its own IDs. The IDs stay reserved so nothing else is re
 | T138–T140 | N2 graph rules with NPK014 (FR-110), ADR-0032, N5 translation context (FR-111, NPXE0015, NPXE0016) | P3b |
 | T141–T143 | S7 node kinds by convention, SUG5, ADR-0026 (FR-112, NPXE0017, NPA030–NPA033) | P3b |
 | T144–T146 | B1 user theme files, C extension themes, the themes guide additions (FR-113–FR-115) | P3b |
-| T147–T151 | Guide images, the 0.3.0 release notes, the quickstart run, SC-016 and the ratchets, the docs site | stays in P3: folded into T157 |
-| T152 | Checkpoint G and its SC table | stays in P3: the SC table is folded into T157 |
+| T147–T151 | Guide images, the 0.3.0 release notes, the quickstart run, SC-016 and the ratchets, the docs site | stays in P3: batch PR-P, before the final review |
+| T152 | Checkpoint G and its SC table | stays in P3: the SC table is in PR-P |
 | T153–T154 | Review and fixes of sub-phase G | P3b (the P3 reviews are the five checkpoints) |
 
 ---
 
 ## Phase 10: Final review and merge preparation (the fifth checkpoint)
+
+### Batch PR-P — model: sonnet — T147–T152 (release preparation, before the final review; 5 units)
+
+Moved out of the merge batch so that the final review (T155) sees this work. The IDs are the old sub-phase G ones, kept
+in P3.
+
+- [ ] T147 Guide images (FR-088, FR-116; 1 unit). Regenerate the guide images that carry the build version with
+  `scripts/guide-screenshots.sh` on your own Xvfb display; inspect each changed PNG with the Read tool.
+- [ ] T148 The 0.3.0 release notes (FR-012, FR-116; 1 unit). Consolidate the "Unreleased" entries of
+  `.github/release-notes.md` into the 0.3.0 section: the hard break (the pin renames and every `*REMOVED*` line), the
+  new packages, the experimental ids, and the user-visible features. Check FR-116's list of guides and ADRs against
+  `docs/`.
+- [ ] T149 The quickstart run (1 unit). Run every section of `specs/006-editor-extension-host/quickstart.md` (section 13
+  is P3b's) on your own display with an isolated `NETPRINTS_STATE_DIR` and `XDG_CONFIG_HOME`; record each step's result
+  in implementation-notes; fix a deviation here (test first).
+- [ ] T150 SC-016, the ratchets and SC-001 (FR-117, FR-118; 1 unit). From the last CI run: every job's duration (none
+  over 15 minutes; a fifth UI shard if a shard passes 12 minutes); the trim count at most its value at the start of the
+  phase; the XAML literal ratchet not grown; 0 NPS, NPA and NPH hits in `src/`, and a test that every analyzer
+  descriptor NetPrints ships has at least one passing and one failing test (SC-001).
+- [ ] T151 The docs site (SC-017, FR-116; 1 unit). `scripts/build-docs.sh` builds with 0 broken links; every guide of
+  FR-116 and every ADR of the plan's schedule is present; `docs/adr/README.md` lists them all.
+- [ ] T152 The SC table: SC-001 to SC-017 with evidence for each (SC-012 to SC-014 marked "moved to P3c"); the
+  quickstart results; the owner's manual list (Windows and macOS editor behaviour, two-DPI check, Cmd mapping, external
+  terminals); the Dock check. Docs updated: the release notes, the guide images, the themes guide, the extensions
+  guide.
 
 ### Batch PR-R — model: opus — T155 (final review, checkpoint 5)
 
@@ -1108,7 +1133,7 @@ and P3b plans them with its own IDs. The IDs stay reserved so nothing else is re
   notes; the Abstractions split ↔ the facet ↔ the Null Object in the CLI; the packages ↔ validation ↔ the kit ↔ the
   template ↔ `verify` ↔ the Godot sample; groups ↔ every surface ↔ failure isolation; settings ↔ the schema ↔ the
   pages ↔ key bindings ↔ presets; run profiles in the editor ↔ the CLI; docs ↔ behaviour; and the SC table so far
-  (SC-001 to SC-015 from the sub-phase gate reports; SC-016 and SC-017 are checked in T157). Findings to the PR and to
+  (SC-001 to SC-015 from the sub-phase gate reports; SC-016 and SC-017 from PR-P, T150 and T151). Findings to the PR and to
   implementation-notes under "Final review".
 
 ### Batch PR-F — model: sonnet — T156 (reserved: fix final review findings)
@@ -1116,29 +1141,10 @@ and P3b plans them with its own IDs. The IDs stay reserved so nothing else is re
 - [ ] T156 Fix every finding of T155 (test first for behaviour findings), reply on each thread, whole suite plus the
   E2E pass, push; "no findings" if there were none.
 
-### Batch PR-M — model: sonnet — T157 (release preparation and merge preparation; 5 units)
+### Batch PR-M — model: sonnet — T157 (merge preparation; 1 unit)
 
-- [ ] T157 Release preparation (the old T147–T152, kept in P3), then merge preparation. In this order:
-  1. Guide images (FR-088, FR-116; 1 unit). Regenerate the guide images that carry the build version with
-     `scripts/guide-screenshots.sh` on your own Xvfb display; inspect each changed PNG with the Read tool.
-  2. The 0.3.0 release notes (FR-012, FR-116; 1 unit). Consolidate the "Unreleased" entries of
-     `.github/release-notes.md` into the 0.3.0 section: the hard break (the pin renames and every `*REMOVED*` line), the
-     new packages, the experimental ids, and the user-visible features. Check FR-116's list of guides and ADRs against
-     `docs/`.
-  3. The quickstart run (1 unit). Run every section of `specs/006-editor-extension-host/quickstart.md` (section 13 is
-     P3b's) on your own display with an isolated `NETPRINTS_STATE_DIR` and `XDG_CONFIG_HOME`; record each step's result
-     in implementation-notes; fix a deviation here (test first).
-  4. SC-016, the ratchets and SC-001 (FR-117, FR-118; 1 unit). From the last CI run: every job's duration (none over 15
-     minutes; a fifth UI shard if a shard passes 12 minutes); the trim count at most its value at the start of the
-     phase; the XAML literal ratchet not grown; 0 NPS, NPA and NPH hits in `src/`, and a test that every analyzer
-     descriptor NetPrints ships has at least one passing and one failing test (SC-001).
-  5. The docs site (SC-017, FR-116; 1 unit). `scripts/build-docs.sh` builds with 0 broken links; every guide of FR-116
-     and every ADR of the plan's schedule is present; `docs/adr/README.md` lists them all.
-  6. The SC table: SC-001 to SC-017 with evidence for each (SC-012 to SC-014 marked "moved to P3c"); the quickstart
-     results; the owner's manual list (Windows and macOS editor behaviour, two-DPI check, Cmd mapping, external
-     terminals); the Dock check. Docs updated: the release notes, the guide images, the themes guide, the extensions
-     guide.
-  7. Merge `origin/master` into `006-editor-extension-host` (a merge commit, no rebase; resolve conflicts keeping both
+- [ ] T157 Merge preparation (the release preparation, old T147–T152, is batch PR-P before the final review).
+  1. Merge `origin/master` into `006-editor-extension-host` (a merge commit, no rebase; resolve conflicts keeping both
      sides' intent), whole suite plus the E2E pass, and push; do not wait for CI. Update the PR description (summary,
      decisions, deferrals, the owner's manual list, a link to the SC table). The coordinator watches `CI` and `CLI
      (Windows)` and marks PR #20 ready (`gh pr ready 20 --repo danielmeza/netprints`) once both are green. The owner
@@ -1150,7 +1156,7 @@ and P3b plans them with its own IDs. The IDs stay reserved so nothing else is re
 ## Dependencies and execution order
 
 - Batches run strictly in order: A1 → … → A5 → B1 → … → B7 → B-R → B-F → C1a → … → C1f → C2a → … → C2f → C2-R → C2-F
-  → D1a → … → D1g → D2a → … → D2d → D2-R → D2-F → E1 → … → E5 → F1 → F2 → F-R → F-F → PR-R → PR-F → PR-M (one agent at
+  → D1a → … → D1g → D2a → … → D2d → D2-R → D2-F → E1 → … → E5 → F1 → F2 → F-R → F-F → PR-P → PR-R → PR-F → PR-M (one agent at
   a time, AGENTS.md). A review batch reads the finished pair of sub-phases; its fix batch closes the checkpoint.
   A-R, A-F, C1-R, C1-F, D1-R, D1-F, E-R and E-F do not exist (merged); G1–G5, G-R and G-F moved to P3b.
 - Every batch starts by checking CI at the previous head and fixing any red first (plan "Process: CI and checkpoints").
@@ -1188,8 +1194,8 @@ and P3b plans them with its own IDs. The IDs stay reserved so nothing else is re
    packages with the stable API, and extensions on every editor surface (plan "Order rationale").
 2. Then the features on the frozen API, in story-priority order: settings, shortcuts, presets and `--profile` (D1);
    the author kit and the Godot sample (D2); run profiles (E); `netprints new` and the C# target in the editor (F).
-3. The tail (old G) is P3b's. P3 ends with the final review (T155), its fixes (T156) and the release and merge
-   preparation (T157).
+3. The tail (old G) is P3b's. P3 ends with the release preparation (T147–T152), the final review (T155), its fixes
+   (T156) and the merge preparation (T157).
 4. Defects are caught at five checkpoints: A+B, C1+C2, D1+D2, E+F (each a review batch and a fix batch) and the final
    review, which checks only integration.
 
@@ -1205,9 +1211,9 @@ and P3b plans them with its own IDs. The IDs stay reserved so nothing else is re
 | D2 — author kit and the Godot sample | 12 (T101–T112) | D2a 4, D2b 4, D2c 4, D2d 3 = 15 | D2-R (T111), D2-F (T112) |
 | E — run and build | 14 (T113–T126); T127, T128 merged | E1 4, E2 3, E3 4, E4 3, E5 3 = 17 | into F-R, F-F (E+F) |
 | F — command line and the C# target in the editor | 7 (T129–T135) | F1 3, F2 3 = 6 | F-R (T134), F-F (T135) |
-| G — tail: moved to P3b | 0 (T136–T154 reserved, 19 IDs) | — (was G1–G5, 22 units; 5 units of release preparation moved to PR-M) | — |
-| Final review and merge | 3 (T155–T157) | PR-M carries 5 units of release preparation | PR-R, PR-F, PR-M |
-| **Total** | **130 active of 157 IDs** (19 reserved for P3b, 8 merged) | **42 batches, 155 units** (+5 units in PR-M = 160) | **11 batches** (4 review, 4 fix, PR-R, PR-F, PR-M) |
+| G — tail: moved to P3b | 0 (T136–T154 reserved, 19 IDs) | — (was G1–G5, 22 units; 5 units of release preparation moved to PR-P) | — |
+| Release preparation, final review and merge | 9 (T147–T152, T155–T157) | PR-P carries 5 units of release preparation | PR-P, PR-R, PR-F, PR-M |
+| **Total** | **136 active of 157 IDs** (13 reserved for P3b, 8 merged) | **42 batches, 155 units** (+5 units in PR-P = 160) | **12 batches** (4 review, 4 fix, PR-P, PR-R, PR-F, PR-M) |
 
 53 batches in all (68 before S2d). The units refine plan.md's first estimate per sub-phase, and its table carries them:
 A 19 (was 16: the M5 spike and the carry-overs are sized separately), B 26 (25), D1 26 (25), D2 15 (14); C1, C2, E and F

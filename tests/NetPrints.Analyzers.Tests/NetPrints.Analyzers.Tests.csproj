@@ -20,6 +20,8 @@
     <!-- Built first, never referenced: the tests load each analyzer assembly from its own output folder. -->
     <ProjectReference Include="..\..\src\NetPrints.Authoring\NetPrints.Authoring.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\src\NetPrints.Authoring.CodeFixes\NetPrints.Authoring.CodeFixes.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\src\NetPrints.RepoAnalyzers\NetPrints.RepoAnalyzers.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\src\NetPrints.RepoAnalyzers.CodeFixes\NetPrints.RepoAnalyzers.CodeFixes.csproj" ReferenceOutputAssembly="false" />
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>SourceRoot</_Parameter1>
       <_Parameter2>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', '..', 'src'))</_Parameter2>
