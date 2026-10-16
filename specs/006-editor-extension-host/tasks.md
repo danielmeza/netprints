@@ -494,7 +494,7 @@ SC-010; US3 scenarios 5–6. **Gate (plan)**: SC-005; SC-010 (the three writers)
 
 ### Batch C1e — model: sonnet — T053–T054 — 4 units
 
-- [ ] T053 [US1] Composition step 1: app and shell (FR-003, FR-004, SC-005, research R4 step 3, gate M1; 2 units).
+- [x] T053 [US1] Composition step 1: app and shell (FR-003, FR-004, SC-005, research R4 step 3, gate M1; 2 units).
   Red/green: T006's M1 test is the invariant. Annotate the app and shell services with `[Singleton<T>]`; the
   composition root (`src/NetPrints.Editor/Hosting/EditorComposition.cs`) builds a `ServiceCollection` from the
   generated `AddEditorServices()` plus the host instances; `EditorContext` stays a facade;
@@ -502,7 +502,7 @@ SC-010; US3 scenarios 5–6. **Gate (plan)**: SC-005; SC-010 (the three writers)
   validators of T011 run at composition (US1 scenario 3). Gate M1: composition at most 150 ms including the provider
   build and the first resolves, and M1 at most 10% over its R5-0 baseline in the perf job. If the gate fails, stop
   here and report (FR-004): T054 and T055 wait for the owner.
-- [ ] T054 [US1] Composition step 2: the project session (FR-003, FR-004, research R4 step 4; 2 units). Test first:
+- [x] T054 [US1] Composition step 2: the project session (FR-003, FR-004, research R4 step 4; 2 units). Test first:
   `tests/NetPrints.Editor.Tests/Hosting/CompositionResolveAllTests.cs` resolves every registration in the root and in a
   project session scope (the gate). Then extract `ProjectSessionScope` from `ProjectLoader`; backups, recovery and
   templates become `[SessionScoped<T>]`; one container per project session, disposed with it.

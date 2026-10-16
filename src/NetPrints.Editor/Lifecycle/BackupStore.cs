@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using NetPrints.Editor.Hosting;
 using NetPrints.Editor.State;
 
 namespace NetPrints.Editor.Lifecycle;
@@ -11,8 +12,17 @@ namespace NetPrints.Editor.Lifecycle;
 /// content of each file and the <c>manifest.json</c> that lists them. Recovery reads the same files through <see cref="List"/> and
 /// <see cref="Read"/>. Every write is atomic, and nothing is ever written inside the project folder. Not thread safe.
 /// </summary>
+[SessionScoped<BackupStore>(Factory = "Create")]
 public sealed class BackupStore
 {
+    /// <summary>Creates the store of the session's project.</summary>
+    /// <param name="options">Where the backups are kept.</param>
+    /// <param name="identity">The session the store belongs to.</param>
+    /// <param name="logger">Receives warnings about unreadable manifests.</param>
+    /// <returns>The store.</returns>
+    internal static BackupStore Create(BackupOptions options, SessionIdentity identity, ILogger<BackupStore> logger) =>
+        new(options.Paths, options.FileSystem, identity.ProjectFilePath, logger);
+
     /// <summary>The manifest's schema version.</summary>
     public const int SchemaVersion = 1;
 

@@ -9,8 +9,17 @@ namespace NetPrints.Editor.Lifecycle;
 /// backup is written <see cref="DefaultDelay"/> after its last change; every change restarts the wait. A write failure never
 /// interrupts editing: it is logged, and the first one of the session is also reported through the warning callback.
 /// </summary>
+[SessionScoped<BackupService>(Factory = "Create")]
 public sealed class BackupService : IDisposable
 {
+    /// <summary>Creates the service of the session's project.</summary>
+    /// <param name="options">Where and how often the backups are written.</param>
+    /// <param name="identity">The session the service belongs to.</param>
+    /// <param name="logger">Receives write failures.</param>
+    /// <returns>The service.</returns>
+    internal static BackupService Create(BackupOptions options, SessionIdentity identity, ILogger<BackupService> logger) =>
+        new(options.Paths, options.FileSystem, options.Time, identity.ProjectFilePath, options.Delay, logger, identity.Data.Warn);
+
     /// <summary>How long after a file's last change its backup is written.</summary>
     public static readonly TimeSpan DefaultDelay = TimeSpan.FromSeconds(30);
 

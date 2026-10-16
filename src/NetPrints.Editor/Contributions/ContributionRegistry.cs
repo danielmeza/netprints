@@ -1,13 +1,29 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NetPrints.Editor.Commands;
 using NetPrints.Editor.Contributions.BuiltIn;
+using NetPrints.Editor.Hosting;
 
 namespace NetPrints.Editor.Contributions;
 
 /// <summary>The default <see cref="IContributionRegistry"/>.</summary>
 /// <param name="logger">Receives one warning per issue.</param>
+[Singleton<IContributionRegistry>(Factory = "Create")]
 public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) : IContributionRegistry
 {
+    /// <summary>Creates the frozen registry of the built-in contributions and the go-to providers.</summary>
+    /// <param name="logger">Receives one warning per issue.</param>
+    /// <param name="services">Resolves the shell lazily, for the session the go-to providers read.</param>
+    /// <returns>The frozen registry.</returns>
+    internal static ContributionRegistry Create(ILogger<ContributionRegistry> logger, IServiceProvider services)
+    {
+        var registry = new ContributionRegistry(logger);
+        BuiltInContributions.Register(registry);
+        GoToProviderContributions.Register(registry, () => services.GetService<ShellHost>()?.Shell.Session);
+        registry.Freeze();
+        return registry;
+    }
+
     private const int UnlistedPanelOrder = 100;
 
     private readonly List<CommandDescriptor> commands = [];

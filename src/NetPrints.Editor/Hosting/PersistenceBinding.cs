@@ -11,6 +11,7 @@ namespace NetPrints.Editor.Hosting;
 /// Keeps a <see cref="ProjectPersistence"/> on the node converters of the current extension registry: the mapper and the
 /// JSON options are rebuilt whenever the registry changes (editor-services.md §4).
 /// </summary>
+[Singleton<PersistenceBinding>(Factory = "Bind")]
 public sealed class PersistenceBinding : IDisposable
 {
     private readonly ProjectPersistence persistence;

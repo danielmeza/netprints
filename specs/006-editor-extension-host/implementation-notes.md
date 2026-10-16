@@ -716,6 +716,36 @@ consumers restore from `local-packages/` plus a scratch feed and build with `-p:
   missing NPX013 row; the row was added.
 - Suite (Release, solution-wide, `--ignore-exit-code 8`): 4636 total, 4602 passed, 33 skipped, 1 failed (the guide row above, fixed and re-run green).
 
+## Batch C1e (T053-T054)
+
+- T053: `EditorServices(host, configure)` builds a `ServiceCollection`: `AddEditorHost(host)` (hand-registered host instances, `IScheduler`, `Func<IMessenger>`,
+  `IProjectSystem`, `ProjectPersistence`) then the generated `AddEditorServices()`, then the caller's `configure`, and a provider with `ValidateScopes`. Annotated:
+  `AvaloniaUiDispatcher`, `ProcessLauncher`, `WindowService` (also as `IWindowService`), clipboard, dialogs and file picker (static `Create(WindowService)`
+  factories), `ReflectionHost`, `CodeAnalysisHost`, `RunStateTracker`, `PersistenceBinding` (`Bind`), `ContributionRegistry` (`Create`, frozen), `EditorContext`
+  (`Create`, optional members from `GetService`), `ShellHost` (`Create`). `EditorContext` stays the facade. `EditorComposition` adds the production-only
+  services (backup options, recent projects, window state, state store, locations) in `configure`; `TestComposition` uses `Replace` for the three doubles.
+  The provider disposes the shell, binding, analysis host and run state. `CreateShellWindow` is once only (the shell is a singleton): a second call throws.
+- Settings validators at composition: the composition reads the `netprints` and `netprints.editor` sections once, so an invalid section logs 2006 and keeps
+  its defaults before the window exists (US1 scenario 5).
+- Generator fix (found by T053): `[Singleton<T>]` on a `record` was silently ignored (the syntax predicate matched `ClassDeclarationSyntax` only); it now
+  matches records too, with a generator test. `EditorContext` is a record.
+- T054: `ProjectSessionScope` (extracted from `ProjectLoader`'s `BackupScope`) builds one container per session from the context's host services
+  (`AddSessionHost`) and creates a scope in it; `SessionIdentity` (`[SessionScoped]`, set once) carries the project path and the warn callback. Session-scoped:
+  `BackupStore`, `BackupService`, `RecoveryService`, `ProjectTemplateService`. `SessionBackups` stays created by the scope (it needs the session view model, which
+  exists after recovery). Disposal is idempotent: backups, scope, container. The loader creates the scope when the project is loaded (recovery needs it) and
+  hands it to `SetProjectAsync`; a load that fails disposes it.
+- Deviation: templates are session-scoped as written, but New project runs with no project open, so that flow creates a short-lived scope with no project path;
+  `BackupStore`/`BackupService` throw if resolved there.
+- Deviation: `CompositionResolveAllTests` resolves the root's singletons except `ShellHost` (a `ShellWindow` needs the Avalonia platform, which `Editor.Tests`
+  lacks; the UI tests build it) and checks that scoped ones are not available at the root.
+- M1 (Release, local): composition alone (provider build and first resolves, no window) cold 30 ms, warm 0.2 ms; the `ComposingTheEditorStaysWithinTheBudget`
+  perf test asserts the warm median at most 150 ms (ADR-0031). `ShellApp.Start` (M1 as in A3): cold 818 ms (A3: 756), warm median 183 ms (A3: 213, runs
+  133 to 235 ms), 16.55 MB (A3: 16.06 MB, +3%). Run to run noise is about 30%, so the +10% gate waits for the perf job.
+- Red/green: `ARecordIsRegisteredLikeAClass` red then green. `AnInvalidSettingsSectionIsReportedWhenTheEditorComposes` red (assertion, with the composition
+  read removed) then green. `TheDoublesReplaceTheGeneratedRegistrations` and `CompositionResolveAllTests` were written before the code and did not compile
+  until it existed; they were not run red.
+- Suite (Release, solution-wide, `--ignore-exit-code 8`): 4643 total, 4610 passed, 33 skipped, 0 failed. No E2E run.
+
 ## Build-time budget (ADR-0024, S2a; B-F3)
 
 - `dotnet build NetPrints.slnx -c Release --no-incremental`, warm compile server, 6 runs at the end of B: 24.2, 19.1 and 12.2 s

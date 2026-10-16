@@ -17,6 +17,7 @@ namespace NetPrints.Editor.Hosting;
 /// The composed shell: the frozen registry, <see cref="ShellViewModel"/>, the docking adapter, the command invoker and
 /// the window. It closes the open documents when the project goes.
 /// </summary>
+[Singleton<ShellHost>(Factory = "Create")]
 internal sealed class ShellHost : IDisposable
 {
     private readonly WindowCloseGuard closeGuard;
@@ -62,16 +63,12 @@ internal sealed class ShellHost : IDisposable
 
     /// <summary>Composes the shell.</summary>
     /// <param name="context">Host services shared across the editor.</param>
+    /// <param name="registry">The frozen registry the shell is generated from.</param>
     /// <returns>The shell.</returns>
-    public static ShellHost Create(EditorContext context)
+    public static ShellHost Create(EditorContext context, IContributionRegistry registry)
     {
         ILogger logger = context.LoggerFactory.CreateLogger<ShellHost>();
         IconRegistry.Shared = new IconRegistry(context.LoggerFactory.CreateLogger<IconRegistry>());
-        var registry = new ContributionRegistry(context.LoggerFactory.CreateLogger<ContributionRegistry>());
-        BuiltInContributions.Register(registry);
-        ShellViewModel? shell = null;
-        GoToProviderContributions.Register(registry, () => shell?.Session);
-        registry.Freeze();
 
         var composed = new ComposedShell();
         var panelContext = new PanelFactoryContext(
@@ -79,7 +76,7 @@ internal sealed class ShellHost : IDisposable
             new EditorDialogService(context.Dialogs),
             new EditorOutput(context.RunState),
             EmptyServiceProvider.Instance);
-        shell = new ShellViewModel(registry, panelContext, TimeProvider.System, context.Dispatcher);
+        var shell = new ShellViewModel(registry, panelContext, TimeProvider.System, context.Dispatcher);
         shell.WindowStateService = context.WindowStateService;
         var actions = new ShellProjectActions(context, shell);
         var startPageContext = new StartPageContext(actions, panelContext, context.Recent, context.StateStore, context.Clipboard, new ShellFolderLauncher());

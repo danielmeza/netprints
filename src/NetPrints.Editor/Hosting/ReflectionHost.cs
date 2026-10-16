@@ -22,6 +22,7 @@ namespace NetPrints.Editor.Hosting;
 /// the extensions' catalogs, the first catalog of an id wins, and the assemblies a catalog covers
 /// are left out of the live provider.
 /// </summary>
+[Singleton<IReflectionHost>]
 public sealed class ReflectionHost : IReflectionHost
 {
     private readonly IUiDispatcher dispatcher;

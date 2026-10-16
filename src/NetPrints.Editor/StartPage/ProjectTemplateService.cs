@@ -2,11 +2,13 @@ using System.Text;
 using Microsoft.CodeAnalysis.CSharp;
 using NetPrints.Core;
 using NetPrints.Editor.Contributions;
+using NetPrints.Extensibility.Loading;
 using NetPrints.Projects;
 
 namespace NetPrints.Editor.StartPage;
 
 /// <summary>Creates a project from a registered project template.</summary>
+[SessionScoped<ProjectTemplateService>(Factory = "Create")]
 internal sealed class ProjectTemplateService(
     Func<IReadOnlyList<ProjectTemplateDescriptor>> templates,
     Func<string, IProjectProfile?> findProfile,
@@ -14,6 +16,21 @@ internal sealed class ProjectTemplateService(
 {
     private static readonly string[] ReservedDeviceNames =
         ["con", "prn", "aux", "nul", "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9", "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9"];
+
+    /// <summary>Creates the service over the registry's templates and the loaded extensions' profiles.</summary>
+    /// <param name="registry">Holds the registered templates.</param>
+    /// <param name="extensions">Provides the project profiles.</param>
+    /// <param name="projects">Creates the project files.</param>
+    /// <returns>The service.</returns>
+    internal static ProjectTemplateService Create(IContributionRegistry registry, IExtensionHost extensions, IProjectSystem projects) =>
+        new(() => registry.ProjectTemplates, profileId => FindProfile(extensions, profileId), projects);
+
+    /// <summary>Finds a project profile among the loaded extensions' profiles and the default one.</summary>
+    /// <param name="extensions">Provides the project profiles.</param>
+    /// <param name="profileId">The profile id.</param>
+    /// <returns>The profile, or <see langword="null"/> when none has that id.</returns>
+    internal static IProjectProfile? FindProfile(IExtensionHost extensions, string profileId) =>
+        extensions.Current.FindProfile(profileId) ?? (profileId == DefaultProjectProfile.ProfileId ? DefaultProjectProfile.Instance : null);
 
     /// <summary>Gets the registered templates, in registration order.</summary>
     public IReadOnlyList<ProjectTemplateDescriptor> Templates => templates();

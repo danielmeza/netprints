@@ -185,6 +185,23 @@ public class RegistrationGeneratorTests
         """;
 
     [Fact]
+    public void ARecordIsRegisteredLikeAClass()
+    {
+        GeneratorRun run = GeneratorHarness.Run("""
+            using NetPrints.Composition;
+
+            namespace Sample;
+
+            public interface IPoint { }
+
+            [Singleton<IPoint>]
+            public sealed record Point : IPoint;
+            """);
+
+        Assert.Contains("AddSingleton<global::Sample.IPoint>(static sp => new global::Sample.Point())", run.Source(RegistrationHint), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TheRegistrationsAreFactoryLambdasThatCallConstructors()
     {
         GeneratorRun run = GeneratorHarness.Run(Sample);

@@ -1,7 +1,13 @@
 using System.Diagnostics;
 using System.Globalization;
 using Avalonia.Headless.XUnit;
+using Microsoft.Extensions.Logging.Abstractions;
+using NetPrints.Editor.Hosting;
 using NetPrints.Editor.UITests.Shell;
+using NetPrints.Extensibility;
+using NetPrints.Extensibility.Hosting;
+using NetPrints.Extensibility.Loading;
+using NetPrints.Extensibility.Settings;
 
 namespace NetPrints.Editor.UITests.Hosting;
 
@@ -15,6 +21,8 @@ namespace NetPrints.Editor.UITests.Hosting;
 public class ShellStartupPerformanceTests
 {
     private const int Runs = 6;
+
+    private const int CompositionBudgetMilliseconds = 150;
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     [Trait("Category", "Performance")]
@@ -47,6 +55,36 @@ public class ShellStartupPerformanceTests
 
         output.WriteLine(string.Create(CultureInfo.InvariantCulture,
             $"M1 median of the warm runs: {Median(times):F1} ms, {Median(bytes):F0} bytes"));
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    [Trait("Category", "Performance")]
+    public async Task ComposingTheEditorStaysWithinTheBudget()
+    {
+        var output = TestContext.Current.TestOutputHelper
+            ?? throw new InvalidOperationException($"{nameof(TestContext)} has no {nameof(TestContext.Current.TestOutputHelper)}.");
+        await using var extensions = new ExtensionHost(new ExtensionLoaderOptions([], [], [BuiltInExtension.InProcessEntry]), NullLoggerFactory.Instance);
+        var settings = new JsonFileSettingsStore(Path.Combine(Path.GetTempPath(), "netprints-ui-tests", Guid.NewGuid().ToString("N"), "settings.json"), NullLogger<JsonFileSettingsStore>.Instance);
+        var host = new EditorHostServices(NullLoggerFactory.Instance, extensions, settings, NullHostChannel.Instance, HostChannelError: null,
+            MsBuildAvailable: false, DisposeOwnedResources: () => ValueTask.CompletedTask);
+
+        var times = new List<double>();
+        for (int run = 1; run <= Runs; run++)
+        {
+            var stopwatch = Stopwatch.StartNew();
+            using var composition = new TestComposition(host, new RecordingDialogs(), new QueuedFilePicker(), new CapturingProcessLauncher());
+            stopwatch.Stop();
+            output.WriteLine(string.Create(CultureInfo.InvariantCulture,
+                $"Composition run {run}/{Runs}{(run == 1 ? " (cold)" : string.Empty)}: provider build and first resolves {stopwatch.Elapsed.TotalMilliseconds:F1} ms"));
+            if (run > 1)
+            {
+                times.Add(stopwatch.Elapsed.TotalMilliseconds);
+            }
+        }
+
+        double median = Median(times);
+        output.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Composition median of the warm runs: {median:F1} ms"));
+        Assert.True(median <= CompositionBudgetMilliseconds, $"Composition took {median:F1} ms, the budget is {CompositionBudgetMilliseconds} ms (ADR-0031).");
     }
 
     private static double Median(List<double> values)

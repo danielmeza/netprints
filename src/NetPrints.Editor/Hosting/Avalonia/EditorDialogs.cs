@@ -13,8 +13,14 @@ using NetPrints.Editor.References;
 namespace NetPrints.Editor.Hosting.Avalonia;
 
 /// <summary>Modal Avalonia dialogs owned by the active window.</summary>
+[Singleton<IEditorDialogs>(Factory = "Create")]
 public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
 {
+    /// <summary>Creates the dialogs owned by the active window of <paramref name="windows"/>.</summary>
+    /// <param name="windows">Picks the window that owns the dialogs.</param>
+    /// <returns>The dialogs.</returns>
+    internal static EditorDialogs Create(WindowService windows) => new(() => windows.ActiveWindow);
+
     private const int MaxNotifications = 3;
     private const string SelectMethodTitle = "Select method";
     private const string SelectMethodLabel = "Select";

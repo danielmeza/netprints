@@ -49,7 +49,7 @@ public sealed class RegistrationGenerator : IIncrementalGenerator
         context.SyntaxProvider
             .ForAttributeWithMetadataName(
                 metadataName,
-                static (node, _) => node is ClassDeclarationSyntax,
+                static (node, _) => node is ClassDeclarationSyntax or RecordDeclarationSyntax,
                 (attribute, token) => RegistrationReader.Read(attribute, lifetime, token))
             .SelectMany(static (found, _) => found.Items)
             .Collect()

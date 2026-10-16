@@ -7,6 +7,7 @@ namespace NetPrints.Editor.Hosting;
 /// compile flow (<see cref="BuildStarted"/>, <see cref="BuildFinished"/>), keeping the tail of its
 /// output, so a slow run can be told apart from lost output (issue #11). Safe to use from any thread.
 /// </summary>
+[Singleton<RunStateTracker>]
 public sealed class RunStateTracker : IDisposable
 {
     /// <summary>How many lines of each stream are kept.</summary>
