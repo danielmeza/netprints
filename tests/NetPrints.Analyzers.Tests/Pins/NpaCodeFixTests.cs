@@ -151,7 +151,7 @@ public class NpaCodeFixTests
 
         Assert.Equal(
             PinSamples.Header + """
-            [NodeKind("LoopNode")]
+            [NodeKind("TODO.kindId")]
             public sealed partial class LoopNode : Node
             {
                 public LoopNode(NodeGraph graph) : base(graph)

@@ -11,12 +11,14 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace NetPrints.Authoring.Pins;
 
-/// <summary>Fix for NPA009: adds <c>[NodeBase]</c> to an abstract class, or <c>[NodeKind("ClassName")]</c> to a concrete one for the author to rename.</summary>
+/// <summary>Fix for NPA009: adds <c>[NodeBase]</c> to an abstract class, or <c>[NodeKind("TODO.kindId")]</c> to a concrete one for the author to replace.</summary>
 [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(AddNodeMarkerCodeFix))]
 [Shared]
 public sealed class AddNodeMarkerCodeFix : CodeFixProvider
 {
-    private const string Title = "Add the node marker";
+    private const string Title = "Add the node marker (a concrete class gets a placeholder kind id to replace)";
+
+    private const string UnfinishedKindId = "TODO.kindId";
 
     private const string NodeBaseName = "NodeBase";
 
@@ -48,7 +50,7 @@ public sealed class AddNodeMarkerCodeFix : CodeFixProvider
     {
         ClassDeclarationSyntax marked = type.Modifiers.Any(SyntaxKind.AbstractKeyword)
             ? NpaSyntax.PrependAttribute(type, root, NodeBaseName, null)
-            : NpaSyntax.PrependAttribute(type, root, NodeKindName, type.Identifier.Text);
+            : NpaSyntax.PrependAttribute(type, root, NodeKindName, UnfinishedKindId);
         return document.WithSyntaxRoot(root.ReplaceNode(type, marked));
     }
 }
