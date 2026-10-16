@@ -36,6 +36,23 @@ public sealed class ProjectLoaderTests : IDisposable
         return rig;
     }
 
+    // US11 scenario 5 (FR-085): loading a project through the editor's project system writes no generated file.
+    [Fact(Timeout = 120_000)]
+    public async Task LoadingAProjectWritesNoGeneratedFile()
+    {
+        string csproj = Track(GeneratedFileTree.CreateStaleSample());
+        string directory = Path.GetDirectoryName(csproj) ?? throw new InvalidOperationException("The sample has no directory.");
+        Dictionary<string, string> before = GeneratedFileTree.Read(directory);
+        Assert.NotEmpty(before);
+        await using ExtensionHost extensions = TestExtensions.CreateBuiltIn();
+        var projects = new NetPrints.Workspace.MsBuildProjectSystem(
+            EditorServices.CreateProjectSystemOptions(extensions), new ProcessRunner(), Microsoft.Extensions.Logging.Abstractions.NullLogger<NetPrints.Workspace.MsBuildProjectSystem>.Instance);
+
+        await projects.LoadAsync(csproj, TestContext.Current.CancellationToken);
+
+        Assert.Equal(before, GeneratedFileTree.Read(directory));
+    }
+
     [Fact]
     public async Task CreateProjectCancelKeepsPreviousProject()
     {

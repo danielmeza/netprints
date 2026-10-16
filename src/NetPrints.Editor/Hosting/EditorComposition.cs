@@ -9,6 +9,7 @@ using NetPrints.Editor.Hosting.Avalonia;
 using NetPrints.Editor.Lifecycle;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.State;
+using NetPrints.Extensibility.Loading;
 using NetPrints.Projects;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Mapping;
@@ -121,6 +122,15 @@ internal sealed class EditorServices : IDisposable
     private readonly RunStateTracker runState;
     private ShellHost? shellHost;
 
+    /// <summary>
+    /// The options the editor's MSBuild project system runs with: the properties the loaded extensions ask for and the editor's SDK
+    /// version. Loading a project must not write generated files (FR-085), so generation on load is off.
+    /// </summary>
+    /// <param name="extensions">The extension host whose loaded extensions name the properties to evaluate.</param>
+    /// <returns>The options.</returns>
+    internal static ProjectSystemOptions CreateProjectSystemOptions(IExtensionHost extensions) =>
+        new(new ExtensionProjectProperties(extensions), NetPrintsSdkVersion, GenerateOnLoad: false);
+
     /// <param name="host">Process-wide services created once by the host (desktop, headless tests).</param>
     /// <param name="windows">The window service, already constructed by the caller so it can hand the same
     /// instance to <paramref name="dialogs"/>/<paramref name="filePicker"/>'s active-window accessor.</param>
@@ -139,7 +149,7 @@ internal sealed class EditorServices : IDisposable
         Windows = windows;
 
         IProjectSystem projects = host.MsBuildAvailable
-            ? new MsBuildProjectSystem(new ProjectSystemOptions(new ExtensionProjectProperties(host.Extensions), NetPrintsSdkVersion), new ProcessRunner(),
+            ? new MsBuildProjectSystem(CreateProjectSystemOptions(host.Extensions), new ProcessRunner(),
                 host.LoggerFactory.CreateLogger<MsBuildProjectSystem>())
             : new NoSdkProjectSystem();
 

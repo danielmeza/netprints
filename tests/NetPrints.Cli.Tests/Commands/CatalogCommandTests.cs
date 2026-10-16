@@ -53,6 +53,23 @@ public sealed class CatalogCommandTests : IDisposable, IClassFixture<PackedFixtu
         Assert.DoesNotContain("wrote ", second.Output, StringComparison.Ordinal);
     }
 
+    // US11 scenario 3 (FR-086): a catalog checked out with CRLF line endings is not stale.
+    [Fact]
+    public async Task CheckIgnoresLineEndingDifferencesAndLeavesTheFileUntouched()
+    {
+        string[] source = ["--assembly", CatalogFixtures.LibraryAssembly, "--output", Output];
+        Assert.Equal(ExitCodes.Success, await _host.RunRealAsync(["catalog", .. source]));
+        string crlf = File.ReadAllText(Output).Replace("\n", "\r\n", StringComparison.Ordinal);
+        await File.WriteAllTextAsync(Output, crlf, TestContext.Current.CancellationToken);
+
+        var check = new CliTestHost(_directory);
+        Assert.Equal(ExitCodes.Success, await check.RunRealAsync(["catalog", .. source, "--check"]));
+
+        Assert.DoesNotContain("stale: ", check.Output, StringComparison.Ordinal);
+        Assert.Contains("up to date: " + Output, check.Output, StringComparison.Ordinal);
+        Assert.Equal(crlf, await File.ReadAllTextAsync(Output, TestContext.Current.CancellationToken));
+    }
+
     [Fact]
     public async Task CheckPassesForAnUpToDateFileAndFailsAfterTheExcludeChanges()
     {

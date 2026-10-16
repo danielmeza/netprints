@@ -213,7 +213,7 @@ trip; Windows CLI tests green; SC-015; R5-0 numbers and the M5 outcome recorded.
   in `tests/NetPrints.Editor.Tests/Reflection/`, a project with an unreadable reference loads the other references and
   shows NPW009 once as a warning (US11 scenario 2). Then `src/NetPrints.Extensibility/Loading/` and the live reflection
   provider; the NPW009 constant and guide row.
-- [ ] T014 [US11] No generation on load; the two Windows CLI defects (FR-085, FR-086, FR-087, SC-015; 1 unit). Test
+- [x] T014 [US11] No generation on load; the two Windows CLI defects (FR-085, FR-086, FR-087, SC-015; 1 unit). Test
   first: `tests/NetPrints.Editor.Tests/Hosting/ProjectLoaderTests.cs` and a Desktop `--check-project` test: loading
   writes no generated file (compare the tree before and after; US11 scenario 5); in `tests/NetPrints.Cli.Tests/`, a
   catalog checked out with CRLF line endings is not stale for `netprints catalog --check` (US11 scenario 3), and
