@@ -181,11 +181,6 @@ namespace NetPrints.Translator
             return pins.Select(pin => GetOrCreatePinName(pin)).ToList();
         }
 
-        private IEnumerable<string?> GetPinIncomingValues(IEnumerable<NodeInputDataPin> pins)
-        {
-            return pins.Select(pin => GetPinIncomingValue(pin)).ToList();
-        }
-
         /// <inheritdoc />
         public string GetOrCreateTypedPinName(NodeOutputDataPin pin)
         {

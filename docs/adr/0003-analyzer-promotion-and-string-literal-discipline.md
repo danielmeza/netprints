@@ -390,7 +390,7 @@ unchanged (`git status samples/ tests/NetPrints.Core.Tests/Fixtures` clean) and 
 ### Info-level backlog in `src/` (FU-5, P3 batch A5)
 
 `dotnet format analyzers NetPrints.slnx --severity info --verify-no-changes --no-restore` reports the rules that sit at
-`suggestion`. Over `src/` it found 932 hits (2026-10-17, A5 start). The rules whose fix is mechanical and local were fixed in
+`suggestion`. Over `src/` it found 932 hits (2026-10-16, A5 start). The rules whose fix is mechanical and local were fixed in
 code (zero-length arrays, `IndexOf(string)` on one character, `Last()` and `First()` on lists and arrays, `Append(string)` of a
 constant character, `AsSpan` for a hex parse, `FromType<T>()`, `FirstOrDefault()` on indexable lists), taking the count to 905.
 Every rule that remains is recorded here with its reason, so the count of unrecorded hits is 0. No suppression was added in
@@ -402,7 +402,7 @@ rewritten. A new hit of a rule that is not in this table is unrecorded and is fi
 | NPS003 | 532 | A hint by design ([ADR-0024](0024-analyzer-and-generator-infrastructure.md)): grouped private fields without comments are the accepted layout, and the rule never fails a build. |
 | S3267 | 59 | A loop that also skips, accumulates or throws inside the body reads better than `Where` plus `foreach`; no defect risk. |
 | CA1859 | 48 | Locals, parameters and fields are typed by `IReadOnlyList<T>` and similar interfaces on purpose, to keep contracts narrow; the devirtualisation gain is not measurable on these paths. |
-| S1135 | 33 | Each `TODO` marks a follow-up tracked in the specs or the roadmap (for example the constraint handling of `GenericType`); the marker leaves with its follow-up. |
+| S1135 | 33 | Each `TODO` is a pre-P1 marker of unfinished work (for example the constraint handling of `GenericType`). None is tracked in the specs or the roadmap as its own item; the marker stays until the code around it is rewritten, and a new `TODO` is a hit that this row does not cover. |
 | S3358 | 25 | Flat `a ? x : b ? y : z` chains; splitting them into statements adds variables without clarity. |
 | S2325, CA1822 | 19, 19 | Instance members that a view binds to, an interface requires or a test replaces; making them static changes the shape of the API for no gain. |
 | S2365 | 15 | Computed properties of the pre-P1 model (`ExecutionGraph` argument types and similar); turning them into methods breaks the editor and its tests. |
@@ -428,7 +428,6 @@ rewritten. A new hit of a rule that is not in this table is unrecorded and is fi
 | S2245 | 2 | `new Random(0)` makes the names of generated temporaries deterministic; it is not a security use. |
 | S2234 | 2 | The swapped arguments of `CanConnectNodePins(pinB, pinA)` are the symmetric retry. |
 | S1643 | 2 | Concatenation in loops over the dimensions of an array type and the arguments of one event; both are a handful of iterations. |
-| S1144 | 2 | The unused `OperatorPrefix` and `GetPinIncomingValues` of the pre-P1 translator, removed with the translator rewrite. |
 | S1066 | 2 | Nested `if` statements in the pre-P1 graph utilities and translator; merging them changes no behaviour and is left to the next rewrite of those methods. |
 | CA1806, S1848 | 1, 1 | `new ReturnNode(this)` in `MethodGraph` registers the node with the graph in its constructor. |
 | S1123, S1133, CA1041 | 1, 1, 1 | `[Obsolete]` without a message on `Variable.IsStatic`, a pre-P1 member whose removal belongs with the variable model rework. |
