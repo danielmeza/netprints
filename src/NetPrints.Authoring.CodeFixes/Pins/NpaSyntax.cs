@@ -55,7 +55,7 @@ internal static class NpaSyntax
             .WithLeadingTrivia(leading)
             .WithTrailingTrivia(SyntaxFactory.EndOfLine(newLine));
 
-        T stripped = (T)member.WithLeadingTrivia(indent);
+        T stripped = member.WithLeadingTrivia(indent);
         return (T)stripped.WithAttributeLists(stripped.AttributeLists.Insert(0, list));
     }
 

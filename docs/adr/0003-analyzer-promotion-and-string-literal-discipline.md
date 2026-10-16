@@ -437,6 +437,7 @@ rewritten. A new hit of a rule that is not in this table is unrecorded and is fi
 | S3168 | 1 | `GraphDragDrop.Moved` is an event-style handler called from a pointer event. |
 | S3264 | 1 | `NodeGraphViewModel.NodeRevealRequested` is subscribed by `GraphEditorView`; the analyzer sees no raise inside the declaring type. |
 | S3427, S1939, S1994, S1871 | 1 each | Overload and interface shapes that mirror the contract tables (`OpenSearchAsync`, `IBuiltInTranslationContext`) and a unique-name search loop (`ProjectLoader`). |
+| S3459 | 1 | `MakeArrayTypeNode.ElementTypePin`: a private partial property that only declares the pin; the pin generator supplies the getter, so the analyzer sees an unassigned auto-property. |
 | S3241, S3881, S3442, S3376, S3928, S2306, S2219, S1199, S1186, S927, S6618, S6607, S4487, MVVMTK0042, CA1868, CA1846 | 1 each | One-off style hints in pre-P1 or generated-pattern code (an `await` identifier mirroring a node kind, `ClassTranslationFailure` naming, an empty built-in translator, the `fileSystem` field of `BackupService`, which only its constructor reads); none points at a defect. |
 
 ## References
