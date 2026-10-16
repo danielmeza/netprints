@@ -193,6 +193,7 @@ public class PinConventionGeneratorTests
                 [global::NetPrints.Graph.NodePinLayout("in.exec.Execution", "out.exec.Then")]
                 partial class ExecBase
                 {
+                    /// <summary>Declares the pins of this class.</summary>
                     protected void DeclarePins()
                     {
                         AddInputExecPin("Execution");

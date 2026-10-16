@@ -7,23 +7,22 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node that returns the default value of a type.
     /// </summary>
-    public class DefaultNode : Node
+    [NodeKind("default")]
+    public sealed partial class DefaultNode : Node
     {
-        /// <summary>
-        /// Pin for the default value.
-        /// </summary>
-        public NodeOutputDataPin DefaultValuePin
-        {
-            get { return OutputDataPins[0]; }
-        }
+        private readonly ObservableValue<BaseType> defaultType = new(TypeSpecifier.FromType<object>());
 
         /// <summary>
         /// Input type pin for the type to cast to.
         /// </summary>
-        public NodeInputTypePin TypePin
-        {
-            get { return InputTypePins[0]; }
-        }
+        public partial NodeInputTypePin TypePin { get; }
+
+        /// <summary>
+        /// Pin for the default value.
+        /// </summary>
+        [Pin("Default")]
+        [PinType(nameof(defaultType))]
+        public partial NodeOutputDataPin DefaultValuePin { get; }
 
         /// <summary>
         /// Type for the default value output. Inferred from input type pin.
@@ -40,8 +39,7 @@ namespace NetPrints.Graph
         public DefaultNode(NodeGraph graph)
             : base(graph)
         {
-            AddInputTypePin("Type");
-            AddOutputDataPin("Default", Type);
+            DeclarePins();
         }
 
         /// <summary>

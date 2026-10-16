@@ -311,7 +311,7 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
 
 ### Batch B5 — model: sonnet — T029–T030 — 4 units
 
-- [ ] T029 [US2] Built-in node kinds declare their pins (FR-010, SC-002; 2 units). Red/green: the S0 golden
+- [x] T029 [US2] Built-in node kinds declare their pins (FR-010, SC-002; 2 units). Red/green: the S0 golden
   (`tests/NetPrints.Core.Tests/Fixtures/Golden/NodePinLayout.golden.txt`, `NodePinLayoutTests`) is the invariant,
   green before and after. Convert every built-in node kind in `src/NetPrints.Core/Graph/` to typed pin properties
   declared by convention, with `[NodeKind]` or `[NodeBase]`, and `[Pin("…")]` only where the property name does not

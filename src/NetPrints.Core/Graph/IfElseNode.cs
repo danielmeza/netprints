@@ -6,40 +6,30 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing an if / else expression.
     /// </summary>
-    public class IfElseNode : Node
+    [NodeKind("ifElse")]
+    public sealed partial class IfElseNode : Node
     {
-        /// <summary>
-        /// Pin that gets executed if the statement was true.
-        /// </summary>
-        public NodeOutputExecPin TruePin
-        {
-            get { return OutputExecPins[0]; }
-        }
-
-        /// <summary>
-        /// Pin that gets executed if the statement was false.
-        /// </summary>
-        public NodeOutputExecPin FalsePin
-        {
-            get { return OutputExecPins[1]; }
-        }
-
         /// <summary>
         /// Input execution pin that executes this node.
         /// </summary>
-        public NodeInputExecPin ExecutionPin
-        {
-            get { return InputExecPins[0]; }
-        }
+        [Pin("Exec")]
+        public partial NodeInputExecPin ExecutionPin { get; }
 
         /// <summary>
         /// Input data pin for the condition of this node.
         /// Expects a boolean value.
         /// </summary>
-        public NodeInputDataPin ConditionPin
-        {
-            get { return InputDataPins[0]; }
-        }
+        public partial NodeInputDataPin<bool> ConditionPin { get; }
+
+        /// <summary>
+        /// Pin that gets executed if the statement was true.
+        /// </summary>
+        public partial NodeOutputExecPin TruePin { get; }
+
+        /// <summary>
+        /// Pin that gets executed if the statement was false.
+        /// </summary>
+        public partial NodeOutputExecPin FalsePin { get; }
 
         /// <summary>
         /// Adds this node to <paramref name="graph"/> and gives it its execution, condition and
@@ -49,12 +39,8 @@ namespace NetPrints.Graph
         public IfElseNode(NodeGraph graph)
             : base(graph)
         {
-            AddInputExecPin("Exec");
-
-            AddInputDataPin("Condition", TypeSpecifier.FromType<bool>());
-
-            AddOutputExecPin("True");
-            AddOutputExecPin("False");
+            DeclarePins();
+            ConditionPin.UnconnectedValue = null;
         }
 
         /// <summary>

@@ -13,15 +13,14 @@ namespace NetPrints.Graph
     /// interfaces as input type pins, so inheritance participates in the same connection and
     /// type-inference machinery as any other node.
     /// </summary>
-    public class ClassReturnNode : Node
+    [NodeKind("classReturn")]
+    public sealed partial class ClassReturnNode : Node
     {
         /// <summary>
         /// Input type pin for the class's base type.
         /// </summary>
-        public NodeInputTypePin SuperTypePin
-        {
-            get => InputTypePins[0];
-        }
+        [Pin("BaseType")]
+        public partial NodeInputTypePin SuperTypePin { get; }
 
         /// <summary>
         /// Input type pins for the class's implemented interfaces, one per interface added with
@@ -39,7 +38,7 @@ namespace NetPrints.Graph
         public ClassReturnNode(ClassGraph graph)
             : base(graph)
         {
-            AddInputTypePin("BaseType");
+            DeclarePins();
         }
 
         /// <summary>

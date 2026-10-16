@@ -9,15 +9,14 @@ namespace NetPrints.Graph
     /// <summary>
     /// Represents a node which returns from a method.
     /// </summary>
-    public class ReturnNode : Node
+    [NodeKind("return")]
+    public sealed partial class ReturnNode : Node
     {
         /// <summary>
         /// Execution pin that returns from the method when executed.
         /// </summary>
-        public NodeInputExecPin ReturnPin
-        {
-            get { return InputExecPins[0]; }
-        }
+        [Pin("Exec")]
+        public partial NodeInputExecPin ReturnPin { get; }
 
         /// <summary>
         /// Same as the base <see cref="Node.MethodGraph"/>, but non-nullable: the constructor only
@@ -35,7 +34,7 @@ namespace NetPrints.Graph
         public ReturnNode(MethodGraph graph)
             : base(graph)
         {
-            AddInputExecPin("Exec");
+            DeclarePins();
 
             SetupSecondaryNodeEvents();
         }

@@ -8,7 +8,8 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing the initial execution node of a method.
     /// </summary>
-    public class MethodEntryNode : ExecutionEntryNode
+    [NodeKind("methodEntry")]
+    public sealed partial class MethodEntryNode : ExecutionEntryNode
     {
         /// <summary>
         /// Same as the base <see cref="Node.MethodGraph"/>, but non-nullable: the constructor only
@@ -24,7 +25,7 @@ namespace NetPrints.Graph
         public MethodEntryNode(MethodGraph graph)
             : base(graph)
         {
-            AddOutputExecPin("Exec");
+            DeclarePins();
         }
 
         /// <summary>

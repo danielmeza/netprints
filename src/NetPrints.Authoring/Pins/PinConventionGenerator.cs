@@ -92,6 +92,11 @@ public sealed class PinConventionGenerator : IIncrementalGenerator
 
     private static void Declare(StringBuilder text, PinSetModel model, int depth)
     {
+        if (!model.IsSealed)
+        {
+            Line(text, depth, "/// <summary>Declares the pins of this class.</summary>");
+        }
+
         Line(text, depth, (model.IsSealed ? "private" : "protected") + (model.HasBase ? " new" : string.Empty) + " void DeclarePins()");
         Line(text, depth, "{");
         if (model.HasBase)

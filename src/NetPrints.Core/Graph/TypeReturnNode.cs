@@ -7,12 +7,13 @@ namespace NetPrints.Graph
     /// A <see cref="TypeGraph"/>'s single fixed node, analogous to <see cref="ClassReturnNode"/>: it
     /// holds the graph's resolved type as a single input type pin.
     /// </summary>
-    public class TypeReturnNode : Node
+    [NodeKind("typeReturn")]
+    public sealed partial class TypeReturnNode : Node
     {
         /// <summary>
         /// Input type pin for the graph's resolved type.
         /// </summary>
-        public NodeInputTypePin TypePin => InputTypePins[0];
+        public partial NodeInputTypePin TypePin { get; }
 
         /// <summary>
         /// Adds this node to <paramref name="graph"/> and gives it its type input type pin.
@@ -21,7 +22,7 @@ namespace NetPrints.Graph
         public TypeReturnNode(TypeGraph graph)
             : base(graph)
         {
-            AddInputTypePin("Type");
+            DeclarePins();
         }
     }
 }

@@ -15,6 +15,7 @@ namespace NetPrints.Graph
     /// (<see cref="EventEntryNode(Core.EventGraph, MethodSpecifier)"/>, argument pins matching the base
     /// signature). Each entry of an event graph is translated into its own method, in node order.
     /// </summary>
+    [NodeKind("eventEntry")]
     public sealed partial class EventEntryNode : Node
     {
         /// <summary>
@@ -46,7 +47,8 @@ namespace NetPrints.Graph
         /// <summary>
         /// Output execution pin that initially executes when the event fires.
         /// </summary>
-        public NodeOutputExecPin InitialExecutionPin => OutputExecPins[0];
+        [Pin("Exec")]
+        public partial NodeOutputExecPin InitialExecutionPin { get; }
 
         /// <summary>
         /// Creates a custom event entry: one output execution pin, no arguments.
@@ -58,7 +60,7 @@ namespace NetPrints.Graph
         {
             ArgumentNullException.ThrowIfNull(eventName);
 
-            AddOutputExecPin("Exec");
+            DeclarePins();
             EventName = eventName;
             Visibility = MemberVisibility.Public;
         }
@@ -75,7 +77,7 @@ namespace NetPrints.Graph
         {
             ArgumentNullException.ThrowIfNull(overridden);
 
-            AddOutputExecPin("Exec");
+            DeclarePins();
             EventName = overridden.Name;
             Visibility = overridden.Visibility;
             Modifiers = MethodModifiers.Override;

@@ -10,9 +10,15 @@ namespace NetPrints.Graph
     /// (eg. a generic argument), as opposed to <see cref="MakeArrayNode"/>, which creates array
     /// values at runtime.
     /// </summary>
-    public class MakeArrayTypeNode : Node
+    [NodeKind("makeArrayType")]
+    public sealed partial class MakeArrayTypeNode : Node
     {
-        private readonly ObservableValue<BaseType> arrayType;
+        private readonly ObservableValue<BaseType> arrayType = new(ArrayOf(TypeSpecifier.FromType<object>()));
+
+        private partial NodeInputTypePin ElementTypePin { get; }
+
+        [PinType(nameof(arrayType))]
+        internal partial NodeOutputTypePin ArrayTypePin { get; }
 
         /// <summary>
         /// Adds this node to <paramref name="graph"/> and gives it its element-type input type pin and
@@ -22,11 +28,7 @@ namespace NetPrints.Graph
         public MakeArrayTypeNode(NodeGraph graph)
             : base(graph)
         {
-            AddInputTypePin("ElementType");
-
-            arrayType = new ObservableValue<BaseType>(GetArrayType());
-
-            AddOutputTypePin("ArrayType", arrayType);
+            DeclarePins();
         }
 
         /// <summary>
@@ -43,11 +45,11 @@ namespace NetPrints.Graph
             arrayType.Value = GetArrayType();
         }
 
-        private BaseType GetArrayType()
-        {
-            var elementType = InputTypePins[0].InferredType?.Value ?? TypeSpecifier.FromType<object>();
-            return new TypeSpecifier(elementType.Name + "[]", false, false, null);
-        }
+        private BaseType GetArrayType() =>
+            ArrayOf(ElementTypePin.InferredType?.Value ?? TypeSpecifier.FromType<object>());
+
+        private static TypeSpecifier ArrayOf(BaseType elementType) =>
+            new(elementType.Name + "[]", false, false, null);
 
         /// <summary>
         /// Returns the array type's short name.
