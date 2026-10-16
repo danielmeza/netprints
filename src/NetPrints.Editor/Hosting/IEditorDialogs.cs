@@ -46,6 +46,13 @@ public interface IEditorDialogs
     /// <returns><see langword="true"/> to trust the project, <see langword="false"/> to open it without them.</returns>
     Task<bool> ConfirmTrustAsync(string projectPath, IReadOnlyList<string> extensionFolders);
 
+    /// <summary>Shows a view model in a window of its own, with its view found by data template, until the window is closed.</summary>
+    /// <param name="title">The window title.</param>
+    /// <param name="viewModel">The view model; closing the window is the user's, or the view model's own close request when it implements <see cref="NetPrints.Editor.Dialogs.IDialogCloseSource"/>.</param>
+    /// <param name="cancellationToken">Closes the window when cancelled.</param>
+    /// <returns>A task that completes when the window is closed.</returns>
+    Task ShowViewModelAsync(string title, object viewModel, CancellationToken cancellationToken);
+
     /// <summary>Shows the keyboard shortcuts sheet until it is closed.</summary>
     /// <param name="sheet">The commands and their shortcuts.</param>
     Task ShowKeyboardShortcutsAsync(KeyboardShortcutsViewModel sheet);

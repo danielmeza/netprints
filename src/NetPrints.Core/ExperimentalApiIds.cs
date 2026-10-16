@@ -27,6 +27,9 @@ public static class ExperimentalApiIds
     /// <summary>The C# feature API: <c>CSharpFeature</c>, <c>CSharpFeatureId</c>, <c>Availability</c> and <c>NodeSearchEntry.Requires</c>.</summary>
     public const string CSharpFeatures = "NPXE0007";
 
+    /// <summary>The extension services API: <c>IExtensionBuilder.Services</c>, <c>HostExports</c> and the per-extension providers and sessions of <c>ExtensionRegistry</c>.</summary>
+    public const string ExtensionServices = "NPXE0008";
+
     /// <summary>The extension string resources API: <c>IExtensionBuilder.AddStringResources</c> and the registry's <c>StringResources</c>.</summary>
     public const string StringResources = "NPXE0011";
 

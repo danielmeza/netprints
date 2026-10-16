@@ -24,6 +24,10 @@ internal sealed class BufferedEditorContributions(string extensionId, Func<bool>
 
     public IEditorContributions AddGoToProvider(IGoToProvider provider) => Buffer(provider, target => target.AddGoToProvider(provider));
 
+    public IEditorContributions AddStatusBarItem(StatusBarItemDescriptor item) => Buffer(item, target => target.AddStatusBarItem(item));
+
+    public IEditorContributions AddDialog(DialogDescriptor dialog) => Buffer(dialog, target => target.AddDialog(dialog));
+
     public IEditorContributions AddViewResources(string resourceUri)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(resourceUri);

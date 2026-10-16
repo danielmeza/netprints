@@ -29,6 +29,7 @@ public class ExperimentalOptInTests
         { "NPXE0005", "public sealed class Fx { public NetPrints.Extensibility.Editor.IProjectSession? Session; }" },
         { "NPXE0006", "public sealed class Fx { public NetPrints.Extensibility.Nodes.INodeSuggestionProvider? Provider; }" },
         { "NPXE0007", "public sealed class Fx { public NetPrints.Extensibility.Nodes.CSharpFeature? Feature; }" },
+        { "NPXE0008", "public sealed class Fx { public int Count(NetPrints.Extensibility.IExtensionBuilder builder) => builder.Services.Count; }" },
         { "NPXE0011", "public sealed class Fx { public void Add(NetPrints.Extensibility.IExtensionBuilder builder, ResourceManager resources) => builder.AddStringResources(resources); }" },
     };
 

@@ -65,7 +65,7 @@ internal static class Program
 
         var settings = new JsonFileSettingsStore(JsonFileSettingsStore.DefaultFilePath(), loggerFactory.CreateLogger<JsonFileSettingsStore>());
         var extensions = new ExtensionHost(
-            new ExtensionLoaderOptions(GetExtensionSearchDirectories(settings), [], [BuiltInExtension.InProcessEntry]), loggerFactory);
+            new ExtensionLoaderOptions(GetExtensionSearchDirectories(settings), [], [BuiltInExtension.InProcessEntry]) { SettingsStore = settings }, loggerFactory);
         HostChannelSelection channel = HostChannelSelector.Select(
             extensions.Current, GetEnvironment(), loggerFactory.CreateLogger(nameof(HostChannelSelector)));
         EditorApp.HostServices = new EditorHostServices(loggerFactory, extensions, settings, channel.Channel, channel.Error, msBuildAvailable,

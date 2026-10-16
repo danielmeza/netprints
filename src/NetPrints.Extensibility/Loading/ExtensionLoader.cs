@@ -47,7 +47,7 @@ public sealed class ExtensionLoader
         var candidates = Discover(failures, cancellationToken);
         var ordered = Order(candidates, failures);
 
-        var registryBuilder = new RegistryBuilder(loggerFactory.CreateLogger<ExtensionRegistry>());
+        var registryBuilder = new RegistryBuilder(loggerFactory.CreateLogger<ExtensionRegistry>(), loggerFactory, options.SettingsStore);
         var loaded = new List<ExtensionLoadResult>();
         var loadedIds = new HashSet<string>(StringComparer.Ordinal);
         var contexts = new Dictionary<string, ExtensionLoadContext>(StringComparer.Ordinal);
@@ -295,7 +295,7 @@ public sealed class ExtensionLoader
             }
         }
 
-        var builder = new ExtensionBuilder(manifest, loggerFactory);
+        var builder = new ExtensionBuilder(manifest, loggerFactory, extension.GetType().Assembly);
         ExtensionContributions contributions;
         try
         {

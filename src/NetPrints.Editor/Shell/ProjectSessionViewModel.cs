@@ -2,9 +2,11 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.DependencyInjection;
 using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Lifecycle;
 using NetPrints.Editor.State;
@@ -30,6 +32,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     private readonly Dictionary<ClassGraph, UndoRedoStack> undoStacks = [];
     private readonly Dictionary<ClassGraph, string> classPaths = [];
     private readonly Dictionary<ClassGraph, ClassContext> contexts = [];
+    private readonly Dictionary<string, IServiceScope> extensionSessions = new(StringComparer.Ordinal);
     private Task<bool>? saving;
     private bool saveRequested;
     private Task<bool>? flow;
@@ -264,6 +267,20 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     /// <returns>The task to await.</returns>
     public Task WaitForBuildAsync() => flow is { IsCompleted: false } current ? current : Task.CompletedTask;
 
+    /// <summary>Gets the session-scoped services of one extension: the scoped registrations of its provider, living until the session is disposed.</summary>
+    /// <param name="extensionId">The extension id, as <see cref="IContributionRegistry.OwnerOf"/> gives it for a contribution.</param>
+    /// <returns>The services; an empty provider for an id that registered none.</returns>
+    public IServiceProvider ExtensionServices(string extensionId)
+    {
+        ArgumentNullException.ThrowIfNull(extensionId);
+        if (!extensionSessions.ContainsKey(extensionId))
+        {
+            extensionSessions[extensionId] = context.Extensions.Current.OpenSession(extensionId);
+        }
+
+        return extensionSessions[extensionId].ServiceProvider;
+    }
+
     /// <summary>Stops the running program and its child processes; does nothing when none runs.</summary>
     public void Stop() => runCancellation?.Cancel();
 
@@ -279,6 +296,12 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         }
 
         contexts.Clear();
+        foreach (IServiceScope scope in extensionSessions.Values)
+        {
+            scope.Dispose();
+        }
+
+        extensionSessions.Clear();
         foreach (UndoRedoStack stack in undoStacks.Values)
         {
             stack.Changed -= OnUndoChanged;

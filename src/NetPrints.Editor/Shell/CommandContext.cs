@@ -17,6 +17,8 @@ namespace NetPrints.Editor.Shell;
 /// <param name="Parameter">An optional command parameter, such as the id of a recent project.</param>
 /// <param name="Scope">The scope the invocation comes from: <see cref="CommandScope.Graph"/> for a key pressed in the canvas, <see cref="CommandScope.ProjectTree"/> for the tree, <see cref="CommandScope.Global"/> when no surface is known (a menu, a bar button).</param>
 /// <param name="Host">The editor services the typed dialogs and output wrap; set by the shell's provider.</param>
+/// <param name="Contributions">The registry the dialogs shown by id are looked up in, set by the <see cref="CommandInvoker"/>.</param>
+/// <param name="Owner">The id of the extension that owns the command being run, set by the <see cref="CommandInvoker"/>; its services are the typed context's <see cref="ICommandContext.Services"/>.</param>
 public sealed record CommandContext(
     IShell Shell,
     ProjectSessionViewModel? Session,
@@ -25,25 +27,27 @@ public sealed record CommandContext(
     CommandSelection Selection,
     object? Parameter = null,
     CommandScope Scope = CommandScope.Global,
-    EditorContext? Host = null) : ICommandContext
+    EditorContext? Host = null,
+    string? Owner = null,
+    IContributionRegistry? Contributions = null) : ICommandContext
 {
     /// <inheritdoc/>
     IEditorShell ICommandContext.Shell => new EditorShellFacade(() => Shell);
 
     /// <inheritdoc/>
-    IProjectSession? ICommandContext.Session => Session is { } session && Host is { } host ? new ProjectSessionFacade(session, host, ActiveGraph) : null;
+    IProjectSession? ICommandContext.Session => Session is { } session && Host is { } host ? new ProjectSessionFacade(session, host, ActiveGraph, Owner) : null;
 
     /// <inheritdoc/>
     IGraphEditor? ICommandContext.ActiveGraph => ActiveGraph is { } graph ? new GraphEditorFacade(graph) : null;
 
     /// <inheritdoc/>
-    IDialogService ICommandContext.Dialogs => new EditorDialogService(RequireHost().Dialogs);
+    IDialogService ICommandContext.Dialogs => new EditorDialogService(RequireHost().Dialogs, Contributions, () => new EditorContexts(this));
 
     /// <inheritdoc/>
     IEditorOutput ICommandContext.Output => new EditorOutput(RequireHost().RunState);
 
     /// <inheritdoc/>
-    IServiceProvider ICommandContext.Services => EmptyServiceProvider.Instance;
+    IServiceProvider ICommandContext.Services => Owner is { } owner && Host is { } host ? host.Extensions.Current.ServicesOf(owner) : EmptyServiceProvider.Instance;
 
     /// <summary>Gets the editor's own context behind the typed one.</summary>
     /// <param name="context">The context a handler was given.</param>

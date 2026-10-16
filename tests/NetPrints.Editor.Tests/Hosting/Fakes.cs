@@ -204,6 +204,15 @@ public sealed class FakeDialogs : IEditorDialogs
         return Task.CompletedTask;
     }
 
+    /// <summary>The titles and view models shown with <see cref="ShowViewModelAsync"/>.</summary>
+    public List<(string Title, object ViewModel)> ViewModelDialogs { get; } = [];
+
+    public Task ShowViewModelAsync(string title, object viewModel, CancellationToken cancellationToken)
+    {
+        ViewModelDialogs.Add((title, viewModel));
+        return Task.CompletedTask;
+    }
+
     public Task ShowReferencesAsync(ReferenceListViewModel references)
     {
         ReferenceDialogs.Add(references);

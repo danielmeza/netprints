@@ -29,6 +29,8 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
     private readonly List<CommandDescriptor> commands = [];
     private readonly List<PanelDescriptor> panels = [];
     private readonly List<DashboardTileDescriptor> tiles = [];
+    private readonly List<StatusBarItemDescriptor> statusBarItems = [];
+    private readonly List<DialogDescriptor> dialogs = [];
     private readonly List<ProjectTemplateDescriptor> templates = [];
     private readonly List<ContextMenuItemDescriptor> menuItems = [];
     private readonly List<ITooltipProvider> tooltipProviders = [];
@@ -88,6 +90,10 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
 
         public IEditorContributions AddGoToProvider(IGoToProvider provider) => Forward(() => registry.AddGoToProvider(provider));
 
+        public IEditorContributions AddStatusBarItem(StatusBarItemDescriptor item) => Forward(() => registry.AddStatusBarItem(item));
+
+        public IEditorContributions AddDialog(DialogDescriptor dialog) => Forward(() => registry.AddDialog(dialog));
+
         public IEditorContributions AddViewResources(string resourceUri) => Forward(() => registry.AddViewResources(owner, resourceUri));
 
         private OwnerFacet Forward(Action add)
@@ -105,6 +111,12 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
 
     /// <inheritdoc/>
     public IReadOnlyList<DashboardTileDescriptor> DashboardTiles => tiles;
+
+    /// <inheritdoc/>
+    public IReadOnlyList<StatusBarItemDescriptor> StatusBarItems => statusBarItems;
+
+    /// <inheritdoc/>
+    public IReadOnlyList<DialogDescriptor> Dialogs => dialogs;
 
     /// <inheritdoc/>
     public IReadOnlyList<ProjectTemplateDescriptor> ProjectTemplates => templates;
@@ -191,6 +203,32 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
         if (TryAccept(tile.Id, !IsBlank(tile.Title) && tile.CreateViewModel is not null, "a title and a view model factory", tiles.Select(t => t.Id)))
         {
             tiles.Add(tile);
+        }
+    }
+
+    /// <summary>Adds a status bar item; an invalid or duplicate one is ignored.</summary>
+    /// <param name="item">The item.</param>
+    /// <exception cref="InvalidOperationException">The registry is frozen.</exception>
+    public void AddStatusBarItem(StatusBarItemDescriptor item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        ThrowIfFrozen();
+        if (TryAccept(item.Id, item.CreateViewModel is not null, "a view model factory", statusBarItems.Select(s => s.Id)))
+        {
+            statusBarItems.Add(item);
+        }
+    }
+
+    /// <summary>Adds a dialog; an invalid or duplicate one is ignored.</summary>
+    /// <param name="dialog">The dialog.</param>
+    /// <exception cref="InvalidOperationException">The registry is frozen.</exception>
+    public void AddDialog(DialogDescriptor dialog)
+    {
+        ArgumentNullException.ThrowIfNull(dialog);
+        ThrowIfFrozen();
+        if (TryAccept(dialog.Id, !IsBlank(dialog.Title) && dialog.CreateViewModel is not null, "a title and a view model factory", dialogs.Select(d => d.Id)))
+        {
+            dialogs.Add(dialog);
         }
     }
 

@@ -189,6 +189,7 @@ disappear in a minor release.
 | `NPXE0005` | Editor contributions: the typed contexts (`ICommandContext`, `IPanelContext`, `IStartPageContext`, `IStatusBarContext`, `ISettingsPageContext`, `IDialogContext`), `IProjectSession`, `IGraphEditor`, `IEditorShell`, `IDialogService`, `IEditorOutput`, `IEditorUndo`, `ICommandHandler`, `CommandScope`, `CommandSelection`. |
 | `NPXE0006` | Node search providers: `INodeSuggestionProvider`, `NodeSearchContext`, `NodeSearchEntry`, `INodeCreationContext`, `IExtensionBuilder.AddSuggestionProvider`, `ExtensionRegistry.SuggestionProviders`. |
 | `NPXE0007` | C# features and requirements: `CSharpFeature`, `CSharpFeatureId`, `Availability`, `NodeSearchEntry.Requires`. |
+| `NPXE0008` | Extension services: `IExtensionBuilder.Services`, `HostExports`, `ExtensionRegistry.ServicesOf`, `ExtensionRegistry.OpenSession`. |
 | `NPXE0011` | Extension string resources: `IExtensionBuilder.AddStringResources`, `ExtensionRegistry.StringResources`. |
 
 Stable since 0.4.0, with no opt-in: the typed pins and the pin attributes (`[NodeKind]`, `[NodeBase]`, `[Pin]`,

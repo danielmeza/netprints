@@ -1,5 +1,7 @@
+using System.Reflection;
 using System.Resources;
 using System.Text.Json.Serialization.Metadata;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NetPrints.Catalog;
 using NetPrints.Core;
@@ -28,13 +30,15 @@ internal sealed record ExtensionContributions(
     IReadOnlyList<ExtensionSettingsDescriptor> Settings,
     IReadOnlyList<CatalogProfile> CatalogProfiles,
     IReadOnlyList<ResourceManager> StringResources,
-    IReadOnlyList<INodeSuggestionProvider> SuggestionProviders);
+    IReadOnlyList<INodeSuggestionProvider> SuggestionProviders,
+    IServiceCollection Services,
+    Assembly OwnAssembly);
 
 /// <summary>
 /// The builder handed to <see cref="INetPrintsExtension.Register"/>: it buffers, and the loader commits the
 /// buffer only if <c>Register</c> returns normally.
 /// </summary>
-internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactory loggerFactory) : IExtensionBuilder
+internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactory loggerFactory, Assembly ownAssembly) : IExtensionBuilder
 {
     private readonly List<INodeLibrary> nodeLibraries = [];
     private readonly List<IClassEmitter> classEmitters = [];
@@ -61,6 +65,8 @@ internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactor
     internal BufferedEditorContributions BufferedEditor => editor ??= new BufferedEditorContributions(Manifest.Id, () => sealedBuilder);
 
     public ILoggerFactory LoggerFactory { get; } = loggerFactory;
+
+    public IServiceCollection Services { get; } = new ServiceCollection();
 
     public IExtensionBuilder AddNodeLibrary(INodeLibrary library) => Add(nodeLibraries, library);
 
@@ -99,7 +105,7 @@ internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactor
         sealedBuilder = true;
         return new ExtensionContributions(
             [.. nodeLibraries], [.. classEmitters], [.. memberEmitters], [.. typeCatalogs], [.. profiles], [.. jsonResolvers], [.. projectProperties],
-            [.. hostChannels], [.. settings], [.. catalogProfiles], [.. stringResources], [.. suggestionProviders]);
+            [.. hostChannels], [.. settings], [.. catalogProfiles], [.. stringResources], [.. suggestionProviders], Services, ownAssembly);
     }
 
     private ExtensionBuilder Add<T>(List<T> list, T item)

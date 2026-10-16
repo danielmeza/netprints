@@ -14,6 +14,7 @@
     <NetPrintsExperimentalOptIn Include="NPXE0005" />
     <NetPrintsExperimentalOptIn Include="NPXE0006" />
     <NetPrintsExperimentalOptIn Include="NPXE0007" />
+    <NetPrintsExperimentalOptIn Include="NPXE0008" />
     <NetPrintsExperimentalOptIn Include="NPXE0011" />
   </ItemGroup>
   <ItemGroup>

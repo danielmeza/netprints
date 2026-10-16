@@ -41,8 +41,22 @@ internal sealed class EditorShellFacade(Func<Shell.IShell> shell) : IEditorShell
 
 /// <summary>The dialogs of the editor as an extension sees them.</summary>
 /// <param name="dialogs">The editor's dialogs.</param>
-internal sealed class EditorDialogService(IEditorDialogs dialogs) : IDialogService
+/// <param name="registry">The registry the dialogs shown by id are looked up in, or null for none.</param>
+/// <param name="context">Creates the context a dialog's view model is created with, or null for none.</param>
+internal sealed class EditorDialogService(IEditorDialogs dialogs, IContributionRegistry? registry = null, Func<IDialogContext>? context = null) : IDialogService
 {
+    /// <inheritdoc/>
+    public async Task<object> ShowDialogAsync(string dialogId, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(dialogId);
+        DialogDescriptor dialog = registry?.Dialogs.FirstOrDefault(candidate => candidate.Id == dialogId)
+            ?? throw new ArgumentException($"No dialog is registered with the id '{dialogId}'.", nameof(dialogId));
+        IDialogContext dialogContext = context?.Invoke() ?? throw new InvalidOperationException("This dialog service was built without a context.");
+        object viewModel = dialog.CreateViewModel(dialogContext);
+        await dialogs.ShowViewModelAsync(dialog.Title, viewModel, cancellationToken).ConfigureAwait(true);
+        return viewModel;
+    }
+
     /// <inheritdoc/>
     public void ShowNotification(string title, string message) => dialogs.ShowNotification(title, message);
 
@@ -106,7 +120,8 @@ internal sealed class GraphEditorFacade(NodeGraphViewModel graph) : IGraphEditor
 /// <param name="session">The session.</param>
 /// <param name="host">The editor services, for the reflection provider.</param>
 /// <param name="activeGraph">The graph being edited, or null.</param>
-internal sealed class ProjectSessionFacade(Shell.ProjectSessionViewModel session, EditorContext host, NodeGraphViewModel? activeGraph) : IProjectSession
+/// <param name="owner">The extension whose session-scoped services <see cref="Services"/> gives, or null for none.</param>
+internal sealed class ProjectSessionFacade(Shell.ProjectSessionViewModel session, EditorContext host, NodeGraphViewModel? activeGraph, string? owner = null) : IProjectSession
 {
     /// <inheritdoc/>
     public Project Project => session.Project;
@@ -121,5 +136,5 @@ internal sealed class ProjectSessionFacade(Shell.ProjectSessionViewModel session
     public IGraphEditor? ActiveGraph => activeGraph is null ? null : new GraphEditorFacade(activeGraph);
 
     /// <inheritdoc/>
-    public IServiceProvider Services => EmptyServiceProvider.Instance;
+    public IServiceProvider Services => owner is null ? EmptyServiceProvider.Instance : session.ExtensionServices(owner);
 }

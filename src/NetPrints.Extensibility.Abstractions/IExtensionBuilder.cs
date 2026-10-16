@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Resources;
 using System.Text.Json.Serialization.Metadata;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NetPrints.Catalog;
 using NetPrints.Core;
@@ -129,6 +130,13 @@ public interface IExtensionBuilder
     /// <returns>This builder.</returns>
     [Experimental(ExperimentalApiIds.NodeSearchProviders, UrlFormat = ExperimentalApiIds.UrlFormat)]
     IExtensionBuilder AddSuggestionProvider(INodeSuggestionProvider provider);
+
+    /// <summary>
+    /// Gets the collection the extension registers its own services in; the registry builds one provider from it for this extension alone, plus the
+    /// host exports of <c>HostExports</c>. A registration that replaces or configures a host service is rejected (<c>NPX006</c>) and the extension stays loaded.
+    /// </summary>
+    [Experimental(ExperimentalApiIds.ExtensionServices, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    IServiceCollection Services { get; }
 
     /// <summary>
     /// Gets the editor contributions of this extension. A host without an editor (the CLI, the SDK generator, the build) ignores

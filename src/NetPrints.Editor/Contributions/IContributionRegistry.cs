@@ -17,6 +17,12 @@ public interface IContributionRegistry
     /// <summary>Gets the accepted dashboard tiles, in registration order.</summary>
     IReadOnlyList<DashboardTileDescriptor> DashboardTiles { get; }
 
+    /// <summary>Gets the accepted status bar items, in registration order.</summary>
+    IReadOnlyList<StatusBarItemDescriptor> StatusBarItems { get; }
+
+    /// <summary>Gets the accepted dialogs, in registration order.</summary>
+    IReadOnlyList<DialogDescriptor> Dialogs { get; }
+
     /// <summary>Gets the accepted project templates, in registration order.</summary>
     IReadOnlyList<ProjectTemplateDescriptor> ProjectTemplates { get; }
 

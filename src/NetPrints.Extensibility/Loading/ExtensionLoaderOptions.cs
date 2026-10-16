@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using NetPrints.Core;
 using NetPrints.Extensibility.Editor;
+using NetPrints.Extensibility.Settings;
 
 namespace NetPrints.Extensibility.Loading;
 
@@ -24,6 +25,13 @@ public sealed record ExtensionLoaderOptions(
     /// </summary>
     [Experimental(ExperimentalApiIds.EditorContributions, UrlFormat = ExperimentalApiIds.UrlFormat)]
     public Func<ExtensionManifest, IEditorContributions>? EditorContributions { get; init; }
+
+    /// <summary>
+    /// Gets the store behind the <c>IOptionsMonitor&lt;T&gt;</c> of an extension's own settings section (<see cref="HostExports"/>);
+    /// <see langword="null"/> makes the monitors return the sections' defaults.
+    /// </summary>
+    [Experimental(ExperimentalApiIds.ExtensionServices, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    public ISettingsStore? SettingsStore { get; init; }
 
     /// <summary>
     /// Only the built-in extension: no search directories and no folders.

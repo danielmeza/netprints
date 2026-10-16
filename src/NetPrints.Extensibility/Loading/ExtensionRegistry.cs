@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Resources;
 using System.Text.Json.Serialization.Metadata;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NetPrints.Catalog;
 using NetPrints.Core;
@@ -20,7 +21,11 @@ namespace NetPrints.Extensibility.Loading;
 /// </summary>
 public sealed class ExtensionRegistry : IAsyncDisposable
 {
+    private static readonly ServiceProvider NoServices = new ServiceCollection().BuildServiceProvider();
+
     private readonly List<object> owned;
+    private readonly Dictionary<string, ServiceProvider> providers;
+    private readonly List<IServiceScope> sessions = [];
     private readonly ILogger logger;
     private bool disposed;
 
@@ -43,8 +48,10 @@ public sealed class ExtensionRegistry : IAsyncDisposable
         TranslationEnvironment translation,
         NodeDocumentConverterRegistry nodeConverters,
         List<object> owned,
+        Dictionary<string, ServiceProvider> providers,
         ILogger logger)
     {
+        this.providers = providers;
         Results = results;
         Loaded = loaded;
         NodeKinds = nodeKinds;
@@ -174,6 +181,64 @@ public sealed class ExtensionRegistry : IAsyncDisposable
     public IHostChannelFactory? FindHostChannel(string id) => HostChannels.FirstOrDefault(factory => factory.Id == id);
 
     /// <summary>
+    /// Gets the provider of one extension: its own registrations plus <see cref="HostExports"/>.
+    /// </summary>
+    /// <param name="extensionId">The extension id.</param>
+    /// <returns>The extension's provider; an empty provider for an id that registered no services or did not load.</returns>
+    [Experimental(ExperimentalApiIds.ExtensionServices, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    public IServiceProvider ServicesOf(string extensionId)
+    {
+        ArgumentNullException.ThrowIfNull(extensionId);
+        return providers.GetValueOrDefault(extensionId) ?? NoServices;
+    }
+
+    /// <summary>
+    /// Opens a session scope of one extension: the scoped services of its provider, disposed before any provider.
+    /// </summary>
+    /// <param name="extensionId">The extension id.</param>
+    /// <returns>The scope; disposing it ends the session. An empty scope for an id that registered no services.</returns>
+    [Experimental(ExperimentalApiIds.ExtensionServices, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    public IServiceScope OpenSession(string extensionId)
+    {
+        ArgumentNullException.ThrowIfNull(extensionId);
+        ObjectDisposedException.ThrowIf(disposed, this);
+        var session = new TrackedSession(providers.GetValueOrDefault(extensionId) ?? NoServices, this);
+        lock (sessions)
+        {
+            sessions.Add(session);
+        }
+
+        return session;
+    }
+
+    private void Forget(TrackedSession session)
+    {
+        lock (sessions)
+        {
+            sessions.Remove(session);
+        }
+    }
+
+    private sealed class TrackedSession(ServiceProvider provider, ExtensionRegistry registry) : IServiceScope, IAsyncDisposable
+    {
+        private readonly AsyncServiceScope scope = provider.CreateAsyncScope();
+
+        public IServiceProvider ServiceProvider => scope.ServiceProvider;
+
+        public void Dispose()
+        {
+            registry.Forget(this);
+            scope.Dispose();
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            registry.Forget(this);
+            return scope.DisposeAsync();
+        }
+    }
+
+    /// <summary>
     /// Disposes the contributed objects that are <see cref="IDisposable"/> or <see cref="IAsyncDisposable"/>,
     /// awaiting an owned <see cref="IAsyncDisposable"/> directly; a failing one is logged and does not stop
     /// the others. Idempotent.
@@ -186,7 +251,15 @@ public sealed class ExtensionRegistry : IAsyncDisposable
         }
 
         disposed = true;
-        foreach (object item in owned.Distinct(ReferenceEqualityComparer.Instance))
+        IServiceScope[] open;
+        lock (sessions)
+        {
+            open = [.. sessions];
+            sessions.Clear();
+        }
+
+        IEnumerable<object> inOrder = [.. open, .. owned.Distinct(ReferenceEqualityComparer.Instance), .. providers.Values];
+        foreach (object item in inOrder)
         {
             try
             {

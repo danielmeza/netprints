@@ -2,6 +2,7 @@ using System;
 using System.Resources;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NetPrints.Catalog;
 using NetPrints.Core;
@@ -18,8 +19,9 @@ namespace NetPrints.Extensibility.Loading;
 /// Commits the contributions of loaded extensions in load order, rejecting conflicting ones, and builds the
 /// <see cref="ExtensionRegistry"/>.
 /// </summary>
-internal sealed class RegistryBuilder(ILogger logger)
+internal sealed class RegistryBuilder(ILogger logger, ILoggerFactory loggerFactory, ISettingsStore? settingsStore)
 {
+    private readonly Dictionary<string, ServiceProvider> providers = new(StringComparer.Ordinal);
     private readonly List<NodeKindDescriptor> nodeKinds = [];
     private readonly HashSet<string> kindIds = new(StringComparer.Ordinal);
     private readonly HashSet<Type> nodeTypes = [];
@@ -130,6 +132,14 @@ internal sealed class RegistryBuilder(ILogger logger)
             }
         }
 
+        providers[manifest.Id] = ExtensionServiceProviders.Build(
+            contributions.Services,
+            contributions.OwnAssembly,
+            [.. settings.Where(descriptor => descriptor.ExtensionId == manifest.Id)],
+            settingsStore,
+            loggerFactory,
+            (contribution, reason) => Reject(manifest, ExtensionDiagnosticCodes.ContributionRejected, contribution, reason));
+
         foreach (CatalogProfile profile in contributions.CatalogProfiles)
         {
             if (BuiltInCatalogProfiles.Ids.Contains(profile.Id, StringComparer.Ordinal))
@@ -213,6 +223,7 @@ internal sealed class RegistryBuilder(ILogger logger)
             translation,
             converters,
             owned,
+            providers,
             loggerFactory.CreateLogger<ExtensionRegistry>());
     }
 

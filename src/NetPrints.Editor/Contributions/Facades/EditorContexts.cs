@@ -39,6 +39,9 @@ internal sealed record PanelFactoryContext(IEditorShell Shell, IDialogService Di
         }
 
         public Task ShowErrorAsync(string title, string message) => Task.CompletedTask;
+
+        public Task<object> ShowDialogAsync(string dialogId, CancellationToken cancellationToken = default) =>
+            Task.FromException<object>(new InvalidOperationException("The shell is not composed yet."));
     }
 
     private sealed class DetachedOutput : IEditorOutput

@@ -38,6 +38,13 @@ public interface IDialogService
     /// <param name="message">The message.</param>
     /// <returns>A task that completes when the dialog is closed.</returns>
     Task ShowErrorAsync(string title, string message);
+
+    /// <summary>Shows a dialog registered with <see cref="IEditorContributions.AddDialog"/>: its factory creates the view model with an <see cref="IDialogContext"/>, and the editor shows it in a window.</summary>
+    /// <param name="dialogId">The id of the dialog.</param>
+    /// <param name="cancellationToken">Cancels waiting for the dialog; the window is closed.</param>
+    /// <returns>A task that completes when the dialog is closed, with the view model it showed, which holds the dialog's result.</returns>
+    /// <exception cref="ArgumentException">No dialog is registered with <paramref name="dialogId"/>.</exception>
+    Task<object> ShowDialogAsync(string dialogId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>The Output panel: where an extension writes lines for the user.</summary>

@@ -42,6 +42,16 @@ public interface IEditorContributions
     /// <returns>This facet.</returns>
     IEditorContributions AddGoToProvider(IGoToProvider provider);
 
+    /// <summary>Adds a segment of the status bar.</summary>
+    /// <param name="item">The segment.</param>
+    /// <returns>This facet.</returns>
+    IEditorContributions AddStatusBarItem(StatusBarItemDescriptor item);
+
+    /// <summary>Adds a dialog that is shown by id through <see cref="IDialogService.ShowDialogAsync"/>.</summary>
+    /// <param name="dialog">The dialog.</param>
+    /// <returns>This facet.</returns>
+    IEditorContributions AddDialog(DialogDescriptor dialog);
+
     /// <summary>
     /// Adds the resources of this extension's views: an <c>avares</c> URI of a document whose root is a <c>DataTemplates</c> list (view templates),
     /// a <c>ResourceDictionary</c> (its <c>Icon.&lt;extension id&gt;.&lt;name&gt;</c> geometries) or a <c>Styles</c> file. An extension with more than one kind calls this once for each.

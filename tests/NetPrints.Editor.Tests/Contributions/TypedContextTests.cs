@@ -161,7 +161,6 @@ public sealed class TypedContextTests : Commands.SessionCommandTests
         Assert.True(invoker.TryRun(registry.Commands.Single()));
         await Task.Yield();
 
-        Assert.Same(context, handler.Received);
-        Assert.IsAssignableFrom<ICommandContext>(handler.Received);
+        Assert.Same(context.Session, CommandContext.From(Assert.IsAssignableFrom<ICommandContext>(handler.Received)).Session);
     }
 }

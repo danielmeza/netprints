@@ -38,6 +38,19 @@ public class EditorFacetTests
     }
 
     [Fact]
+    public async Task StatusBarItemsAndDialogsReachTheHostFacetInOrder()
+    {
+        var recorder = new RecordingFacet();
+        var extension = InProcess("test.ext", builder => builder.Editor
+            .AddStatusBarItem(new StatusBarItemDescriptor("test.ext.status.a", StatusBarAlignment.Right, 1, _ => new object()))
+            .AddDialog(new DialogDescriptor("test.ext.dialog.a", "A", _ => new object())));
+
+        await using ExtensionRegistry registry = Load(Options([BuiltInExtension.InProcessEntry, extension]) with { EditorContributions = manifest => recorder.For(manifest.Id) });
+
+        Assert.Equal(["test.ext:status:test.ext.status.a", "test.ext:dialog:test.ext.dialog.a"], recorder.Calls);
+    }
+
+    [Fact]
     public async Task AnExtensionWhoseRegisterThrowsContributesNothingToTheEditor()
     {
         var recorder = new RecordingFacet();
@@ -91,6 +104,10 @@ public class EditorFacetTests
             public IEditorContributions AddTooltipProvider(ITooltipProvider provider) => Record("tooltip");
 
             public IEditorContributions AddGoToProvider(IGoToProvider provider) => Record("goto");
+
+            public IEditorContributions AddStatusBarItem(StatusBarItemDescriptor item) => Record("status:" + item.Id);
+
+            public IEditorContributions AddDialog(DialogDescriptor dialog) => Record("dialog:" + dialog.Id);
 
             public IEditorContributions AddViewResources(string resourceUri) => Record("view:" + resourceUri);
 

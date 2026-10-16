@@ -107,6 +107,8 @@ public sealed class RecordingDialogs : IEditorDialogs
 
     public Task ShowAboutAsync(AboutViewModel about) => Task.CompletedTask;
 
+    public Task ShowViewModelAsync(string title, object viewModel, CancellationToken cancellationToken) => Task.CompletedTask;
+
     public Task ShowGoToAnythingAsync(NetPrints.Editor.Navigation.GoToAnythingViewModel goTo) => Task.CompletedTask;
 
     public Task ShowCommandPaletteAsync(NetPrints.Editor.Commands.CommandPalette.CommandPaletteViewModel palette) => Task.CompletedTask;

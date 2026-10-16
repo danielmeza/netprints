@@ -56,7 +56,7 @@ public sealed class CommandInvoker(IContributionRegistry registry, ICommandConte
     public bool CanRun(CommandDescriptor command, CommandScope scope = CommandScope.Global, object? parameter = null)
     {
         ArgumentNullException.ThrowIfNull(command);
-        return command.Handler.CanExecute(contexts.Create(parameter, scope));
+        return command.Handler.CanExecute(CreateFor(command, scope, parameter));
     }
 
     /// <summary>Builds the context of an invocation made now.</summary>
@@ -73,7 +73,7 @@ public sealed class CommandInvoker(IContributionRegistry registry, ICommandConte
     public bool TryRun(CommandDescriptor command, CommandScope scope = CommandScope.Global, object? parameter = null)
     {
         ArgumentNullException.ThrowIfNull(command);
-        CommandContext context = contexts.Create(parameter, scope);
+        CommandContext context = CreateFor(command, scope, parameter);
         if (!command.Handler.CanExecute(context))
         {
             return false;
@@ -93,6 +93,12 @@ public sealed class CommandInvoker(IContributionRegistry registry, ICommandConte
         ArgumentException.ThrowIfNullOrEmpty(commandName);
         CommandDescriptor? command = registry.Commands.FirstOrDefault(c => c.Id == ContributionIds.CommandPrefix + commandName);
         return command is not null && TryRun(command, scope, parameter);
+    }
+
+    private CommandContext CreateFor(CommandDescriptor command, CommandScope scope, object? parameter)
+    {
+        CommandContext context = contexts.Create(parameter, scope);
+        return context with { Owner = registry.OwnerOf(command.Id), Contributions = registry };
     }
 
     private static async Task RunAsync(CommandDescriptor command, CommandContext context) =>

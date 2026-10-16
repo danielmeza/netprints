@@ -411,6 +411,16 @@ public static class AutomationIds
     public const string AboutDialog = "Dialogs.About";
 
     /// <summary>
+    /// Automation id for the window that shows a dialog an extension registered.
+    /// </summary>
+    public const string ExtensionDialog = "Dialogs.Extension";
+
+    /// <summary>
+    /// Automation id for the close button of the window that shows a dialog an extension registered.
+    /// </summary>
+    public const string ExtensionDialogCloseButton = "Dialogs.Extension.Close";
+
+    /// <summary>
     /// Automation id for the About dialog's version text.
     /// </summary>
     public const string AboutVersion = "Dialogs.About.Version";

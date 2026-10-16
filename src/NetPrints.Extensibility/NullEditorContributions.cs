@@ -21,5 +21,9 @@ internal sealed class NullEditorContributions : IEditorContributions
 
     public IEditorContributions AddGoToProvider(IGoToProvider provider) => this;
 
+    public IEditorContributions AddStatusBarItem(StatusBarItemDescriptor item) => this;
+
+    public IEditorContributions AddDialog(DialogDescriptor dialog) => this;
+
     public IEditorContributions AddViewResources(string resourceUri) => this;
 }

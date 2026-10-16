@@ -653,6 +653,49 @@ NetPrints.Extensibility.Editor.CommandKeyId.Z = 25 -> NetPrints.Extensibility.Ed
 [NPXE0005]NetPrints.Extensibility.Editor.TooltipTarget.Subject.init -> void
 [NPXE0005]NetPrints.Extensibility.Editor.TooltipTarget.TooltipTarget(NetPrints.Extensibility.Editor.TooltipTargetKind Kind, object! Subject) -> void
 [NPXE0005]NetPrints.Extensibility.IExtensionBuilder.Editor.get -> NetPrints.Extensibility.Editor.IEditorContributions!
+[NPXE0008]NetPrints.Extensibility.IExtensionBuilder.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.<Clone>$() -> NetPrints.Extensibility.Editor.DialogDescriptor!
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.CreateViewModel.get -> System.Func<NetPrints.Extensibility.Editor.IDialogContext!, object!>!
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.CreateViewModel.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.Deconstruct(out string! Id, out string! Title, out System.Func<NetPrints.Extensibility.Editor.IDialogContext!, object!>! CreateViewModel) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.DialogDescriptor(string! Id, string! Title, System.Func<NetPrints.Extensibility.Editor.IDialogContext!, object!>! CreateViewModel) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.Equals(NetPrints.Extensibility.Editor.DialogDescriptor? other) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.Id.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.Id.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.Title.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.Title.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.IDialogService.ShowDialogAsync(string! dialogId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<object!>!
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorContributions.AddDialog(NetPrints.Extensibility.Editor.DialogDescriptor! dialog) -> NetPrints.Extensibility.Editor.IEditorContributions!
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorContributions.AddStatusBarItem(NetPrints.Extensibility.Editor.StatusBarItemDescriptor! item) -> NetPrints.Extensibility.Editor.IEditorContributions!
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarAlignment
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarAlignment.Left = 0 -> NetPrints.Extensibility.Editor.StatusBarAlignment
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarAlignment.Right = 1 -> NetPrints.Extensibility.Editor.StatusBarAlignment
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.<Clone>$() -> NetPrints.Extensibility.Editor.StatusBarItemDescriptor!
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.Alignment.get -> NetPrints.Extensibility.Editor.StatusBarAlignment
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.Alignment.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.AppliesTo.get -> System.Func<NetPrints.Extensibility.Editor.IStatusBarContext!, bool>?
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.AppliesTo.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.CreateViewModel.get -> System.Func<NetPrints.Extensibility.Editor.IStatusBarContext!, object!>!
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.CreateViewModel.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.Deconstruct(out string! Id, out NetPrints.Extensibility.Editor.StatusBarAlignment Alignment, out int Order, out System.Func<NetPrints.Extensibility.Editor.IStatusBarContext!, object!>! CreateViewModel, out System.Func<NetPrints.Extensibility.Editor.IStatusBarContext!, bool>? AppliesTo) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.Equals(NetPrints.Extensibility.Editor.StatusBarItemDescriptor? other) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.Id.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.Id.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.Order.get -> int
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.Order.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.StatusBarItemDescriptor(string! Id, NetPrints.Extensibility.Editor.StatusBarAlignment Alignment, int Order, System.Func<NetPrints.Extensibility.Editor.IStatusBarContext!, object!>! CreateViewModel, System.Func<NetPrints.Extensibility.Editor.IStatusBarContext!, bool>? AppliesTo = null) -> void
+[NPXE0005]override NetPrints.Extensibility.Editor.DialogDescriptor.Equals(object? obj) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.DialogDescriptor.GetHashCode() -> int
+[NPXE0005]override NetPrints.Extensibility.Editor.DialogDescriptor.ToString() -> string!
+[NPXE0005]override NetPrints.Extensibility.Editor.StatusBarItemDescriptor.Equals(object? obj) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.StatusBarItemDescriptor.GetHashCode() -> int
+[NPXE0005]override NetPrints.Extensibility.Editor.StatusBarItemDescriptor.ToString() -> string!
+[NPXE0005]static NetPrints.Extensibility.Editor.DialogDescriptor.operator !=(NetPrints.Extensibility.Editor.DialogDescriptor? left, NetPrints.Extensibility.Editor.DialogDescriptor? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.DialogDescriptor.operator ==(NetPrints.Extensibility.Editor.DialogDescriptor? left, NetPrints.Extensibility.Editor.DialogDescriptor? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.StatusBarItemDescriptor.operator !=(NetPrints.Extensibility.Editor.StatusBarItemDescriptor? left, NetPrints.Extensibility.Editor.StatusBarItemDescriptor? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.StatusBarItemDescriptor.operator ==(NetPrints.Extensibility.Editor.StatusBarItemDescriptor? left, NetPrints.Extensibility.Editor.StatusBarItemDescriptor? right) -> bool
 [NPXE0005]override NetPrints.Extensibility.Editor.CommandDescriptor.Equals(object? obj) -> bool
 [NPXE0005]override NetPrints.Extensibility.Editor.CommandDescriptor.GetHashCode() -> int
 [NPXE0005]override NetPrints.Extensibility.Editor.CommandDescriptor.ToString() -> string!

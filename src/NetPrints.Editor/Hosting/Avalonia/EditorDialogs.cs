@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Notifications;
+using Avalonia.Threading;
 using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.Commands.CommandPalette;
@@ -52,6 +53,14 @@ public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
         dialog.Closed += (_, _) => closed.TrySetResult(dialog is IDialogResult<T> result ? result.Result : default);
         dialog.Show();
         return await closed.Task;
+    }
+
+    /// <inheritdoc/>
+    public async Task ShowViewModelAsync(string title, object viewModel, CancellationToken cancellationToken)
+    {
+        var dialog = new ExtensionDialog(title, viewModel);
+        using CancellationTokenRegistration registration = cancellationToken.Register(() => Dispatcher.UIThread.Post(dialog.Close));
+        await ShowAsync<object>(dialog);
     }
 
     /// <inheritdoc/>
