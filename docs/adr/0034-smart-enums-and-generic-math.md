@@ -16,8 +16,8 @@ topic, so it takes the first free one after the reserved 0024-0032 and 0033.
 - A class cannot be an attribute argument, and the attribute-driven plan writes `[DefaultGesture(...)]`, so the keys
   also need an enum for attributes.
 - Primitive types are listed in five places (`TypedValueConverter`, `SignatureChange`, `TranslatorUtil` suffixes,
-  `NodePinViewModel`, `TypeSpecifier.IsPrimitive`). The one reflection-shaped spot, `TypedValueConverter`, produces an
-  IL2057 trim warning.
+  `NodePinViewModel`, `TypeSpecifier.IsPrimitive`). `NodePinViewModel` resolves the type by name and produces an
+  IL2057 trim warning (`TypedValueConverter.ParseEnum` has one too, for enums, which the table does not cover).
 
 ## Decision
 
@@ -95,7 +95,7 @@ topic, so it takes the first free one after the reserved 0024-0032 and 0033.
    - Numeric rows are registered through `Number<T>() where T : INumberBase<T>`, using `T.Zero` and `T.Parse` /
      `ToString` with the invariant culture.
    - `bool`, `char` and `string` quoting, NaN and Infinity literals and enums keep special rows.
-   - The table removes one trim-ratchet warning (IL2057 at `TypedValueConverter`).
+   - The table removes one trim-ratchet warning (IL2057 in `NodePinViewModel`; the one at `TypedValueConverter.ParseEnum` stays).
    - It gets a golden test built from the 18 wire-form samples and the 240-input parse matrix.
    - Switch node (B1) case literals reuse the table.
    - Cost, accepted by the owner: about 36 generic methods JIT-compiled once at first use, roughly 1.4 ms.

@@ -41,8 +41,13 @@ Accepted (2026-10-16, P3 spec `specs/006-editor-extension-host/`, research R9 an
 
 ## Consequences
 
-- An extension node gets the +/- buttons, the overload button, editable names and the inspector link by implementing a
-  role, with no change to the editor.
+- An extension node gets the +/- buttons, editable names and the inspector link by implementing a role, with no change
+  to the editor. The overload button does not follow yet: `IOverloadableNode` can change an overload but cannot list
+  them, so the editor builds the list only for `MakeArrayNode`, `CallMethodNode` and `ConstructorNode`. A member that
+  lists the overloads comes with the settled shape of the role interfaces.
+- `IPinListEditor`, `IOverloadableNode` and `IPinNameEditor` are public Core API but not yet on research R16's stable
+  list and under no NPXE id: their shape (`object` overloads, English `AddPinLabel` strings ahead of `LocalizedText`) is
+  unsettled. They are classified, or changed, in the C1 publish-gate review.
 - A void method with an `out` parameter can be made pure, and its output can be wired onward.
 - A pure call with `out` parameters runs when a consumer needs one of its outputs, like any other pure node.
 - `CallMethodNode.ReturnValuePins` now means the `Result` pins only; callers that wanted every output read

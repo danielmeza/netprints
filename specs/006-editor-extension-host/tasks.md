@@ -243,7 +243,7 @@ trip; Windows CLI tests green; SC-015; R5-0 numbers and the M5 outcome recorded.
 ## Phase 2: Node model and search, Core 0.4.0 (sub-phase B, User Story 2, Priority P1) 🎯 MVP
 
 **Goal**: node search is built from providers owned by node kinds, with one creation service and one ranker; pins are
-typed properties declared by convention and tracked by key; the 13 renames ship as a hard break; capabilities are role
+typed properties declared by convention and tracked by key; the 8 renames (first counted as 13) ship as a hard break; capabilities are role
 interfaces; pins carry roles, `out` and `ref` parameters get output pins, and purity follows the roles; `sbyte` and
 `decimal` are full primitives. Saved graphs do not change. **Independent test**: US2's independent test. **Gate
 (plan)**: SC-002; the FR-017 budget; the trim ratchet down by at least 2; the pack spike's outcome recorded.
@@ -315,8 +315,8 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
   (`tests/NetPrints.Core.Tests/Fixtures/Golden/NodePinLayout.golden.txt`, `NodePinLayoutTests`) is the invariant,
   green before and after. Convert every built-in node kind in `src/NetPrints.Core/Graph/` to typed pin properties
   declared by convention, with `[NodeKind]` or `[NodeBase]`, and `[Pin("…")]` only where the property name does not
-  give the stored key (no rename yet). List those overrides in implementation-notes: they are the 13 renames and the 2
-  overrides of T031 (research R8). Every fixture and sample graph loads and saves byte-identically; the generated C#
+  give the stored key (no rename yet). List those overrides in implementation-notes: they are the renames and the
+  overrides of T031 (research R8; B6 found 9: 8 renamed, 1 kept). Every fixture and sample graph loads and saves byte-identically; the generated C#
   goldens are unchanged.
 - [x] T030 [US2] Pin-key tracking (FR-011, research R8 S4; 2 units). Test first:
   `tests/NetPrints.Analyzers.Tests/Pins/PinKeyTrackingTests.cs`: NPA010 for a declared key not recorded; NPA011 naming
@@ -328,11 +328,11 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
 ### Batch B6 — model: sonnet — T031–T033 — 3 units
 
 - [x] T031 [US2] The 0.4.0 pin renames (FR-012, research R8 S3; 1 unit). Of the `[Pin("…")]` overrides T029 listed,
-  rename the 13 properties to `<key>Pin` and drop their override; the 2 whose new name would clash with an existing
-  member keep their override (the AOP follow-up §2 counts, research R8). Ship it as a hard break: `*REMOVED*` lines in
+  rename the properties to `<key>Pin` and drop their override (done: 8 of the 9; first counted as 13 and 2); the one whose new name would clash with an existing
+  member keeps its override (the AOP follow-up §2 counts, research R8). Ship it as a hard break: `*REMOVED*` lines in
   `src/NetPrints.Core/PublicAPI.Unshipped.txt`, no `[Obsolete]`, and a breaking entry under "Unreleased" in
-  `.github/release-notes.md` listing each old and new name. The S0 golden, `NodePins.Shipped.txt`, every
-  fixture and every sample graph stay byte-identical (US2 scenario 3; NPA011 proves no stored key moved).
+  `.github/release-notes.md` listing each old and new name. `NodePins.Shipped.txt`, every
+  fixture and every sample graph stay byte-identical (the S0 golden changes in the property-name column only, 12 lines) (US2 scenario 3; NPA011 proves no stored key moved).
 - [x] T032 [P] [US2] ADR-0025 and "Declaring pins" (FR-010–FR-012, FR-116, research R8; 1 unit). Write
   `docs/adr/0025-declarative-node-pins.md` (typed pins, the convention, pin-key tracking, the 0.4.0 rename policy) and
   the "Declaring pins" section of `docs/guide/extensions.md` (typed properties, the convention, `[Pin]`, `[PinType]`,
@@ -341,7 +341,7 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
   `tests/NetPrints.Core.Tests/Graph/PrimitiveKindsTests.cs`: a golden of the table; unconnected `sbyte` and `decimal`
   inputs get defaults and the numeric editor, and their values emit valid C# (US2 scenario 7). Then
   `src/NetPrints.Core/Core/PrimitiveKinds.cs` (one `INumberBase<T>` row per primitive) replacing the five scattered
-  lists, including the one behind the IL2057 warning in `src/NetPrints.Serialization/Mapping/TypedValueConverter.cs`;
+  lists, including the one behind the IL2057 warning in `NodePinViewModel` (the one in `TypedValueConverter.ParseEnum` stays: enums are not in the table);
   `eng/trim-warnings.txt` lowered if the count dropped.
 
 ### Batch B7 — model: sonnet — T034–T037 — 5 units

@@ -48,6 +48,6 @@ instead.
 - [0039: User attributes and their editor extension model](0039-user-attributes-and-editor-extension-model.md)
 - [0040: Editor settings: one store, typed sections, generated pages and user key bindings](0040-editor-settings-pages-and-key-bindings.md)
 
-Numbers 0026, 0027, 0030 and 0032 are reserved by the roadmap for ADRs not yet written (declarative pins, node kinds,
-localization, node search, node capabilities, the Extensibility Stairway split, graph rules); 0031 and later were
-written first.
+Numbers 0026, 0027, 0030 and 0032 are reserved by the roadmap for ADRs not yet written (node kinds,
+localization, the Extensibility Stairway split, graph rules); 0031 and later were written first. Declarative pins
+(0025), node search (0028) and node capabilities (0029) are written.

@@ -11,8 +11,8 @@ P3 opens the editor to extensions and builds the user features that need that ho
 - **Foundation.** NetPrints gets its own analyzer and generator projects. They enforce the layout rules (NPS), generate
   the service registrations, the smart-enum ids and the settings validators, and the editor composes through MS.DI with
   generated factory registrations (ADR-0031). Unknown document members survive a save. Research R2–R7.
-- **Node model before the freeze.** Pins become typed properties declared by convention, with tracked keys. The 13 pin
-  renames ship as a hard break in Core 0.4.0. `out` and `ref` parameters become output pins, purity follows pin roles,
+- **Node model before the freeze.** Pins become typed properties declared by convention, with tracked keys. The 8 pin
+  renames (first counted as 13) ship as a hard break in Core 0.4.0. `out` and `ref` parameters become output pins, purity follows pin roles,
   node capabilities become role interfaces, and node search is split into providers owned by node kinds. Saved graphs
   do not change. Research R8–R11.
 - **Public contracts and the publish gate.** `NetPrints.Extensibility.Abstractions` is split from the host. Labels
@@ -238,7 +238,7 @@ src/
 ├── NetPrints.Core/                      # changed: typed pins + attributes, PinRole, purity, out/ref pins, PrimitiveKinds,
 │                                        #   GraphPoint, LocalizedText, CSharpLanguageVersion/CSharpTarget,
 │                                        #   ProcessStartRequest additions, NodeStrings.resx, ExperimentalApiIds,
-│                                        #   NodePins.*.txt, the 13 renames, the package ProjectEdit records
+│                                        #   NodePins.*.txt, the 8 renames, the package ProjectEdit records
 ├── NetPrints.Serialization/             # changed: [JsonExtensionData] on every record, kindVersion, node-data migrations
 ├── NetPrints.Extensibility.Abstractions/# new: contracts moved from Extensibility; NetPrints.Extensibility.Editor
 ├── NetPrints.Extensibility/             # changed: host only; groups, per-extension providers, HostExports,

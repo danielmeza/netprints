@@ -194,7 +194,7 @@ pins; node search matches its characterization goldens.
 2. **Given** a change that would alter a stored pin key (a renamed pin property with no override), **When** the
    solution builds, **Then** pin-key tracking fails the build naming the old and the new key.
 3. **Given** a graph saved by the P3a editor, **When** the P3 editor loads and saves it, **Then** the file is
-   byte-identical, although 13 pin properties were renamed.
+   byte-identical, although 8 pin properties were renamed (research R8 counted 13 renames and 2 overrides; B6 found 9 overrides, renamed 8 and kept 1).
 4. **Given** a call node for a method with an `out` parameter, **When** it is placed, **Then** it has an output data
    pin carrying the parameter's value after the call, and an `out` or `ref` input that is not connected to a variable
    is a validation error.
@@ -646,14 +646,16 @@ preset lists while the extension is loaded.
 
 **Node model and search (US2)**
 
-- **FR-009**: Data pins MUST be typed (`NodeInputDataPin<T>`, `NodeOutputDataPin<T>`), with `default(T)` defaults and no
+- **FR-009**: Data pins MUST be typed (`NodeInputDataPin<T>`, `NodeOutputDataPin<T>`), with `default(T)` defaults (except
+  `IfElseNode.ConditionPin` and `ForLoopNode.MaxIndexPin`, which start unset to keep stored graphs byte-identical) and no
   generic-math constraint.
 - **FR-010**: Node kinds MUST declare their pins through `[NodeKind]`, `[Pin]` and `[PinType]` and a convention
   generator: a pin's key is its property name without the `Pin` suffix unless `[Pin("…")]` overrides it; analyzers
   NPA001 to NPA009 MUST report misuse, with code fixes where the fix is mechanical.
 - **FR-011**: Pin-key tracking (NPA010, NPA011), seeded from the S0 pin-layout golden, MUST fail the build when a
   stored pin key changes without a declared override, and MUST land before the renames.
-- **FR-012**: The 13 pin property renames and 2 key overrides MUST ship as a hard break in `NetPrints.Core` 0.4.0:
+- **FR-012**: The 8 pin property renames (research counted 13 renames and 2 overrides; B6 found 9 overrides, renamed 8 and kept 1)
+  and the typed getters, the sealed node classes and the removed overrides MUST ship as a hard break in `NetPrints.Core` 0.4.0:
   `*REMOVED*` API entries and release notes, no `[Obsolete]` shims, and no change to any stored key.
 - **FR-013**: Pins MUST carry a role (Result, OutParam, Exception, Target and the others the plan lists); a node MUST be
   allowed to be pure exactly when it has at least one output data pin with a result role; the Exception pin MUST NOT
@@ -669,8 +671,8 @@ preset lists while the extension is loaded.
   ranker with a fixed category order (SUG2, SUG3, ADR-0028). Opening the search MUST NOT create a node.
 - **FR-017**: Node search MUST return the same results in the same order as the P3a characterization goldens, except
   the recorded This Variables and This Methods order change, and MUST stay within P3a's budget of 30,000 rows.
-- **FR-018**: A `PrimitiveKinds` table in Core MUST replace the scattered primitive lists (and with them the IL2057
-  trimming warning of the typed value converter), and `sbyte` and `decimal` MUST be full primitives (unconnected
+- **FR-018**: A `PrimitiveKinds` table in Core MUST replace the scattered primitive lists (and with them the IL2057 trim warning of `NodePinViewModel`; the one at `TypedValueConverter.ParseEnum`
+  stays, because enums are not in the table), and `sbyte` and `decimal` MUST be full primitives (unconnected
   defaults and the numeric editor), pinned by a golden test (ADR-0034).
 
 **Published packages and the public API (US3)**

@@ -169,8 +169,9 @@ ADR-0031, ADR-0033 to ADR-0040.
   - **S4**: `NodePins.Shipped.txt` and `NodePins.Unshipped.txt` per project, seeded from the S0 golden; NPA010 (a
     declared key not recorded, a warning) and NPA011 (a shipped key disappeared, an error), with the "keep key" and "remove on purpose"
     fixes; the release step moves Unshipped to Shipped.
-  - **S3**: the 13 renames and the 2 overrides as a hard break: `*REMOVED*` entries, release notes, no `[Obsolete]`.
-    The S0 golden, every fixture and every sample graph stay byte-identical.
+  - **S3**: the 8 renames (the first count was 13 renames and 2 overrides; B6 found 9 overrides, renamed 8 and kept 1) as a hard break:
+    `*REMOVED*` entries, release notes, no `[Obsolete]`. Every fixture and every sample graph stay byte-identical; the S0
+    golden changes only in the property-name column (12 lines), every slot is the same.
   - Resource keys use the full pin reference (`Node.<kind>.Pin.in.data.InitialIndex`; follow-up question 10).
 - **Rationale**: owner decisions 5–7; FR-009–FR-012.
 - **Alternatives rejected**: bare pin names (46 renames and member clashes, follow-up question 1); `[PinType<int>]`
@@ -212,7 +213,7 @@ ADR-0031, ADR-0033 to ADR-0040.
 - **Decision**: R2 in the 0.4.0 window after S3: `IPinListEditor`, `IOverloadableNode`, editable pin names and
   `IMemberReferencingNode` as role interfaces that search, navigation and the inspector ask for; the header role falls
   back by convention. `PrimitiveKinds` (Core, one `INumberBase<T>` row per primitive) replaces the five scattered
-  lists and the IL2057 at `TypedValueConverter`; `sbyte` and `decimal` become full primitives, pinned by a golden test.
+  lists and the IL2057 of `NodePinViewModel` (the one at `TypedValueConverter.ParseEnum` stays); `sbyte` and `decimal` become full primitives, pinned by a golden test.
 - **Rationale**: decided (ADR-0029 and ADR-0034 are planned or written); both change public shapes, so they land
   before the gate.
 - **Alternatives rejected**: none open.

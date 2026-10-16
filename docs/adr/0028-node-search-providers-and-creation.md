@@ -28,7 +28,8 @@ provider contract (SUG4) lands in C1 and gets its own amendment.
   ranker uses a fixed category order (NetPrints, Pin Variables, Pin Methods, This Methods, This Variables, Static
   Methods, Static Variables, Method Variables, Types, Pin Static Methods, Generic Types, Generic Static Methods), then
   the categories of extensions in order of first appearance; entries keep their order inside a category.
-- **Recorded order change.** This Methods now come before This Variables. The P3a goldens do not contain a This
+- **Recorded order change.** This Methods now come before This Variables (a default taken in T022, pending the owner;
+  the old canvas search showed variables before methods per base type). The P3a goldens do not contain a This
   Variables category (the fixture class has no instance variables), so no golden changes; a ranker test pins the order.
 - **Trimming.** The ratchet falls from 14 to 12: the `Activator` and `GetConstructor` warnings are gone.
 - **SUG4** (C1): the provider and ranker contracts move to the Abstractions assembly under NPXE0006, with

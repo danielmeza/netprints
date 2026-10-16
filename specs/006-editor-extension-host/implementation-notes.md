@@ -168,6 +168,7 @@ and is marked "default pending owner" in tasks.md.
 | Node categories | one "NetPrints" category for the built-ins | T044 |
 | Live language switch | no; a language change applies after a restart | T046 |
 | External terminal | Linux detection order behind `run.linuxTerminal`; the Windows console closes at exit; macOS through `open -a Terminal` | T123 |
+| Search order: This Methods before This Variables (the old canvas search showed variables first per base type) | This Methods first, as the default ranker's fixed order says; one ranker constant to flip | T022 |
 
 ## Batch A3 (CI fix, T006, T007)
 
@@ -343,7 +344,7 @@ kept in `.agent-archive/2026-10-16-p3-m5-spike/` beside the repository.
   latest release (v12.1.0.9, 2026-10-13), so no release contains it yet and no bump is possible. FR-007: the round-trip tests above.
   Still to read from PR #20 CI at this head: the Analyzers leg, `CLI (Windows)` run id with the CRLF and `git-install` tests, the
   longest CI job; the R5-0 numbers and the M5 verdict are in their sections above. T016 stays unticked until that CI is green.
-- Checkpoint A, CI at 6aab2555 green (Analyzers leg included): CI run 38906857501, CLI (Windows) run 38906856876, Release run 38906857074, Docs run 38906856885. T016 ticked.
+- Checkpoint A, CI at 6aab2555 green (Analyzers leg included): CI run 38906857501, CLI (Windows) run 38906856876, Release run 38906857074, Docs run 38906856885. T016 ticked. Longest CI job of run 38906857501: Desktop E2E (Linux, Xvfb), 13.5 min.
 
 ## Batch B1 (T019-T020)
 
@@ -513,6 +514,10 @@ kept in `.agent-archive/2026-10-16-p3-m5-spike/` beside the repository.
 - Decision: `DefaultOperatorSpecifiers.defaultNumericTypes` stays a list. It is a deliberate subset (no `sbyte`, `long`, `ulong`) that
   decides which operator nodes exist, and widening it would change node search results against the P3a goldens (FR-017).
 - Red/green T033: `PrimitiveKindsTests` written first; red as a compile failure (no `PrimitiveKinds` type), green 7 of 7 after.
+  The defect (sbyte and decimal had no default and no editor) was not pinned by an assertion on the old code: the tests use
+  the new type, so they cannot compile against it. Checked later (B-F3): with the `sbyte` row removed from `PrimitiveKinds`,
+  `PrimitiveKindsTests` fails 4 of 7 on assertions (`TheTableMatchesTheGolden` among them); restored, 7 of 7. Next time a
+  defect fix pins the old behaviour with an assertion before the new type lands.
 - Suite (Release): 4469 total, 4436 passed, 33 skipped, 0 failed; build 0 warnings; `dotnet format` clean; trim ratchet 11.
 
 ## Batch B7 (T034-T037)
@@ -549,8 +554,8 @@ kept in `.agent-archive/2026-10-16-p3-m5-spike/` beside the repository.
 - Checkpoint B, evidence (Release, before CI): suite 4490 total, 4457 passed, 33 skipped, 0 failed (UITests 13 min 40 s, Editor.Tests
   1 min 47 s, Cli.Tests 41 s, Catalog.Tests 48 s, Core.Tests 34 s, Analyzers.Tests 2 s). E2E (`NETPRINTS_E2E=1`, `--fail-skips on`,
   display start 180): 53 total, 52 passed, 1 skipped (`GuideScreenshotTests`, not run for explicit filtering), 0 failed. Solution
-  build 0 warnings; `dotnet format --verify-no-changes` clean. Trim ratchet 11 (R5-0 start of the phase was 12 before T033, so down
-  by 1 from T033 alone; the second drop the plan expects from the FR-117 factories is not in this batch's numbers: read it from the
+  build 0 warnings; `dotnet format --verify-no-changes` clean. Trim ratchet 11 (the R5-0 baseline of the phase is 14, so down
+  by 3: the A-side drops to 12, then T033 to 11; the second drop the plan expects from the FR-117 factories is not in this batch's numbers: read it from the
   trim job). Still to read from PR #20 CI at this head: the longest CI job, `SearchPerformanceTests` numbers from the perf job, the pack
   spike (see "Pack spike": passed), the Dock check (pin stays 12.1.0.6, see Checkpoint A). T037 ticked after CI went green at 0a37ba60: CI run 38934517919, CLI (Windows) run 38934517781, Release run 38934517593, Docs run 38934517619.
 
@@ -582,6 +587,18 @@ consumers restore from `local-packages/` plus a scratch feed and build with `-p:
 ## Checkpoint reports
 
 (T016, T037, T057, T076, T098, T110, T126, T133, T170, T169; the SC table is T152 in PR-P)
+
+## Build-time budget (ADR-0024, S2a; B-F3)
+
+- `dotnet build NetPrints.slnx -c Release --no-incremental`, warm compile server, 6 runs at the end of B: 24.2, 19.1 and 12.2 s
+  while another job loaded the machine (load average 17), then 9.96, 10.35 and 9.76 s on a quiet machine. A1's baseline is
+  9.0 to 9.9 s in Debug (after: 9.0 to 9.9 s), so the quiet Release runs are at most about 5% above the Debug figure and cannot
+  be told apart from run-to-run noise or from the configuration change; the solution has also grown since A1. Budget (under 2%)
+  is therefore met only in the sense that no cost is visible; a clean A/B of S2a alone was not possible after the fact.
+- `dotnet build src/NetPrints.Core -c Release --no-incremental -p:ReportAnalyzer=true`: total analyzer time 5.8 s for the Core
+  compilation, of which SonarAnalyzer 5.4 s, IDisposableAnalyzers 0.13 s, Threading analyzers 0.13 s, CommunityToolkit.Mvvm
+  generators 0.04 s and `NetPrints.Authoring` (the pin generator and the NPA analyzers) 0.002 s. The repository's own
+  analyzers are under 0.1% of the analyzer time; Sonar is the cost, as before S2a.
 
 ## Reviews
 

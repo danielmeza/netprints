@@ -240,11 +240,11 @@ version newer than the framework's default is allowed with NPW007; an unknown or
 | Pin declaration | property name, key (name without `Pin`, or `[Pin("…")]`), direction, exec or data, type, role, default | generated `DeclarePins()`; analyzers NPA001–NPA009 |
 | `PinRole` | `Target`, `Argument`, `Result`, `OutParam`, `Exception` | purity: at least one `Result` or `OutParam` output data pin |
 | `out`/`ref` output pin | key `out.data.<parameterName>` | carries the value after the call; the input must connect to a variable |
-| Pin-key tracking | `NodePins.Shipped.txt`, `NodePins.Unshipped.txt` per project | one line per `<kind> <direction>.<exec|data>.<key>`; NPA010, NPA011 |
+| Pin-key tracking | `NodePins.Shipped.txt`, `NodePins.Unshipped.txt` per project | one line per `<kind> <direction>.<exec|data|type>.<key>` (type pins are tracked too); NPA010, NPA011 |
 | `kindVersion` (new, optional) | int on a node document | written only when the kind's `DataVersion` > 0; migrations run from it (absent = 0) |
 | Unknown members | `[JsonExtensionData]` on every document record | written after the known members, ordinal key order; opaque to `format`, `show` and `merge`; the editor's open and save keep them on every record with a model object, not inside the reference records (type, method, variable, value), which it writes from the model's types |
 
-The 13 renamed properties and the 2 overrides change no stored key; the S0 pin-layout golden stays byte-identical.
+The 8 renamed properties (the first count was 13 renames and 2 overrides) change no stored key; the S0 pin-layout golden changes only in the property-name column (12 lines), every slot is the same. A typed primitive input pin starts at `default(T)`, except `IfElseNode.ConditionPin` and `ForLoopNode.MaxIndexPin`, which start unset so stored graphs stay byte-identical.
 
 ## 8. Node search
 
