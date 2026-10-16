@@ -385,9 +385,47 @@ kept in `.agent-archive/2026-10-16-p3-m5-spike/` beside the repository.
 - T023: ADR-0028 written and indexed.
 - Red/green: tests were written before the code; the red state was the compile failure of the missing types, not a separate run.
 
+## Batch B3 (T024-T026)
+
+- T024: `NodeInputDataPin<T>` and `NodeOutputDataPin<T>` (no constraint; type from `TypeSpecifier.FromType<T>()`, second
+  constructor takes the `ObservableValue<BaseType>` that `[PinType]` pins use). The typed input pin starts with
+  `UnconnectedValue = default(T)` where the pin has an editable unconnected value (a primitive that is not an enum and not
+  null by default); a reference type or enum keeps null as before. Attributes `NodeKind`, `NodeBase`, `Pin` (key, `Role`),
+  `PinType`, `NodePinLayout` in `NetPrints.Core/Graph/`, all in `PublicAPI.Unshipped.txt`.
+- Deviation: `PinRole` (T035's type) is defined now, with the five members, because `[Pin(Role = ...)]` needs it; T035 adds
+  the behaviour, not the type.
+- T025: `NetPrints.Authoring/Pins/` (`PinConventionGenerator`, `PinReader`, `PinModels`). Two pipelines, `NodeKindPins` and
+  `NodeBasePins`. Per class it emits `[NodePinLayout("in.exec.Execution", ...)]` (the `PinKeys` reference format, in
+  declaration order), `DeclarePins()` (`private` on a sealed class, else `protected`; `new` plus `base.DeclarePins()` when a
+  base class declares pins) and the `partial` properties (`InputExecPins[offset + n]`, data pins cast). Base offsets come from
+  the base class's partial properties in the same compilation, or from its `[NodePinLayout]` in a referenced assembly. A BCL
+  `[DefaultValue]` on a typed input pin of a special-type primitive becomes `{ UnconnectedValue = (T)literal }`. Not covered
+  (NPA rules, T027): a class that is not `partial`, a name without the `Pin` suffix (the full name is the key), an untyped
+  data pin without `[PinType]` (skipped).
+- Test seams: `AuthoringHarness` (the repository `GeneratorHarness`, but loading `NetPrints.Authoring` and referencing the
+  real `NetPrints.Core`); `NetPrints.Analyzers.Tests` now references Core. Snapshots are inline raw strings, 7 tests.
+- Red/green: `TypedPinTests` red as a compile failure (no typed pins or attributes), 13 of 13 green after. The generator tests
+  red as `KeyNotFoundException` (no generated source) for the four snapshots, the compile test and the incrementality
+  change test; green 7 of 7 after (the compile test then failed once on a missing `using` in the sample, fixed in the test).
+  Analyzers.Tests 97 of 97.
+- Suite (Release): 4380 total, 4347 passed, 33 skipped, 0 failed; build 0 warnings.
+
 ## Pack spike
 
-(T026)
+T026, run on `scripts/pack-local.sh` version `0.1.0-local.20261016141953`, scratch projects outside the repository (the
+consumers restore from `local-packages/` plus a scratch feed and build with `-p:ReportAnalyzer=true -v:d`).
+
+- The `NetPrints.Core` package holds `analyzers/dotnet/cs/NetPrints.Authoring.dll` and `NetPrints.Authoring.CodeFixes.dll`.
+- Consumer that references only the packed Core, with a `[NodeKind]` node: the compiler command line has one
+  `/analyzer:` entry for `NetPrints.Authoring.dll`, the analyzer report lists `PinConventionGenerator` once, one generated
+  file `NodePins.Spike.LoopNode.g.cs`, no duplicate hint, no warnings. Pass.
+- Scratch package `Fake.Abstractions` that depends on Core with `PrivateAssets="none"` (nuspec: `include="All"`), and a
+  consumer that references only it: same result, one analyzer entry, one report line, one generated file. Pass.
+- Control, `Fake.Control` with the default `PrivateAssets` (nuspec: `exclude="Build,Analyzers"`): the analyzers also reach
+  the consumer, exactly once. So with this SDK (10.0.400) and NuGet the analyzers of a transitive package dependency are not
+  held back by that exclude; the `PrivateAssets="none"` declaration is not what makes it work, and it is harmless. Decision for
+  the coordinator: T106 keeps the template with the single Abstractions reference; the fallback (the template references Core
+  directly) is not needed.
 
 ## Publish gate
 

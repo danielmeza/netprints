@@ -294,7 +294,7 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
   `[Pin("…")]` override, a `[NodeBase]` base with pin offsets and a BCL `[DefaultValue]`; a compile test; an
   incrementality test (US2 scenario 1). Then `src/NetPrints.Authoring/Pins/`: the generator implements `partial` pin
   properties and `DeclarePins()`; a key is the property name without `Pin` unless `[Pin("…")]` overrides it.
-- [ ] T026 [US2] The pack spike (research R12, plan "Gate outcomes"; 1 unit). Pack `NetPrints.Core` into
+- [x] T026 [US2] The pack spike (research R12, plan "Gate outcomes"; 1 unit). Pack `NetPrints.Core` into
   `local-packages/` with `scripts/pack-local.sh` and build a scratch consumer outside the repository that references
   only the packed Core: the Authoring generator and analyzers run exactly once (`-p:ReportAnalyzer=true`; generated
   sources present; no duplicate hint names). Repeat through a scratch package that depends on Core with
