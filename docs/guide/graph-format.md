@@ -87,6 +87,15 @@ creates that many arguments typed `object`. This means **an older editor drops c
 when it saves the graph**: it reads the entry with untyped arguments and writes it back without the
 `arguments` array. An override entry never writes `arguments`; its arguments come from the base method.
 
+## Unknown members
+
+A member this build does not know, at any level of a graph file (the class, a graph, a method, a node, a
+pin, a connection), survives a load and save of the document. It is kept as an opaque value, written after
+the known members of its object and in ordinal key order. `netprints format` keeps it, `netprints show`
+prints it as `unknown <key> <value>`, and the merge driver takes the change of whichever side changed it,
+or reports a conflict when both sides changed the same member to different values. This lets a newer
+editor, or an extension, add a field without an older editor discarding it.
+
 ## Version control
 
 Graph files are designed to work well in git: they are text, canonical (deterministic bytes), and

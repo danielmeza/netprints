@@ -14,7 +14,13 @@ namespace NetPrints.Serialization.Documents;
 /// <param name="Name">The pin's user-facing name, present only when it differs from its <c>keyName</c>
 /// (a renamed argument or return pin).</param>
 /// <param name="Value">The pin's unconnected value, present only when set.</param>
-public sealed record PinStateDocument(string Pin, string? Name, TypedValue? Value);
+public sealed record PinStateDocument(string Pin, string? Name, TypedValue? Value)
+{
+    /// <summary>Gets the members this build does not know, kept as opaque values and written after the known ones.</summary>
+    [JsonExtensionData]
+    [JsonInclude]
+    public UnknownMembers? ExtensionData;
+}
 
 /// <summary>
 /// Polymorphic base for a node's stored form (document-format.md §1.5). Common fields (in this order
@@ -53,7 +59,13 @@ public sealed record PinStateDocument(string Pin, string? Name, TypedValue? Valu
 public abstract record NodeDocument(
     [property: JsonPropertyOrder(-3), JsonIgnore(Condition = JsonIgnoreCondition.Never)] string Id,
     [property: JsonPropertyOrder(-2)] string? Name,
-    [property: JsonPropertyOrder(-1)] IReadOnlyList<PinStateDocument>? Pins);
+    [property: JsonPropertyOrder(-1)] IReadOnlyList<PinStateDocument>? Pins)
+{
+    /// <summary>Gets the members this build does not know, kept as opaque values and written after the known ones.</summary>
+    [JsonExtensionData]
+    [JsonInclude]
+    public UnknownMembers? ExtensionData;
+}
 
 /// <summary>A node of a kind this build of NetPrints does not know (document-format.md §1.5): its
 /// original content is preserved and re-emitted unchanged.</summary>

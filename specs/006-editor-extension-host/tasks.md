@@ -198,7 +198,7 @@ trip; Windows CLI tests green; SC-015; R5-0 numbers and the M5 outcome recorded.
   sealed options class with `init` members in a source-generated JSON context, validated by an `[OptionsValidator]`
   validator over DataAnnotations (add `Microsoft.Extensions.Options` 10.0.12 to `Directory.Packages.props`); the
   composition calls the validators itself (no generic host). Extension sections and NPX014 come in T088.
-- [ ] T012 [US1] Unknown document members (FR-007, research R7, data-model §7; 1 unit). Test first:
+- [x] T012 [US1] Unknown document members (FR-007, research R7, data-model §7; 1 unit). Test first:
   `tests/NetPrints.Core.Tests/Serialization/UnknownMembersTests.cs`: class, graph and node documents with unknown
   members at several levels load and save with the members after the known ones, in ordinal key order (US1 scenario
   6); `tests/NetPrints.Cli.Tests/` cases: `format` and `show` keep them as opaque values, and the merge driver takes one

@@ -917,3 +917,19 @@ virtual NetPrints.Serialization.Documents.NodeDocument.EqualityContract.get -> S
 virtual NetPrints.Serialization.Documents.NodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
 virtual NetPrints.Serialization.Documents.NodeDocument.PrintMembers(System.Text.StringBuilder! builder) -> bool
 ~override NetPrints.Serialization.DocumentId.Equals(object obj) -> bool
+NetPrints.Serialization.Documents.AccessorDocument.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
+NetPrints.Serialization.Documents.ClassDocument.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
+NetPrints.Serialization.Documents.ConnectionDocument.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
+NetPrints.Serialization.Documents.ConstructorDocument.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
+NetPrints.Serialization.Documents.EventGraphDocument.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
+NetPrints.Serialization.Documents.GraphDocument.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
+NetPrints.Serialization.Documents.LocalVariableDocument.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
+NetPrints.Serialization.Documents.MethodDocument.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
+NetPrints.Serialization.Documents.NodeDocument.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
+NetPrints.Serialization.Documents.PinStateDocument.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
+NetPrints.Serialization.Documents.UnknownMembers
+NetPrints.Serialization.Documents.UnknownMembers.Equals(NetPrints.Serialization.Documents.UnknownMembers? other) -> bool
+NetPrints.Serialization.Documents.UnknownMembers.UnknownMembers() -> void
+NetPrints.Serialization.Documents.VariableDocument.ExtensionData -> NetPrints.Serialization.Documents.UnknownMembers?
+override NetPrints.Serialization.Documents.UnknownMembers.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.UnknownMembers.GetHashCode() -> int
