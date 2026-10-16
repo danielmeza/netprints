@@ -120,7 +120,7 @@ internal sealed class KeyHost : IDisposable
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         foreach (var (id, gesture, scope, handler) in commands)
         {
-            registry.AddCommand(new CommandDescriptor(ContributionIds.CommandPrefix + id, id, handler, DefaultGestures: [gesture], Scope: scope));
+            registry.AddCommand(new CommandDescriptor(ContributionIds.CommandPrefix + id, id, handler, DefaultGestures: [CommandGesture.Parse(gesture, null)], Scope: scope));
         }
 
         return registry;

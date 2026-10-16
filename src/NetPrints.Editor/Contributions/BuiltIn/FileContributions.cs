@@ -23,7 +23,7 @@ public static class FileContributions
             "New project…",
             new NewProjectCommandHandler(),
             IconId: IconIds.NewProject,
-            DefaultGestures: ["Ctrl+Shift+N"],
+            DefaultGestures: [new(CommandModifiers.Ctrl | CommandModifiers.Shift, CommandKey.N)],
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, ProjectGroup, 0),
             CommandBarOrder: null));
@@ -33,7 +33,7 @@ public static class FileContributions
             "Open project…",
             new OpenProjectCommandHandler(),
             IconId: IconIds.OpenProject,
-            DefaultGestures: ["Ctrl+O"],
+            DefaultGestures: [new(CommandModifiers.Ctrl, CommandKey.O)],
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, ProjectGroup, 1),
             CommandBarOrder: null));
@@ -83,7 +83,7 @@ public static class FileContributions
             "Save",
             new SaveCommandHandler(),
             IconId: IconIds.Save,
-            DefaultGestures: ["Ctrl+S"],
+            DefaultGestures: [new(CommandModifiers.Ctrl, CommandKey.S)],
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, SaveGroup, 0),
             CommandBarOrder: 1));
@@ -93,7 +93,7 @@ public static class FileContributions
             "Save all",
             new SaveAllCommandHandler(),
             IconId: IconIds.SaveAll,
-            DefaultGestures: ["Ctrl+Shift+S"],
+            DefaultGestures: [new(CommandModifiers.Ctrl | CommandModifiers.Shift, CommandKey.S)],
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, SaveGroup, 1),
             CommandBarOrder: null));

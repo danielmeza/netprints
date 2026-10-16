@@ -21,9 +21,9 @@ internal static class CommandKeyGestures
     /// <returns>The gestures.</returns>
     public static IEnumerable<KeyGesture> Of(CommandDescriptor command, bool isMacOS)
     {
-        foreach (string text in command.DefaultGestures ?? [])
+        foreach (CommandGesture gesture in command.DefaultGestures ?? [])
         {
-            if (CommandGesture.TryParse(text, out CommandGesture gesture) && TryKey(gesture.Key, out Key key))
+            if (Enum.TryParse(gesture.Key.Id.ToString(), out Key key))
             {
                 yield return new KeyGesture(key, Modifiers(gesture.Modifiers, isMacOS));
             }
@@ -49,16 +49,6 @@ internal static class CommandKeyGestures
         }
 
         return false;
-    }
-
-    private static bool TryKey(string name, out Key key)
-    {
-        if (name.Length == 1 && char.IsDigit(name[0]))
-        {
-            return Enum.TryParse("D" + name, out key);
-        }
-
-        return Enum.TryParse(name, out key);
     }
 
     private static KeyModifiers Modifiers(CommandModifiers modifiers, bool isMacOS)

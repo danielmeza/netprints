@@ -20,16 +20,14 @@ public class DefaultShortcutTests
     }
 
     public static TheoryData<string, string, CommandScope> Gestures() => ToData(BuiltIns().SelectMany(command => Scopes.Where(scope => AppliesIn(command, scope))
-        .SelectMany(scope => (command.DefaultGestures ?? []).Select(gesture => (command.Id, gesture, scope)))));
+        .SelectMany(scope => (command.DefaultGestures ?? []).Select(gesture => (command.Id, gesture.ToString(), scope)))));
 
     public static TheoryData<string, string, CommandScope> SingleKeyGestures() => ToData(BuiltIns().Where(command => command.Scope != CommandScope.Global)
         .SelectMany(command => Scopes.Where(scope => scope != CommandScope.Global && AppliesIn(command, scope))
-            .SelectMany(scope => (command.DefaultGestures ?? []).Where(IsPlain).Select(gesture => (command.Id, gesture, scope)))));
+            .SelectMany(scope => (command.DefaultGestures ?? []).Where(gesture => gesture.IsPlain).Select(gesture => (command.Id, gesture.ToString(), scope)))));
 
     private static bool AppliesIn(CommandDescriptor command, CommandScope scope) =>
         scope == CommandScope.Global ? command.Scope == CommandScope.Global : command.Scope.HasFlag(scope);
-
-    private static bool IsPlain(string gesture) => CommandGesture.TryParse(gesture, out var parsed) && parsed.IsPlain;
 
     private static TheoryData<string, string, CommandScope> ToData(IEnumerable<(string Id, string Gesture, CommandScope Scope)> rows)
     {
@@ -72,8 +70,8 @@ public class DefaultShortcutTests
             "Ctrl+S", "Ctrl+Shift+S", "Ctrl+O", "Ctrl+Shift+N", "F7", "Ctrl+Shift+B", "F5", "Shift+F5", "Ctrl+Z", "Ctrl+Y", "Ctrl+Shift+Z",
             "Delete", "F2", "Ctrl+A", "F", "Home", "Shift+F", "Esc", "Ctrl+Space", "Ctrl+W", "Ctrl+Tab", "Ctrl+Shift+Tab", .. pending,
         ];
-        var bound = BuiltIns().SelectMany(command => (command.DefaultGestures ?? []))
-            .Select(gesture => CommandGesture.TryParse(gesture, out var parsed) ? parsed.ToString() : gesture).ToHashSet(StringComparer.Ordinal);
+        var bound = BuiltIns().SelectMany(command => command.DefaultGestures ?? [])
+            .Select(gesture => gesture.ToString()).ToHashSet(StringComparer.Ordinal);
 
         string[] missing = [.. fr034.Except(pending).Where(gesture => !bound.Contains(CommandGesture.TryParse(gesture, out var parsed) ? parsed.ToString() : gesture))];
 

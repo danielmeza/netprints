@@ -259,6 +259,41 @@ kept in `.agent-archive/2026-10-16-p3-m5-spike/` beside the repository.
   factory-method option on the attributes (shape 1 above), which the contract text already hints at ("directly or
   through a factory").
 
+## Batch A4 (T008-T010)
+
+- T008 shape: `[Singleton<T>]` and `[SessionScoped<T>]` (both with `Factory = "Method"`, a static factory method on the type, for tuple
+  serializers, the registry freeze, the shell cycle and `BackupOptions`/`ProjectLocations`) and `[ScopeFactory]`. `AddEditorServices()`
+  is one lambda per registration, one line each; constructor parameters resolve from the provider, `ILogger<T>` and `ILogger` come from
+  `ILoggerFactory`, `IEnumerable<T>` is `GetServices`, an optional parameter is passed explicitly unless its type is registered here.
+  Host instances stay hand-registered next to the call. `[ScopeFactory]` partial classes need an `IServiceProvider services` member;
+  their `partial Create*` methods take matching parameters by type and resolve the rest.
+- Size (240 registrations in one file): 255 lines, 1.06 lines per registration, so the 600-line bound is reached near 585
+  registrations (the spike's per-argument format gave 4.6 lines each).
+- Decision (double dispose): a type with several service attributes is registered once and forwarded for the other services when it is
+  not disposable and has one lifetime. A disposable one, or one with mixed lifetimes, is NPI005 (new code; the contract table gets the
+  row). A holder whose members are services stays a factory plus hand registration, as the spike found. A runtime test pins that a
+  held disposable type is disposed once.
+- Decision: the NPI rules are reported by the generators (spans at the attribute), and `CompositionDiagnosticsAnalyzer` and
+  `SmartEnumDiagnosticsAnalyzer` only declare the descriptors, because RS2002 needs an analyzer to list them.
+- Decision: constructors count when public or internal (the generated code is in the same assembly).
+- Deviation: the generator tests use their own `GeneratorHarness` (loads the generators from the RepoAnalyzers output folder), not
+  `GeneratorTestHost`, which is tied to the Annotations generator; no Annotations alias is needed in `Analyzers.Tests`.
+- Decision: the injected attributes carry `[Embedded]` (a third generator, `EmbeddedAttributeGenerator`, adds the definition once).
+  Without it every `src` project that has `InternalsVisibleTo` access to another got CS0436 on `[SmartEnum]`. The two Catalog
+  fixtures that run the Annotations generator, which adds the same definition, drop the RepoAnalyzers reference.
+- T009: `[SmartEnum]` emits `{Name}Id` and a lazily built `All` property (not a field), so a lookup declared after the members cannot
+  see it half-built; NPI011 reports a lookup declared before them (same file) or in another file, and members that are properties or
+  not `static readonly`. NPI010: not a top-level abstract partial class.
+- T010: `CommandKey` has 75 members (26 letters, D0-D9, F1-F24, 15 named), per-member nested classes, no switch (a test scans the
+  file). `CommandGesture` is `record(CommandModifiers, CommandKey)`, `ISpanParsable` and `ISpanFormattable`; span parsing allocates
+  only the gesture (test). `CommandDescriptor.DefaultGestures` is `IReadOnlyList<CommandGesture>?`; the 24 built-in lists are typed
+  values. New `CommandGesture.Display` uses the key glyph (`Esc`), so menus and the guide keep their text. The registry's
+  "unparseable gesture" case is gone (parsing is at the boundary) and a null gesture is an invalid descriptor.
+- Red/green: T008 tests 16 of 75 red (no generator), then 75 green; NPI doc rows red (2 guide tests), then green. T009 11 of 90 red,
+  then 90 green. T010 red as a compile failure (142 errors), then green: Editor.Tests 1917 of 1917 in Release.
+- Suite (Release, no E2E pass): 4310 total, 4276 passed, 33 skipped, 1 failed (`ShortcutGuideTests`, `Escape` against `Esc`), fixed
+  with `Display`; Editor.Tests re-run 1917 of 1917. UITests (16 min) passed before that change and were not re-run.
+
 ## Pack spike
 
 (T026)

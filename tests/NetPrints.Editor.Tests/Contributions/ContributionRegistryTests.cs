@@ -20,7 +20,9 @@ public class ContributionRegistryTests
     private ContributionRegistry NewRegistry() => new(logger);
 
     private static CommandDescriptor Command(string id, string label = "Label", CommandScope scope = CommandScope.Global, params string[] gestures) =>
-        new(id, label, new NoopHandler(), DefaultGestures: gestures, Scope: scope);
+        new(id, label, new NoopHandler(), DefaultGestures: [.. gestures.Select(text => CommandGesture.Parse(text, null))], Scope: scope);
+
+    private static string[] Texts(CommandDescriptor command) => [.. (command.DefaultGestures ?? []).Select(gesture => gesture.ToString())];
 
     private static PanelDescriptor Panel(string id) => new(id, "Panel", _ => new object(), PanelDock.Left, 0);
 
@@ -130,15 +132,13 @@ public class ContributionRegistryTests
         Assert.Empty(registry.Issues);
     }
 
-    [Theory]
-    [InlineData("Ctrl+Banana")]
-    [InlineData("Ctrl+12")]
-    [InlineData("F25")]
-    public void AnUnknownKeyIsAnInvalidDescriptor(string gesture)
+    [Fact]
+    public void ANullGestureIsAnInvalidDescriptor()
     {
         var registry = NewRegistry();
+        CommandDescriptor command = Command("netprints.command.odd") with { DefaultGestures = new CommandGesture[1] };
 
-        registry.AddCommand(Command("netprints.command.odd", gestures: gesture));
+        registry.AddCommand(command);
 
         Assert.Empty(registry.Commands);
         Assert.Equal(ContributionIssueKind.InvalidDescriptor, Assert.Single(registry.Issues).Kind);
@@ -201,17 +201,6 @@ public class ContributionRegistryTests
     }
 
     [Fact]
-    public void AnUnparseableGestureIsAnInvalidDescriptor()
-    {
-        var registry = NewRegistry();
-
-        registry.AddCommand(Command("netprints.command.save", scope: CommandScope.Graph, gestures: "Ctrl+"));
-
-        Assert.Empty(registry.Commands);
-        Assert.Equal(ContributionIssueKind.InvalidDescriptor, Assert.Single(registry.Issues).Kind);
-    }
-
-    [Fact]
     public void ADuplicateIdWithinAKindIsReportedAndTheFirstWins()
     {
         var registry = NewRegistry();
@@ -269,8 +258,8 @@ public class ContributionRegistryTests
 
         registry.AddCommand(Command("netprints.command.second", scope: CommandScope.Graph, gestures: ["Ctrl+K", "Ctrl+L"]));
 
-        Assert.Equal(["Ctrl+K"], registry.Commands[0].DefaultGestures);
-        Assert.Equal(["Ctrl+L"], registry.Commands[1].DefaultGestures);
+        Assert.Equal(["Ctrl+K"], Texts(registry.Commands[0]));
+        Assert.Equal(["Ctrl+L"], Texts(registry.Commands[1]));
         var issue = Assert.Single(registry.Issues);
         Assert.Equal(ContributionIssueKind.GestureConflict, issue.Kind);
         Assert.Equal("netprints.command.second", issue.Id);
@@ -312,7 +301,7 @@ public class ContributionRegistryTests
 
         registry.AddCommand(Command("netprints.command.second", scope: CommandScope.ProjectTree, gestures: "Delete"));
 
-        Assert.Equal(["Delete"], registry.Commands[1].DefaultGestures);
+        Assert.Equal(["Delete"], Texts(registry.Commands[1]));
         Assert.Empty(registry.Issues);
     }
 

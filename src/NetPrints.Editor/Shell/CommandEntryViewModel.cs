@@ -26,7 +26,7 @@ public sealed partial class CommandEntryViewModel : ObservableObject
         AutomationId = automationPrefix + descriptor.Id;
         IconId = descriptor.IconId;
         StaticLabel = descriptor.Label;
-        FirstGesture = descriptor.DefaultGestures is { Count: > 0 } gestures ? gestures[0] : "";
+        FirstGesture = descriptor.DefaultGestures is { Count: > 0 } gestures ? gestures[0].Display : "";
         Refresh();
     }
 

@@ -477,7 +477,7 @@ public class RegistrySurfaceTests
         var handler = new AlwaysEnabled();
         using var rig = SurfaceRig.Create(registry =>
         {
-            registry.AddCommand(new CommandDescriptor("acme.command.hello", "Say hello", handler, "Hand", ["Ctrl+Alt+H"], CommandScope.Global, new MenuPlacement("View", "acme", 0), 8));
+            registry.AddCommand(new CommandDescriptor("acme.command.hello", "Say hello", handler, "Hand", [new CommandGesture(CommandModifiers.Ctrl | CommandModifiers.Alt, CommandKey.H)], CommandScope.Global, new MenuPlacement("View", "acme", 0), 8));
             registry.AddCommand(new CommandDescriptor("acme.command.report", "Report", handler, null, null, CommandScope.Global, new MenuPlacement("Reports", "reports", 0), null));
         });
 

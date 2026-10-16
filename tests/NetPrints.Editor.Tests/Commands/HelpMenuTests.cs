@@ -65,7 +65,7 @@ public class HelpMenuTests
     public void ACommandFromAnotherContributionAppearsInItsMenu()
     {
         ContributionRegistry registry = Registered(extra => extra.AddCommand(new CommandDescriptor(
-            "acme.command.hello", "Hello", new AboutCommandHandler(), DefaultGestures: ["Ctrl+H"], Menu: new MenuPlacement("Help", "acme", 0))));
+            "acme.command.hello", "Hello", new AboutCommandHandler(), DefaultGestures: [new CommandGesture(CommandModifiers.Ctrl, CommandKey.H)], Menu: new MenuPlacement("Help", "acme", 0))));
 
         var sheet = new KeyboardShortcutsViewModel(registry);
 

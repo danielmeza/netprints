@@ -179,7 +179,7 @@ trip; Windows CLI tests green; SC-015; R5-0 numbers and the M5 outcome recorded.
   `tests/NetPrints.Analyzers.Tests/SmartEnums/SmartEnumGeneratorTests.cs` (snapshot: only the companion id enum and the
   `All` list; compile; incrementality) and NPI010/NPI011 cases. Then the generator in
   `src/NetPrints.RepoAnalyzers/SmartEnums/`. Guide rows.
-- [ ] T010 [US1] `CommandKey`, `CommandKeyId` and gesture parsing (FR-005, research R5, ADR-0034; 1 unit). Test first:
+- [x] T010 [US1] `CommandKey`, `CommandKeyId` and gesture parsing (FR-005, research R5, ADR-0034; 1 unit). Test first:
   `tests/NetPrints.Editor.Tests/Contributions/CommandKeyTests.cs` (the 1:1 mapping of `CommandKey.All` to
   `CommandKeyId`; per-member behaviour with no switch over keys; a test that touches the static constructor, so a
   `TypeInitializationException` fails it — US1 scenario 4) and `CommandGestureTests.cs` (the `ISpanParsable<T>` and

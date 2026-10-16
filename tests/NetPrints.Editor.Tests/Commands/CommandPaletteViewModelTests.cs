@@ -54,7 +54,7 @@ public sealed class CommandPaletteViewModelTests
     {
         var probe = new Probe(enabled);
         probes[name] = probe;
-        registry.AddCommand(new CommandDescriptor(ContributionIds.CommandPrefix + name, label, probe, DefaultGestures: gestures,
+        registry.AddCommand(new CommandDescriptor(ContributionIds.CommandPrefix + name, label, probe, DefaultGestures: [.. gestures.Select(text => CommandGesture.Parse(text, null))],
             Menu: menu is null ? null : new MenuPlacement(menu, "g", 0)));
     }
 

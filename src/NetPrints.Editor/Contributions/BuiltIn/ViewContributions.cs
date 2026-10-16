@@ -26,7 +26,7 @@ public static class ViewContributions
             "Frame selection",
             new FrameSelectionCommandHandler(),
             IconId: IconIds.ZoomToFit,
-            DefaultGestures: ["F"],
+            DefaultGestures: [new(CommandModifiers.None, CommandKey.F)],
             Scope: CommandScope.Graph,
             Menu: new MenuPlacement(MenuName, ViewportGroup, 0),
             CommandBarOrder: null));
@@ -36,7 +36,7 @@ public static class ViewContributions
             "Fit all",
             new FitAllCommandHandler(),
             IconId: IconIds.FitToScreen,
-            DefaultGestures: ["Home", "Shift+F"],
+            DefaultGestures: [new(CommandModifiers.None, CommandKey.Home), new(CommandModifiers.Shift, CommandKey.F)],
             Scope: CommandScope.Graph,
             Menu: new MenuPlacement(MenuName, ViewportGroup, 1),
             CommandBarOrder: null));
@@ -95,7 +95,7 @@ public static class ViewContributions
             ContributionIds.CommandPrefix + "commandPalette",
             "Command palette…",
             new CommandPaletteCommandHandler(),
-            DefaultGestures: ["Ctrl+Shift+P"],
+            DefaultGestures: [new(CommandModifiers.Ctrl | CommandModifiers.Shift, CommandKey.P)],
             Menu: new MenuPlacement(MenuName, FindGroup, 0)));
     }
 }

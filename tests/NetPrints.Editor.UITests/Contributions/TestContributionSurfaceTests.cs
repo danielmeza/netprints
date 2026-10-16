@@ -80,7 +80,7 @@ public class TestContributionSurfaceTests
 
     private static void AddTestContributions(IContributionRegistry registry)
     {
-        registry.AddCommand(new CommandDescriptor(HelloId, "Say hello", new HelloHandler(), DefaultGestures: ["Ctrl+Alt+H"], Menu: new MenuPlacement("File", "testext", 0)));
+        registry.AddCommand(new CommandDescriptor(HelloId, "Say hello", new HelloHandler(), DefaultGestures: [new CommandGesture(CommandModifiers.Ctrl | CommandModifiers.Alt, CommandKey.H)], Menu: new MenuPlacement("File", "testext", 0)));
         registry.AddPanel(new PanelDescriptor(NotesPanelId, "Notes", _ => new object(), PanelDock.Bottom, 9));
         registry.AddDashboardTile(new DashboardTileDescriptor("testext.tile.hello", "Hello", 99, _ => TileBody));
         registry.AddProjectTemplate(new ProjectTemplateDescriptor(TemplateId, "Empty test app", "An empty template", DefaultProjectProfile.ProfileId, ProjectOutputType.Library));

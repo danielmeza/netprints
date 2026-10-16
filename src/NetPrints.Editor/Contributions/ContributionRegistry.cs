@@ -56,38 +56,38 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
             return;
         }
 
-        var gestures = new List<(string Text, string Canonical)>();
-        foreach (string text in command.DefaultGestures ?? [])
+        var gestures = new List<CommandGesture>();
+        foreach (CommandGesture gesture in command.DefaultGestures ?? [])
         {
-            if (!CommandGesture.TryParse(text, out var gesture))
+            if (gesture is null)
             {
-                Report(ContributionIssueKind.InvalidDescriptor, command.Id, $"Gesture '{text}' cannot be parsed.");
+                Report(ContributionIssueKind.InvalidDescriptor, command.Id, "A default gesture is null.");
                 return;
             }
 
             if (gesture.IsPlain && !gesture.IsFunctionKey && command.Scope == CommandScope.Global)
             {
-                Report(ContributionIssueKind.InvalidDescriptor, command.Id, $"Single-key or Shift-only gesture '{text}' is not allowed in the Global scope (function keys are).");
+                Report(ContributionIssueKind.InvalidDescriptor, command.Id, $"Single-key or Shift-only gesture '{gesture}' is not allowed in the Global scope (function keys are).");
                 return;
             }
 
-            if (!gestures.Exists(g => g.Canonical == gesture.ToString()))
+            if (!gestures.Contains(gesture))
             {
-                gestures.Add((text, gesture.ToString()));
+                gestures.Add(gesture);
             }
         }
 
-        var kept = new List<string>(gestures.Count);
-        foreach (var (text, canonical) in gestures)
+        var kept = new List<CommandGesture>(gestures.Count);
+        foreach (CommandGesture gesture in gestures)
         {
-            var owner = commands.FirstOrDefault(c => ScopesOverlap(c.Scope, command.Scope) && GesturesOf(c).Contains(canonical));
+            var owner = commands.FirstOrDefault(c => ScopesOverlap(c.Scope, command.Scope) && (c.DefaultGestures ?? []).Contains(gesture));
             if (owner is null)
             {
-                kept.Add(text);
+                kept.Add(gesture);
             }
             else
             {
-                Report(ContributionIssueKind.GestureConflict, command.Id, $"Gesture '{text}' is already bound to '{owner.Id}'; the first registration keeps it.");
+                Report(ContributionIssueKind.GestureConflict, command.Id, $"Gesture '{gesture}' is already bound to '{owner.Id}'; the first registration keeps it.");
             }
         }
 
@@ -187,9 +187,6 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
 
     private static bool ScopesOverlap(CommandScope a, CommandScope b) =>
         a == CommandScope.Global || b == CommandScope.Global || (a & b) != 0;
-
-    private static HashSet<string> GesturesOf(CommandDescriptor command) =>
-        [.. (command.DefaultGestures ?? []).Select(g => CommandGesture.TryParse(g, out var parsed) ? parsed.ToString() : g)];
 
     private void ThrowIfFrozen()
     {

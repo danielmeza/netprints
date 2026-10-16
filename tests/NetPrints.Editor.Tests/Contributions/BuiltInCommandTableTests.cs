@@ -117,7 +117,7 @@ public class BuiltInCommandTableTests
         Assert.Equal(row.Label, command.Label);
         Assert.Equal(row.Menu, command.Menu?.Path);
         Assert.Equal(row.Group, command.Menu?.Group);
-        Assert.Equal(row.Gestures.Select(Canonical), (command.DefaultGestures ?? []).Select(Canonical));
+        Assert.Equal(row.Gestures.Select(Canonical), (command.DefaultGestures ?? []).Select(gesture => gesture.ToString()));
         Assert.Equal(row.Scope, command.Scope);
         Assert.Equal(row.Bar, command.CommandBarOrder);
         Assert.Equal(row.Handler, command.Handler.GetType());
@@ -153,7 +153,7 @@ public class BuiltInCommandTableTests
 
     [Fact]
     public void ExitsAltF4BelongsToTheOsAndIsNotARegisteredGesture() =>
-        Assert.DoesNotContain(Registered().Commands.SelectMany(command => command.DefaultGestures ?? []), gesture => Canonical(gesture) == "Alt+F4");
+        Assert.DoesNotContain(Registered().Commands.SelectMany(command => command.DefaultGestures ?? []), gesture => gesture.ToString() == "Alt+F4");
 
     [Fact]
     public void ThePendingListIsShrinkOnlyAndEachEntryIsStillPending()

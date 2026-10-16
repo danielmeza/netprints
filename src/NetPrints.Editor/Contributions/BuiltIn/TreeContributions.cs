@@ -26,7 +26,7 @@ public static class TreeContributions
             "Open",
             new OpenGraphCommandHandler(),
             IconId: null,
-            DefaultGestures: ["Enter"],
+            DefaultGestures: [new(CommandModifiers.None, CommandKey.Enter)],
             Scope: CommandScope.ProjectTree,
             Menu: null,
             CommandBarOrder: null));
