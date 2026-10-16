@@ -54,7 +54,8 @@ start page's Learn card opens the same sheet.
 ![The Keyboard shortcuts sheet](../../../website/static/img/guide/editor/keyboard-shortcuts.png)
 
 The table below is the same list. A shortcut marked *Graph canvas* works while the graph canvas has focus, one
-marked *Project tree* while the project tree has focus, and the rest work anywhere in the window. A command with
+marked *Project tree* while the project tree has focus, one marked *Variables panel* while a list of the
+Variables panel has focus (on its selected row), and the rest work anywhere in the window. A command with
 two shortcuts lists both. A dash means the command has no shortcut; it is still in the menu and the palette.
 
 <!-- shortcuts:begin -->
@@ -74,8 +75,8 @@ two shortcuts lists both. A dash means the command has no shortcut; it is still 
 | File | Exit | – | Anywhere |
 | Edit | Undo | Ctrl+Z | Anywhere |
 | Edit | Redo | Ctrl+Y, Ctrl+Shift+Z | Anywhere |
-| Edit | Delete | Delete | Graph canvas, Project tree |
-| Edit | Rename | F2 | Graph canvas, Project tree |
+| Edit | Delete | Delete | Graph canvas, Project tree, Variables panel |
+| Edit | Rename | F2 | Graph canvas, Project tree, Variables panel |
 | Edit | Select all | Ctrl+A | Graph canvas |
 | Edit | Add node… | Ctrl+Space | Graph canvas |
 | Edit | Class settings | – | Anywhere |
@@ -97,7 +98,7 @@ two shortcuts lists both. A dash means the command has no shortcut; it is still 
 | View | Reset layout | – | Anywhere |
 | View | Theme › Dark | – | Anywhere |
 | View | Theme › Light | – | Anywhere |
-| View | Theme › System | – | Anywhere |
+| View | Theme › System (follow OS) | – | Anywhere |
 | View | Command palette… | Ctrl+Shift+P | Anywhere |
 | Go | Go to anything… | Ctrl+P | Anywhere |
 | Go | Back | Alt+Left | Anywhere |

@@ -6,6 +6,7 @@ using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Events;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Shell;
+using NetPrints.Editor.Variables;
 using NetPrints.Graph;
 
 namespace NetPrints.Editor.Inspectors;
@@ -179,6 +180,7 @@ public sealed partial class InspectorPanelViewModel : ObservableObject, IShellPa
         MethodGraph { Class: { } owner } method => Watch(session.ContextFor(owner)).Methods.FirstOrDefault(item => ReferenceEquals(item.Graph, method)),
         ConstructorGraph { Class: { } owner } constructor => Watch(session.ContextFor(owner)).Constructors.FirstOrDefault(item => ReferenceEquals(item.Graph, constructor)),
         Variable { Class: { } owner } variable => Watch(session.ContextFor(owner)).Variables.FirstOrDefault(item => ReferenceEquals(item.Variable, variable)),
+        LocalVariableViewModel { IsDisposed: false } local => local,
         EventGraph { Class: { } owner } eventGraph => EventGraphInspectorOf(Watch(session.ContextFor(owner)), eventGraph),
         EventEntryNode { Graph.Class: { } owner } entry => Watch(session.ContextFor(owner)).EventEntryInspectorOf(entry),
         _ => null,

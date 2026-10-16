@@ -339,7 +339,7 @@ public class LocalVariableTests : IDisposable
     public void VariablesPanelBuildsMethodGroupFromOpenedGraphAndClearsWhenClosed()
     {
         Assert.True(panel.HasMethodGroup);
-        Assert.Equal("Method: Method", panel.MethodGroupHeader);
+        Assert.Equal("Local variables: Method", panel.MethodGroupHeader);
         Assert.Same(context.Variables, panel.ClassVariables);
 
         panel.OnOpenedGraphChanged(null);

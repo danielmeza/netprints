@@ -1,0 +1,42 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
+             xmlns:edvariables="clr-namespace:NetPrints.Editor.Variables"
+             x:Class="NetPrints.Editor.Variables.VariableRowView"
+             x:DataType="edvariables:VariableRowViewModel">
+  <!-- A variable row, member or local: type chip, name, muted type and the shared remove column. Double click or F2 renames in place. -->
+  <ctl:ListRow AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableRow}" AutomationProperties.Name="{Binding Name}"
+               RemoveCommand="{Binding RemoveCommand}" RemoveText="Remove variable" RemoveAutomationId="{x:Static ed:AutomationIds.VariableRowRemove}">
+    <Grid ColumnDefinitions="Auto,*,Auto">
+      <Ellipse Classes="pin connected variableChip" AutomationProperties.AccessibilityView="Raw">
+        <Interaction.Behaviors>
+          <edbehaviors:StyleClassBehavior ClassName="{Binding FamilyClass}" />
+        </Interaction.Behaviors>
+      </Ellipse>
+      <TextBlock Grid.Column="1" Classes="treeItem" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableName}" Text="{Binding Name}"
+                 TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Background="Transparent" IsVisible="{Binding IsNotEditing}">
+        <Interaction.Behaviors>
+          <edbehaviors:VariableDragSourceBehavior />
+          <ExecuteCommandOnDoubleTappedBehavior Command="{Binding BeginRenameCommand}" />
+        </Interaction.Behaviors>
+      </TextBlock>
+      <StackPanel Grid.Column="1">
+        <TextBox Text="{Binding EditText}" IsVisible="{Binding IsEditing}" AutomationProperties.Name="Name" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableRenameBox}">
+          <Interaction.Behaviors>
+            <FocusOnVisibleBehavior />
+            <TextBoxSelectAllOnGotFocusBehavior />
+            <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding CommitEditCommand}" />
+            <ExecuteCommandOnKeyDownBehavior Key="Escape" Command="{Binding CancelEditCommand}" />
+            <ExecuteCommandOnLostFocusBehavior Command="{Binding CancelEditCommand}" />
+            <edbehaviors:FocusRowOnEditEndBehavior />
+          </Interaction.Behaviors>
+        </TextBox>
+        <TextBlock Classes="fieldError" Text="{Binding RenameError}" IsVisible="{Binding HasRenameError}"
+                   AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableRenameError}" />
+      </StackPanel>
+      <TextBlock Grid.Column="2" Classes="secondary rowType" Text="{Binding TypeName}" />
+    </Grid>
+  </ctl:ListRow>
+</UserControl>

@@ -80,7 +80,7 @@ public static class ViewContributions
         [
             ("theme.dark", "Dark", EditorTheme.Dark),
             ("theme.light", "Light", EditorTheme.Light),
-            ("theme.system", "System", EditorTheme.System),
+            ("theme.system", "System (follow OS)", EditorTheme.System),
         ];
         foreach ((int order, (string id, string label, EditorTheme theme)) in themes.Index())
         {
