@@ -19,14 +19,17 @@ this spec cites them and does not reopen them."
 **Roadmap phase**: P3 (depends on P0, P1 and P3a; P3a merged 2026-10-15 as PR #12, `bf3496e9`). **Done when**
 (roadmap): the phase's features work end to end and the docs are updated (guides, API reference, ADRs).
 
-**Scope split (owner, 2026-10-16)**: the package service, NuGet packages in the References dialog, the extension
-manager and samples from remote sources moved to roadmap phase P3c (Clarifications, session 2026-10-16). Their IDs
-(User Stories 12 to 14, FR-089 to FR-106, SC-012 to SC-014) stay below, marked "moved to P3c", and are not reused; the
-boundary calls are in the Assumptions.
+**Scope (owner, 2026-10-16)**: the extension manager and samples from remote sources are roadmap phase P3c's. Their
+IDs (User Stories 13 and 14, FR-094 to FR-106, SC-013 and SC-014) stay below, marked "moved to P3c", and are not
+reused; the boundary calls are in the Assumptions. Earlier the same day the owner had also moved the package service
+and NuGet packages to P3c and the tail to P3b, then kept both in P3: User Story 12 (NuGet packages in the References
+dialog; FR-089 to FR-093, SC-012) and User Stories 16 and 17 (inspector sections, value editors and graph rules; user
+and extension themes; FR-109 to FR-115) are active (Clarifications, session 2026-10-16). P3 is about 5 weeks in agent
+time.
 
-**Scope split 2 (owner, 2026-10-16)**: the tail (inspector sections, value editors, graph rules and user and extension
-themes, plan sub-phase G) moved to roadmap phase P3b. Its IDs (User Stories 16 and 17, FR-109 to FR-115) stay below,
-marked "moved to P3b", and are not reused. FR-116 stays in P3. P3 is about 4 weeks in agent time.
+**Version (owner, 2026-10-16)**: P3a ships as v0.3.0, so P3's release is 0.4.0. The hard renames, the `*REMOVED*`
+entries, the release notes, the published package versions and `netprintsApi` 0.4 below name 0.4.0; before this date
+they said 0.3.0, including the owner's hard-rename decision of 2026-10-08.
 
 **Sources reused**: the roadmap's P3 section, including "Carried over from P2" and "Carried over from P3a"; the
 deferrals of the P3a spec (`specs/005-editor-shell/spec.md`: Assumptions and the deferred lines after FR-089) and its
@@ -109,21 +112,34 @@ The owner answered the two questions the coordinator asked after the spec was wr
 - Q: Should the tail (sub-phase G: inspector sections, value editors, graph rules, translator helpers, node kinds by
   convention, user and extension themes) stay in P3 behind the Checkpoint F scope rule? → A: No. The owner approved
   moving it to P3b. User Stories 16 and 17 and FR-109 to FR-115 moved there, with their IDs kept and marked "moved to
-  P3b". No success criterion was tied only to them. FR-116 (the docs) and the 0.3.0 release preparation stay in P3.
+  P3b". No success criterion was tied only to them. FR-116 (the docs) and the 0.4.0 release preparation stay in P3.
   This narrows answer 1: the Checkpoint F scope rule no longer exists, and the P6 fallbacks it named for R6, N2, N5, S7,
   SUG5, B1 and C are no longer P3 cut lines (P3b decides their placement). The manifest `themes` field (FR-029) stays
   in P3, because it must exist before the packages publish; P3b consumes it.
 - Q: Does each sub-phase end with its own review? → A: No. Reviews run at five checkpoints: A+B, C1+C2, D1+D2, E+F and
   the final review. Each checkpoint is one adversarial review batch plus one fix batch. The sub-phase gate reports stay
   in tasks.md. The implementers push and return without waiting for CI; the coordinator watches the PR's CI.
+- Q: After the two moves above, what stays out of P3? → A: Only the extension manager and the remote samples. The
+  owner, verbatim: "Lo de los paquetes nuget debe quedar, ademas las secciones del inspector, editores de valores y
+  reglas del grafo y temas de usuario o extensiones debe quedar tambien lo que puedes sacar es el gestor de extensiones
+  y los samples remotos." ("The NuGet packages must stay; the inspector sections, value editors and graph rules, and
+  user or extension themes must stay too; what you can take out is the extension manager and the remote samples.")
+  User Story 12 with FR-089 to FR-093 and SC-012, and User Stories 16 and 17 with FR-109 to FR-115, are active again;
+  User Stories 13 and 14, FR-094 to FR-106, SC-013 and SC-014 stay in P3c. This reverses the tail answer above and
+  narrows the first answer of this session: the package service and the Packages tab return with User Story 12, and
+  P3c's extension manager and samples gallery reuse that service. No scope rule comes back: the tail and User Story 12
+  are planned work with no cut line, and the P6 fallbacks of the 2026-10-15 answer 1 stay retired. The narrowed
+  answers 2 and 5 still hold, because they depend on the extension manager and the sample manifest, which stay in P3c.
+  The model-driven grid (ADR-0036 c) stays in P3b, with the member defaults and editor metadata it builds on. The
+  reviews stay at five checkpoints: the plan folds the tail (sub-phase G) into the E+F checkpoint (E+F+G) and the
+  NuGet packages (sub-phase H) into the final one.
 
 ## User Scenarios & Testing *(mandatory)*
 
 The stories are ordered by priority. **MVP slice: User Stories 1–4**, core first: the analyzer and generator
 foundation, the node model reshaped before the API freezes, the published packages, and extensions contributing to the
-editor. Each later story is independently testable on top of the MVP. The tail (User Stories 16 and 17, priority P4)
-moved to P3b.
-in the Clarifications may move out of P3.
+editor. Each later story is independently testable on top of the MVP. Priority P4 marks the tail (User Stories 16 and
+17); the owner kept it in P3 with no scope rule (Clarifications, session 2026-10-16).
 
 ### User Story 1 - Analyzer and generator foundation (Priority: P1)
 
@@ -165,7 +181,7 @@ become output pins, purity follows from pin roles, node capabilities are role in
 providers owned by node kinds. Saved graphs do not change.
 
 **Why this priority**: These change public shapes (pin properties, node capabilities, search providers). The owner
-decided a hard rename in 0.3.0 with no compatibility shims (2026-10-08), so they must land before the packages publish.
+decided a hard rename in 0.4.0 with no compatibility shims (2026-10-08), so they must land before the packages publish.
 
 **Independent Test**: Every fixture and sample graph loads and saves byte-identical; the generated C# goldens are
 byte-identical except the recorded changes for `out` and `ref` pins; the pin-layout golden (S0) matches the declared
@@ -451,24 +467,46 @@ are listed for the owner.
 
 ---
 
-### User Story 12 - NuGet packages in the References dialog (moved to P3c)
+### User Story 12 - NuGet packages in the References dialog (Priority: P3)
 
-Moved to roadmap phase P3c on 2026-10-16 (Clarifications, session 2026-10-16), with FR-089 to FR-093 and SC-012.
+A developer browses, adds, updates and removes NuGet packages from a Packages tab in the References dialog, with the
+sources and credentials `dotnet restore` uses, and a failed change leaves the project files exactly as they were.
+
+**Why this priority**: B7 (gap research 2026-10-06); it also builds the package service that P3c's extension manager
+and samples gallery reuse. The owner kept it in P3 on 2026-10-16 (Clarifications).
+
+**Independent Test**: In a Central Package Management fixture and a plain fixture, add and update a package from a
+local feed: the files match what `dotnet package add` writes; make the restore fail: the files are byte-identical to
+before.
+
+**Acceptance Scenarios**:
+
+1. **Given** the Packages tab, **When** the user searches a source, **Then** results show with versions, a prerelease
+   switch, and deprecated and vulnerable badges.
+2. **Given** a project that uses Central Package Management, **When** the user adds a package, **Then** the version goes
+   to `Directory.Packages.props` (or a `VersionOverride` when the user picks one) and the reference to the project file,
+   with comments and order preserved.
+3. **Given** a change whose restore fails, **When** the failure is reported, **Then** the project and props files are
+   restored to their exact bytes.
+4. **Given** a package that graph nodes use, **When** the user removes it, **Then** the nodes that use it are listed
+   first; proceeding keeps them as unresolved nodes.
+5. **Given** no network, **When** the tab opens, **Then** installed packages and the global packages folder are still
+   listed, marked offline.
 
 ---
 
 ### User Story 13 - Extension manager (moved to P3c)
 
-Moved to roadmap phase P3c on 2026-10-16, with FR-094 to FR-098 and SC-013. P3 keeps loading per-user extensions from
-the configured extension directories and the extension package format that the author kit packs and verifies
-(Assumptions).
+Moved to roadmap phase P3c on 2026-10-16, with FR-094 to FR-098 and SC-013; it reuses User Story 12's package service.
+P3 keeps loading per-user extensions from the configured extension directories and the extension package format that
+the author kit packs and verifies (Assumptions).
 
 ---
 
 ### User Story 14 - Samples from remote sources (moved to P3c)
 
-Moved to roadmap phase P3c on 2026-10-16, with FR-099 to FR-106 and SC-014. The start page keeps P3a's samples tile and
-bundled sample until P3c replaces them.
+Moved to roadmap phase P3c on 2026-10-16, with FR-099 to FR-106 and SC-014; it reuses User Story 12's package service.
+The start page keeps P3a's samples tile and bundled sample until P3c replaces them.
 
 ---
 
@@ -491,17 +529,51 @@ files as the editor's New project with the Console template, and the project bui
 
 ---
 
-### User Story 16 - Inspector sections, value editors and graph rules (moved to P3b)
+### User Story 16 - Inspector sections, value editors and graph rules (Priority: P4)
 
-Moved to roadmap phase P3b on 2026-10-16 (Clarifications, session 2026-10-16), with FR-109 to FR-112 (R6, N2, N5, S7
-and SUG5). The experimental ids NPXE0014 to NPXE0017, ADR-0032, ADR-0026 and the check NPK014 move with it.
+An extension author adds sections to the inspector for variables, methods and classes, contributes editors for pin and
+default values of its types, adds graph rules whose diagnostics appear in Errors and in `netprints build`, and reaches
+the translation context for helper members; built-in node kinds are declared by convention.
+
+**Why this priority**: The additive tail of the SOLID plan (R6, N2, N5, S7 and SUG5); each is experimental. The owner
+kept it in P3 on 2026-10-16 with no scope rule (Clarifications); the model-driven grid stays in P3b.
+
+**Independent Test**: The test extension contributes an inspector section, a value editor for one of its types and a
+graph rule: each appears, the rule's diagnostic shows in Errors and fails `netprints build`, and the extension's
+conformance tests cover all three.
+
+**Acceptance Scenarios**:
+
+1. **Given** an extension inspector section that applies to variables, **When** a variable is selected, **Then** the
+   section appears below the built-in ones and edits the model with undo.
+2. **Given** an extension value editor for a type, **When** an unconnected pin or a default of that type is edited,
+   **Then** the extension's editor is used; without the extension, the generic editor is.
+3. **Given** a graph rule that flags a pattern, **When** the graph has it, **Then** Errors lists the diagnostic in the
+   editor, and `netprints build` and `generate` report it with the same code.
 
 ---
 
-### User Story 17 - Themes from users and extensions (moved to P3b)
+### User Story 17 - Themes from users and extensions (Priority: P4)
 
-Moved to roadmap phase P3b on 2026-10-16, with FR-113 to FR-115 (B1 and C of ADR-0035). P3 keeps the theme presets (US8)
-and the manifest `themes` field (FR-029), which P3b consumes.
+A user duplicates a preset into a theme file, edits it, reloads it, and uses extensions that ship themes. Themes are
+data and never run code.
+
+**Why this priority**: B1 and C of ADR-0035; the owner wants community themes as plugins and kept both in P3 on
+2026-10-16 (Clarifications). Distributing extension themes through the extension manager is P3c's.
+
+**Independent Test**: Duplicate NetPrints Dark, change two tokens and a Semi key in the file, Reload: the editor shows
+the change; a token with a bad value keeps the base value and is warned about; an extension's theme appears in the
+preset lists while the extension is loaded.
+
+**Acceptance Scenarios**:
+
+1. **Given** "Duplicate theme", **When** the user runs it, **Then** a `*.nptheme.json` file with the active preset's
+   values is written to the per-user themes folder and selected.
+2. **Given** a theme file with an unknown token, a bad value, a newer schema or a failing contrast pair, **When** it is
+   loaded, **Then** the unknown token is ignored with a warning, the bad value keeps the base value with a warning, the
+   newer file is skipped with a message, and a contrast failure applies with a warning naming the pairs.
+3. **Given** a loaded extension whose manifest lists themes, **When** the Appearance page opens, **Then** those themes
+   are offered under the extension's name.
 
 ---
 
@@ -529,9 +601,12 @@ and the manifest `themes` field (FR-029), which P3b consumes.
   info message.
 - A project's `LangVersion` names a version newer than the editor's compiler knows (`16.0`): the editor's maximum is
   used and an info message says so.
-- Moved to P3c on 2026-10-16: a restore that fails or is cancelled during a package change, a feed that ignores the
-  package type filter, sample index and image limits, an extension disabled while documents use its nodes, and an
-  extension package shown as Incompatible.
+- A restore fails halfway through a package change, or the user cancels it: the project and props files are put back
+  byte-identical, and the reflection provider is not reloaded.
+- A package reference whose version comes from an MSBuild property, or sits in a condition the change cannot target:
+  the Packages tab shows it read-only with the reason, and no edit touches it.
+- Moved to P3c on 2026-10-16: a feed that ignores the package type filter, sample index and image limits, an extension
+  disabled while documents use its nodes, and an extension package shown as Incompatible.
 
 ## Requirements *(mandatory)*
 
@@ -576,7 +651,7 @@ and the manifest `themes` field (FR-029), which P3b consumes.
   NPA001 to NPA009 MUST report misuse, with code fixes where the fix is mechanical.
 - **FR-011**: Pin-key tracking (NPA010, NPA011), seeded from the S0 pin-layout golden, MUST fail the build when a
   stored pin key changes without a declared override, and MUST land before the renames.
-- **FR-012**: The 13 pin property renames and 2 key overrides MUST ship as a hard break in `NetPrints.Core` 0.3.0:
+- **FR-012**: The 13 pin property renames and 2 key overrides MUST ship as a hard break in `NetPrints.Core` 0.4.0:
   `*REMOVED*` API entries and release notes, no `[Obsolete]` shims, and no change to any stored key.
 - **FR-013**: Pins MUST carry a role (Result, OutParam, Exception, Target and the others the plan lists); a node MUST be
   allowed to be pure exactly when it has at least one output data pin with a result role; the Exception pin MUST NOT
@@ -601,15 +676,15 @@ and the manifest `themes` field (FR-029), which P3b consumes.
 - **FR-019**: `NetPrints.Extensibility.Abstractions` (contracts only) MUST be split from `NetPrints.Extensibility`
   before the search provider contracts publish (R7, ADR-0030).
 - **FR-020**: `NetPrints.Extensibility.Abstractions`, `NetPrints.Extensibility` and `NetPrints.Serialization` MUST become
-  packable at version 0.3.0 together with the packages they depend on, with public API tracking files, package
+  packable at version 0.4.0 together with the packages they depend on, with public API tracking files, package
   validation, a README, and XML docs on every public member; `ExtensionApi.Version` MUST change with every shipped API
   change, and the validation baseline MUST be set at the first publish.
 - **FR-021**: The contribution kinds MUST be public descriptors in the Abstractions package: commands, panels, dashboard
   tiles, project templates, context-menu items, tooltip providers, go-to providers (P3a), plus status-bar items (C-15),
   settings pages, dialogs (R4), node search providers (SUG4), document migrations (N4), view resources and icon ids
-  (N8, ADR-0021); inspector sections, value editors and graph rules moved to P3b (FR-109, FR-110). The built-in editor MUST
-  register all of its own contributions through the same public API, as the built-in editor extension; the built-in
-  status-bar segments (error and warning counts, build state, run state, zoom, selection count) MUST be status-bar
+  (N8, ADR-0021) and, in the tail, inspector sections, value editors and graph rules (FR-109, FR-110). The built-in
+  editor MUST register all of its own contributions through the same public API, as the built-in editor extension; the
+  built-in status-bar segments (error and warning counts, build state, run state, zoom, selection count) MUST be status-bar
   items.
 - **FR-022**: Command handlers MUST receive a typed context built on `IProjectSession` and a graph-view abstraction,
   not editor view models (ADR-0020's R16 note), before `ICommandHandler` publishes; contribution descriptors MUST get
@@ -632,8 +707,8 @@ and the manifest `themes` field (FR-029), which P3b consumes.
 - **FR-028**: `CSharpLanguageVersion` and a minimal `CSharpTarget` MUST be public and stable before the publish gate;
   `CSharpFeature` and `Requires` on node-search entries MUST be experimental under a new NPXE id (ADR-0038 decision 9).
 - **FR-029**: The extension manifest MUST accept a `themes` field (a list of theme files) before the packages publish,
-  with a `netprintsApi` minor version that declares it (ADR-0035). The field is accepted and validated in P3; offering
-  those themes on the Appearance page is FR-115, in P3b.
+  with a `netprintsApi` minor version that declares it (ADR-0035). Offering those themes on the Appearance page is
+  FR-115.
 - **FR-030**: Every API that is still settling MUST carry `[Experimental]` with an NPXE id listed in the extension
   guide (ADR-0017); the plan assigns the ids.
 - **FR-031**: After the publish gate, the hygiene analyzers NPH001 to NPH006 (S5) and the command analyzer (S6) MUST run
@@ -820,15 +895,30 @@ and the manifest `themes` field (FR-029), which P3b consumes.
   12.1.0.6 and the workaround that fills empty capability objects removed, with the capability binding warnings still
   absent (the same startup warnings test).
 
-**NuGet packages (US12), extension manager (US13), samples from remote sources (US14): moved to P3c**
+**NuGet packages (US12)**
+
+- **FR-089**: One package service (`NetPrints.Packages`) MUST serve the Packages tab, shaped so that P3c's extension
+  manager and samples gallery reuse it: sources and credentials from the `nuget.config` hierarchy and the NuGet
+  credential plugins, search and versions, a prerelease switch, a 5-minute cache, and an offline fallback to the global
+  packages folder. No secret MUST be stored in NetPrints state, and source URLs MUST be redacted in logs. A spike MUST
+  first pin the NuGet library version and the credential plugin hooks.
+- **FR-090**: Package changes MUST be project edits (`AddPackageReference`, `SetPackageVersion`,
+  `RemovePackageReference`) aware of Central Package Management, `VersionOverride`, version ranges and conditional items,
+  preserving comments and order; `NetPrints.Sdk` can be updated but not removed. A reference the edits cannot change
+  safely (a version from an MSBuild property, a condition the change cannot target) MUST be shown read-only with the
+  reason.
+- **FR-091**: Applying a change MUST write the files, restore through the project load, and on failure or cancellation
+  put the project and props files back byte-identical; on success the reflection provider is refreshed and the graphs
+  re-validated.
+- **FR-092**: Removing a package MUST first list the nodes that use it; if the user proceeds they stay as unresolved
+  nodes.
+- **FR-093**: The Packages tab MUST have Installed, Browse and Updates tabs, a source drop-down, a version picker with a
+  compatibility filter, deprecated and vulnerable badges, and transitive packages shown read-only.
+
+**Extension manager (US13), samples from remote sources (US14): moved to P3c**
 
 These IDs moved to roadmap phase P3c on 2026-10-16 and are not reused in P3.
 
-- **FR-089**: Moved to P3c (the `NetPrints.Packages` service and its NuGet spike).
-- **FR-090**: Moved to P3c (package reference edits).
-- **FR-091**: Moved to P3c (apply, restore and roll back a package change).
-- **FR-092**: Moved to P3c (package removal impact).
-- **FR-093**: Moved to P3c (the Packages tab).
 - **FR-094**: Moved to P3c (the Extensions dialog).
 - **FR-095**: Moved to P3c (installing extension packages into the per-user folder; the package format itself stays in
   P3, FR-080).
@@ -852,24 +942,36 @@ These IDs moved to roadmap phase P3c on 2026-10-16 and are not reused in P3.
   `netprints-library` and `netprints-extension`, generated from the same files as the registry's templates; a test MUST
   compare their output with the editor's New project.
 
-**Tail: inspector sections, value editors, graph rules (US16), themes from users and extensions (US17): moved to P3b**
+**Tail: inspector sections, value editors, graph rules (US16)**
 
-These IDs moved to roadmap phase P3b on 2026-10-16 and are not reused in P3.
+- **FR-109**: Extensions MUST be able to contribute inspector sections for variables, methods and classes, and editors
+  for pin and default values (R6), through the value-editor contract of ADR-0036 shared by pins, variable and parameter
+  defaults and grid rows; the built-in inspectors MUST register the same way. All of it is experimental.
+- **FR-110**: Extensions MUST be able to contribute graph rules (N2, ADR-0032) whose diagnostics appear in Errors and in
+  `netprints build` and `generate` with the same codes.
+- **FR-111**: Node translators MUST be able to add usings and helper members through the translation context (N5).
+- **FR-112**: Built-in fixed node kinds MUST be declared by convention (S7: inferred document, translator and
+  `On<Pin>` dispatch, generated registration) with their search entries as generated metadata (SUG5, ADR-0026). The
+  model-driven grid with contributed editors (ADR-0036 c) is P3b's.
 
-- **FR-109**: Moved to P3b (inspector sections and value editors, R6, with the value-editor contract of ADR-0036).
-- **FR-110**: Moved to P3b (graph rules, N2, ADR-0032).
-- **FR-111**: Moved to P3b (translation context additions, N5).
-- **FR-112**: Moved to P3b (node kinds by convention, S7 and SUG5, and the model-driven grid).
-- **FR-113**: Moved to P3b (user theme files, Reload themes and Duplicate theme).
-- **FR-114**: Moved to P3b (Semi resources in themes, checked at runtime).
-- **FR-115**: Moved to P3b (themes from a loaded extension's manifest `themes` field).
+**Tail: themes from users and extensions (US17)**
+
+- **FR-113**: User theme files (`*.nptheme.json` in the per-user themes folder, ADR-0033) MUST follow ADR-0035 decision
+  8 (schema version, id, label, base, a sparse token map, alias table, size cap; no URLs, fonts or images) with Reload
+  themes and Duplicate theme; contrast failures warn and apply.
+- **FR-114**: A theme MAY set Semi resources; each key MUST be checked against the resources loaded at runtime (unknown
+  key: warning) and each value parsed by the type of the resource it replaces; NetPrints MUST NOT keep a list of Semi
+  keys, and the theming guide links to Semi's own documentation.
+- **FR-115**: Themes listed in a loaded extension's manifest `themes` field MUST be offered on the Appearance page under
+  the extension's name, with the same validation; a theme never runs code or loads XAML. Distributing them through the
+  extension manager is P3c's.
 
 **Docs, release and CI (all stories)**
 
 - **FR-116**: The docs MUST be updated: an extension authoring guide built on the packages and the kit, the settings
-  and keyboard shortcuts guide, the theming guide, the run profiles guide, the CLI reference for the new commands, the
-  API reference of the published packages, the ADRs the plan lists, and release notes for the 0.3.0 hard break (the
-  packages, extensions and samples guides moved to P3c).
+  and keyboard shortcuts guide, the theming guide (with user and extension themes), the run profiles guide, the NuGet
+  packages guide, the CLI reference for the new commands, the API reference of the published packages, the ADRs the
+  plan lists, and release notes for the 0.4.0 hard break (the extension manager and samples guides moved to P3c).
 - **FR-117**: The trimming ratchet (`eng/trim-warnings.txt`) MUST NOT go up; the node creation service removes the two
   warnings of reflection-based node creation.
 - **FR-118**: New Desktop E2E scenarios MUST follow ADR-0006 (one class per scenario, page objects, no sleeps) and run
@@ -900,7 +1002,12 @@ These IDs moved to roadmap phase P3b on 2026-10-16 and are not reused in P3.
 - **Conformance check**: one of the kit's checks, with a rule id, a message and a fixture that fails it.
 - **Verify report**: the result of `netprints extension verify`: checks run, failures and missing API members.
 - **Pin role**: the role of a node pin (Result, OutParam, Exception, Target, …) that purity and capabilities use.
-- Moved to P3c on 2026-10-16: **package source**, **sample** and **sample index**.
+- **Package source**: a `nuget.config` feed with its credentials kept by NuGet, never by NetPrints (per-user sample
+  index sources are P3c's).
+- **Package reference**: a declared `PackageReference` with its version (in the project, or in
+  `Directory.Packages.props` under Central Package Management, or a `VersionOverride`), editable or read-only with the
+  reason; **package change**: an add, update or remove applied as one unit and rolled back byte-identical.
+- Moved to P3c on 2026-10-16: **sample** and **sample index**.
 
 ## Success Criteria *(mandatory)*
 
@@ -935,7 +1042,9 @@ These IDs moved to roadmap phase P3b on 2026-10-16 and are not reused in P3.
 - **SC-011**: A project created from `dotnet new netprints-extension` builds and passes the kit with 0 edits; each
   conformance check of the kit (the roadmap's 12 and the checks FR-077 adds) has a fixture that fails it with a message
   naming the rule.
-- **SC-012**: Moved to P3c on 2026-10-16 (package changes match `dotnet package add` and roll back byte-identical).
+- **SC-012**: Each package change in the Central Package Management and plain fixtures matches what `dotnet package
+  add` writes for the same change; 100% of forced restore failures and cancellations leave the project and props files
+  byte-identical.
 - **SC-013**: Moved to P3c on 2026-10-16 (the install rejection table).
 - **SC-014**: Moved to P3c on 2026-10-16 (no bundled sample; a sample installed from a folder source opens and runs).
 - **SC-015**: The Windows CLI leg passes the CRLF catalog check test and the `git-install` path test; 0 unrecorded
@@ -954,7 +1063,7 @@ These IDs moved to roadmap phase P3b on 2026-10-16 and are not reused in P3.
   editor behaviour (the session log on Windows, the two-DPI check, Cmd mapping, external terminals) is checked by hand
   and listed for the owner.
 - No tag, release, NuGet push, wiki edit or external submission happens in this phase's PR; packages are packed and
-  validated locally and in CI, and the release (v0.3.0) needs the owner's approval.
+  validated locally and in CI, and the release (v0.4.0) needs the owner's approval.
 - The schema stays v1 and additive until the version cut (roadmap), so document changes in P3 need no migrations of
   NetPrints' own documents.
 - The UI text stays English; P3 builds the localization infrastructure (L1) only.
@@ -963,15 +1072,20 @@ These IDs moved to roadmap phase P3b on 2026-10-16 and are not reused in P3.
 - The roadmap's "anything functional left beyond P0 parity" has no known item: P0 merged at parity with its 60-item
   inventory, and P3a replaced the old windows. A parity gap found during P3 is recorded as a follow-up, not added to
   P3's scope.
-- Boundary calls of the P3c split (2026-10-16). The package work moved out; each remaining story keeps the minimum it
-  needs from the host:
+- Boundary calls of the P3c split (2026-10-16, revised the same day: the package service, NuGet packages and the tail
+  stay in P3). The extension manager and the remote samples moved out; each remaining story keeps the minimum it needs
+  from the host:
   - **Per-user extensions (Clarifications answer 2, FR-032, US4, US15)**: the app group loads, at editor start,
     the extensions in the configured extension directories (`netprints.extensionPaths`, `NETPRINTS_EXTENSION_PATH`),
     which the editor already reads; the Settings page for extension directories (FR-044) is how a user adds one. The
     managed per-user folder `<data>/extensions/<id>/<version>/`, its enabled or disabled state and the "Incompatible"
     display are P3c's.
   - **Published packages (US3)**: the packages are packed locally and consumed through `dotnet restore` like any NuGet
-    package; nothing in P3 needs the `NetPrints.Packages` service.
+    package; US3 does not use the `NetPrints.Packages` service.
+  - **Package service (US12, FR-089)**: P3 builds it for the Packages tab (sources, credentials, search, versions,
+    metadata, cache, offline fallback, installed and transitive packages). P3c's extension manager and samples gallery
+    reuse it and add what only they need: searches by package type, download, verify and extract into the per-user
+    folders, and the sample index sources. The spike on whether feeds accept the custom package types stays in P3c.
   - **Author kit (US10)**: the extension package format (a `NetPrintsExtension` `.nupkg` holding the loader's folder)
     stays in P3, because the template packs it and `netprints extension verify` reads it (FR-079, FR-080). Installing
     it, and the spike on whether remote feeds accept the custom package type, are P3c's; if that spike changes the
@@ -982,8 +1096,8 @@ These IDs moved to roadmap phase P3b on 2026-10-16 and are not reused in P3.
     samples carry no profile, so the samples gallery filter comes with the sample manifest's `profile` in P3c.
   - **Start page samples**: P3a's samples tile and its bundled HelloWorld sample stay as they are until P3c replaces
     them (FR-106).
-  - **Extension themes (US17, ADR-0035 C)**: moved to P3b with US17 (the Appearance page offering the themes of loaded
-    extensions); their distribution through the extension manager's Browse tab is P3c's.
+  - **Extension themes (US17, ADR-0035 C)**: P3 offers the themes of loaded extensions on the Appearance page
+    (FR-115); their distribution through the extension manager's Browse tab is P3c's.
   - **Trust**: P3 keeps the per-project trust prompt and the trusted projects setting (FR-044); the per-publisher install
     trust and its revoke list are P3c's (FR-097).
   - **Restart to apply**: the bar stays in P3 for settings that need a restart (FR-042); P3c reuses it for extension
@@ -997,15 +1111,14 @@ These IDs moved to roadmap phase P3b on 2026-10-16 and are not reused in P3.
   (b), and the model-driven grid (c); user attributes and the plugin attribute
   contracts (ADR-0039); declaration-only partial members; emission styles with requirements, NPT010, NPT011, the target
   probes, the CLI target line and the style matrix (ADR-0038's P3b slice); re-enabling Const; parameter modifiers.
-  Also the tail moved from P3 on 2026-10-16: User Stories 16 and 17, FR-109 to FR-115 (R6 inspector sections and value
-  editors with the ADR-0036 contract, N2 graph rules with ADR-0032 and NPK014, N5, S7 and SUG5 with ADR-0026, B1 user
-  themes and C extension themes, NPXE0014 to NPXE0017, NPA030 to NPA033). P3b may place any of them in P6.
+  The tail that moved to P3b earlier on 2026-10-16 is back in P3 (Clarifications); only the model-driven grid stays
+  here.
 - **P6**: moving existing strings into resources (L2) and the first translation (L3); node clipboard, nudge,
   Tab-to-search, the undo history list, the Self node, keyboard access to every connection (GR-1), mouse back and
   forward, "show all members", the custom title bar, the Publish dialog, live instance inspection.
-- **P3c** (split from P3 on 2026-10-16): the `NetPrints.Packages` service, NuGet packages in the References dialog, the
-  extension manager and its per-user folder, samples from remote sources (User Stories 12 to 14, FR-089 to FR-106,
-  SC-012 to SC-014), the sample Godot extension's own sample, and the samples gallery's `--profile` filter.
+- **P3c** (split from P3 on 2026-10-16): the extension manager and its per-user folder, samples from remote sources
+  (User Stories 13 and 14, FR-094 to FR-106, SC-013 and SC-014), the sample Godot extension's own sample, and the
+  samples gallery's `--profile` filter, all on P3's package service.
 - **P7** structured code generation; **P8** performance work, ReadyToRun publishing and the shared warmed reflection
   provider; **P4** VSIX; **P5** VS Code and browser build.
 - **U1 to U3**: the UnrealSharp template and profiles, the Unreal flags section, struct editors, and a public
@@ -1027,20 +1140,22 @@ These IDs moved to roadmap phase P3b on 2026-10-16 and are not reused in P3.
   kit).
 - The P3a execution process applies: implementation batches of 2 to 4 tasks run one after another; each sub-phase
   checkpoint gets an adversarial review and a fix batch; the PR gets a light final review; tests go in the existing
-  test projects. Since 2026-10-16 the reviews run at five checkpoints (A+B, C1+C2, D1+D2, E+F, the final review),
-  implementers push and return without waiting for CI, and the coordinator watches the PR's CI (plan "Process").
+  test projects. Since 2026-10-16 the reviews run at five checkpoints (A+B, C1+C2, D1+D2, E+F with the tail G, and
+  the final review, which also reviews the NuGet sub-phase H), implementers push and return without waiting for CI,
+  and the coordinator watches the PR's CI (plan "Process").
 - PR #19 is not part of P3.
 
 ### Sub-phases (outline for the plan)
 
-The plan refines this outline into eight sub-phases (the ninth, G, moved to P3b on 2026-10-16): C splits into C1 (public contracts) and C2 (facets and the publish
-gate), D into D1 (the host in the editor) and D2 (the author kit and the Godot sample), and F also holds the editor half
-of the C# target (US9). plan.md's sub-phase table is the one tasks.md follows.
+The plan refines this outline into ten sub-phases: C splits into C1 (public contracts) and C2 (facets and the publish
+gate), D into D1 (the host in the editor) and D2 (the author kit and the Godot sample), F also holds the editor half of
+the C# target (US9), and the NuGet packages (US12) are sub-phase H. plan.md's sub-phase table is the one tasks.md
+follows.
 
 - **A, foundation**: S1 (analyzer and generator projects, NPS rules, DI attributes and registration generator,
   `[SmartEnum]` and `CommandKey`, `CommandGesture` parsing, options validators); R5-0 baselines and the M5 spike;
   unknown document members preserved; the P2 code carry-overs (FR-082 to FR-087). Checkpoint A.
-- **B, node model and search (Core 0.3.0)**: SUG1; SUG2 and SUG3; S2a, S2b, S4, S3; R2; pin roles, `out` and `ref`
+- **B, node model and search (Core 0.4.0)**: SUG1; SUG2 and SUG3; S2a, S2b, S4, S3; R2; pin roles, `out` and `ref`
   pins and purity; `PrimitiveKinds`. Checkpoint B.
 - **C, public contracts and the publish gate**: R7; SUG4 with L1; the C# target types (US9); R5a and R5b with the app,
   shell and session composition steps; N1 and N8 with per-extension services; R4; N3 and N4; the status-bar kind;
@@ -1050,12 +1165,14 @@ of the C# target (US9). plan.md's sub-phase table is the one tasks.md follows.
   workflow; the sample Godot extension. Checkpoint D.
 - **E, run and build**: run profiles in the editor and CLI; the configuration selector; console input and external
   terminal. Checkpoint E.
-- **F, command-line templates**: `netprints new` and the `dotnet new` templates (US15). The package service, the
-  Packages tab, the extension manager and the remote samples that F held moved to P3c on 2026-10-16. Checkpoint F
-  has no scope rule any more.
-- **G, tail (moved to P3b on 2026-10-16)**: R6 and the value-editor contract; N2; N5; S7 and SUG5; B1 and C. The
-  release preparation it held (regenerated guide images, the 0.3.0 release notes, the quickstart run, the CI budget and
-  docs checks) stays in P3 and runs with the final review.
+- **F, command-line templates**: `netprints new` and the `dotnet new` templates (US15). The extension manager and the
+  remote samples that F held moved to P3c on 2026-10-16; the package service and the Packages tab are sub-phase H.
+  Checkpoint F has no scope rule any more.
+- **G, tail**: R6 and the value-editor contract; N2; N5; S7 and SUG5; B1 and C. Checkpoint G; reviewed with E and F.
+- **H, NuGet packages (US12)**: the NuGet spike; the package service; package reference edits; apply, restore and
+  roll back; removal impact; the Packages tab. Checkpoint H; reviewed at the final checkpoint.
+- **Release preparation** (held by G before 2026-10-16): regenerated guide images, the 0.4.0 release notes, the
+  quickstart run, the CI budget and docs checks; it runs just before the final review.
 
 ### ADRs
 
@@ -1067,7 +1184,8 @@ of the C# target (US9). plan.md's sub-phase table is the one tasks.md follows.
   as analyzers), ADR-0007 (E7 stays a test), ADR-0010 (conformance checks for providers, rules and contributions),
   ADR-0020 (typed contexts, contribution groups, `AppliesTo`, new kinds, label keys, menu ids, factories through DI),
   ADR-0021 (extension icon ids), ADR-0023 (Semi and Ursa locale), ADR-0026 (`PrepareFromSearchAsync`, offers from typed
-  pins), ADR-0035 (B1 and C placement: moved to P3b on 2026-10-16). ADR-0026 and ADR-0032 are written in P3b.
+  pins), ADR-0035 (B1 and C in P3, C's distribution in P3c). ADR-0026 and ADR-0032 are written in sub-phase G. The
+  plan adds one new ADR, 0042 (the NuGet package service and package reference edits), written in sub-phase H.
 
 ### Decisions taken while specifying
 
@@ -1097,10 +1215,10 @@ Each was decided autonomously from the roadmap and the ADRs; the reason follows.
 
 ### Sizing
 
-The item sizes in the roadmap's P3 section added up to far more than the phases table's "~2.5 w". The package service,
-the Packages tab, the extension manager and the samples, about 23 days, moved to P3c on 2026-10-16. What remains still
-exceeds it: the attribute-driven core path is about 25 units and run profiles about 7 days, before the SOLID shape
-work, themes, the C# target and the kit. The plan re-estimates P3 per sub-phase and proposes the phases table update,
-which the coordinator makes with the owner's OK. On 2026-10-16 the tail moved to P3b as well (about 17 units), and the
-roadmap now states P3 as about 4 weeks in agent time (plan units are human half-days and overstate calendar time by
-about 5 times).
+The item sizes in the roadmap's P3 section added up to far more than the phases table's "~2.5 w". The extension
+manager and the remote samples, about 12 days, moved to P3c on 2026-10-16. What remains still exceeds it: the
+attribute-driven core path is about 25 units, run profiles about 7 days and the package service with the Packages tab
+about 11 days, before the SOLID shape work, themes, the C# target, the kit and the tail. The plan re-estimates P3 per
+sub-phase and proposes the phases table update, which the coordinator makes with the owner's OK. Plan units are human
+half-days and overstate calendar time by about 5 times; the roadmap states P3 as about 5 weeks in agent time (about 4
+before the tail and the NuGet packages came back).

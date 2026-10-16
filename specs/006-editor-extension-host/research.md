@@ -9,12 +9,13 @@ by path as text:
 
 | Record | What P3 takes from it |
 |---|---|
-| `.agent-archive/2026-10-08-aop-plan/report.md`, `followup.md`, `decisions.md` | S1 infrastructure, NPS/NPA/NPH families, declarative pins by convention, pin-key tracking, the 0.3.0 renames, L1, S5, S6, S7, S10; owner decisions 1–13 |
+| `.agent-archive/2026-10-08-aop-plan/report.md`, `followup.md`, `decisions.md` | S1 infrastructure, NPS/NPA/NPH families, declarative pins by convention, pin-key tracking, the 0.4.0 renames, L1, S5, S6, S7, S10; owner decisions 1–13 |
 | `.agent-archive/2026-10-08-solid-plan/report.md`, `report-2.md`, `decisions.md` | SUG1–SUG5, R2, R4, R5, R6, R7, N1–N9, the M1–M5 measurement plan; owner decisions 1–15 and the DI reopening |
 | `.agent-archive/2026-10-13-theme-presets/decisions.md` (with `report.md`, `audit.md`) | B0, B1, C; preset list; Semi pass-through; contrast policy |
 | `.agent-archive/2026-10-13-details-panel/decisions.md` (with `report.md`, `audit.md`) | R6 widened into the value-editor contract; the grid's P3-tail-or-P3b placement; inspector tokens |
 | `.agent-archive/2026-10-14-attributes-langversion/report.md`, `audit.md`, `sources/` | `CSharpTarget`, `CSharpFeature`, `Requires`, filtering and lowering policy |
 | `.agent-archive/2026-10-14-run-profile-kinds/report.md`, `audit.md`, `sources/` | the run profile kinds and their prior art (ADR-0037) |
+| `.agent-archive/2026-10-06-roadmap-gaps/b07-b17-packages-and-extensions.md` | B7: the package service, package reference edits, rollback and the Packages tab (R32–R35) |
 | `docs/research/2026-09-29-extension-testing/README.md` (in the repository) | the twelve conformance checks, the noisy neighbour, the verifier |
 | `docs/research/2026-10-14-engine-integration/` (in the repository) | the Godot project shape the sample extension's template uses |
 
@@ -23,15 +24,15 @@ ADR-0031, ADR-0033 to ADR-0040.
 
 ## R1. Scope
 
-- **Decision**: P3 is the spec's 12 active stories (US1–US11, US15). US12–US14 and FR-089–FR-106, SC-012–SC-014
-  moved to P3c on 2026-10-16 and are not planned. The tail (US16, US17, FR-109–FR-115: R6, N2, N5, S7, SUG5, B1 and C)
-  moved to P3b on the same day, so the Checkpoint F scope rule is gone; P3b decides whether any of it goes to P6. The
-  release preparation of the old sub-phase G stays in P3. No other cut is allowed (Clarifications answer 1, narrowed
-  on 2026-10-16). R6, R14, R16 and R24 below describe the designs P3b picks up; P3 builds only the parts they name for
-  A–F.
-- **Rationale**: the owner placed these items in P3 and named the only fallbacks.
+- **Decision**: P3 is the spec's 15 active stories (US1–US12, US15–US17). US13 and US14 with FR-094–FR-106,
+  SC-013 and SC-014 moved to P3c on 2026-10-16 and are not planned. The owner kept the NuGet packages (US12,
+  FR-089–FR-093, SC-012) and the tail (US16, US17, FR-109–FR-115: R6, N2, N5, S7, SUG5, B1 and C) in P3 the same day,
+  after a first move to P3c and P3b. The tail is sub-phase G, the NuGet packages sub-phase H (R32–R35). There is no
+  scope rule and no cut line: the 2026-10-15 fallbacks are retired. The model-driven grid (ADR-0036 c) stays in P3b.
+- **Rationale**: the owner's decision of 2026-10-16 (Clarifications, session 2026-10-16, last answer).
 - **Alternatives rejected**: splitting P3 into more phases now (the owner confirmed one spec and one PR on
-  2026-10-16); planning the P3c items "in case they fit" (that would re-scope silently).
+  2026-10-16); planning the P3c items "in case they fit" (that would re-scope silently); planning the model-driven
+  grid in G (it builds on P3b's member defaults and editor metadata, ADR-0036 a and b).
 
 ## R2. Analyzer and generator projects (S1, ADR-0024)
 
@@ -156,7 +157,7 @@ ADR-0031, ADR-0033 to ADR-0040.
 - **Alternatives rejected**: preserving unknown members in their original position (the canonical writer would need
   the source order; canonical order is the format's own rule).
 
-## R8. Declarative pins, pin-key tracking and the 0.3.0 renames (S2a, S2b, S4, S3; ADR-0025)
+## R8. Declarative pins, pin-key tracking and the 0.4.0 renames (S2a, S2b, S4, S3; ADR-0025)
 
 - **Decision**: the follow-up's "recommended combined design", in the order S2a → S2b → S4 → S3:
   - **S2a**: `NodeInputDataPin<T>` and `NodeOutputDataPin<T>` (`default(T)`, no generic-math constraint); `[NodeKind]`,
@@ -208,7 +209,7 @@ ADR-0031, ADR-0033 to ADR-0040.
 
 ## R11. Node capabilities and `PrimitiveKinds` (R2, ADR-0029; ADR-0034)
 
-- **Decision**: R2 in the 0.3.0 window after S3: `IPinListEditor`, `IOverloadableNode`, editable pin names and
+- **Decision**: R2 in the 0.4.0 window after S3: `IPinListEditor`, `IOverloadableNode`, editable pin names and
   `IMemberReferencingNode` as role interfaces that search, navigation and the inspector ask for; the header role falls
   back by convention. `PrimitiveKinds` (Core, one `INumberBase<T>` row per primitive) replaces the five scattered
   lists and the IL2057 at `TypedValueConverter`; `sbyte` and `decimal` become full primitives, pinned by a golden test.
@@ -224,13 +225,13 @@ ADR-0031, ADR-0033 to ADR-0040.
     from `NetPrints.Extensibility` (host only) with the SOLID report's type split. Namespaces do not change; no type
     forwards (nothing has shipped). An architecture test pins the allowed references and the absence of
     `System.Runtime.Loader` in Abstractions.
-  - Packages at 0.3.0: `NetPrints.Core` (with the Authoring analyzers), `NetPrints.Reflection`, `NetPrints.Catalog`,
+  - Packages at 0.4.0: `NetPrints.Core` (with the Authoring analyzers), `NetPrints.Reflection`, `NetPrints.Catalog`,
     `NetPrints.Serialization`, `NetPrints.Extensibility.Abstractions`, `NetPrints.Extensibility`,
     `NetPrints.Extensibility.Testing`, `NetPrints.Extensibility.Testing.Xunit`, `NetPrints.Templates`, plus the
     existing `NetPrints.Annotations`, `NetPrints.Sdk` and the `NetPrints.Cli` tool.
   - Every packable library enables `EnablePackageValidation`. Packages already on nuget.org get
     `PackageValidationBaselineVersion` set to their last published version, with a `CompatibilitySuppressions.xml` that
-    holds exactly the intended 0.3.0 breaks (a test cross-checks it against the `*REMOVED*` lines); the new packages
+    holds exactly the intended 0.4.0 breaks (a test cross-checks it against the `*REMOVED*` lines); the new packages
     get their baseline in the release that first publishes them (a `releasing.md` step, FR-020).
   - A test ties `ExtensionApi.Version` to the Abstractions and Extensibility API files: a recorded hash of the
     `PublicAPI.*.txt` files changes only together with the version.
@@ -283,10 +284,10 @@ ADR-0031, ADR-0033 to ADR-0040.
   - **Kinds on the facet**: commands, panels, dashboard tiles, context-menu items (with `AppliesTo`), tooltip
     providers, go-to providers, status-bar items (C-15), settings pages (NPXE0009, custom views NPXE0010), dialogs
     (R4: a registered dialog view model shown by id through `IDialogService`), view resources and icon ids (N8:
-    `Icon.<extension id>.<name>`; an unknown id draws the fallback glyph and records an issue); inspector sections and
-    value editors (NPXE0014) are P3b's. Model-side kinds stay flat on the builder because the CLI uses
-    them: project templates (NPXE0012), node search providers (NPXE0006), document migrations (NPXE0013); graph rules
-    (NPXE0015) are P3b's.
+    `Icon.<extension id>.<name>`; an unknown id draws the fallback glyph and records an issue), and in the tail (G)
+    inspector sections and value editors (NPXE0014). Model-side kinds stay flat on the builder because the CLI uses
+    them: project templates (NPXE0012), node search providers (NPXE0006), document migrations (NPXE0013), graph rules
+    (NPXE0015, G).
   - **Groups (D1)**: the registry keeps the app group (built-ins first, then per-user extensions in load order) and
     one session group per open project; it is no longer frozen. Adding or removing a group raises `Changed` with a new
     immutable snapshot; menus, the command bar, key bindings, the palette, the shortcuts sheet, context menus, the
@@ -326,12 +327,13 @@ ADR-0031, ADR-0033 to ADR-0040.
   | NPXE0011 | Extension string resources (`AddStringResources`) | C1 |
   | NPXE0012 | Project templates with files | C2 |
   | NPXE0013 | Extension node-data migrations | C2 |
-  | NPXE0014 | Inspector sections and value editors (R6) | P3b (was G) |
-  | NPXE0015 | Graph rules (N2) | P3b (was G) |
-  | NPXE0016 | Translation context additions (N5) | P3b (was G) |
-  | NPXE0017 | Node kinds by convention (S7, SUG5) | P3b (was G) |
+  | NPXE0014 | Inspector sections and value editors (R6) | G |
+  | NPXE0015 | Graph rules (N2) | G |
+  | NPXE0016 | Translation context additions (N5) | G |
+  | NPXE0017 | Node kinds by convention (S7, SUG5) | G |
+  | NPXE0018 | Package reference edits (`AddPackageReference`, `SetPackageVersion`, `RemovePackageReference` on `ProjectEdit`; R33) | H |
 
-  Stable from 0.3.0: the typed pins and pin attributes (`[NodeKind]`, `[NodeBase]`, `[Pin]`, `[PinType]`),
+  Stable from 0.4.0: the typed pins and pin attributes (`[NodeKind]`, `[NodeBase]`, `[Pin]`, `[PinType]`),
   `PinRole`, `CSharpLanguageVersion`, the minimal `CSharpTarget`, `LocalizedText`, `GraphPoint`, the manifest's
   `themes` field and the existing stable surface. NPXE0001–NPXE0004 keep their meaning.
 - **Rationale**: one id per surface an author opts into, so a settings-only extension does not opt into editor
@@ -464,8 +466,10 @@ ADR-0031, ADR-0033 to ADR-0040.
   use for user files (embedded presets are trusted and gated by tests); a per-variant overlay writer for
   `Application.Resources.ThemeDictionaries[Dark|Light]`; High contrast selects Semi's high-contrast variant for its
   slot (Aquatic for Dark, Desert for Light) plus its tuned tokens; `darkPreset` and `lightPreset` strings with a
-  choices provider; the Appearance page; wire opacity and thickness and the ADR-0036 inspector tokens. B1 and C moved
-  to P3b on 2026-10-16 (the ADR-0035 amendment in F records it).
+  choices provider; the Appearance page; wire opacity and thickness and the ADR-0036 inspector tokens. B1 and C land in
+  G (owner, 2026-10-16): user theme files with Reload and Duplicate on the same loader, and the themes of loaded
+  extensions from the manifest `themes` field (C2). Their distribution through the extension manager is P3c's. The
+  ADR-0035 amendment at Checkpoint F records the placement.
 - **Rationale**: ADR-0035 decisions 1–9; one format for presets and user files means B1 adds only validation messages
   and the Reload and Duplicate commands.
 - **Alternatives rejected**: presets as C# dictionaries (a second format for B1 to parse).
@@ -529,6 +533,11 @@ ADR-0031, ADR-0033 to ADR-0040.
     hosts for netstandard2.0 analyzers, R2), `tests/NetPrints.Extensibility.Testing.Tests` (the kit's own tests and
     the failing fixtures, which the spec exempts), and the Godot sample's tests (outside the solution, R26).
   - Conformance failing fixtures live in `tests/Fixtures/Extensions/Conformance/` (one `Fx.Fail.<Check>` per check).
+  - The NuGet package tests (H) go in `tests/NetPrints.Editor.Tests/Packages/` (the service, the changes, the tab's
+    view models) and `tests/NetPrints.Editor.Tests/Hosting/` (the project edits, next to the project system's tests);
+    their fixtures are in `tests/Fixtures/Packages/`: a plain project, a Central Package Management project, one with
+    a `VersionOverride`, and a fixture library the tests pack once per run into a temporary local folder feed. No
+    test reaches the network.
   - CI: one new matrix leg (Analyzers; the kit's tests join the Core leg), the Godot job after `packages`, and the
     `packages` job also validates and packs the new packages. `CiWorkflowTests` keeps the legs and the UI shard
     filters complementary.
@@ -551,10 +560,11 @@ ADR-0031, ADR-0033 to ADR-0040.
 
 ## R30. Sizing
 
-- **Decision**: units of about half a day, as in the AOP and SOLID plans. P3 is about 160 units of implementation
-  plus about 10 for the five checkpoint reviews and fix batches; the sub-phase table in [plan.md](plan.md) has the
-  split. The units are human half-days and overstate calendar time by about 5 times, so the roadmap states P3 as about
-  4 weeks in agent time (owner-approved 2026-10-16). The scope rule this section once described is gone with the tail.
+- **Decision**: units of about half a day, as in the AOP and SOLID plans. P3 is about 195 units of implementation
+  (A–F 155, G 17, H 18, the release preparation 5) plus about 10 for the five checkpoint reviews and fix batches; the
+  sub-phase table in [plan.md](plan.md) has the split. The units are human half-days and overstate calendar time by
+  about 5 times, so the roadmap states P3 as about 5 weeks in agent time (4 weeks before G and H came back on
+  2026-10-16, at about 40 units a week). The scope rule this section once described is retired.
 - **Rationale**: the spec's Sizing section asks the plan to re-estimate.
 - **Alternatives rejected**: none.
 
@@ -569,4 +579,121 @@ ADR-0031, ADR-0033 to ADR-0040.
   rules also in `build` and `generate`; templates with files now; the trim ratchet kept; ReadyToRun in P8; per-kind
   node data versions (R18).
 - The deferred items stay out of P3: L2 and L3, hot enable and disable, collectible load contexts, extension seams,
-  `AddRunProfileKind`, NPT010 and NPT011, the per-user run environment, and the P3c items.
+  `AddRunProfileKind`, NPT010 and NPT011, the per-user run environment, the model-driven grid (P3b), the `netprints
+  package` verbs (v1.1), and the P3c items.
+
+## R32. The package service and the NuGet spike (B7, FR-089; ADR-0042) — new research
+
+- **Decision**:
+  - A new library `src/NetPrints.Packages/` (`net10.0`, not packed in P3) holds the service. The editor references it
+    for the Packages tab; P3c's extension manager and samples gallery reuse it. Core, Serialization, Workspace and the
+    published packages do not reference it, so the NuGet libraries reach neither extension authors nor the CLI and
+    the build host.
+  - **NuGet client libraries**: `NuGet.Protocol`, `NuGet.Configuration`, `NuGet.Credentials`, `NuGet.Versioning`,
+    `NuGet.Frameworks` and `NuGet.ProjectModel` (for `project.assets.json`) at one version: the one the SDK pinned by
+    `global.json` ships, so `nuget.config` semantics and the credential plugins match `dotnet restore`. `NuGet.Protocol`
+    brings `Newtonsoft.Json` transitively; code in `src/` never uses it (a `BannedSymbols.txt` entry, RS0030), and
+    NetPrints' own JSON stays source-generated System.Text.Json. ADR-0018's "no Newtonsoft" note is about the Dock
+    layout and is not changed.
+  - **The spike (first task of H)**: pin the version; check that the credential plugins
+    (`DefaultCredentialServiceUtility` in non-interactive mode) run in-process in the editor; check that a local folder
+    feed answers search, versions and metadata; measure the trim ratchet with the editor referencing the service
+    (FR-117: it must not rise); and record, for P3c, whether a local folder feed honours the `packageType` filter.
+    Outcomes go under "NuGet spike" in implementation-notes. If the credential plugins cannot run non-interactively
+    in-process, an authenticated source that fails reports NPW012 ("run `dotnet restore --interactive` once"), and the
+    tab still lists installed packages.
+  - **Sources and credentials**: `Settings.LoadDefaultSettings(<project folder>)`, the hierarchy `dotnet restore`
+    reads (from the project folder up, then the user and machine files); enabled sources only, in file order.
+    Credentials come only from `packageSourceCredentials` and the credential plugins; NetPrints never prompts for them,
+    stores them or logs them. Logs carry a source's name and its URL without user info, query or fragment.
+  - **Operations** (`IPackageService`, async with cancellation): list the sources; search (query, prerelease, skip,
+    take) in one source or all; the versions of an id; the metadata of a version (description, authors, license,
+    project URL, dependency groups, deprecation, vulnerabilities); the compatibility of a version with every target
+    framework of the project (`NuGet.Frameworks` over the dependency groups); the installed and transitive packages of a
+    project from its assets file.
+  - **Cache**: in memory, 5 minutes per source, operation and arguments, on the injected `TimeProvider`; the tab's
+    Refresh bypasses it. **Offline**: when a source cannot be reached (NPW011), search and versions fall back to the
+    global packages folder (`SettingsUtility.GetGlobalPackagesFolder`), and those results are marked offline.
+- **Rationale**: FR-089; the B7 design (gap research 2026-10-06): one service shared with B17 and the samples, the
+  sources and credentials of `dotnet restore`, no secrets in NetPrints.
+- **Alternatives rejected**: `dotnet package search` per query (a process start per keystroke, and no deprecation,
+  compatibility or offline listing in one call); a hand-written V3 client on System.Text.Json (it would re-implement
+  `nuget.config` semantics and the credential plugin protocol that authenticated feeds rely on); the service in
+  `NetPrints.Workspace` (it would bring the NuGet libraries to the CLI and the build host, which do not need them in
+  P3).
+
+## R33. Package reference edits (FR-090; ADR-0042) — new research
+
+- **Decision**:
+  - Three new `ProjectEdit` records in Core (`NetPrints.Projects`): `AddPackageReference(id, version,
+    useVersionOverride)`, `SetPackageVersion(id, version, useVersionOverride)` and `RemovePackageReference(id)`, under
+    NPXE0018 because they land after the publish gate (R16). They carry strings; `NetPrints.Packages` validates the id and the version with `NuGet.Versioning` before it builds one.
+    `MsBuildProjectSystem.ApplyAsync` applies them through MSBuild's construction model with formatting preserved,
+    the way it applies today's edits.
+  - **Central Package Management**, detected from the evaluated `ManagePackageVersionsCentrally` and
+    `DirectoryPackagesPropsPath`: add writes `<PackageVersion Include Version>` to that props file (in the item group
+    that already holds `PackageVersion` items) and a `<PackageReference Include>` with no version to the project; with
+    "Use VersionOverride" the project item gets `VersionOverride` and the props file is untouched. Update changes the
+    `PackageVersion` item, or the item's `VersionOverride` when it has one. Remove deletes the project item only; the
+    `PackageVersion` item stays, as with `dotnet package remove`.
+  - **Plain projects**: the `Version` on the `PackageReference` item, kept in the form the item already uses
+    (attribute or child element); new items use the attribute form `dotnet package add` writes.
+  - **Ranges and conditions**: a range (`[1.0,2.0)`) is shown as written and replaced only by an explicit version
+    choice. An item with its own `Condition`, or in a conditioned item group, is edited in place when it is the only
+    item for the id; when several conditioned items declare the id, the reference is read-only with NPW013 and the
+    reason. A version that is an MSBuild property expression (`$(…)`) is read-only with NPW013.
+  - `NetPrints.Sdk`: `SetPackageVersion` is allowed; `RemovePackageReference` is refused.
+  - **Fidelity (SC-012)**: a test runs `dotnet package add --no-restore` and `dotnet package remove` on one copy of each
+    fixture (plain, CPM) and NetPrints' edit on another, and compares the bytes; the `VersionOverride` case, which the
+    CLI does not write on request, has its own golden.
+- **Rationale**: FR-090, SC-012; the project system already edits project files through the construction model (P1),
+  which the `dotnet` CLI also uses, so the bytes can match.
+- **Alternatives rejected**: `XDocument` edits (a second edit path whose whitespace handling differs from the CLI's);
+  running `dotnet package add` to make the change (it restores in place and leaves no rollback point).
+
+## R34. Applying a change, rolling back, and the removal impact (FR-091, FR-092; ADR-0042) — new research
+
+- **Decision**:
+  - **One change at a time per project**; the tab's commands are disabled while one runs. A change first records the
+    exact bytes of every file it will write (the project file, and `Directory.Packages.props` under CPM), writes them
+    atomically (`ProjectFiles.WriteAtomicAsync`), then reloads the project through `IProjectSystem.LoadAsync`, whose
+    restore runs because the written files are newer than the assets file.
+  - **Failure or cancellation** (a `RestoreFailed` project message, an exception from the load, or a cancelled token):
+    every recorded file is written back with its original bytes (the rollback itself ignores the token), NPW010
+    reports the restore's first error lines, and the session keeps its project snapshot and reflection provider.
+    `obj/` is left to the next restore, which the rolled-back files' newer timestamps trigger.
+  - **Success**: the session takes the new snapshot, refreshes the reflection provider through the path the References
+    dialog already uses after an edit, and re-validates the open graphs.
+  - **Removal impact**: before a removal the service finds the assemblies only that package brings (from the assets
+    file's dependency graph: the package and its dependencies, minus what the other direct references bring), then
+    the nodes whose referenced members come from those assemblies, through the `IMemberReferencingNode` role (R11) and
+    the reflection provider's assembly of each declaring type. The confirmation lists them (graph, node, member);
+    proceeding removes the package, and those nodes load as unresolved nodes, which saving keeps.
+- **Rationale**: FR-091, FR-092, SC-012 and the spec's edge case; P3a's rule that the editor never loses user files.
+- **Alternatives rejected**: restoring a temporary copy first (the result depends on the real folder's `obj/`,
+  `Directory.Build.*` files and `nuget.config`); a git-based rollback (a project need not be a repository).
+
+## R35. The Packages tab (FR-093) — new research
+
+- **Decision**:
+  - A **Packages** tab in P3a's References dialog. The existing references list keeps showing package references
+    read-only; the new tab edits them.
+  - Sub-tabs **Installed** (direct references with their declared and resolved versions; transitive packages in a
+    collapsed read-only group), **Browse** (search box and results) and **Updates** (direct references with a newer
+    version in the selected sources). Above them: a **source** drop-down (All sources, then each enabled source by
+    name), a **Prerelease** switch and **Refresh**.
+  - **Details** of the selected package: id, description, authors, license and project URL as plain text; a version
+    picker newest first, with versions incompatible with any of the project's target frameworks hidden unless "Show
+    incompatible" is on; deprecated and vulnerable badges with the reason; Add, Update and Remove, plus "Use
+    VersionOverride" under Central Package Management; read-only references show their NPW013 reason instead.
+  - **Offline**: an offline banner, installed packages from the assets file, and Browse results from the global
+    packages folder marked offline (US12 scenario 5).
+  - Package icons are not downloaded in P3, so no remote image is loaded (P3c's image rules cover sample images).
+  - View models `PackagesTabViewModel`, `PackageListViewModel` (one per sub-tab), `PackageRowViewModel` and
+    `PackageDetailsViewModel`; `[RelayCommand] async Task` commands; text from resources (L1); automation ids under
+    `References.Packages.*`; a page object in `NetPrints.Testing.Ui`. View-model tests use a fake `IPackageService`;
+    the service's mapping of deprecation and vulnerabilities is tested on NuGet's own metadata types.
+- **Rationale**: FR-093, US12 scenarios 1 and 5; the B7 design; the References dialog is where users manage
+  references today.
+- **Alternatives rejected**: a separate Packages document (a second place to manage references); remote package icons
+  (they would need P3c's image safety rules first).

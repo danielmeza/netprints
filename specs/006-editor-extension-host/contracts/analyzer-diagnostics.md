@@ -10,13 +10,13 @@ wording or split a rule if the tests and this table change together; a code is n
 | Prefix | Owner | Shipped to authors | Where it runs | Status |
 |---|---|---|---|---|
 | NPS | `NetPrints.RepoAnalyzers` | no | `src/`, `tests/` | new (A) |
-| NPA | `NetPrints.Authoring` (+ `.CodeFixes`) | yes, inside the `NetPrints.Core` package | every project that references Core | new (B, C; G moved to P3b) |
+| NPA | `NetPrints.Authoring` (+ `.CodeFixes`) | yes, inside the `NetPrints.Core` package | every project that references Core | new (B, C, G) |
 | NPH | `NetPrints.RepoAnalyzers` | no | `src/` (VSTHRD switches also in `tests/`) | new (C2) |
 | NPI | `NetPrints.RepoAnalyzers` (DI and smart-enum generators) | no | `src/` | new (A) |
 | NPX | `NetPrints.Extensibility` (host diagnostics) | n/a (runtime) | loader, registry, editor Errors | extended (C2, D1) |
 | NPK | `NetPrints.Extensibility.Testing`, `netprints extension verify` | yes (the kit) | author tests, `verify` | new (D2) |
 | NPR | run profile resolver (`NetPrints.Workspace`) | n/a (runtime) | editor, `netprints run` | new (E); table in [run-profiles.md](run-profiles.md) |
-| NPW | workspace (project evaluation) | n/a (runtime) | editor, CLI | extended (A, C1) |
+| NPW | workspace (project evaluation, package changes) | n/a (runtime) | editor, CLI | extended (A, C1, H) |
 | NPC, NPD, NPE, NPT, NPXE | unchanged | | | |
 
 `docs/guide/diagnostics.md` (new, FR-008) lists every prefix and every code with its severity and a one-line cause;
@@ -50,7 +50,7 @@ a staleness test compares it with the `*DiagnosticCodes` classes and the analyze
 | NPA022 | error | A constant contribution id does not match the id pattern or the owner prefix | C2 (S6) |
 | NPA023 | error | Duplicate constant command id in a compilation | C2 (S6) |
 | NPA024 | warning | Duplicate (menu id, group, order) | C2 (S6) |
-| NPA030–NPA033 | error | Node kinds by convention (S7): document record not in a JSON context; kind id format; duplicate kind ids; `CanSetPure` true without a `Pure` document member | P3b (moved from G) |
+| NPA030–NPA033 | error | Node kinds by convention (S7): document record not in a JSON context; kind id format; duplicate kind ids; `CanSetPure` true without a `Pure` document member | G (tail) |
 | NPA040 | warning (repo: error) | A convention resource key is missing from the neutral resx | C1 (L1) |
 | NPA041 | error | A satellite resx has a key the neutral one lacks, or a `{n}` placeholder count differs | C1 (L1) |
 | NPA042 | info | A resx key that no declaration uses | C1 (L1) |
@@ -98,7 +98,7 @@ and green on the repository (red/green). VSTHRD002 and VSTHRD103 go to `error` i
 | NPK011 | Coexistence with the built-ins and a noisy neighbour | yes | — |
 | NPK012 | Disposal: no exception, idempotent, no leak of the load context | yes | — |
 | NPK013 | Service providers: builds, validates, only allowed host exports, capture and leak test | yes | — |
-| NPK014 | Graph rules: deterministic, graph unchanged, cancellation honoured, isolated when throwing (P3b, with graph rules) | yes | — |
+| NPK014 | Graph rules: deterministic, graph unchanged, cancellation honoured, isolated when throwing (G, with graph rules) | yes | — |
 | NPK015 | Editor contributions: ids prefixed, labels resolvable, gestures parse and follow scope rules, icon ids resolve | yes | — |
 | NPK016 | Contributed views: no colour or size literal a theme cannot reach (E2/E8 rules over the extension's `.axaml`) | yes | — |
 | NPK017 | API compatibility: every NetPrints member the extension references exists in the host | — | yes |
@@ -126,6 +126,10 @@ Each check fails with a message naming the code, the rule and the offending item
 | NPW007 | info | `LangVersion` newer than the target framework's default |
 | NPW008 | info | `LangVersion` unknown or newer than NetPrints knows; `MaxKnown` used |
 | NPW009 | warning | a reference could not be read; skipped (FU-2) |
+| NPW010 | error | a package change's restore failed or was cancelled; the project and props files were put back (H, [nuget-references.md](nuget-references.md)) |
+| NPW011 | warning | a package source could not be reached; offline results are shown (H) |
+| NPW012 | warning | a package source needs credentials that no non-interactive credential provider supplied (H) |
+| NPW013 | info | a package reference cannot be edited safely (a version from an MSBuild property, several conditioned items); it is shown read-only (H) |
 
 ## 9. Tests that pin this contract
 

@@ -5,13 +5,17 @@ description: "Task list for P3 — Editor extension host"
 # Tasks: Editor Extension Host
 
 **Input**: `specs/006-editor-extension-host/`: plan.md (the sub-phase table, gates and ADR schedule), spec.md, research.md
-(R1–R31), data-model.md, contracts/, quickstart.md.
+(R1–R35), data-model.md, contracts/, quickstart.md.
 
 **Start condition**: met when batch P3-S2c (this file, the speckit-analyze fixes and `implementation-notes.md`) is on
 draft PR #20 and CI is green. Branch `006-editor-extension-host` from `master` after the P3a merge (PR #12, `bf3496e9`).
-ADR-0040 is committed with the spec. User Stories 12–14 (FR-089–FR-106, SC-012–SC-014) moved to P3c and have no task
-here. User Stories 16 and 17 (FR-109–FR-115) moved to P3b on 2026-10-16 (batch P3-S2d); their tasks T136–T154 are
-reserved, not renumbered, in "Phase 9" below.
+ADR-0040 is committed with the spec. User Stories 13 and 14 (FR-094–FR-106, SC-013, SC-014) moved to P3c and have no
+task here. Batch P3-S2d moved User Stories 16 and 17 to P3b; batch P3-S2e (2026-10-16, the owner's decision in the
+spec's Clarifications) brought them back with User Story 12. The tail is sub-phase G (T136–T146 and its gate T170;
+T153 and T154 are the E+F+G checkpoint's review and fixes) and the NuGet packages are sub-phase H (T158–T169). No ID
+was renumbered. Counts after S2e: 15 active stories, 105 active FRs, 15 active SCs; 160 active tasks of 170 IDs (10
+merged); 50 implementation batches with 190 units, plus 5 units in PR-P (195); 62 batches in all. P3's release is
+0.4.0 (P3a ships as v0.3.0; spec "Version").
 
 **Tests**: REQUIRED (constitution V). A behaviour task names its test class first. "Test first" means: write the test,
 run it, see it fail for the expected reason (red), then change the code until it passes (green). The red test is
@@ -36,7 +40,7 @@ plus the Desktop E2E pass (`NETPRINTS_E2E=1 … --fail-skips on`, AGENTS.md), th
 warnings) and `dotnet format NetPrints.slnx --verify-no-changes`. No `!`, no suppressions, XML docs on every public
 member, `[LoggerMessage]` logging, injected `TimeProvider`, source-generated JSON only, async all the way, sealed types,
 a named constant for every identifier used in more than one place. Every public API change of a tracked library goes
-through its `PublicAPI.*.txt`; the 0.3.0 breaks use `*REMOVED*` entries and release notes, never `[Obsolete]`; every
+through its `PublicAPI.*.txt`; the 0.4.0 breaks use `*REMOVED*` entries and release notes, never `[Obsolete]`; every
 settling surface carries its NPXE id (research R16) and a row in the extension guide's "API stability" table. Contracts
 in Abstractions are UI-free. New UI text comes from resources once L1 lands (T044), and the XAML literal ratchet never
 grows. Code comments stay short; rationale goes in the commit message and in
@@ -54,7 +58,7 @@ attribution. Every user-visible change gets an entry under "Unreleased" in `.git
 
 - **[P]**: can run in parallel with the other tasks of the same batch (different files, no dependency). Batches still
   run one after another.
-- **[Story]**: US1–US11 and US15 from spec.md (US16 and US17 moved to P3b). Checkpoint, review, fix and merge tasks have no story label.
+- **[Story]**: US1–US12 and US15–US17 from spec.md. Checkpoint, review, fix and merge tasks have no story label.
 - **Batch header**: `Batch <id> — model: <sonnet|opus> — T<first>–T<last> — <n> units`; one agent per batch, batches run
   in order. The model tag is the owner-approved process role (AGENTS.md "Model selection"): implementation and fix
   batches are sonnet, reviews are opus.
@@ -71,14 +75,14 @@ attribution. Every user-visible change gets an entry under "Unreleased" in `.git
   Dock check (has a Dock release that includes wieslawsoltes/Dock#1191 shipped? if so, the fix batch does T085's bump),
   and a "Docs updated:" line. A sub-phase is not done until its docs are updated. The gate task's "CI green" is checked
   by the coordinator, and the CI run ids it names are filled in by the next batch's start-of-batch check.
-- **Reviews** (owner rule, five checkpoints since 2026-10-16): A+B, C1+C2, D1+D2, E+F and the final review. Each is
-  one adversarial opus review batch of the pair's whole diff (`B-R`, `C2-R`, `D2-R`, `F-R`, `PR-R`) by an agent that
-  did not implement it, then one reserved sonnet fix batch (`B-F`, `C2-F`, `D2-F`, `F-F`, `PR-F`) that must be green on
-  CI before the next checkpoint's work starts. The review of the first sub-phase of a pair (A, C1, D1, E) is "merged
-  into" the second's task; the IDs stay. The reviewer first enumerates the decision corpus (constitution, AGENTS.md,
-  the ADRs the pair touches, spec.md, plan.md, the contracts) and checks each applicable document against the diff. The
-  final review is light and covers the whole PR; the merge preparation (PR-M) follows. The owner merges; any release
-  needs the owner's OK.
+- **Reviews** (owner rule, five checkpoints since 2026-10-16): A+B, C1+C2, D1+D2, E+F+G and the final review. Each is
+  one adversarial opus review batch of the group's whole diff (`B-R`, `C2-R`, `D2-R`, `G-R`, `PR-R`) by an agent that
+  did not implement it, then one reserved sonnet fix batch (`B-F`, `C2-F`, `D2-F`, `G-F`, `PR-F`) that must be green on
+  CI before the next checkpoint's work starts. The reviews of the earlier sub-phases of a group (A, C1, D1, E and F)
+  are "merged into" the last one's task; the IDs stay. The reviewer first enumerates the decision corpus (constitution,
+  AGENTS.md, the ADRs the group touches, spec.md, plan.md, the contracts) and checks each applicable document against
+  the diff. The final review covers sub-phase H in full, the release preparation (PR-P), and the whole PR lightly for
+  integration; the merge preparation (PR-M) follows. The owner merges; any release needs the owner's OK.
 
 ---
 
@@ -236,7 +240,7 @@ trip; Windows CLI tests green; SC-015; R5-0 numbers and the M5 outcome recorded.
 
 ---
 
-## Phase 2: Node model and search, Core 0.3.0 (sub-phase B, User Story 2, Priority P1) 🎯 MVP
+## Phase 2: Node model and search, Core 0.4.0 (sub-phase B, User Story 2, Priority P1) 🎯 MVP
 
 **Goal**: node search is built from providers owned by node kinds, with one creation service and one ranker; pins are
 typed properties declared by convention and tracked by key; the 13 renames ship as a hard break; capabilities are role
@@ -323,14 +327,14 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
 
 ### Batch B6 — model: sonnet — T031–T033 — 3 units
 
-- [ ] T031 [US2] The 0.3.0 pin renames (FR-012, research R8 S3; 1 unit). Of the `[Pin("…")]` overrides T029 listed,
+- [ ] T031 [US2] The 0.4.0 pin renames (FR-012, research R8 S3; 1 unit). Of the `[Pin("…")]` overrides T029 listed,
   rename the 13 properties to `<key>Pin` and drop their override; the 2 whose new name would clash with an existing
   member keep their override (the AOP follow-up §2 counts, research R8). Ship it as a hard break: `*REMOVED*` lines in
   `src/NetPrints.Core/PublicAPI.Unshipped.txt`, no `[Obsolete]`, and a breaking entry under "Unreleased" in
   `.github/release-notes.md` listing each old and new name. The S0 golden, `NodePins.Shipped.txt`, every
   fixture and every sample graph stay byte-identical (US2 scenario 3; NPA011 proves no stored key moved).
 - [ ] T032 [P] [US2] ADR-0025 and "Declaring pins" (FR-010–FR-012, FR-116, research R8; 1 unit). Write
-  `docs/adr/0025-declarative-node-pins.md` (typed pins, the convention, pin-key tracking, the 0.3.0 rename policy) and
+  `docs/adr/0025-declarative-node-pins.md` (typed pins, the convention, pin-key tracking, the 0.4.0 rename policy) and
   the "Declaring pins" section of `docs/guide/extensions.md` (typed properties, the convention, `[Pin]`, `[PinType]`,
   `[NodeBase]`, the `NodePins` files, the NPA rules). ADR index.
 - [ ] T033 [P] [US2] `PrimitiveKinds` (FR-018, research R11, ADR-0034; 1 unit). Test first:
@@ -407,7 +411,7 @@ SC-010; US3 scenarios 5–6. **Gate (plan)**: SC-005; SC-010 (the three writers)
   `RegistryBuilder`, `BuiltInExtension`, `JsonFileSettingsStore`). Split the `PublicAPI.*.txt` files; add the project to
   `NetPrints.slnx`.
 - [ ] T041 [US3] `GraphPoint` to Core (research R14, R31; 1 unit). Move `GraphPoint` to `src/NetPrints.Core/Graph/`
-  (namespace `NetPrints.Graph`), public and stable from 0.3.0; update its callers and the API files.
+  (namespace `NetPrints.Graph`), public and stable from 0.4.0; update its callers and the API files.
 - [ ] T042 [P] [US3] ADR-0030, the split (FR-019, FR-116, research R12; 1 unit). Write
   `docs/adr/0030-extensibility-split-and-editor-facet.md`: the package split, the allowed references, analyzer delivery
   through `PrivateAssets="none"` on the Core reference, and a "Facet" section that T072 fills. ADR index.
@@ -602,13 +606,13 @@ SC-005 rechecked (research R4).
   `[RequiresRestart]`, `[SettingPath(PathKind.File|Folder)]`, `[Description]` and a choices provider id into
   `x-netprints-restart`, `x-netprints-path`, `description` and `x-netprints-choices`. Then `SettingsPageDescriptor`
   (NPXE0009; `CreateViewModel` under NPXE0010), the attributes and `AddSettingsPage`. The Settings document is T089.
-- [ ] T069 [US3] The manifest's `themes` field (FR-029, contracts/extension-api.md §9, data-model §1; 1 unit; P3b
-  consumes it, FR-115). Test first: manifest tests: `themes` is accepted from `netprintsApi` 0.3; with an older `netprintsApi` it is NPX001;
+- [ ] T069 [US3] The manifest's `themes` field (FR-029, contracts/extension-api.md §9, data-model §1; 1 unit; T145
+  consumes it, FR-115). Test first: manifest tests: `themes` is accepted from `netprintsApi` 0.4; with an older `netprintsApi` it is NPX001;
   unknown manifest fields are ignored with an info message. Then the manifest model and its validation.
 - [ ] T070 [US3] The `ExtensionApi.Version` tie (FR-020, research R12; 1 unit). Test first:
   `tests/NetPrints.Core.Tests/Extensibility/ExtensionApiVersionTests.cs`: a recorded hash of the Abstractions and
-  Extensibility `PublicAPI.*.txt` files changes only together with `ExtensionApi.Version`. Then set the version to 0.3
-  and record the hash.
+  Extensibility `PublicAPI.*.txt` files changes only together with `ExtensionApi.Version`. Then set the version to 0.4
+  (P3's release is 0.4.0) and record the hash.
 
 ### Batch C2e — model: sonnet — T071–T073 — 4 units
 
@@ -617,7 +621,7 @@ SC-005 rechecked (research R4).
   version; a scratch consumer that references only `NetPrints.Extensibility.Abstractions` gets the Authoring analyzers
   exactly once; `tests/NetPrints.TestExtension` builds against the packed packages only. Then `EnablePackageValidation`
   on every packable library; `PackageValidationBaselineVersion` for the packages already on nuget.org, with a
-  `CompatibilitySuppressions.xml` holding exactly the 0.3.0 breaks, cross-checked by a test against the `*REMOVED*`
+  `CompatibilitySuppressions.xml` holding exactly the 0.4.0 breaks, cross-checked by a test against the `*REMOVED*`
   lines; READMEs for the new packages (`eng/PackageReadme.targets`); `scripts/pack-local.sh`; the `packages` job in
   `.github/workflows/ci.yml` validates and packs; `docs/contributing/releasing.md` gains the baseline step for a first
   publish; `docs/api/docfx.json` lists the new packages.
@@ -800,7 +804,7 @@ tests. **Gate (plan)**: SC-004, SC-006, SC-007, SC-009.
   (scenario 1); Classic Dark gives the `#000` canvas, triangle pins and the `#AA202020` card; High contrast uses Semi's
   high-contrast variants (Aquatic for Dark, Desert for Light) plus its tuned tokens (scenario 4); an unknown
   `darkPreset` falls back to the variant's default with a log entry and keeps the other appearance keys (scenario 3).
-  Then the embedded `*.nptheme.json` presets in `src/NetPrints.Editor/Theming/Presets/`, the loader that P3b's B1 will reuse,
+  Then the embedded `*.nptheme.json` presets in `src/NetPrints.Editor/Theming/Presets/`, the loader that B1 (T144) reuses,
   the overlay writer for `ThemeDictionaries[Dark|Light]`, and the Appearance page fields with the preview strip.
 - [ ] T097 [P] [US8] The theming guide (FR-066, FR-116; 1 unit). Write `docs/guide/editor/themes.md`: modes, presets,
   the contrast policy and the token list generated from the catalogue (a staleness test). Guide index.
@@ -847,11 +851,11 @@ contracts/cli.md §2–§3. **Independent test**: US10's independent test. **Gat
 
 - [ ] T103 [US10] Checks NPK009–NPK013, NPK015 and NPK016 (FR-076–FR-078, SC-011; 2 units). Same pattern as T102.
   NPK016 scans the extension's `.axaml` sources with the repository's E2/E8 XAML rules, from
-  `ConformanceOptions.SourceDirectory` or the folder holding `netprints-extension.json`. NPK014 (graph rules) is
-  reserved: it lands with N2 in P3b.
+  `ConformanceOptions.SourceDirectory` or the folder holding `netprints-extension.json`. NPK014 (graph rules) lands
+  with N2 in T138.
 - [ ] T104 [US10] `NetPrints.TestExtension` through the kit only (FR-078, US10 scenario 4; 1 unit). Replace its direct
   tests with a `ConformanceTests<TestExtension>` class and kit-based tests; amend ADR-0010 (conformance checks for
-  service providers and editor contributions; NPK013, NPK015, NPK016; the graph rules check NPK014 is P3b's).
+  service providers, graph rules and editor contributions; NPK013–NPK016, with NPK014 landing in T138).
 - [ ] T105 [P] [US10] The extension testing guide (FR-116; 1 unit). Write `docs/guide/extension-testing.md`: the kit,
   the xUnit adapter, and each NPK check with its rule and its fix. Guide index.
 
@@ -1012,16 +1016,16 @@ contracts/run-profiles.md. **Independent test**: US7's independent test. **Gate 
   longest CI job; the Dock check. Docs updated: the run profiles guide, `cli.md`, the diagnostics guide, the release
   notes.
 
-### Batch E-R — no batch (T127 merged into T134)
+### Batch E-R — no batch (T127 merged into T153)
 
-- [x] T127 Merged into T134: the review of sub-phase E runs with sub-phase F's, at the E+F checkpoint (batch F-R). Its
-  extra checks (constitution I and VII, ADR-0033, ADR-0037, spec US7 and FR-051–FR-065, research R22, R23,
-  contracts/run-profiles.md, data-model §4; the argument handling for shell re-parsing and injection, the environment
-  scrub, and the process-tree kill) are listed in T134.
+- [x] T127 Merged into T153 (by way of T134): the review of sub-phase E runs with sub-phases F and G, at the E+F+G
+  checkpoint (batch G-R). Its extra checks (constitution I and VII, ADR-0033, ADR-0037, spec US7 and FR-051–FR-065,
+  research R22, R23, contracts/run-profiles.md, data-model §4; the argument handling for shell re-parsing and
+  injection, the environment scrub, and the process-tree kill) are listed in T153.
 
-### Batch E-F — no batch (T128 merged into T135)
+### Batch E-F — no batch (T128 merged into T154)
 
-- [x] T128 Merged into T135: the fixes for sub-phase E's findings run in batch F-F.
+- [x] T128 Merged into T154 (by way of T135): the fixes for sub-phase E's findings run in batch G-F.
 
 ---
 
@@ -1059,82 +1063,257 @@ independent test; US9 scenarios 3–4. **Gate (plan)**: the US15 tests and SC-01
   Then the fixes.
 - [ ] T133 **Checkpoint F** (plan "Gate outcomes"; 1 unit). Whole suite plus the E2E pass; CI green. Report the plan's
   gate F: the US15 tests (`NewCommandTests`, `TemplateParityTests`) and SC-010 for the editor path
-  (`CSharpTargetWriterIdentityTests`). The scope rule no longer exists: the tail (old T136–T154) moved to P3b on
-  2026-10-16. Write the ADR-0035 amendment: B1 (user theme files) and C (extension themes) are P3b's, and P3 keeps B0
-  and the manifest `themes` field. Docs updated: `cli.md`, the projects guide, ADR-0035.
+  (`CSharpTargetWriterIdentityTests`). There is no scope rule: the owner kept the tail and the NuGet packages in P3 on
+  2026-10-16. Write the ADR-0035 amendment: B1 (user theme files) and C (the themes of loaded extensions) land in P3's
+  sub-phase G, and distributing extension themes through the extension manager is P3c's. Docs updated: `cli.md`, the
+  projects guide, ADR-0035.
 
-### Batch F-R — model: opus — T134 (checkpoint E+F review)
+### Batch F-R — no batch (T134 merged into T153)
 
-- [ ] T134 Review sub-phases E and F (the E+F checkpoint) against their decision corpus (constitution I and VII,
-  ADR-0015, ADR-0033, ADR-0035, ADR-0037, ADR-0038, spec US7, US9 and US15, FR-051–FR-065, FR-073, FR-074, FR-107,
-  FR-108, research R17, R19, R22, R23, R31, contracts/run-profiles.md, contracts/cli.md §1–§2, data-model §4): the whole
-  diff of batches E1–F2. Check the argument handling for shell re-parsing and injection, the environment scrub, and the
-  process-tree kill. Findings to the PR and to implementation-notes under "Review E+F". No code changes.
+- [x] T134 Merged into T153: the review of sub-phases E and F runs with sub-phase G's, at the E+F+G checkpoint (batch
+  G-R). Its checks (constitution I and VII, ADR-0015, ADR-0033, ADR-0035, ADR-0037, ADR-0038, spec US7, US9 and US15,
+  FR-051–FR-065, FR-073, FR-074, FR-107, FR-108, research R17, R19, R22, R23, R31, contracts/run-profiles.md,
+  contracts/cli.md §1–§2, data-model §4) are listed in T153.
 
-### Batch F-F — model: sonnet — T135 (checkpoint E+F fixes)
+### Batch F-F — no batch (T135 merged into T154)
 
-- [ ] T135 Fix every finding of T134 (test first for behaviour findings), reply on each thread, whole suite plus the
-  E2E pass, push; "no findings" if there were none. The final review (T155) starts only after this batch is pushed and
-  green on CI (the coordinator checks).
+- [x] T135 Merged into T154: the fixes for sub-phases E's and F's findings run in batch G-F.
 
 ---
 
-## Phase 9: The tail (sub-phase G, User Stories 16 and 17): moved to P3b
+## Phase 9: The tail (sub-phase G, User Stories 16 and 17, Priority P4)
 
-### Reserved: T136–T154 moved to P3b (batches G1–G5, G-R and G-F)
+**Goal**: extensions contribute inspector sections, value editors and graph rules; node translators add helper members;
+the built-in fixed node kinds are declared by convention; users duplicate, edit and reload theme files, and loaded
+extensions offer their themes. Restored from `51e0f06d` in batch P3-S2e (owner, 2026-10-16) with no scope rule; the
+model-driven grid stays in P3b. Contracts: contracts/extension-api.md §2, §6, contracts/analyzer-diagnostics.md §3, §6.
+**Independent test**: US16 and US17 independent tests; quickstart §13. **Gate (plan)**: the US16 and US17 tests;
+SC-002 rechecked; SC-001 for NPA030–NPA033; NPK014's failing fixture.
 
-The tasks were never started. Their original text is in the git history (`git show 9ac912c9:specs/006-editor-extension-host/tasks.md`),
-and P3b plans them with its own IDs. The IDs stay reserved so nothing else is renumbered.
+### Batch G1 — model: sonnet — T136–T137 — 4 units
 
-| IDs | Content | Where it went |
-|---|---|---|
-| T136–T137 | R6: the value-editor contract, inspector sections, value editors (FR-109, NPXE0014) | P3b |
-| T138–T140 | N2 graph rules with NPK014 (FR-110), ADR-0032, N5 translation context (FR-111, NPXE0015, NPXE0016) | P3b |
-| T141–T143 | S7 node kinds by convention, SUG5, ADR-0026 (FR-112, NPXE0017, NPA030–NPA033) | P3b |
-| T144–T146 | B1 user theme files, C extension themes, the themes guide additions (FR-113–FR-115) | P3b |
-| T147–T151 | Guide images, the 0.3.0 release notes, the quickstart run, SC-016 and the ratchets, the docs site | stays in P3: batch PR-P, before the final review |
-| T152 | Checkpoint G and its SC table | stays in P3: the SC table is in PR-P |
-| T153–T154 | Review and fixes of sub-phase G | P3b (the P3 reviews are the five checkpoints) |
+- [ ] T136 [US16] The value-editor contract and inspector sections (FR-109, FR-021, ADR-0036, research R14, R16; 2
+  units; load `avalonia-xaml` and `avalonia-styling`). Test first: the built-in inspectors and the pin and default
+  editors register through the contract; an extension inspector section for variables appears below the built-in ones
+  and edits the model with undo (US16 scenario 1). Then `AddInspectorSection` (NPXE0014) on the facet and the
+  value-editor contract shared by pins, variable and parameter defaults and grid rows; the built-ins register the same
+  way. The model-driven grid stays in P3b (FR-112).
+- [ ] T137 [US16] Value editors (FR-109, research R16; 2 units; load `avalonia-xaml` and `avalonia-styling`). Test
+  first: an extension value editor for its type edits an unconnected pin and a default of that type, and without the
+  extension the generic editor does (US16 scenario 2); `NetPrints.TestExtension` contributes one, and NPK015 covers it.
+  Then `AddValueEditor` (NPXE0014).
+
+### Batch G2 — model: sonnet — T138–T140 — 4 units
+
+- [ ] T138 [US16] Graph rules and NPK014 (FR-110, FR-077, FR-078, SC-011, research R16; 2 units). Test first: an `Fx`
+  graph rule's diagnostic appears in Errors and in `netprints build` and `generate` with the same code (US16 scenario
+  3); NPK014 (deterministic, graph unchanged, cancellation honoured, isolated when throwing) with its failing fixture
+  `Fx.Fail.GraphRules`. Then `AddGraphRule` (NPXE0015) on the builder and the rule runner shared by the editor and the
+  CLI; the extension testing guide and the diagnostics guide gain NPK014 (the guide's staleness test needs the row in
+  the same commit).
+- [ ] T139 [P] [US16] ADR-0032 (FR-110, FR-116; 1 unit). Write `docs/adr/0032-graph-rules.md` and the graph rules
+  section of `docs/guide/extensions.md`. ADR index.
+- [ ] T140 [US16] Translation context additions (FR-111, N5, research R16; 1 unit). Test first: a node translator adds
+  a using and a helper member; the output is deterministic and each addition is written once. Then the context API
+  (NPXE0016).
+
+### Batch G3 — model: sonnet — T141–T143 — 5 units
+
+- [ ] T141 [US16] Node kinds by convention (FR-112, S7, SC-001, contracts/analyzer-diagnostics.md §3; 2 units). Test
+  first: generator snapshots (the inferred document, the translator and `On<Pin>` dispatch, the generated
+  registration), compile and incrementality tests, and NPA030–NPA033 cases. Then the generator in
+  `src/NetPrints.Authoring/NodeKinds/` (NPXE0017) and guide rows.
+- [ ] T142 [US16] Built-in fixed kinds by convention and SUG5 (FR-112, SC-002; 2 units). Red/green: the goldens, the S0
+  golden and the search goldens stay unchanged. Convert the built-in fixed node kinds; their search entries become
+  generated metadata (SUG5).
+- [ ] T143 [P] [US16] ADR-0026 (FR-112, FR-116; 1 unit). Write `docs/adr/0026-node-kinds-by-convention.md`, including
+  the amendment content the plan names (`PrepareFromSearchAsync`, offers from typed pins). ADR index.
+
+### Batch G4 — model: sonnet — T144–T146, T170 — 4 units
+
+- [ ] T144 [US17] User theme files (FR-113, FR-114, research R24 B1; 2 units; load `avalonia-xaml` and
+  `avalonia-styling`). Test first:
+  "Duplicate theme" writes `<config>/NetPrints/themes/<id>.nptheme.json` with the active preset's values and selects
+  it (US17 scenario 1); "Reload themes" applies edits; an unknown token is ignored with a warning, a bad value keeps the
+  base value with a warning, a newer schema is skipped with a message, and a contrast failure applies with a warning
+  naming the pairs (scenario 2); the size cap; no URLs, fonts or images; a Semi key is checked against the resources
+  loaded at runtime (unknown: warning) and its value parsed by the type of the resource it replaces, with no list of
+  Semi keys in NetPrints. Then the commands and the validation on T096's loader.
+- [ ] T145 [US17] Extension themes (FR-115, FR-029, research R24 C; 1 unit; load `avalonia-xaml` and
+  `avalonia-styling` before touching the Appearance page view). Test first: a loaded per-user `Fx`
+  extension whose manifest lists themes (T069's field) offers them on the Appearance page under its name, with the same
+  validation (US17 scenario 3); a theme never runs code or loads XAML. Then the wiring.
+- [ ] T146 [P] [US17] The theming guide for user and extension themes (FR-114, FR-116; 1 unit). Extend
+  `docs/guide/editor/themes.md`: the file format, the commands, the warnings, and a link to Semi's own documentation.
+- [ ] T170 **Checkpoint G** (plan "Gate outcomes"). Whole suite plus the E2E pass; CI green. Report the plan's gate G:
+  the US16 tests (the inspector section, value editor and graph rule tests of T136–T138) and the US17 tests (T144,
+  T145); SC-002 rechecked after T142 (goldens, S0 golden and search goldens unchanged); SC-001 for NPA030–NPA033;
+  NPK014's failing fixture (SC-011); quickstart §13; the longest CI job; the Dock check. Docs updated: the extensions
+  guide, the extension testing guide, the themes guide, ADR-0026, ADR-0032.
+
+### Batch G-R — model: opus — T153 (checkpoint E+F+G review)
+
+- [ ] T153 Review sub-phases E, F and G (the E+F+G checkpoint) against their decision corpus (constitution I, V and
+  VII, ADR-0015, ADR-0026, ADR-0032, ADR-0033, ADR-0035, ADR-0036, ADR-0037, ADR-0038, spec US7, US9, US15, US16 and
+  US17, FR-051–FR-065, FR-073, FR-074, FR-107–FR-115, research R14, R16, R17, R19, R22–R24, R31,
+  contracts/run-profiles.md, contracts/cli.md §1–§2, contracts/extension-api.md §2, §6, contracts/analyzer-diagnostics.md
+  §3, §6, data-model §2, §4, §5): the whole diff of batches E1–G4. Check the argument handling for shell re-parsing and
+  injection, the environment scrub and the process-tree kill; every new NPXE surface; the goldens around T142; that a
+  theme never runs code or loads XAML. Findings to the PR and to implementation-notes under "Review E+F+G". No code
+  changes.
+
+### Batch G-F — model: sonnet — T154 (checkpoint E+F+G fixes)
+
+- [ ] T154 Fix every finding of T153 (test first for behaviour findings), reply on each thread, whole suite plus the
+  E2E pass, push; "no findings" if there were none. Sub-phase H starts only after this batch is pushed and green on CI
+  (the coordinator checks).
 
 ---
 
-## Phase 10: Final review and merge preparation (the fifth checkpoint)
+## Phase 10: NuGet packages in the References dialog (sub-phase H, User Story 12, Priority P3)
+
+**Goal**: a developer browses, adds, updates and removes NuGet packages from a Packages tab, with the sources and
+credentials `dotnet restore` uses; a failed or cancelled change leaves the files byte-identical; the package service is
+ready for P3c to reuse. New in batch P3-S2e (owner, 2026-10-16). Contract: contracts/nuget-references.md; data-model
+§12; research R32–R35; ADR-0042. **Independent test**: US12's independent test; quickstart §14. **Gate (plan)**:
+SC-012; US12 scenarios 1–5; no secret in NetPrints state or logs; the trim ratchet not up.
+
+### Batch H1 — model: sonnet — T158–T160 — 4 units
+
+- [ ] T158 [US12] The NuGet spike (FR-089, FR-117, research R32; 1 unit; gate). On a scratch branch that is never
+  pushed, reference `NuGet.Protocol`, `NuGet.Configuration`, `NuGet.Credentials`, `NuGet.Versioning`,
+  `NuGet.Frameworks` and `NuGet.ProjectModel` from a probe library referenced by the editor, at the version the SDK
+  pinned by `global.json` ships (`dotnet nuget --version`). Check, and record under "NuGet spike" in
+  implementation-notes: the version; that `DefaultCredentialServiceUtility` in non-interactive mode runs in-process in
+  the editor (with no credential plugin installed, and with the Azure Artifacts credential provider if it is present);
+  that a local folder feed answers search, versions and metadata; the trim ratchet count (`eng/trim-warnings.sh`) with
+  the probe referenced; and, for P3c, whether a local folder feed honours the `packageType` filter. If the ratchet
+  rises, or the plugins cannot run non-interactively, apply the plan's gate outcome and report it. Only the notes and
+  the `Directory.Packages.props` pins reach the PR, with T159.
+- [ ] T159 [US12] `NetPrints.Packages`: sources and credentials (FR-089, research R32, contracts/nuget-references.md
+  §1; 2 units). Test first: `tests/NetPrints.Editor.Tests/Packages/PackageSourcesTests.cs`: a fixture `nuget.config`
+  hierarchy (the project folder and its parent, with the user and machine files kept out through the service's
+  settings seam) gives the enabled sources in file order; a `packageSourceCredentials` entry never appears in a captured log line or in any file
+  NetPrints writes; logged URLs lose user info, query and fragment; a source needing credentials with no provider
+  reports NPW012 with the `dotnet restore --interactive` hint. Then `src/NetPrints.Packages/` (in `NetPrints.slnx`,
+  not packable), `IPackageService` with `Sources`, the `[Singleton<T>]` registration, the NPW010–NPW013 constants with
+  their rows in `docs/guide/diagnostics.md` (same commit, for the guide's staleness test), the `[LoggerMessage]` log
+  class, the `BannedSymbols.txt` entry for `Newtonsoft.Json`, and the pins from T158.
+- [ ] T160 [US12] ADR-0042 (FR-116, research R32–R35; 1 unit; after T158). Write
+  `docs/adr/0042-nuget-package-service-and-package-edits.md`: the NuGet client libraries in `NetPrints.Packages` with
+  `Newtonsoft.Json` transitive and banned in `src/`; sources and credentials from `nuget.config` and the credential
+  plugins only, no secrets in NetPrints state, redacted URLs; CPM-aware edits through the MSBuild construction model;
+  the byte-identical rollback; the removal impact; reuse by P3c; the spike's outcome. ADR index.
+
+### Batch H2 — model: sonnet — T161–T163 — 5 units
+
+- [ ] T161 [US12] Search, versions, metadata, cache and offline (FR-089, FR-093, research R32, contract §1; 2 units).
+  Test first: `tests/NetPrints.Editor.Tests/Packages/PackageSearchTests.cs`: against the local folder feed packed once
+  per run from `tests/Fixtures/Packages/Fx.Packages.Sample/` (1.0.0, 1.1.0, 2.0.0-beta), search and versions honour
+  the prerelease switch (US12 scenario 1); compatibility is computed against every target framework of the project;
+  deprecation and vulnerabilities map from NuGet's own metadata types; a second call within 5 minutes hits the cache
+  and a later one does not (fake `TimeProvider`), and Refresh bypasses it; an unreachable source gives NPW011 and
+  offline results from a fixture global packages folder (scenario 5). Then the operations on `IPackageService`.
+- [ ] T162 [US12] Installed packages, transitive packages and updates (FR-089, FR-093, research R32, R35; 2 units).
+  Test first: from a fixture `obj/project.assets.json`, direct references list with declared and resolved versions,
+  transitive ones read-only; a `$(…)` version and several conditioned items for one id are read-only with NPW013 and
+  the reason; Updates lists direct references with a newer version in the selected sources; no network is needed for
+  Installed (scenario 5). Then `Installed` and the update query.
+- [ ] T163 [US12] The removal impact (FR-092, research R34, contract §5; 1 unit). Test first: a fixture graph whose node
+  calls a method of `Fx.Packages.Sample` is listed (graph, node, member) for a removal (US12 scenario 4); a package
+  whose assemblies another direct reference also brings lists nothing. Then the impact query over the assets file's
+  dependency graph and `IMemberReferencingNode`.
+
+### Batch H3 — model: sonnet — T164–T165 — 5 units
+
+- [ ] T164 [US12] Package reference edits (FR-090, SC-012, research R33, contract §2; 3 units, design-heavy). Test
+  first: `tests/NetPrints.Editor.Tests/Hosting/PackageEditTests.cs`: each row of contract §2 on the plain, CPM and
+  `VersionOverride` fixtures of `tests/Fixtures/Packages/`, with comments and order preserved (US12 scenario 2); the
+  plain and CPM add, update and remove compared byte for byte with `dotnet package add --no-restore` and `dotnet
+  package remove` run on a second copy (SC-012, first half); the `VersionOverride` golden; a range kept as written; a
+  property version and several conditioned items refused with NPW013; `NetPrints.Sdk` updated but not removed; an
+  invalid id or version refused before any write. Then `AddPackageReference`, `SetPackageVersion` and
+  `RemovePackageReference` in `NetPrints.Core/Projects/ProjectEdit.cs` under NPXE0018 (the public shape is frozen
+  after T073, research R16), their `PublicAPI` entries and the extension guide's "API stability" row, and their
+  application in `MsBuildProjectSystem` (both files under CPM).
+- [ ] T165 [US12] Apply, restore and roll back (FR-091, SC-012, research R34, contract §3; 2 units). Test first:
+  `tests/NetPrints.Editor.Tests/Packages/PackageChangeTests.cs`: a successful add refreshes the reflection provider and
+  re-validates the open graphs; a forced restore failure (a version the local feed lacks) and a cancellation during
+  the restore each leave the project and props files byte-identical, report NPW010, and keep the session's snapshot
+  and reflection provider (US12 scenario 3, the spec's edge case, SC-012 second half); a second change while one runs
+  is refused. Then the change runner in `NetPrints.Packages` on `IProjectSystem` and `ProjectFiles.WriteAtomicAsync`.
+
+### Batch H4 — model: sonnet — T166–T169 — 4 units
+
+- [ ] T166 [US12] The Packages tab (FR-093, FR-092, research R35, contract §4; 2 units; load `avalonia-xaml`,
+  `avalonia-styling` and `avalonia-behaviors`). Test first: view-model tests in
+  `tests/NetPrints.Editor.Tests/Packages/PackagesTabViewModelTests.cs` on a fake `IPackageService` (the three sub-tabs,
+  the source filter, prerelease, the compatibility filter with "Show incompatible", the badges, the offline banner,
+  read-only rows with their reason, "Use VersionOverride" only under CPM, the remove confirmation listing the impact —
+  US12 scenarios 1, 4, 5), and a headless UI test of the tab's controls and automation ids
+  (`References.Packages.*`) through a page object in `NetPrints.Testing.Ui`. Then the view models, the tab in the
+  References dialog, and its text in resources.
+- [ ] T167 [US12] The `ManagePackages` E2E (SC-012, FR-118; 1 unit). One class (ADR-0006) on a copy of the CPM fixture
+  with a temporary local folder feed: add `Fx.Packages.Sample` 1.0.0, update to 1.1.0, remove it with the impact list
+  shown, and a forced restore failure that leaves both files byte-identical. `NETPRINTS_STATE_DIR` per lease.
+- [ ] T168 [P] [US12] The NuGet packages guide (FR-116; 1 unit). Write `docs/guide/editor/packages.md`: sources and
+  credentials (what NetPrints reads and never stores), the three sub-tabs, Central Package Management and
+  `VersionOverride`, read-only references, rollback, removal, offline; links to the NPW010–NPW013 rows T159 added to
+  the diagnostics guide. Guide index.
+- [ ] T169 **Checkpoint H** (plan "Gate outcomes"). Whole suite plus the E2E pass; CI green. Report the plan's gate H:
+  SC-012 (`PackageEditTests`, `PackageChangeTests`, `ManagePackagesTests`); US12 scenarios 1–5 with their test names;
+  no secret in NetPrints state or logs (`PackageSourcesTests`); the trim count at most its value at the start of the
+  phase; quickstart §14 on a local folder feed; the longest CI job; the Dock check. Docs updated: the packages guide,
+  the diagnostics guide, ADR-0042, the release notes.
+
+---
+
+## Phase 11: Final review and merge preparation (the fifth checkpoint)
 
 ### Batch PR-P — model: sonnet — T147–T152 (release preparation, before the final review; 5 units)
 
-Moved out of the merge batch so that the final review (T155) sees this work. The IDs are the old sub-phase G ones, kept
-in P3.
+Moved out of the merge batch so that the final review (T155) sees this work. The IDs are the old sub-phase G ones; the
+batch runs after sub-phase H (Checkpoint H, T169).
 
 - [ ] T147 Guide images (FR-088, FR-116; 1 unit). Regenerate the guide images that carry the build version with
   `scripts/guide-screenshots.sh` on your own Xvfb display; inspect each changed PNG with the Read tool.
-- [ ] T148 The 0.3.0 release notes (FR-012, FR-116; 1 unit). Consolidate the "Unreleased" entries of
-  `.github/release-notes.md` into the 0.3.0 section: the hard break (the pin renames and every `*REMOVED*` line), the
+- [ ] T148 The 0.4.0 release notes (FR-012, FR-116; 1 unit). Consolidate the "Unreleased" entries of
+  `.github/release-notes.md` into the 0.4.0 section: the hard break (the pin renames and every `*REMOVED*` line), the
   new packages, the experimental ids, and the user-visible features. Check FR-116's list of guides and ADRs against
   `docs/`.
-- [ ] T149 The quickstart run (1 unit). Run every section of `specs/006-editor-extension-host/quickstart.md` (section 13
-  is P3b's) on your own display with an isolated `NETPRINTS_STATE_DIR` and `XDG_CONFIG_HOME`; record each step's result
-  in implementation-notes; fix a deviation here (test first).
+- [ ] T149 The quickstart run (1 unit). Run every section of `specs/006-editor-extension-host/quickstart.md` (§14 on a
+  temporary local folder feed, no network) on your own display with an isolated `NETPRINTS_STATE_DIR` and
+  `XDG_CONFIG_HOME`; record each step's result in implementation-notes; fix a deviation here (test first).
 - [ ] T150 SC-016, the ratchets and SC-001 (FR-117, FR-118; 1 unit). From the last CI run: every job's duration (none
   over 15 minutes; a fifth UI shard if a shard passes 12 minutes); the trim count at most its value at the start of the
   phase; the XAML literal ratchet not grown; 0 NPS, NPA and NPH hits in `src/`, and a test that every analyzer
   descriptor NetPrints ships has at least one passing and one failing test (SC-001).
 - [ ] T151 The docs site (SC-017, FR-116; 1 unit). `scripts/build-docs.sh` builds with 0 broken links; every guide of
   FR-116 and every ADR of the plan's schedule is present; `docs/adr/README.md` lists them all.
-- [ ] T152 The SC table: SC-001 to SC-017 with evidence for each (SC-012 to SC-014 marked "moved to P3c"); the
+- [ ] T152 The SC table: SC-001 to SC-017 with evidence for each (SC-013 and SC-014 marked "moved to P3c"); the
   quickstart results; the owner's manual list (Windows and macOS editor behaviour, two-DPI check, Cmd mapping, external
-  terminals); the Dock check. Docs updated: the release notes, the guide images, the themes guide, the extensions
-  guide.
+  terminals, an authenticated private feed in the Packages tab); the Dock check. Docs updated: the release notes, the
+  guide images, the themes guide, the extensions guide, the packages guide.
 
 ### Batch PR-R — model: opus — T155 (final review, checkpoint 5)
 
-- [ ] T155 A light final review of the whole PR by a reviewer who did not implement it. It covers integration across
-  sub-phases, not each sub-phase again: the analyzers ↔ the sweep ↔ the hygiene analyzers that replaced tests; the
-  composition gates ↔ the perf numbers; the typed pins ↔ the renames ↔ the S0 golden ↔ `NodePins` files ↔ the release
-  notes; the Abstractions split ↔ the facet ↔ the Null Object in the CLI; the packages ↔ validation ↔ the kit ↔ the
-  template ↔ `verify` ↔ the Godot sample; groups ↔ every surface ↔ failure isolation; settings ↔ the schema ↔ the
-  pages ↔ key bindings ↔ presets; run profiles in the editor ↔ the CLI; docs ↔ behaviour; and the SC table so far
-  (SC-001 to SC-015 from the sub-phase gate reports; SC-016 and SC-017 from PR-P, T150 and T151). Findings to the PR and to
-  implementation-notes under "Final review".
+- [ ] T155 The final review (the fifth checkpoint) by a reviewer who did not implement the work, in two parts.
+  1. **Sub-phase H in full** (its own review folds into this one): the whole diff of batches H1–H4 against its decision
+     corpus (constitution I, V and VII, AGENTS.md, ADR-0003, ADR-0015, ADR-0031, ADR-0033, ADR-0042, spec US12,
+     FR-089–FR-093, SC-012, research R32–R35, contracts/nuget-references.md, contracts/analyzer-diagnostics.md §8,
+     data-model §12). Extra weight: no credential or secret in NetPrints state, settings or logs; every logged URL
+     redacted; the rollback byte-identical on every failure path, cancellation included; no `Newtonsoft.Json` use in
+     `src/`; the `dotnet package add` comparisons; the trim count.
+  2. **The release preparation (PR-P) and the whole PR, lightly**: integration across sub-phases, not each sub-phase
+     again: the analyzers ↔ the sweep ↔ the hygiene analyzers that replaced tests; the composition gates ↔ the perf
+     numbers; the typed pins ↔ the renames ↔ the S0 golden ↔ `NodePins` files ↔ the S7 conversion ↔ the release notes;
+     the Abstractions split ↔ the facet ↔ the Null Object in the CLI; the published packages ↔ validation ↔ the kit ↔
+     the template ↔ `verify` ↔ the Godot sample; groups ↔ every surface ↔ failure isolation; settings ↔ the schema ↔ the
+     pages ↔ key bindings ↔ presets ↔ user and extension themes; inspector sections ↔ value editors ↔ graph rules ↔
+     NPK014; run profiles in the editor ↔ the CLI; the package service ↔ the project edits ↔ the reflection refresh;
+     docs ↔ behaviour; and the SC table (SC-001 to SC-015 from the sub-phase gate reports; SC-016 and SC-017 from PR-P,
+     T150 and T151).
+  Findings to the PR and to implementation-notes under "Final review" (H's under "Review H").
 
 ### Batch PR-F — model: sonnet — T156 (reserved: fix final review findings)
 
@@ -1148,7 +1327,7 @@ in P3.
      sides' intent), whole suite plus the E2E pass, and push; do not wait for CI. Update the PR description (summary,
      decisions, deferrals, the owner's manual list, a link to the SC table). The coordinator watches `CI` and `CLI
      (Windows)` and marks PR #20 ready (`gh pr ready 20 --repo danielmeza/netprints`) once both are green. The owner
-     merges. The v0.3.0 release, tags and NuGet pushes need the owner's OK; the roadmap and constitution edits after the
+     merges. The v0.4.0 release, tags and NuGet pushes need the owner's OK; the roadmap and constitution edits after the
      merge belong to the coordinator.
 
 ---
@@ -1156,13 +1335,15 @@ in P3.
 ## Dependencies and execution order
 
 - Batches run strictly in order: A1 → … → A5 → B1 → … → B7 → B-R → B-F → C1a → … → C1f → C2a → … → C2f → C2-R → C2-F
-  → D1a → … → D1g → D2a → … → D2d → D2-R → D2-F → E1 → … → E5 → F1 → F2 → F-R → F-F → PR-P → PR-R → PR-F → PR-M (one agent at
-  a time, AGENTS.md). A review batch reads the finished pair of sub-phases; its fix batch closes the checkpoint.
-  A-R, A-F, C1-R, C1-F, D1-R, D1-F, E-R and E-F do not exist (merged); G1–G5, G-R and G-F moved to P3b.
+  → D1a → … → D1g → D2a → … → D2d → D2-R → D2-F → E1 → … → E5 → F1 → F2 → G1 → … → G4 → G-R → G-F → H1 → … → H4 → PR-P
+  → PR-R → PR-F → PR-M (one agent at a time, AGENTS.md). A review batch reads the finished group of sub-phases; its fix
+  batch closes the checkpoint. A-R, A-F, C1-R, C1-F, D1-R, D1-F, E-R, E-F, F-R and F-F do not exist (merged); H's
+  review is part of PR-R.
 - Every batch starts by checking CI at the previous head and fixing any red first (plan "Process: CI and checkpoints").
 - Gates stop the chain: T007 (M5) decides T008 and T053–T055; T053's M1 and T055's M2 stop the migration at the failed
   step (FR-004); T026 (pack spike) decides T106's reference; T073 (publish gate) freezes the public shape for every
-  later batch.
+  later batch (G and H add surfaces only under NPXE0014–NPXE0018); T158 (NuGet spike) pins the libraries for T159–T166
+  and applies the plan's gate outcome for credential plugins and the trim ratchet.
 - Within A: the NPS rules (T004) and the sweep (T005) come before every other code change, so later batches follow the
   layout from the start. T012 (unknown members) lands before any new document field: the `out`/`ref` pins (T035) and
   `kindVersion` (T067). T008 (registration generator) and T011 (validators) feed the composition steps T053–T055.
@@ -1173,31 +1354,40 @@ in P3.
   contexts (T052) before the facet's descriptors (T060–T065); the C# target types (T047) before `Requires` (T051) and
   the availability filter (T131); the templates with files (T066) before the template package (T106, T130) and
   `netprints new` (T129); the settings page kind (T068) before the Settings document (T089); the manifest `themes`
-  field (T069) is consumed by P3b's extension themes.
+  field (T069) before the extension themes (T145).
 - D1: groups (T079) before surfaces (T080) and isolation (T081); the store and schema (T086–T088) before the pages
   (T089, T090); the resolver of gestures (T092) before the page (T093) and the E2E (T094); the catalogue (T095) before
-  the presets (T096), whose loader P3b's B1 reuses.
+  the presets (T096), whose loader B1 (T144) reuses.
 - D2 needs C2's packages (T071) and D1's settings pages (the Godot sample's page). The kit (T101) comes before every
   check; `NetPrints.Templates` is created in T106 and gains the project templates in T130. The Godot sample (T109) ships
   the template whose profiles E tests (T125).
 - E needs no D work except the Godot sample (T125). F's availability filter needs C1's target and SUG4.
+- G: the value-editor contract (T136) before the value editors (T137); graph rules (T138) after D2's kit, which NPK014
+  joins; the convention generator (T141) before the built-in conversion (T142), whose goldens stay unchanged; the user
+  theme files (T144) before the extension themes (T145), which need T069's manifest field.
+- H: the spike (T158) before every other H task; the sources (T159) before search (T161) and installed packages
+  (T162); T162 before the removal impact (T163) and the tab (T166); the edits (T164) before the change runner (T165);
+  T163 and T165 before the tab (T166), which comes before the E2E (T167). H needs B's `IMemberReferencingNode` (T034)
+  and nothing from E to G.
 - Within a batch, [P] tasks touch different files; tasks without [P] run in order.
 
 ## Parallel opportunities (inside a batch, for a single agent)
 
 - A1: T003 ∥ T001–T002. B6: T032 ∥ T033 (and both ∥ T031). C1a: T042 ∥ T040–T041. D1e: T091 ∥ T089–T090. D1g: T097 ∥
-  T095–T096. D2b: T105 ∥ T103–T104.
+  T095–T096. D2b: T105 ∥ T103–T104. G2: T139 ∥ T138, T140. G3: T143 ∥ T141–T142. G4: T146 ∥ T144–T145. H4: T168 ∥
+  T166–T167.
 
 ## Implementation strategy
 
 1. MVP = Checkpoint C2 plus D1a–D1b (US1–US4): the analyzers and generators, the reshaped node model, the published
    packages with the stable API, and extensions on every editor surface (plan "Order rationale").
 2. Then the features on the frozen API, in story-priority order: settings, shortcuts, presets and `--profile` (D1);
-   the author kit and the Godot sample (D2); run profiles (E); `netprints new` and the C# target in the editor (F).
-3. The tail (old G) is P3b's. P3 ends with the release preparation (T147–T152), the final review (T155), its fixes
-   (T156) and the merge preparation (T157).
-4. Defects are caught at five checkpoints: A+B, C1+C2, D1+D2, E+F (each a review batch and a fix batch) and the final
-   review, which checks only integration.
+   the author kit and the Godot sample (D2); run profiles (E); `netprints new` and the C# target in the editor (F);
+   the tail (G); the NuGet packages (H, after G although US12's priority is higher: plan "Order rationale").
+3. P3 ends with the release preparation (T147–T152), the final review (T155), its fixes (T156) and the merge
+   preparation (T157).
+4. Defects are caught at five checkpoints: A+B, C1+C2, D1+D2, E+F+G (each a review batch and a fix batch) and the
+   final review, which reviews H in full and the rest only for integration.
 
 ## Task counts
 
@@ -1209,22 +1399,23 @@ in P3.
 | C2 — facets and the publish gate | 19 (T060–T078) | C2a 4, C2b 4, C2c 4, C2d 3, C2e 4, C2f 3 = 22 | C2-R (T077), C2-F (T078) |
 | D1 — extension host in the editor | 20 (T079–T098); T099, T100 merged | D1a 4, D1b 4, D1c 3, D1d 4, D1e 4, D1f 3, D1g 4 = 26 | into D2-R, D2-F (D1+D2) |
 | D2 — author kit and the Godot sample | 12 (T101–T112) | D2a 4, D2b 4, D2c 4, D2d 3 = 15 | D2-R (T111), D2-F (T112) |
-| E — run and build | 14 (T113–T126); T127, T128 merged | E1 4, E2 3, E3 4, E4 3, E5 3 = 17 | into F-R, F-F (E+F) |
-| F — command line and the C# target in the editor | 7 (T129–T135) | F1 3, F2 3 = 6 | F-R (T134), F-F (T135) |
-| G — tail: moved to P3b | 0 (T136–T154 reserved, 19 IDs) | — (was G1–G5, 22 units; 5 units of release preparation moved to PR-P) | — |
+| E — run and build | 14 (T113–T126); T127, T128 merged | E1 4, E2 3, E3 4, E4 3, E5 3 = 17 | into G-R, G-F (E+F+G) |
+| F — command line and the C# target in the editor | 5 (T129–T133); T134, T135 merged | F1 3, F2 3 = 6 | into G-R, G-F (E+F+G) |
+| G — tail | 14 (T136–T146, T170, T153, T154) | G1 4, G2 4, G3 5, G4 4 = 17 | G-R (T153), G-F (T154) |
+| H — NuGet packages | 12 (T158–T169) | H1 4, H2 5, H3 5, H4 4 = 18 | into PR-R, PR-F (the final checkpoint) |
 | Release preparation, final review and merge | 9 (T147–T152, T155–T157) | PR-P carries 5 units of release preparation | PR-P, PR-R, PR-F, PR-M |
-| **Total** | **136 active of 157 IDs** (13 reserved for P3b, 8 merged) | **42 batches, 155 units** (+5 units in PR-P = 160) | **12 batches** (4 review, 4 fix, PR-P, PR-R, PR-F, PR-M) |
+| **Total** | **160 active of 170 IDs** (10 merged) | **50 batches, 190 units** (+5 units in PR-P = 195) | **12 batches** (4 review, 4 fix, PR-P, PR-R, PR-F, PR-M) |
 
-53 batches in all (68 before S2d). The units refine plan.md's first estimate per sub-phase, and its table carries them:
-A 19 (was 16: the M5 spike and the carry-overs are sized separately), B 26 (25), D1 26 (25), D2 15 (14); C1, C2, E and F
-are unchanged. The total, 160 units, is within the plan's "about 160". Five review checkpoints replace the nine
-per-sub-phase reviews.
+62 batches in all (54 after S2d and A2, 68 before S2d). The units refine plan.md's first estimate per sub-phase, and its
+table carries them: A 19 (was 16: the M5 spike and the carry-overs are sized separately), B 26 (25), D1 26 (25), D2 15
+(14); C1, C2, E, F and G are unchanged; H (18) is new in S2e. The total, 195 units, is the plan's "about 195". Five
+review checkpoints replace the nine per-sub-phase reviews; T170 (Checkpoint G) has a higher ID than H's tasks because
+IDs are never renumbered.
 
 ## Requirement coverage
 
-Every active FR and SC maps to at least one task. US12–US14, FR-089–FR-106 and SC-012–SC-014 moved to P3c and have no
-task (T157 lists them as moved). US16, US17 and FR-109–FR-115 moved to P3b and have no task (T136–T154 are
-reserved).
+Every active FR (105) and SC (15) maps to at least one task. US13, US14, FR-094–FR-106, SC-013 and SC-014 moved to
+P3c and have no task (T152 marks them as moved).
 
 | Requirement | Tasks |
 |---|---|
@@ -1239,7 +1430,7 @@ reserved).
 | FR-009 | T024 |
 | FR-010 | T024, T025, T027, T028, T029, T032 |
 | FR-011 | T030 |
-| FR-012 | T031, T157 |
+| FR-012 | T031, T148 |
 | FR-013, FR-014 | T035 |
 | FR-015 | T034 |
 | FR-016 | T019, T020, T021, T022 |
@@ -1247,7 +1438,7 @@ reserved).
 | FR-018 | T033 |
 | FR-019 | T040, T042 |
 | FR-020 | T070, T071, T073 |
-| FR-021 | T051, T060, T061, T062, T064, T065, T068 (inspector sections, value editors and graph rules: P3b) |
+| FR-021 | T051, T060, T061, T062, T064, T065, T068, T136, T137, T138 |
 | FR-022 | T052 |
 | FR-023 | T060 |
 | FR-024 | T063 |
@@ -1255,7 +1446,7 @@ reserved).
 | FR-026 | T067 |
 | FR-027 | T043, T044, T045, T046 |
 | FR-028 | T047, T051 |
-| FR-029 | T069 |
+| FR-029 | T069, T145 |
 | FR-030 | T051, T056, T072, T073 |
 | FR-031 | T074, T075 |
 | FR-032 | T079, T082 |
@@ -1295,23 +1486,33 @@ reserved).
 | FR-074 | T132 |
 | FR-075 | T050 |
 | FR-076 | T101, T102, T103 |
-| FR-077 | T103 (NPK014: P3b) |
-| FR-078 | T102, T103, T104 |
+| FR-077 | T103, T138 |
+| FR-078 | T102, T103, T104, T138 |
 | FR-079 | T106 |
 | FR-080 | T106, T107 |
 | FR-081 | T108, T109 |
 | FR-082, FR-083 | T013 |
 | FR-084 | T015 |
 | FR-085–FR-087 | T014 |
-| FR-088 | T085, T157, every sub-phase gate (Dock check, `ShellMainFlow`) |
+| FR-088 | T085, T147, every sub-phase gate (Dock check, `ShellMainFlow`) |
+| FR-089 | T158, T159, T161, T162 |
+| FR-090 | T164 |
+| FR-091 | T165 |
+| FR-092 | T163, T166 |
+| FR-093 | T161, T162, T166 |
 | FR-107 | T129 |
 | FR-108 | T106, T130 |
-| FR-109–FR-115 | moved to P3b (T136–T146 reserved) |
-| FR-116 | T003, T023, T032, T036, T042, T046, T056, T071, T072, T091, T094, T097, T105, T107, T125, T129, T157 |
-| FR-117 | T021, T033, T157 |
-| FR-118 | T002, T084, T094, T101, T124, T157 |
-| SC-001 | T004, T005, T027, T074, T075, T076, T157 |
-| SC-002 | T019, T022, T029, T031, T035, T037 |
+| FR-109 | T136, T137 |
+| FR-110 | T138, T139 |
+| FR-111 | T140 |
+| FR-112 | T141, T142, T143 |
+| FR-113, FR-114 | T144, T146 |
+| FR-115 | T145 |
+| FR-116 | T003, T023, T032, T036, T042, T046, T056, T071, T072, T091, T094, T097, T105, T107, T125, T129, T139, T143, T146, T148, T151, T160, T168 |
+| FR-117 | T021, T033, T150, T158 |
+| FR-118 | T002, T084, T094, T101, T124, T150, T167 |
+| SC-001 | T004, T005, T027, T074, T075, T076, T141, T150 |
+| SC-002 | T019, T022, T029, T031, T035, T037, T142, T170 |
 | SC-003 | T071, T073, T109, T110 |
 | SC-004 | T081, T083, T098 |
 | SC-005 | T006, T053, T055, T057, T076 |
@@ -1320,10 +1521,11 @@ reserved).
 | SC-008 | T114, T115, T118, T124, T126 |
 | SC-009 | T096, T098 |
 | SC-010 | T049, T057, T133 |
-| SC-011 | T102, T103, T106, T110 |
+| SC-011 | T102, T103, T106, T110, T138 |
+| SC-012 | T164, T165, T167, T169 |
 | SC-015 | T014, T015, T016 |
-| SC-016 | every sub-phase gate, T157 |
-| SC-017 | T157 |
+| SC-016 | every sub-phase gate, T150 |
+| SC-017 | T151 |
 
 ## ADR schedule coverage
 
@@ -1334,8 +1536,10 @@ reserved).
 | 0027 | T046 |
 | 0030 | T042 (split), T072 (facet, CLI trust) |
 | 0041 | T107 |
-| 0032, 0026 | moved to P3b |
-| Amendments | ADR-0003: T003 (StyleCop note), T015 (FU-5 records), T074; ADR-0007: T074; ADR-0023: T046; ADR-0020, ADR-0021: T072; ADR-0010: T104; ADR-0035: T133 (B1 and C placement: P3b); the ADR-0026 amendment moved to P3b |
+| 0032 | T139 |
+| 0026 (with its amendment content) | T143 |
+| 0042 (new) | T160 |
+| Amendments | ADR-0003: T003 (StyleCop note), T015 (FU-5 records), T074; ADR-0007: T074; ADR-0023: T046; ADR-0020, ADR-0021: T072; ADR-0010: T104; ADR-0035: T133 (B1 and C in G, C's distribution in P3c) |
 
 ## Analysis
 
@@ -1378,5 +1582,41 @@ LOW, recorded and left as they are:
   states it as about 4 weeks in agent time.
 
 Batch P3-S2d (2026-10-16) later moved the tail (T136–T154) to P3b, merged the per-sub-phase reviews into five
-checkpoints and changed the CI process. This analysis is the record of S2c; the counts above are superseded by "Task
-counts" (12 active stories, 93 active FRs, 14 SCs).
+checkpoints and changed the CI process. The analysis above is the record of S2c; its counts are superseded by "Task
+counts".
+
+### Analysis of batch P3-S2e (2026-10-16)
+
+`speckit-analyze` ran again over spec.md, plan.md and this file (with the constitution, research.md, data-model.md,
+quickstart.md and the contracts as references) after US12, US16 and US17 came back and the version moved to 0.4.0.
+Result: 0 CRITICAL, 0 HIGH, 6 MEDIUM and 8 LOW findings. No constitution conflict. Every active FR (105) and SC (15)
+has a task; every task ID T001–T170 exists once; each batch header's units equal its tasks' units (50 implementation
+batches, 190 units); no task serves a P3c item.
+
+Fixed in the same commit:
+
+| Id | Severity | Finding | Fix |
+|---|---|---|---|
+| M1 | MEDIUM | NPW010–NPW013 (T159) and NPK014 (T138) add diagnostic codes, but their rows in the diagnostics guide, whose staleness test compares it with the code constants, were left to later tasks, so those commits would fail CI | T159 and T138 add the guide rows in the same commit; T168 links to them |
+| M2 | MEDIUM | T137 (value editors) and T145 (extension themes on the Appearance page) touch views without the avalonia skills, and T144 loaded only `avalonia-styling` | the three tasks load `avalonia-xaml` and `avalonia-styling` |
+| M3 | MEDIUM | the requirement coverage mapped FR-012, FR-088, FR-116, FR-117, FR-118, SC-001, SC-016 and SC-017 to T157, whose release work moved to PR-P in batch A2 | mapped to T147, T148, T150 and T151 |
+| M4 | MEDIUM | the package `ProjectEdit` records add public Core API after the publish gate, where plan.md allows new shapes only under an NPXE id | NPXE0018 (research R16, R33, T164, contracts/nuget-references.md §2) |
+| M5 | MEDIUM | the spec's User Scenarios intro kept a broken line from S2d ("in the Clarifications may move out of P3.") | rewritten |
+| M6 | MEDIUM | plan.md listed ADR-0026 both as a new ADR and among the amendments (an S2c LOW that G's return makes real again) | written once, with its amendment content (plan Scale/Scope and ADR schedule, T143) |
+
+LOW, recorded and left as they are:
+
+- US16 and US17 have no success criterion of their own (as in the original spec); gate G uses their acceptance tests
+  and SC-001, SC-002 and SC-011.
+- FR-089 names no latency budget for package search, only the 5-minute cache; performance work is P8's.
+- Research R33 states that `dotnet package remove` leaves the `PackageVersion` item under Central Package Management;
+  T164's byte comparison with the CLI is the check, and the contract changes with the test if the CLI differs.
+- Sub-phase H runs after G although US12's priority (P3) is above the tail's (P4); plan.md's "Order rationale" gives
+  the reason (checkpoint sizes, no dependency either way).
+- T170 (Checkpoint G) has a higher ID than H's tasks because IDs are never renumbered.
+- The deprecated and vulnerable badges are tested on NuGet's metadata types and on a fake service only; a local
+  folder feed carries no such metadata, so `ManagePackages` does not show them.
+- The package edit tests run on Linux only (Editor.Tests); the Windows CLI leg does not cover Windows paths in
+  `Directory.Packages.props`. An authenticated private feed is on the owner's manual list (T152).
+- The Clarifications keep the superseded answers of 2026-10-16 (the P3c split, the tail to P3b) as a dated record; the
+  last answer of that session narrows them.

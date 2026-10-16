@@ -14,7 +14,7 @@ member names may change in implementation if the tests and the contracts change 
 | `name` | string | Display name; shown as the owner in the palette and the shortcuts sheet |
 | `version` | SemVer string | Shown in diagnostics (the project-versus-user precedence message names both versions) |
 | `assembly` | string | File name next to the manifest |
-| `netprintsApi` | `major.minor` | At most the host's `ExtensionApi.Version`; `themes` needs the 0.3 minor or later |
+| `netprintsApi` | `major.minor` | At most the host's `ExtensionApi.Version`; `themes` needs the 0.4 minor or later |
 | `dependsOn` | string[] | Extension ids, ADR-0010 type sharing |
 | `themes` | string[] (new) | Relative paths of `*.nptheme.json` files; data only, never code or XAML (ADR-0035) |
 
@@ -73,8 +73,8 @@ after a restart.
 | View resources and icons | `Editor.AddViewResources` | with the group | DataTemplates, `Icon.<extension id>.<name>` |
 | Node search provider | `AddSuggestionProvider` (flat) | project | node search |
 | Node-data migration | `AddDocumentMigration` (flat) | project | document load |
-| Inspector section, value editor (P3b) | `Editor.AddInspectorSection`, `Editor.AddValueEditor` | project | inspector, pin and default editors |
-| Graph rule (P3b) | `AddGraphRule` (flat) | project | Errors, `netprints build` and `generate` |
+| Inspector section, value editor (G) | `Editor.AddInspectorSection`, `Editor.AddValueEditor` | project | inspector, pin and default editors |
+| Graph rule (G) | `AddGraphRule` (flat) | project | Errors, `netprints build` and `generate` |
 
 ### Contribution group
 
@@ -215,7 +215,7 @@ Unloading a project while an `Executable` run is alive asks whether to leave it 
 |---|---|---|
 | Token (catalogue entry) | key, kind (colour, brush, thickness, size, radius, opacity, font, shape), Dark default, Light default, contrast partners | every visual element of the editor is a token (ADR-0035 decision 1) |
 | Preset | id, label, variant (`dark`, `light` or both), base Semi variant, token values | built-in: `netprints.dark`, `netprints.light`, `netprints.classicDark`, `netprints.highContrast`; gated by the contrast tests |
-| Theme file (`*.nptheme.json`; user files and extension themes are P3b) | `schemaVersion`, `id`, `label`, `base`, `tokens` (sparse), Semi keys | the same format as the embedded presets; unknown token: ignored with a warning; bad value: keeps the base value with a warning; newer schema: skipped; size capped; no URLs, fonts or images |
+| Theme file (`*.nptheme.json`; user files in `<config>/NetPrints/themes/` and extension themes land in G) | `schemaVersion`, `id`, `label`, `base`, `tokens` (sparse), Semi keys | the same format as the embedded presets; unknown token: ignored with a warning; bad value: keeps the base value with a warning; newer schema: skipped; contrast failure: applied with a warning naming the pairs; size capped; no URLs, fonts or images; a Semi key is checked against the resources loaded at runtime |
 
 A preset applies as an overlay into `ThemeDictionaries[Dark]` or `[Light]`, so a Dark preset changes no Light value.
 An unknown preset id falls back to the variant's default and is logged.
@@ -279,3 +279,23 @@ The 13 renamed properties and the 2 overrides change no stored key; the S0 pin-l
 | `Settings.<section>.<key>.Label`, `.Description` | settings sections |
 
 Fallback: the UI culture, its parent, the neutral resx, then the default text (pin labels: the raw key).
+
+## 12. NuGet packages (US12)
+
+Research R32–R35, [contracts/nuget-references.md](contracts/nuget-references.md), ADR-0042.
+
+| Entity | Fields | Rule |
+|---|---|---|
+| Package source | name, URL, enabled, the `nuget.config` that declares it | read from the `nuget.config` hierarchy of the project folder; enabled sources in file order; never stored by NetPrints; credentials stay with NuGet (`packageSourceCredentials`, credential plugins); logs show the name and the URL without user info, query or fragment |
+| Package reference (declared) | id, version or range as written, `VersionOverride`, condition, the file that holds the version (project or `Directory.Packages.props`), editable, read-only reason | read from the project and props files; a version from an MSBuild property, or one of several conditioned items for the id, is read-only (NPW013) |
+| Installed package | id, resolved version, direct or transitive, target framework, compile assemblies, dependencies | from `obj/project.assets.json`; transitive packages are read-only |
+| Search result | id, versions, description, authors, license, project URL, deprecation, vulnerabilities, compatible frameworks, offline flag | cached in memory 5 minutes per source, operation and arguments; offline results come from the global packages folder |
+| Package change | kind (add, update, remove), id, version, `useVersionOverride`, the files it writes with their original bytes | one change at a time per project; applied as one unit; rolled back byte-identical on a failed or cancelled restore |
+| Removal impact | package id, the assemblies only it brings, the nodes that use them (graph, node, member) | computed before a removal; proceeding keeps those nodes as unresolved nodes |
+
+```text
+Package change:
+Idle ──apply──► Writing ──► Restoring ──success──► Refreshing (reflection provider, graph validation) ──► Idle
+                                │ restore failed, load threw, or cancelled
+                                └──► Rolling back (original bytes) ──► Idle, NPW010
+```

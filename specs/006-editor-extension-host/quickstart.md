@@ -1,6 +1,6 @@
 # Quickstart: validating P3 end to end
 
-This runs every active story's main flow (US1–US11, US15) against a local build. The behaviour is in the
+This runs every active story's main flow (US1–US12, US15–US17) against a local build. The behaviour is in the
 [spec](./spec.md), the surfaces in [contracts/](./contracts/), the formats in [data-model.md](./data-model.md). Most
 steps are also automated tests; this guide is the manual and checkpoint walk-through.
 
@@ -168,12 +168,41 @@ netprints new nope --name X        # exits 2
 The created project builds and runs; its files equal `dotnet new netprints-console -n Hello` and the editor's New
 project with the Console template (the test `TemplateParityTests`).
 
-## 13. Tail (US16, US17): moved to P3b
+## 13. Tail (US16, US17)
 
-Nothing to run in P3. P3b's quickstart covers inspector sections, value editors, graph rules, user theme files and
-extension themes.
+1. US16: select a variable in the test extension's fixture: its inspector section appears below the built-ins and
+   edits with undo; its value editor edits a pin of its type; its graph rule's code shows in Errors and fails
+   `netprints build`.
+2. US17: Appearance › Duplicate theme writes `$XDG_CONFIG_HOME/NetPrints/themes/<id>.nptheme.json`; edit two tokens and
+   a Semi key, Reload themes: applied. A bad value keeps the base value with a warning; a newer schema is skipped; an
+   extension's theme appears under its name while the extension is loaded.
 
-## 14. Docs and release readiness
+## 14. NuGet packages (US12)
+
+Work on copies of `tests/Fixtures/Packages/` (the plain and the Central Package Management projects) in a temporary
+folder, with a `nuget.config` next to each copy whose only source is a local folder feed:
+
+```bash
+feed="$(mktemp -d)"
+dotnet pack tests/Fixtures/Packages/Fx.Packages.Sample -c Release -o "$feed"   # the fixture library, 1.0.0
+dotnet pack tests/Fixtures/Packages/Fx.Packages.Sample -c Release -o "$feed" -p:Version=1.1.0
+```
+
+1. Open a copy in the editor, References › Packages › Browse, source "local": `Fx.Packages.Sample` lists with its
+   versions; the Prerelease switch and the compatibility filter change the version list.
+2. Add 1.0.0 to the CPM copy: `Directory.Packages.props` gains the `PackageVersion`, the project the version-less
+   `PackageReference`; `dotnet package add Fx.Packages.Sample --version 1.0.0 --no-restore` on a second copy writes the
+   same bytes (`cmp`). The same on the plain copy.
+3. Save copies of the project and props files, delete the 1.1.0 package from `$feed` while the tab still lists it
+   (cached), and update to 1.1.0: the restore fails, NPW010 shows, and both files equal the saved copies (`cmp`).
+4. Pack 1.1.0 again, Refresh, and update: the props file changes, the reflection provider reloads, the graphs
+   re-validate.
+5. Place a node that calls a method of the package, then Remove: the impact list names the node; proceed: the node
+   shows as unresolved and saving keeps it.
+6. Point the source at an unreachable URL and reopen the tab: the offline banner, NPW011, installed packages still
+   listed.
+
+## 15. Docs and release readiness
 
 `scripts/build-docs.sh`: 0 broken links (SC-017); the guides of FR-116 and the ADRs of the plan are present; the guide
 images that carry the build version are regenerated (`scripts/guide-screenshots.sh`). No tag, push to NuGet or release

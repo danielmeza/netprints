@@ -72,8 +72,9 @@ topic, so it takes the first free one after the reserved 0024-0032 and 0033.
 4. **`ISpanParsable<CommandKey>` and `ISpanFormattable` are implemented directly**, with public `Parse` and `TryParse`
    on the type, backed by a `FrozenDictionary` with an alternate span lookup (.NET 9). `CommandGesture` implements the
    same two interfaces. Strings are parsed only at the boundaries: keybinding JSON, manifests and display.
-   `DefaultGestures` becomes `IReadOnlyList<CommandGesture>?` under the 0.3.0 hard-rename policy. How tolerant a
-   future keybindings file must be is a separate decision; the state-files rule only requires the whole-file fallback.
+   `DefaultGestures` becomes `IReadOnlyList<CommandGesture>?` under the 0.4.0 hard-rename policy (P3's release; P3a
+   ships as 0.3.0). How tolerant a future keybindings file must be is a separate decision; the state-files rule only
+   requires the whole-file fallback.
 5. **The generic `ISmartEnum<TSelf>` waits for the second smart enum.** An ADR then chooses between a base class with
    `static abstract All` and `ISmartEnum` as prototyped.
 6. **Smart enums are never bound through `IConfiguration`.** Settings bind strings and parse them; the configuration

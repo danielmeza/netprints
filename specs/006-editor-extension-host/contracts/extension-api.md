@@ -6,7 +6,7 @@ this contract change together. The invariants may not: UI-free contracts, typed 
 built-ins first, groups removed as a whole, editor contributions ignored by hosts without an editor, and every
 settling surface behind an NPXE id.
 
-## 1. Packages (version 0.3.0)
+## 1. Packages (version 0.4.0)
 
 | Package | Assembly contents | Depends on |
 |---|---|---|
@@ -89,8 +89,8 @@ public interface IEditorContributions
   `netprints.editor`, before any other extension (FR-021).
 - The CLI, the SDK generator and the build hand out the Null Object facet: an extension that registers editor
   contributions loads there without error (US3 scenario 3).
-- Moved to P3b (2026-10-16): `AddInspectorSection`, `AddValueEditor` (NPXE0014) on the facet; `AddGraphRule`
-  (NPXE0015) on the builder. P3 does not publish them.
+- In the tail (sub-phase G): `AddInspectorSection`, `AddValueEditor` (NPXE0014) on the facet; `AddGraphRule`
+  (NPXE0015) on the builder. They are experimental, so they may land after the publish gate.
 
 ## 3. Typed contexts (R5a, R5b)
 
@@ -245,9 +245,9 @@ rejected. Core services are not replaceable in P3.
 
 ## 9. Manifest and API version
 
-- `themes` (string array) is accepted from `netprintsApi` 0.3; an older `netprintsApi` with `themes` is NPX001.
-- `ExtensionApi.Version` becomes 0.3 with the first P3 API change and changes again with every later shipped change
-  (a test ties it to the API files).
+- `themes` (string array) is accepted from `netprintsApi` 0.4; an older `netprintsApi` with `themes` is NPX001.
+- `ExtensionApi.Version` becomes 0.4 (P3's release, 0.4.0) with the first P3 API change and changes again with every
+  later shipped change (a test ties it to the API files).
 - Project-declared extensions load in the CLI and the build without a trust check, like analyzers and build tasks;
   the extension guide and ADR-0030 say so (FR-038).
 

@@ -58,8 +58,8 @@ netprints extension verify <folder|package.nupkg> [--host <folder>] [--format te
 ```json
 {
   "schemaVersion": 1,
-  "extension": { "id": "…", "version": "…", "netprintsApi": "0.3" },
-  "host": { "apiVersion": "0.3", "assemblies": ["NetPrints.Core", "…"] },
+  "extension": { "id": "…", "version": "…", "netprintsApi": "0.4" },
+  "host": { "apiVersion": "0.4", "assemblies": ["NetPrints.Core", "…"] },
   "checks": [ { "id": "NPK017", "name": "apiCompatibility", "status": "failed", "messages": ["…"] } ],
   "missingMembers": [ { "assembly": "…", "type": "…", "member": "…", "referencedFrom": "…" } ]
 }

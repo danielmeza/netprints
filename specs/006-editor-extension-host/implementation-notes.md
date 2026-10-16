@@ -28,7 +28,7 @@ Owner-approved 2026-10-16. Docs only; no code.
   relabelled US3. P3b adds the Appearance page offering and its validation.
 - Decision: NPK014 (graph rules) and the S7 analyzers NPA030–NPA033 move with the tail. The kit ships NPK001–NPK013,
   NPK015 and NPK016 in P3; NPK014 stays reserved.
-- Decision: the release preparation of G (T147–T151: guide images, the 0.3.0 release notes, the quickstart run, the CI
+- Decision: the release preparation of G (T147–T151: guide images, the 0.4.0 release notes, the quickstart run, the CI
   budget and ratchet checks, the docs site, and the SC table of T152) stays in P3. With T147–T154 reserved for P3b it
   folds into T157 (the merge batch, 5 units), after the final review and its fixes. Ambiguity for the coordinator: the
   folded work is not itself reviewed; a separate batch before T155 is the alternative.
@@ -114,6 +114,48 @@ Owner-approved 2026-10-16. Docs only; no code.
   then 52 of 52 in Analyzers.Tests. `DiagnosticsGuideTests` was red (NPS section and rows missing), then 6 of 6. Suite
   (Debug, no E2E pass): 4167 total, 4134 passed, 33 skipped, 0 failed.
 
+## Batch P3-S2e (US12, US16 and US17 back in P3; version 0.4.0)
+
+Owner decision 2026-10-16, verbatim: "Lo de los paquetes nuget debe quedar, ademas las secciones del inspector, editores
+de valores y reglas del grafo y temas de usuario o extensiones debe quedar tambien lo que puedes sacar es el gestor de
+extensiones y los samples remotos." Docs only; no code.
+
+- Decision: User Story 12 (FR-089–FR-093, SC-012) and User Stories 16 and 17 (FR-109–FR-115) are active again; only
+  User Stories 13 and 14 (FR-094–FR-106, SC-013, SC-014) stay in P3c. The spec records it as the last Clarification of
+  2026-10-16 and narrows the earlier answers; there is no scope rule and no cut line.
+- Decision: the model-driven grid (ADR-0036 c) stays in P3b; FR-112 says so. FR-112 is now a MUST (it was a SHOULD
+  while the tail could be cut).
+- Decision: FR-090 gains the read-only rule (a version from an MSBuild property, or several conditioned items for one
+  id) and a matching edge case, so the edits never guess; NPW013 reports it.
+- Decision: the tail is sub-phase G, restored from `51e0f06d` as T136–T146 (batches G1–G4) with a new gate T170
+  (Checkpoint G); T153 and T154 become the E+F+G checkpoint's review and fixes, and T134 and T135 merge into them.
+  The ADR-0035 amendment stays in T133 (Checkpoint F) and now records B1 and C in G, with C's distribution in P3c.
+- Decision: the NuGet packages are sub-phase H, new: T158–T169 in batches H1–H4 (18 units), with research R32–R35,
+  contracts/nuget-references.md, data-model §12, quickstart §14 and ADR-0042 (planned like ADR-0041: the package
+  service and package edits, written in T160). The NuGet libraries live in a new `src/NetPrints.Packages/`; their
+  transitive `Newtonsoft.Json` is banned in `src/`.
+- Decision: the package `ProjectEdit` records are experimental under NPXE0018, because they add public Core API after
+  the publish gate.
+- Decision: checkpoints stay at five. G folds into the fourth (E+F+G, about 40 units; the others are 41–46). H folds
+  into the final checkpoint, whose review covers H in full plus the release preparation and the whole PR lightly
+  (about 23 units of new work). No sixth checkpoint was needed. H runs after G although US12's priority is higher:
+  there is no dependency either way, and the sizes balance.
+- Decision: P3 is about 5 weeks in agent time (195 implementation units plus 5 checkpoints; it was about 4 weeks for
+  160). P3c shrinks to the extension manager and the remote samples, about 12 human days, about 1 week in agent time,
+  on P3's package service. P3b loses the tail. The roadmap carries both.
+- Decision (coordinator, owner-approved): P3a ships as v0.3.0, so P3's release is 0.4.0. Every "0.3.0" that meant P3's
+  release now says 0.4.0 (the hard renames, `*REMOVED*`, the release notes, the package versions) in the feature
+  folder, ADR-0034 and the roadmap. `netprintsApi` and `ExtensionApi.Version` for P3 become 0.4 (they were 0.3, tied
+  to P3's package version; the code still says 1.0 until T070).
+- New counts: 15 active stories, 105 active FRs, 15 active SCs; 10 sub-phases; 160 active tasks of 170 IDs (10
+  merged); 50 implementation batches with 190 units plus 5 in PR-P (195); 62 batches in all.
+- speckit-analyze: 0 CRITICAL, 0 HIGH, 6 MEDIUM (fixed) and 8 LOW; the table and the LOW list are in tasks.md
+  "Analysis of batch P3-S2e". LOW, left as they are: US16 and US17 have no SC of their own; no latency budget for
+  package search; R33's claim about `dotnet package remove` under CPM is checked by T164's comparison; H runs after G
+  although US12's priority is higher; T170 has a higher ID than H's tasks; the package badges are not shown in the
+  E2E (no local-feed metadata); Windows paths in `Directory.Packages.props` are not covered in CI; the superseded
+  2026-10-16 Clarifications stay as a dated record.
+
 ## Owner questions taken by default
 
 The plan left these product questions to the owner (research R3, R13, R23, R31). Each task below applies the default
@@ -143,10 +185,14 @@ and is marked "default pending owner" in tasks.md.
 
 (T073)
 
+## NuGet spike
+
+(T158)
+
 ## Checkpoint reports
 
-(T016, T037, T057, T076, T098, T110, T126, T133; the old T152 is part of T157)
+(T016, T037, T057, T076, T098, T110, T126, T133, T170, T169; the SC table is T152 in PR-P)
 
 ## Reviews
 
-(Review A+B: T038; Review C1+C2: T077; Review D1+D2: T111; Review E+F: T134; Final review: T155)
+(Review A+B: T038; Review C1+C2: T077; Review D1+D2: T111; Review E+F+G: T153; Final review with Review H: T155)

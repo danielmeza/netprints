@@ -31,9 +31,9 @@ when it is started.
 | P1 | Core refactor + extension points | ~3.5 w | P0 | **merged** 2026-09-29 (PR #6, cc96a93); released `v0.1.0`, `v0.1.1` |
 | P2 | Catalog tooling + Spectre CLI | ~2.5 w | P1 | **merged** 2026-10-01 (PR #9, 3a6eafc); released `v0.2.0` |
 | P3a | Editor shell | ~2–3 w | P0, P1 | **merged** 2026-10-15 (PR #12, bf3496e9); owner-feedback follow-up PR #19 |
-| P3 | Editor extension host | ~4 w agent time (re-estimated in the P3 plan, 2026-10-16) | P0, P1, P3a | in progress (spec in `specs/006-editor-extension-host/`) |
-| P3c | Packages and extension manager | ~4.5 w (about 23 days; re-estimated in its plan) | P3 | not started (split from P3, owner-approved 2026-10-16) |
-| P3b | Declarations and code style, plus the P3 tail | ~3–4 w, plus about 17 units for the tail (re-estimated in its plan) | P1, P3a, P3 | not started (owner-approved 2026-09-26; tail moved here 2026-10-16) |
+| P3 | Editor extension host | ~5 w agent time (re-estimated in the P3 plan, 2026-10-16; with the tail and the NuGet packages) | P0, P1, P3a | in progress (spec in `specs/006-editor-extension-host/`) |
+| P3c | Extension manager and remote samples | ~1 w agent time (about 12 human days; re-estimated in its plan) | P3 | not started (split from P3, owner-approved 2026-10-16) |
+| P3b | Declarations and code style | ~3–4 w | P1, P3a, P3 | not started (owner-approved 2026-09-26) |
 | P4 | VSIX (WpfAvaloniaHost) | ~2 w | P3 | **deferred** by owner (2026-09-24) |
 | P5 | VS Code extension + browser build + sidecar | ~2.5–3 w | P3 | not started |
 | P6 | Usability (Blueprint-level ease of use) | ~4–5 w | P2, P3 | not started |
@@ -228,13 +228,17 @@ of P3. The items P3a left open moved to P3 ("Carried over from P3a").
 inspector sections, panels, settings pages), sample non-Unreal extension, anything functional
 left beyond P0 parity. Publishes the `NetPrints.Serialization` and `NetPrints.Extensibility`
 packages for extension authors. No performance work here (owner decision 2026-09-25: see P8).
-The package service, the NuGet package manager (B7), the extension manager (B17) and samples from remote sources moved
-to P3c on 2026-10-16 (see there). P3 keeps what those need from the host: loading extensions from local folders, the
-extension package format that the author kit packs and verifies, and the start page's existing samples tile.
-The tail (inspector sections and value editors, graph rules, translator helpers, node kinds by convention, user and
-extension themes: R6, N2, N5, S7, SUG5, B1 and C) moved to P3b on 2026-10-16 (see there); wherever this section says the
-tail is at "the P3 tail" or "P3 if capacity allows", read P3b. P3 is about 4 weeks in agent time. Its reviews run at five
-checkpoints (A+B, C1+C2, D1+D2, E+F, the final review); implementers push and return, and the coordinator watches CI.
+The extension manager (B17) and samples from remote sources moved to P3c on 2026-10-16 (see there). P3 keeps what those
+need from the host: loading extensions from local folders, the extension package format that the author kit packs and
+verifies, the start page's existing samples tile, and the package service of B7, which P3c reuses. The owner had first
+moved the package service and the NuGet package manager (B7) to P3c and the tail to P3b, then kept both in P3 the same
+day: "Lo de los paquetes nuget debe quedar, ademas las secciones del inspector, editores de valores y reglas del grafo y
+temas de usuario o extensiones debe quedar tambien lo que puedes sacar es el gestor de extensiones y los samples
+remotos." The tail (inspector sections and value editors, graph rules, translator helpers, node kinds by convention,
+user and extension themes: R6, N2, N5, S7, SUG5, B1 and C) is planned work with no scope rule; wherever this section
+says "the P3 tail" or "P3 if capacity allows", read "in P3". Only the model-driven grid (ADR-0036 c) is P3b's. P3 is
+about 5 weeks in agent time. Its reviews run at five checkpoints (A+B, C1+C2, D1+D2, E+F with the tail, and the final
+review, which also reviews the NuGet packages); implementers push and return, and the coordinator watches CI.
 - **Carried over from P3a** (closeout 2026-10-15; P3a final notes):
   - regenerate the start-page guide images that carry the build version before the next release;
   - the per-user session log on Windows is unverified (pure resolver tests only; no Desktop code runs on Windows in CI);
@@ -310,6 +314,27 @@ checkpoints (A+B, C1+C2, D1+D2, E+F, the final review); implementers push and re
   - Design and prior art: `.agent-archive/2026-10-14-run-profile-kinds/` (outside this repo).
 - **Interactive stdin / external terminal (gap research 2026-10-06)** (B5): an input line in Output and a "Run in external terminal"
   profile option; today stdin is not redirected, so `Console.ReadLine()` sees EOF.
+- **NuGet package manager (gap research 2026-10-06; kept in P3 by the owner on 2026-10-16)** (B7, size M, about 6 days
+  after the shared package service of about 5 days). A Packages tab in the References dialog; one `NetPrints.Packages`
+  service, which P3c's extension manager (B17) and samples gallery reuse.
+  - Service: sources and credentials come from the `nuget.config` hierarchy and the NuGet credential plugins (the same ones
+    `dotnet restore` uses), search and versions through `NuGet.Protocol`, prerelease toggle, 5-minute cache, offline fallback to
+    the global packages folder. No secrets in NetPrints state; source URLs are redacted in logs.
+  - Edits: new `ProjectEdit` records (`AddPackageReference`, `SetPackageVersion`, `RemovePackageReference`). Aware of Central
+    Package Management (`Directory.Packages.props`), `VersionOverride`, ranges and conditional items; comments and order are
+    preserved; `NetPrints.Sdk` can be updated but not removed.
+  - Apply: write, restore through `LoadAsync`, and on a restore failure put the exact bytes back (csproj and props), then
+    refresh the reflection provider and re-validate graphs. Removal first lists the nodes that use the package; they stay as
+    unresolved nodes if the user proceeds.
+  - UI: Installed, Browse and Updates tabs, source drop-down, version picker with a compatibility filter, deprecated and
+    vulnerable badges, transitive packages read-only.
+  - CLI (v1.1): `netprints package list|add|remove|search|update` (exit codes per ADR-0015, `--format json`).
+  - Tests: fixture CPM and plain projects, golden comparison with `dotnet package add`, rollback and cancellation, impact scan,
+    local-folder feed; one E2E class.
+  - Spike first: the `NuGet.*` version to pin and the credential plugin hooks (no `NuGet.*` package is referenced yet); it
+    also records, for P3c, whether a local folder feed honours the `packageType` filter. `NuGet.Protocol` brings
+    `Newtonsoft.Json`; NetPrints' own code never uses it. Planned ADR-0042 (the package service and package edits).
+  - Design and prior art: `.agent-archive/2026-10-06-roadmap-gaps/b07-b17-packages-and-extensions.md` (outside this repo).
 - **`netprints new` and `dotnet new` templates (gap research 2026-10-06)** (B15): the CLI gains `new`, using the project template registry.
 - **Build configuration selector (gap research 2026-10-06)** (B23): a Debug/Release selector next to the run profile (the Publish dialog is in P6).
 - **Status-bar item contribution kind (gap research 2026-10-06)** (C-15): added to the contribution registry before P3 publishes it; the
@@ -320,17 +345,17 @@ checkpoints (A+B, C1+C2, D1+D2, E+F, the final review); implementers push and re
   - **S1** (first P3 batch): analyzer and generator projects, wiring, and the NPS style rules (attribute on its own line, blank line between members).
   - **S2a, S2b**: typed pins `NodeInputDataPin<T>`/`NodeOutputDataPin<T>`; `[NodeKind]`/`[Pin]`/`[PinType]` and the convention generator (pin key is the property name without the `Pin` suffix); analyzers NPA001-NPA009 with code fixes.
   - **S4**: pin-key tracking seeded from the S0 golden (NPA010/NPA011), before the renames.
-  - **S3**: the 13 pin property renames plus 2 overrides, a hard break in 0.3.0 with `*REMOVED*` entries and release notes, no `[Obsolete]` shims; file keys do not change.
+  - **S3**: the 13 pin property renames plus 2 overrides, a hard break in 0.4.0 with `*REMOVED*` entries and release notes, no `[Obsolete]` shims; file keys do not change.
   - **L1**: localization infrastructure (stable keys separate from display text, resx, `netprints.language`), before the Extensibility and Serialization packages publish.
   - **S5, S6**: hygiene analyzers (NPH001-NPH006) and the command analyzer.
-  - **S7** (moved to P3b on 2026-10-16; before B11, B18 and U2): node kinds by convention (inferred document, translator and `On<Pin>` dispatch, generated `AddNodes()`).
+  - **S7** (P3's tail, owner 2026-10-16; before B11, B18 and U2): node kinds by convention (inferred document, translator and `On<Pin>` dispatch, generated `AddNodes()`).
   - Planned ADRs, not yet written: 0024 (analyzer and generator infrastructure), 0025 (declarative node pins by convention), 0026 (node kinds by convention), 0027 (localization: stable keys vs display text). Planned amendments: ADR-0003 (hygiene rules promoted to analyzers), ADR-0007 (XAML rule E7 stays a test), ADR-0020 (label keys, menu ids split from labels), ADR-0023 (Semi and Ursa locale follow the app culture).
 - **SOLID plan (owner decisions 2026-10-08)**: search, node capabilities, editor composition and extension contracts. Design and decisions:
   `.agent-archive/2026-10-08-solid-plan/` (outside this repo). P3a takes only T094a, the T082 `IMemberReferencingNode` amendment and the T091a header-role fallback. In P3, the shape-defining work lands before the package publish gate, in this order, merged with the attribute-driven slices above:
-  - S1; SUG1 (internal search providers grouped by node kind; `SuggestionListViewModel` becomes `NodeSearchViewModel`, `SuggestionItem` becomes `SuggestionRowViewModel`) with R5-0 (M1, M2 and M4 baselines); SUG2 + SUG3 (creation service, ranker); S2a → S2b → S4 → S3 (Core 0.3.0); R2 (node capabilities as role interfaces, same window);
+  - S1; SUG1 (internal search providers grouped by node kind; `SuggestionListViewModel` becomes `NodeSearchViewModel`, `SuggestionItem` becomes `SuggestionRowViewModel`) with R5-0 (M1, M2 and M4 baselines); SUG2 + SUG3 (creation service, ranker); S2a → S2b → S4 → S3 (Core 0.4.0); R2 (node capabilities as role interfaces, same window);
   - R7 (Stairway split: `NetPrints.Extensibility.Abstractions`, contracts only) before SUG4; SUG4 + L1 (public search provider contracts, experimental); R5a/b (typed contribution contexts, editor abstractions); N1 + N8 (editor facet with a Null Object, per-session contribution groups, view resources and icons); R4 (dialogs); N3 (templates, with files) + N4 (document migrations);
   - **publish gate** (Abstractions, Extensibility, Serialization), then S5, S6;
-  - additive and experimental, moved to P3b on 2026-10-16 (it may place any of them in P6): R6 (inspector sections and pin editors), N2 (graph rules, also in CLI build and generate), N9 (settings page, with AOP S10), N5 (translator context); S7 + SUG5 with S7.
+  - additive and experimental, in P3 after the gate (the owner kept them in P3 on 2026-10-16, with no scope rule): R6 (inspector sections and pin editors), N2 (graph rules, also in CLI build and generate), N9 (settings page, with AOP S10), N5 (translator context); S7 + SUG5 with S7.
   - **DI in the editor** (reopened and decided 2026-10-08, [ADR-0031](../../docs/adr/0031-editor-composition-and-di.md); it replaces the earlier hand-written root with no container): MS.DI 10 with our `[Singleton<T>]`/`[SessionScoped<T>]` attributes and a registration generator that emits factory lambdas. The container exists only at the root and per project session; class and graph contexts use generated typed factories; nothing is resolved per row, node or pin. Migration path (each step has its gate):
     - **R5-0**: baselines for M1 (shell start), M2 (graph scope) and M4 (trimming), plus the M5 spike that gates MS.DI with our generator against Pure.DI;
     - **with S1**: the attributes, the registration generator, its analyzers and snapshot tests, and the hygiene test in its new form;
@@ -355,8 +380,8 @@ checkpoints (A+B, C1+C2, D1+D2, E+F, the final review); implementers push and re
   - **CLI trust**: project-declared extensions load in the CLI without a trust check, the same as analyzers and build tasks; the guide and the ADR say so.
   - **M4 trimming ratchet**: a non-blocking CI step (`eng/trim-warnings.txt`) counts the IL2xxx/IL3xxx warnings of `NetPrints.Editor`; the count may only go down. Prepares P5.
   - Planned ADRs (0024–0027 above): 0028 (node search providers and node creation), 0029 (node capabilities as role interfaces, including `IMemberReferencingNode`), 0030 (Extensibility Stairway split and the editor facet), 0031 (editor composition and DI; written 2026-10-08), 0032 (graph rules). Also written, with unreserved numbers: 0033 (logging and per-user folders), 0034 (smart enums and generic math). Planned amendments: ADR-0020 (typed descriptor contexts, per-session contribution groups, `AppliesTo`, new contribution kinds), ADR-0021 (extension icon ids), ADR-0026 (`PrepareFromSearchAsync`, offers from typed pins), ADR-0010 (conformance checks for providers, rules and contributions).
-  - **Editor themes** ([ADR-0035](../../docs/adr/0035-editor-themes-are-data.md), owner 2026-10-13): every visual element is a token a theme can set; themes are data and never run code. **B0** (about 4-5 units): the token catalogue in product code with the contrast math, a per-variant overlay in `Application.Resources.ThemeDictionaries[Dark|Light]`, `darkPreset`/`lightPreset` string settings, embedded presets (NetPrints Dark, NetPrints Light, Classic Dark, High contrast on Semi's own HC variants), wire opacity and thickness tokens, a theme settings page, the reserved manifest `themes` field before the publish gate, and a test of the overlay precedence. **B1** (about 9 more): user `*.nptheme.json` files, validation messages, Reload and Duplicate. **C** (themes declared by ordinary extensions, via B17; since the 2026-10-16 split, P3 offers the themes of loaded extensions, and their distribution through B17's Browse tab follows in P3c). B1 and C moved to P3b on 2026-10-16 (P3 keeps B0 and the manifest `themes` field). Contrast: warn and apply; the built-in presets are gated by tests. Semi keys are passed through and validated at runtime, never curated.
-  - **Value-editor contract** ([ADR-0036](../../docs/adr/0036-member-defaults-and-editor-metadata.md)): R6's `PinEditorDescriptor` widens into a value-editor contract shared by pins, variable and parameter defaults and grid rows (no extra cost while experimental). The model-driven grid with plugin-contributed editors (c, about 13-15 units) lands in P3b (the whole value-editor contract moved there from the P3 tail on 2026-10-16).
+  - **Editor themes** ([ADR-0035](../../docs/adr/0035-editor-themes-are-data.md), owner 2026-10-13): every visual element is a token a theme can set; themes are data and never run code. **B0** (about 4-5 units): the token catalogue in product code with the contrast math, a per-variant overlay in `Application.Resources.ThemeDictionaries[Dark|Light]`, `darkPreset`/`lightPreset` string settings, embedded presets (NetPrints Dark, NetPrints Light, Classic Dark, High contrast on Semi's own HC variants), wire opacity and thickness tokens, a theme settings page, the reserved manifest `themes` field before the publish gate, and a test of the overlay precedence. **B1** (about 9 more): user `*.nptheme.json` files, validation messages, Reload and Duplicate. **C** (themes declared by ordinary extensions, via B17; since the 2026-10-16 split, P3 offers the themes of loaded extensions, and their distribution through B17's Browse tab follows in P3c). B1 and C are in P3 (owner, 2026-10-16; no capacity rule). Contrast: warn and apply; the built-in presets are gated by tests. Semi keys are passed through and validated at runtime, never curated.
+  - **Value-editor contract** ([ADR-0036](../../docs/adr/0036-member-defaults-and-editor-metadata.md)): R6's `PinEditorDescriptor` widens into a value-editor contract shared by pins, variable and parameter defaults and grid rows (no extra cost while experimental). The value-editor contract, inspector sections and value editors are in P3's tail (owner, 2026-10-16); the model-driven grid with plugin-contributed editors (c, about 13-15 units) lands in P3b, with the member defaults and editor metadata it builds on.
 - **C# target (owner 2026-10-14; ADR-0038)**: one stable `CSharpTarget` per project, carried by `ProjectSnapshot` and reached through
   `Project` and `IProjectSession`.
   - Emission depends on the language version only. It is computed from the evaluated `LangVersion`, `MaxSupportedLangVersion` and
@@ -382,20 +407,24 @@ checkpoints (A+B, C1+C2, D1+D2, E+F, the final review); implementers push and re
   - Design and prior art: `.agent-archive/2026-10-14-attributes-langversion/` (outside this repo).
 Done when: also docs updated (guides, API reference, ADRs as applicable).
 
-### P3c — Packages and extension manager (owner-approved 2026-10-16)
+### P3c — Extension manager and remote samples (owner-approved 2026-10-16)
 Split out of P3. On 2026-10-16 the coordinator asked whether to move the package work (the package service, the Packages
 tab, the extension manager and the remote samples, about 23 days) into its own phase, and recommended it. The owner
 answered "continua con P3 como recomiendas" ("go on with P3 as you recommend"). The same answer settled P3's process
 questions with the recommended defaults: one spec and one PR for P3, core first, and the same batch and review process as
-P3a. P3c follows the same process: one spec, one branch, one PR.
-- **Scope:** one `NetPrints.Packages` service (about 5 days) and the three features built on it:
-  - NuGet packages in the References dialog (B7, about 6 days);
+P3a. Later the same day the owner kept the package service and the NuGet packages (B7) in P3: "lo que puedes sacar es el
+gestor de extensiones y los samples remotos" ("what you can take out is the extension manager and the remote samples").
+P3c follows the same process: one spec, one branch, one PR.
+- **Scope** (about 12 human days, about 1 week in agent time), on P3's `NetPrints.Packages` service:
   - the extension manager (B17, about 6 days for v1, or the 3-day fallback): browse, install, update, enable, disable and
     uninstall per-user extensions from feeds and folders, with trust and integrity checks;
   - samples from remote sources (about 6 days, or 8 after B17's fallback): the start page gallery over the release index,
     NuGet feeds, folder sources and extension samples; no sample is bundled with the editor any more.
   The details are below, as P3 held them before the split.
 - **Depends on P3:**
+  - the package service (B7): sources and credentials from `nuget.config`, search, versions, metadata, the cache and the
+    offline fallback. P3c adds searches by package type, download, verify and extract into the per-user folders, and the
+    sample index sources;
   - the published Extensibility packages and the extension package format: P3's `dotnet new netprints-extension` template
     packs an extension as a `.nupkg` of package type `NetPrintsExtension`, and `netprints extension verify` reads it; P3c
     installs that package. If B17's spike finds that feeds reject the custom package type, P3c changes the format, the
@@ -409,33 +438,16 @@ P3a. P3c follows the same process: one spec, one branch, one PR.
   - `--profile`: P3 filters New project and the template list; filtering the samples gallery comes here, with the sample
     manifest's `profile`.
 - **Moved here from P3's spec** (`specs/006-editor-extension-host/spec.md`; the IDs stay there marked "moved to P3c" and
-  are not reused): User Stories 12 to 14, FR-089 to FR-106, SC-012 to SC-014, their edge cases (a restore that fails or is
-  cancelled during a package change, feeds that ignore the package type filter, sample index and image limits, disabled
-  and Incompatible extensions) and entities (package source, sample, sample index). Also the sample Godot extension's own
-  sample under `samples/<id>/` (spec 006 FR-037) and the samples gallery's `--profile` filter (FR-036). The text as
-  drafted before the split is in commit `2e1a350a` of that file, and is the starting point for `/speckit-specify`.
+  are not reused): User Stories 13 and 14, FR-094 to FR-106, SC-013 and SC-014, their edge cases (feeds that ignore the
+  package type filter, sample index and image limits, disabled and Incompatible extensions) and entities (sample, sample
+  index, sample index sources). Also the sample Godot extension's own sample under `samples/<id>/` (spec 006 FR-037) and
+  the samples gallery's `--profile` filter (FR-036). The text as drafted before the split is in commit `2e1a350a` of
+  that file, and is the starting point for `/speckit-specify`. User Story 12 (B7) went back to P3 the same day.
 - **Later, not in P3c:** the `netprints package` verbs and the `netprints extension` verbs other than `verify` (v1.1);
   project-scope and "dev" extension folders; hot enable and disable; dual-type `NetPrintsSample;Template` packages for
   `dotnet new install`; theme-only packages without an assembly; a hosted gallery.
-- **NuGet package manager (gap research 2026-10-06)** (B7, size M, about 6 days after the shared package service of about 5 days).
-  A Packages tab in the References dialog; one `NetPrints.Packages` service shared with B17.
-  - Service: sources and credentials come from the `nuget.config` hierarchy and the NuGet credential plugins (the same ones
-    `dotnet restore` uses), search and versions through `NuGet.Protocol`, prerelease toggle, 5-minute cache, offline fallback to
-    the global packages folder. No secrets in NetPrints state; source URLs are redacted in logs.
-  - Edits: new `ProjectEdit` records (`AddPackageReference`, `SetPackageVersion`, `RemovePackageReference`). Aware of Central
-    Package Management (`Directory.Packages.props`), `VersionOverride`, ranges and conditional items; comments and order are
-    preserved; `NetPrints.Sdk` can be updated but not removed.
-  - Apply: write, restore through `LoadAsync`, and on a restore failure put the exact bytes back (csproj and props), then
-    refresh the reflection provider and re-validate graphs. Removal first lists the nodes that use the package; they stay as
-    unresolved nodes if the user proceeds.
-  - UI: Installed, Browse and Updates tabs, source drop-down and panel, version picker with a compatibility filter,
-    deprecated and vulnerable badges, transitive packages read-only.
-  - CLI (v1.1): `netprints package list|add|remove|search|update` (exit codes per ADR-0015, `--format json`).
-  - Tests: fixture CPM and plain projects, golden comparison with `dotnet package add`, rollback and cancellation, impact scan,
-    local-folder feed; one E2E class.
-  - Spike first: the `NuGet.*` version to pin and the credential plugin hooks (no `NuGet.*` package is referenced yet).
-  - Design and prior art: `.agent-archive/2026-10-06-roadmap-gaps/b07-b17-packages-and-extensions.md` (outside this repo).
-- **Extension manager (gap research 2026-10-06)** (B17, size M, about 6 days for v1; needs the shared package service of B7
+- **NuGet package manager (B7)**: in P3 (see there); P3c reuses its package service.
+- **Extension manager (gap research 2026-10-06)** (B17, size M, about 6 days for v1; needs P3's package service (B7)
   and P3's extension template). A separate Extensions dialog (command `manageExtensions`), not a Packages tab. If P3c is
   tight, v1 shrinks to a list, folder install, enable/disable and the trust list (about 3 days).
   - Package format (P3's, see above): a `NetPrintsExtension` package type holding the folder the loader already reads
@@ -495,25 +507,18 @@ P3a. P3c follows the same process: one spec, one branch, one PR.
   - Tests: the index parser (relative URLs, bad hash, id or version that differs from the package), the install rejection table
     shared with B17, the gallery ViewModel, and one E2E opening a sample from a folder source.
   - Spike, shared with B17's custom-type spike: whether dual-type `NetPrintsSample;Template` packages work with `dotnet new
-    install` (for B15; not needed for v1), and local-feed `packageType` filtering in B7's NuGet-version spike. If P3c is tight,
-    screenshots, `localized` and the update badge move to v1.1.
+    install` (for B15; not needed for v1), and local-feed `packageType` filtering (recorded by P3's B7 NuGet spike). If
+    P3c is tight, screenshots, `localized` and the update badge move to v1.1.
   - Design and prior art: `.agent-archive/2026-10-14-samples-remote/` (outside this repo).
-Done when: the phase's features work end to end and the docs are updated (the packages, extensions and samples guides, the
-CLI reference, ADRs as applicable).
+Done when: the phase's features work end to end and the docs are updated (the extensions and samples guides, the CLI
+reference, ADRs as applicable).
 
 ### P3b — Declarations and code style (owner-approved 2026-09-26)
 One extensible engine for what NetPrints can declare and how it writes C#. It is **extensible from the
 start**: the built-in kinds, styles and modifiers are registered through the same public API that
 profiles and P3 extensions use, so custom emitters need no core changes.
-- **Moved here from the P3 tail (owner-approved 2026-10-16; about 17 units; spec `specs/006-editor-extension-host/`
-  keeps the IDs marked "moved to P3b")**:
-  - R6: inspector sections, value editors and the ADR-0036 value-editor contract (NPXE0014), with the model-driven grid;
-  - N2: graph rules (NPXE0015, ADR-0032) and the conformance check NPK014;
-  - N5: translation context additions (NPXE0016);
-  - S7 and SUG5: node kinds by convention (NPXE0017, NPA030-NPA033, ADR-0026 with its amendment);
-  - B1 and C of ADR-0035: user theme files (Reload, Duplicate) and the themes of loaded extensions (the manifest
-    `themes` field already exists from P3).
-  P3b's plan may place any of these in P6.
+- **The P3 tail stays in P3** (owner, 2026-10-16; it was moved here and back the same day). P3b keeps the model-driven
+  grid with plugin-contributed editors (ADR-0036 c), on P3's value-editor contract.
 - **Declaration kinds registry.** Each kind's descriptor has:
   - its creation template;
   - the members, graphs and modifiers it allows;
