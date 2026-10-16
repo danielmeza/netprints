@@ -59,7 +59,7 @@ Document issues are reported when a graph file is read; all but NPD008 leave the
 
 ## NPI: internal generators
 
-These rules belong to the generators that compose the editor (`[Singleton<T>]`, `[SessionScoped<T>]`, `[ScopeFactory]`). They check NetPrints' own source and are not shipped in any package; they report as errors.
+These rules belong to the generators that compose the editor (`[Singleton<T>]`, `[SessionScoped<T>]`, `[ScopeFactory]`) and to the smart enum generator (`[SmartEnum]`). They check NetPrints' own source and are not shipped in any package; they report as errors.
 
 | Code | Severity | Cause |
 |---|---|---|
@@ -68,6 +68,8 @@ These rules belong to the generators that compose the editor (`[Singleton<T>]`, 
 | NPI003 | error | A registered type has no accessible constructor, or several and none marked `[ActivatorUtilitiesConstructor]`. |
 | NPI004 | error | Two registrations of one service in the same lifetime where another registered type takes a single instance of it. |
 | NPI005 | error | A type registered for several services is disposable (the container would dispose the one instance once for each registration) or the registrations have different lifetimes. |
+| NPI010 | error | A `[SmartEnum]` type is not a top-level `abstract partial class`. |
+| NPI011 | error | A smart enum member is a property or a field that is not `static readonly`, or a static field initializer reads `All` before every member field is declared (`All` would be read half-built). |
 
 ## NPS: repository style
 

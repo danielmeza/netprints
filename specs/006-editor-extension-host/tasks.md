@@ -175,7 +175,7 @@ trip; Windows CLI tests green; SC-015; R5-0 numbers and the M5 outcome recorded.
   no reflection activation, no assembly scanning) and implements the `Create` methods of `partial` `[ScopeFactory]`
   classes; NPI001–NPI004 with `NpiDiagnosticCodes`. No editor service is annotated yet (C1 does it, one step at a
   time). Guide rows.
-- [ ] T009 [US1] `[SmartEnum]` (FR-005, research R5, ADR-0034; 1 unit). Test first:
+- [x] T009 [US1] `[SmartEnum]` (FR-005, research R5, ADR-0034; 1 unit). Test first:
   `tests/NetPrints.Analyzers.Tests/SmartEnums/SmartEnumGeneratorTests.cs` (snapshot: only the companion id enum and the
   `All` list; compile; incrementality) and NPI010/NPI011 cases. Then the generator in
   `src/NetPrints.RepoAnalyzers/SmartEnums/`. Guide rows.

@@ -13,3 +13,5 @@ NPI002 | Composition | Error | A service attribute on a type that cannot be regi
 NPI003 | Composition | Error | A registered type has no single constructor to call
 NPI004 | Composition | Error | Two registrations of one service where a consumer takes a single instance
 NPI005 | Composition | Error | A type registered for several services cannot share one instance
+NPI010 | SmartEnum | Error | A smart enum is not a top-level abstract partial class
+NPI011 | SmartEnum | Error | A smart enum member is not a static readonly field, or a lookup reads All before the members
