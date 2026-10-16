@@ -167,7 +167,7 @@ ADR-0031, ADR-0033 to ADR-0040.
     package and reaches a consumer of the packed package.
   - **S2b**: NPA001–NPA009 and `NetPrints.Authoring.CodeFixes` (make partial, add the marker, keep the key).
   - **S4**: `NodePins.Shipped.txt` and `NodePins.Unshipped.txt` per project, seeded from the S0 golden; NPA010 (a
-    shipped key disappeared) and NPA011 (an unshipped key not recorded), with the "keep key" and "remove on purpose"
+    declared key not recorded, a warning) and NPA011 (a shipped key disappeared, an error), with the "keep key" and "remove on purpose"
     fixes; the release step moves Unshipped to Shipped.
   - **S3**: the 13 renames and the 2 overrides as a hard break: `*REMOVED*` entries, release notes, no `[Obsolete]`.
     The S0 golden, every fixture and every sample graph stay byte-identical.
