@@ -14,13 +14,13 @@ public class NodeGraphViewModelTests(TestEditor editor) : GraphTestBase(editor)
         Assert.Equal(2, Graph.Nodes.Count());
         var connection = Graph.Connections.Single();
         Assert.Equal(PinKind.Exec, connection.Kind);
-        Assert.Same(Method.EntryNode.InitialExecutionPin, connection.Source.Pin);
+        Assert.Same(Method.EntryNode.ExecPin, connection.Source.Pin);
 
         var write = new CallMethodNode(Method, ConsoleWriteLine(StringType));
         Assert.Equal(3, Graph.Nodes.Count());
 
-        GraphUtil.ConnectExecPins(Method.EntryNode.InitialExecutionPin, write.InputExecPins[0]);
-        GraphUtil.ConnectExecPins(write.OutputExecPins[0], Method.MainReturnNode.ReturnPin);
+        GraphUtil.ConnectExecPins(Method.EntryNode.ExecPin, write.InputExecPins[0]);
+        GraphUtil.ConnectExecPins(write.OutputExecPins[0], Method.MainReturnNode.ExecPin);
         Assert.Equal(2, Graph.Connections.Count());
 
         var literal = LiteralNode.WithValue(Method, "x");
@@ -56,32 +56,32 @@ public class NodeGraphViewModelTests(TestEditor editor) : GraphTestBase(editor)
     {
         Graph.Connections.Single().Disconnect();
         Assert.Empty(Graph.Connections);
-        Assert.Null(Method.EntryNode.InitialExecutionPin.OutgoingPin);
+        Assert.Null(Method.EntryNode.ExecPin.OutgoingPin);
     }
 
     [Fact]
     public void ConnectionCompletedCommandConnectsCompatiblePins()
     {
         var write = new CallMethodNode(Method, ConsoleWriteLine(StringType));
-        VmOf(Method.EntryNode.InitialExecutionPin).DisconnectAll();
-        var source = VmOf(Method.EntryNode.InitialExecutionPin);
+        VmOf(Method.EntryNode.ExecPin).DisconnectAll();
+        var source = VmOf(Method.EntryNode.ExecPin);
         var target = VmOf(write.InputExecPins[0]);
 
         Graph.ConnectionCompletedCommand.Execute((source, target)); // ED-T09
 
-        Assert.Same(write.InputExecPins[0], Method.EntryNode.InitialExecutionPin.OutgoingPin);
+        Assert.Same(write.InputExecPins[0], Method.EntryNode.ExecPin.OutgoingPin);
     }
 
     [Fact]
     public void ConnectionCompletedCommandOpensSearchWhenReleasedOnEmptyCanvas()
     {
-        var source = VmOf(Method.EntryNode.InitialExecutionPin);
+        var source = VmOf(Method.EntryNode.ExecPin);
         Graph.PendingConnectionAnchor = new GraphPoint(40, 60);
 
         Graph.ConnectionCompletedCommand.Execute((source, (NodePinViewModel?)null)); // ED-T09, PAR-47
 
         Assert.True(Graph.Search.IsOpen);
-        Assert.Same(Method.EntryNode.InitialExecutionPin, Graph.Search.SuggestionPin);
+        Assert.Same(Method.EntryNode.ExecPin, Graph.Search.SuggestionPin);
         Assert.Equal(new GraphPoint(40, 60), Graph.Search.Position);
     }
 
@@ -112,8 +112,8 @@ public class NodeGraphViewModelTests(TestEditor editor) : GraphTestBase(editor)
         Assert.Equal(0, node.PositionY);
 
         var returnNode = Method.MainReturnNode;
-        var connected = (IfElseNode)Graph.AddNode<IfElseNode>(new GraphPoint(10, 20), Method.EntryNode.InitialExecutionPin);
-        Assert.Same(connected.InputExecPins[0], Method.EntryNode.InitialExecutionPin.OutgoingPin);
+        var connected = (IfElseNode)Graph.AddNode<IfElseNode>(new GraphPoint(10, 20), Method.EntryNode.ExecPin);
+        Assert.Same(connected.InputExecPins[0], Method.EntryNode.ExecPin.OutgoingPin);
         _ = returnNode;
     }
 

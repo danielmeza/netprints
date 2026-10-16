@@ -14,8 +14,7 @@ namespace NetPrints.Graph
         /// <summary>
         /// Output execution pin that initially executes when a method gets called.
         /// </summary>
-        [Pin("Exec")]
-        public partial NodeOutputExecPin InitialExecutionPin { get; }
+        public partial NodeOutputExecPin ExecPin { get; }
 
         /// <summary>
         /// Adds this node to <paramref name="graph"/>.

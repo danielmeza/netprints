@@ -146,7 +146,7 @@ public class ShellEditingTests
             [], MethodModifiers.Static, MemberVisibility.Public, TypeSpecifier.FromType<Guid>(), []);
         var callNode = new CallMethodNode(method, parseSpecifier);
         var badArgument = LiteralNode.WithValue(method, 123);
-        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, callNode.InputExecPins[0]);
+        GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, callNode.InputExecPins[0]);
         GraphUtil.ConnectExecPins(callNode.OutputExecPins[0], method.ReturnNodes.First().InputExecPins[0]);
         GraphUtil.ConnectDataPins(badArgument.ValuePin, callNode.ArgumentPins[0]);
         cls.Methods.Add(method);

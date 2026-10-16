@@ -481,7 +481,7 @@ namespace NetPrints.Graph
             newMethod.ReturnNodes.First().PositionY = newMethod.EntryNode.PositionY;
 
             // Connect entry and return node execution pins
-            GraphUtil.ConnectExecPins(newMethod.EntryNode.InitialExecutionPin, newMethod.MainReturnNode.ReturnPin);
+            GraphUtil.ConnectExecPins(newMethod.EntryNode.ExecPin, newMethod.MainReturnNode.ExecPin);
 
             // Add generic arguments
             for (var i = 0; i < methodSpecifier.GenericArguments.Count; i++)

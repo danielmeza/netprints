@@ -20,9 +20,8 @@ namespace NetPrints.Graph
         /// <summary>
         /// Pin for the default value.
         /// </summary>
-        [Pin("Default")]
         [PinType(nameof(defaultType))]
-        public partial NodeOutputDataPin DefaultValuePin { get; }
+        public partial NodeOutputDataPin DefaultPin { get; }
 
         /// <summary>
         /// Type for the default value output. Inferred from input type pin.
@@ -43,7 +42,7 @@ namespace NetPrints.Graph
         }
 
         /// <summary>
-        /// Propagates <see cref="Type"/> (the inferred type) to <see cref="DefaultValuePin"/>.
+        /// Propagates <see cref="Type"/> (the inferred type) to <see cref="DefaultPin"/>.
         /// </summary>
         /// <param name="sender">The node whose input type changed.</param>
         /// <param name="eventArgs">Unused; forwarded to the base implementation.</param>
@@ -51,7 +50,7 @@ namespace NetPrints.Graph
         {
             base.HandleInputTypeChanged(sender, eventArgs);
 
-            DefaultValuePin.PinType.Value = Type;
+            DefaultPin.PinType.Value = Type;
         }
 
         /// <summary>

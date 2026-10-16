@@ -106,7 +106,7 @@ namespace NetPrints.Tests.Characterization
 
             var getItemsNode = new VariableGetterNode(getItems, itemsVar.Specifier);
             cursor.Place(getItemsNode);
-            GraphUtil.ConnectExecPins(getItems.EntryNode.InitialExecutionPin, getItems.MainReturnNode.ReturnPin);
+            GraphUtil.ConnectExecPins(getItems.EntryNode.ExecPin, getItems.MainReturnNode.ExecPin);
             GraphUtil.ConnectDataPins(getItemsNode.ValuePin, getItems.MainReturnNode.InputDataPins[0]);
 
             var setItems = new MethodGraph("set_Items")
@@ -126,8 +126,8 @@ namespace NetPrints.Tests.Characterization
 
             var setItemsNode = new VariableSetterNode(setItems, itemsVar.Specifier);
             cursor.Place(setItemsNode);
-            GraphUtil.ConnectExecPins(setItems.EntryNode.InitialExecutionPin, setItemsNode.InputExecPins[0]);
-            GraphUtil.ConnectExecPins(setItemsNode.OutputExecPins[0], setItems.MainReturnNode.ReturnPin);
+            GraphUtil.ConnectExecPins(setItems.EntryNode.ExecPin, setItemsNode.InputExecPins[0]);
+            GraphUtil.ConnectExecPins(setItemsNode.OutputExecPins[0], setItems.MainReturnNode.ExecPin);
             GraphUtil.ConnectDataPins(setItems.EntryNode.OutputDataPins[0], setItemsNode.NewValuePin);
 
             itemsVar.GetterMethod = getItems;
@@ -202,14 +202,14 @@ namespace NetPrints.Tests.Characterization
             var ifElse = new IfElseNode(main);
             cursor.Place(ifElse);
             GraphUtil.ConnectDataPins(ifElseConditionLiteral.ValuePin, ifElse.ConditionPin);
-            GraphUtil.ConnectExecPins(main.EntryNode.InitialExecutionPin, ifElse.ExecutionPin);
+            GraphUtil.ConnectExecPins(main.EntryNode.ExecPin, ifElse.ExecPin);
 
             // forLoop on the true branch, straight back to the return node.
             var forLoop = new ForLoopNode(main);
             cursor.Place(forLoop);
             forLoop.MaxIndexPin.UnconnectedValue = 10;
-            GraphUtil.ConnectExecPins(ifElse.TruePin, forLoop.ExecutionPin);
-            GraphUtil.ConnectExecPins(forLoop.CompletedPin, main.MainReturnNode.ReturnPin);
+            GraphUtil.ConnectExecPins(ifElse.TruePin, forLoop.ExecPin);
+            GraphUtil.ConnectExecPins(forLoop.CompletedPin, main.MainReturnNode.ExecPin);
 
             // await, unreferenced (its task pin would need a real Task-returning connection to be
             // reachable; presence of the node kind is what T002 requires).

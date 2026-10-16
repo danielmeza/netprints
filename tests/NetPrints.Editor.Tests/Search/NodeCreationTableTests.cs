@@ -193,7 +193,7 @@ public sealed class NodeCreationTableTests(IReflectionHost sharedReflection)
     [Fact(Timeout = 60000)]
     public async Task AnExecOutputIsConnectedToTheNewNodesExecInput()
     {
-        NodeOutputExecPin entry = Method.EntryNode.InitialExecutionPin;
+        NodeOutputExecPin entry = Method.EntryNode.ExecPin;
         SuggestionRowViewModel ifElse = await OpenAsync(Graph, "If Else", entry);
 
         await Graph.Search.SelectCommand.ExecuteAsync(ifElse);
@@ -239,7 +239,7 @@ public sealed class NodeCreationTableTests(IReflectionHost sharedReflection)
     [Fact(Timeout = 60000)]
     public async Task UndoAndRedoRemoveAndRestoreTheCreatedNodeAndItsConnection()
     {
-        NodeOutputExecPin entry = Method.EntryNode.InitialExecutionPin;
+        NodeOutputExecPin entry = Method.EntryNode.ExecPin;
         NodeInputExecPin? previous = entry.OutgoingPin;
         await Graph.Search.SelectCommand.ExecuteAsync(await OpenAsync(Graph, "If Else", entry));
         IfElseNode node = Method.Nodes.OfType<IfElseNode>().Single();

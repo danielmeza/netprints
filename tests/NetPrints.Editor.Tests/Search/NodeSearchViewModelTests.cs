@@ -114,7 +114,7 @@ public class NodeSearchViewModelTests : GraphTestBase
     [Fact(Timeout = 60000)]
     public async Task PinSearchConnectsNewNode()
     {
-        var entryExec = Method.EntryNode.InitialExecutionPin;
+        var entryExec = Method.EntryNode.ExecPin;
         var previous = entryExec.OutgoingPin;
         await Graph.OpenSearchAsync(new GraphPoint(0, 0), entryExec, TestContext.Current.CancellationToken);
         Assert.Same(previous, entryExec.OutgoingPin);

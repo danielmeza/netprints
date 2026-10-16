@@ -12,8 +12,7 @@ namespace NetPrints.Graph
         /// <summary>
         /// Input execution pin that executes the loop.
         /// </summary>
-        [Pin("Exec")]
-        public partial NodeInputExecPin ExecutionPin { get; }
+        public partial NodeInputExecPin ExecPin { get; }
 
         /// <summary>
         /// Input execution pin that skips the current loop step.

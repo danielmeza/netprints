@@ -47,8 +47,7 @@ namespace NetPrints.Graph
         /// <summary>
         /// Output execution pin that initially executes when the event fires.
         /// </summary>
-        [Pin("Exec")]
-        public partial NodeOutputExecPin InitialExecutionPin { get; }
+        public partial NodeOutputExecPin ExecPin { get; }
 
         /// <summary>
         /// Creates a custom event entry: one output execution pin, no arguments.

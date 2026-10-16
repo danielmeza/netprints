@@ -80,8 +80,8 @@ namespace NetPrints.Tests.Characterization
             LiteralNode maxIndexLiteralNode = LiteralNode.WithValue(runMethod, 10);
             ForLoopNode forLoopNode = new ForLoopNode(runMethod);
 
-            GraphUtil.ConnectExecPins(runMethod.EntryNode.InitialExecutionPin, forLoopNode.ExecutionPin);
-            GraphUtil.ConnectExecPins(forLoopNode.CompletedPin, runMethod.ReturnNodes.First().ReturnPin);
+            GraphUtil.ConnectExecPins(runMethod.EntryNode.ExecPin, forLoopNode.ExecPin);
+            GraphUtil.ConnectExecPins(forLoopNode.CompletedPin, runMethod.ReturnNodes.First().ExecPin);
             GraphUtil.ConnectDataPins(maxIndexLiteralNode.ValuePin, forLoopNode.MaxIndexPin);
 
             cls.Methods.Add(runMethod);

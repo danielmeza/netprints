@@ -60,7 +60,7 @@ public sealed class NodeCreationServiceTests : FixtureGraphTestBase
     public void CreatingForAPinConnectsAndUndoesInOneStep()
     {
         var service = Service(new FakePrompts());
-        var exec = Method.EntryNode.InitialExecutionPin;
+        var exec = Method.EntryNode.ExecPin;
 
         var wiredBefore = exec.OutgoingPin;
 

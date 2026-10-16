@@ -24,7 +24,7 @@ public sealed class ThePurityCheckBoxGoesThroughUndoTests : GraphTestBase
         handler = new CallMethodNode(Method, ConsoleWriteLine(StringType));
         errorSink = new CallMethodNode(Method, ConsoleWriteLine(TypeSpecifier.FromType<Exception>()));
         resultSink = new CallMethodNode(Method, ConsoleWriteLine(IntType));
-        GraphUtil.ConnectExecPins(Method.EntryNode.InitialExecutionPin, max.InputExecPins[0]);
+        GraphUtil.ConnectExecPins(Method.EntryNode.ExecPin, max.InputExecPins[0]);
         GraphUtil.ConnectExecPins(max.OutputExecPins[0], next.InputExecPins[0]);
         GraphUtil.ConnectExecPins(max.CatchPin ?? throw new InvalidOperationException("No Catch pin."), handler.InputExecPins[0]);
         GraphUtil.ConnectDataPins(max.ExceptionPin ?? throw new InvalidOperationException("No Exception pin."), errorSink.ArgumentPins[0]);
@@ -38,7 +38,7 @@ public sealed class ThePurityCheckBoxGoesThroughUndoTests : GraphTestBase
     private void AssertImpureWithEveryWire()
     {
         Assert.False(max.IsPure);
-        Assert.Same(max.InputExecPins[0], Method.EntryNode.InitialExecutionPin.OutgoingPin);
+        Assert.Same(max.InputExecPins[0], Method.EntryNode.ExecPin.OutgoingPin);
         Assert.Same(next.InputExecPins[0], max.OutputExecPins[0].OutgoingPin);
         Assert.Same(handler.InputExecPins[0], max.CatchPin?.OutgoingPin);
         Assert.Same(max.ExceptionPin, errorSink.ArgumentPins[0].IncomingPin);

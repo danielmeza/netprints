@@ -12,8 +12,7 @@ namespace NetPrints.Graph
         /// <summary>
         /// Input execution pin that executes this node.
         /// </summary>
-        [Pin("Exec")]
-        public partial NodeInputExecPin ExecutionPin { get; }
+        public partial NodeInputExecPin ExecPin { get; }
 
         /// <summary>
         /// Input data pin for the condition of this node.

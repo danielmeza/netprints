@@ -24,7 +24,7 @@ internal static class MultiExtensionGraphs
         var method = new MethodGraph("Main") { Class = cls, Visibility = MemberVisibility.Public, Modifiers = MethodModifiers.Static };
         cls.Methods.Add(method);
 
-        NodeOutputExecPin previous = ((MethodEntryNode)method.EntryNode).InitialExecutionPin;
+        NodeOutputExecPin previous = ((MethodEntryNode)method.EntryNode).ExecPin;
         foreach (string kind in kinds)
         {
             var descriptor = registry.NodeKinds.Single(k => k.Kind == kind);
@@ -33,7 +33,7 @@ internal static class MultiExtensionGraphs
             previous = node.OutputExecPins[0];
         }
 
-        GraphUtil.ConnectExecPins(previous, ((ReturnNode)method.MainReturnNode).ReturnPin);
+        GraphUtil.ConnectExecPins(previous, ((ReturnNode)method.MainReturnNode).ExecPin);
         return cls;
     }
 

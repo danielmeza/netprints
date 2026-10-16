@@ -53,7 +53,7 @@ public class ClassContextMembersTests(TestEditor editor) : IAsyncLifetime
 
         Assert.Equal(new[] { "Main", "Method", "Method2" }, context.Methods.Select(m => m.Name).ToArray());
         Assert.Same(method, context.Methods[2].Graph);
-        Assert.Same(method.MainReturnNode.ReturnPin, method.EntryNode.InitialExecutionPin.OutgoingPin);
+        Assert.Same(method.MainReturnNode.ExecPin, method.EntryNode.ExecPin.OutgoingPin);
         Assert.Equal(0, method.EntryNode.PositionX % 28);
         Assert.Equal(0, method.MainReturnNode.PositionX % 28);
     }

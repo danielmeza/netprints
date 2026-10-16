@@ -597,10 +597,10 @@ namespace NetPrints.Translator
             builder.AppendLine();
 
             // Start after the entry if necessary (id != 0)
-            NodeInputExecPin? initialOutgoingPin = entry.InitialExecutionPin.OutgoingPin;
+            NodeInputExecPin? initialOutgoingPin = entry.ExecPin.OutgoingPin;
             if (initialOutgoingPin != null && GetExecPinStateId(initialOutgoingPin) != 0)
             {
-                WriteGotoOutputPin(entry.InitialExecutionPin);
+                WriteGotoOutputPin(entry.ExecPin);
             }
 
             // Translate every exec node reachable from this entry

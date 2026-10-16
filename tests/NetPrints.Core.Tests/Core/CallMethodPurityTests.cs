@@ -79,7 +79,7 @@ namespace NetPrints.Tests.Core
             var call = new CallMethodNode(method, WriteLine());
             GraphUtil.ConnectExecPins(
                 call.CatchPin ?? throw new InvalidOperationException("An impure call has a Catch pin."),
-                method.MainReturnNode.ReturnPin);
+                method.MainReturnNode.ExecPin);
 
             Assert.NotNull(call.ExceptionPin);
             Assert.False(call.CanSetPure);
@@ -110,8 +110,8 @@ namespace NetPrints.Tests.Core
                 call.IsPure = true;
             }
 
-            GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, call.InputExecPins.Single());
-            GraphUtil.ConnectExecPins(call.OutputExecPins[0], method.ReturnNodes.First().ReturnPin);
+            GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, call.InputExecPins.Single());
+            GraphUtil.ConnectExecPins(call.OutputExecPins[0], method.ReturnNodes.First().ExecPin);
 
             string code = new ExecutionGraphTranslator(TranslationEnvironment.BuiltIn).Translate(method, true, []);
 
@@ -132,8 +132,8 @@ namespace NetPrints.Tests.Core
                 call.ArgumentPins[1].UnconnectedValue = 0;
             }
 
-            GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, call.InputExecPins.Single());
-            GraphUtil.ConnectExecPins(call.OutputExecPins[0], method.ReturnNodes.First().ReturnPin);
+            GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, call.InputExecPins.Single());
+            GraphUtil.ConnectExecPins(call.OutputExecPins[0], method.ReturnNodes.First().ExecPin);
 
             return new ExecutionGraphTranslator(TranslationEnvironment.BuiltIn).Translate(method, true, []);
         }
@@ -176,8 +176,8 @@ namespace NetPrints.Tests.Core
                 node.ArgumentPins[0].UnconnectedValue = 0;
             }
 
-            GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, node.InputExecPins.Single());
-            GraphUtil.ConnectExecPins(node.OutputExecPins[0], method.ReturnNodes.First().ReturnPin);
+            GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, node.InputExecPins.Single());
+            GraphUtil.ConnectExecPins(node.OutputExecPins[0], method.ReturnNodes.First().ExecPin);
 
             var ex = Assert.Throws<TranslationException>(() => new ExecutionGraphTranslator(TranslationEnvironment.BuiltIn).Translate(method, true, []));
 

@@ -22,7 +22,7 @@ namespace NetPrints.Tests.Core
         private static MethodGraph StaticMethod(ClassGraph cls, string name)
         {
             var method = new MethodGraph(name) { Class = cls, Visibility = MemberVisibility.Public, Modifiers = MethodModifiers.Static };
-            GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, method.MainReturnNode.ReturnPin);
+            GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, method.MainReturnNode.ExecPin);
             cls.Methods.Add(method);
             return method;
         }
@@ -100,9 +100,9 @@ namespace NetPrints.Tests.Core
             var call = new CallMethodNode(run, SpecifierOf(cls, "Callee"));
             var getter = new VariableGetterNode(run, count.Specifier);
             var setter = new VariableSetterNode(run, count.Specifier);
-            GraphUtil.ConnectExecPins(run.EntryNode.InitialExecutionPin, call.InputExecPins[0]);
+            GraphUtil.ConnectExecPins(run.EntryNode.ExecPin, call.InputExecPins[0]);
             GraphUtil.ConnectExecPins(call.OutputExecPins[0], setter.InputExecPins[0]);
-            GraphUtil.ConnectExecPins(setter.OutputExecPins[0], run.MainReturnNode.ReturnPin);
+            GraphUtil.ConnectExecPins(setter.OutputExecPins[0], run.MainReturnNode.ExecPin);
             GraphUtil.ConnectDataPins(getter.ValuePin, setter.NewValuePin);
 
             MemberRename.RenameMethod([cls], callee, "Renamed");

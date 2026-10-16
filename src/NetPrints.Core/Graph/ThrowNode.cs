@@ -13,8 +13,7 @@ namespace NetPrints.Graph
         /// <summary>
         /// Input execution pin that throws when executed.
         /// </summary>
-        [Pin("Exec")]
-        internal partial NodeInputExecPin ExecutionPin { get; }
+        internal partial NodeInputExecPin ExecPin { get; }
 
         /// <summary>
         /// Pin for the exception to throw.

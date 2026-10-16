@@ -28,7 +28,7 @@ public static class ModelOperations
         method.MainReturnNode.PositionX = method.EntryNode.PositionX + GraphUtil.NewMethodReturnOffsetX;
         method.MainReturnNode.PositionY = method.EntryNode.PositionY;
 
-        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, method.MainReturnNode.ReturnPin);
+        GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, method.MainReturnNode.ExecPin);
 
         const int offsetX = -308;
         const int offsetY = -112;
@@ -54,7 +54,7 @@ public static class ModelOperations
         method.MainReturnNode.PositionX = method.EntryNode.PositionX + GraphUtil.NewMethodReturnOffsetX;
         method.MainReturnNode.PositionY = method.EntryNode.PositionY;
 
-        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, method.MainReturnNode.ReturnPin);
+        GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, method.MainReturnNode.ExecPin);
 
         const int offsetX = -308;
         const int offsetY = -112;

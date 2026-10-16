@@ -15,8 +15,7 @@ namespace NetPrints.Graph
         /// <summary>
         /// Execution pin that returns from the method when executed.
         /// </summary>
-        [Pin("Exec")]
-        public partial NodeInputExecPin ReturnPin { get; }
+        public partial NodeInputExecPin ExecPin { get; }
 
         /// <summary>
         /// Same as the base <see cref="Node.MethodGraph"/>, but non-nullable: the constructor only

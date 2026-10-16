@@ -327,7 +327,7 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
 
 ### Batch B6 — model: sonnet — T031–T033 — 3 units
 
-- [ ] T031 [US2] The 0.4.0 pin renames (FR-012, research R8 S3; 1 unit). Of the `[Pin("…")]` overrides T029 listed,
+- [x] T031 [US2] The 0.4.0 pin renames (FR-012, research R8 S3; 1 unit). Of the `[Pin("…")]` overrides T029 listed,
   rename the 13 properties to `<key>Pin` and drop their override; the 2 whose new name would clash with an existing
   member keep their override (the AOP follow-up §2 counts, research R8). Ship it as a hard break: `*REMOVED*` lines in
   `src/NetPrints.Core/PublicAPI.Unshipped.txt`, no `[Obsolete]`, and a breaking entry under "Unreleased" in

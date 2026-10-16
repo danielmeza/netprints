@@ -62,9 +62,9 @@ namespace NetPrints.Tests.Serialization
             Position(call2, 2);
             Position(ret, 3);
 
-            GraphUtil.ConnectExecPins(((MethodEntryNode)entry).InitialExecutionPin, call1.InputExecPins[0]);
+            GraphUtil.ConnectExecPins(((MethodEntryNode)entry).ExecPin, call1.InputExecPins[0]);
             GraphUtil.ConnectExecPins(call1.OutputExecPins[0], call2.InputExecPins[0]);
-            GraphUtil.ConnectExecPins(call2.OutputExecPins[0], ((ReturnNode)ret).ReturnPin);
+            GraphUtil.ConnectExecPins(call2.OutputExecPins[0], ((ReturnNode)ret).ExecPin);
 
             return (project, cls, method);
         }

@@ -61,8 +61,8 @@ namespace NetPrints.Tests.Samples
 
             writeLineNode.ArgumentPins.Single().UnconnectedValue = "Hello, World!";
 
-            GraphUtil.ConnectExecPins(main.EntryNode.InitialExecutionPin, writeLineNode.InputExecPins[0]);
-            GraphUtil.ConnectExecPins(writeLineNode.OutputExecPins[0], main.MainReturnNode.ReturnPin);
+            GraphUtil.ConnectExecPins(main.EntryNode.ExecPin, writeLineNode.InputExecPins[0]);
+            GraphUtil.ConnectExecPins(writeLineNode.OutputExecPins[0], main.MainReturnNode.ExecPin);
 
             cls.Methods.Add(main);
             project.Classes.Add(cls);

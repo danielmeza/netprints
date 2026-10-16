@@ -707,7 +707,7 @@ internal static class BuiltInNodeTranslators
         context.AppendLine($"if ({context.GetOrCreatePinName(node.IndexPin)} < {context.GetPinIncomingValue(node.MaxIndexPin)})");
         context.AppendLine("{");
         context.WritePushJumpStack(node.ContinuePin);
-        context.WriteGotoOutputPinIfNecessary(node.LoopPin, node.ExecutionPin);
+        context.WriteGotoOutputPinIfNecessary(node.LoopPin, node.ExecPin);
         context.AppendLine("}");
     }
 
@@ -918,7 +918,7 @@ internal static class BuiltInNodeTranslators
     /// <param name="node">Default node to translate.</param>
     internal static void PureTranslateDefaultNode(IExecutionTranslationContext context, DefaultNode node)
     {
-        context.AppendLine($"{context.GetOrCreatePinName(node.DefaultValuePin)} = default({node.Type.FullCodeName});");
+        context.AppendLine($"{context.GetOrCreatePinName(node.DefaultPin)} = default({node.Type.FullCodeName});");
     }
 
     /// <summary>

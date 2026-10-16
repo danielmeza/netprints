@@ -45,7 +45,7 @@ public class MemberVariableViewModelTests : IDisposable
         Assert.True(variable.HasGetter);
         var getter = variable.Getter!;
         Assert.Equal("get_Variable", getter.Name);
-        Assert.Same(getter.MainReturnNode.ReturnPin, getter.EntryNode.InitialExecutionPin.OutgoingPin);
+        Assert.Same(getter.MainReturnNode.ExecPin, getter.EntryNode.ExecPin.OutgoingPin);
         Assert.NotNull(getter.MainReturnNode.InputTypePins[0].IncomingPin);
         Assert.Equal(560, getter.EntryNode.PositionX);
 

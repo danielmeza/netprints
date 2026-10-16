@@ -82,7 +82,7 @@ namespace NetPrints.Tests.Serialization
             Assert.Matches(IdFormat.Pattern, returnNode.Id);
 
             // The connection followed the rename (no NPD002).
-            NodeInputExecPin? incoming = entryNode.InitialExecutionPin.OutgoingPin;
+            NodeInputExecPin? incoming = entryNode.ExecPin.OutgoingPin;
             Assert.NotNull(incoming);
             Assert.Same(returnNode, incoming.Node);
 

@@ -19,8 +19,7 @@ namespace NetPrints.Graph
         /// <summary>
         /// Input type pin for the class's base type.
         /// </summary>
-        [Pin("BaseType")]
-        public partial NodeInputTypePin SuperTypePin { get; }
+        public partial NodeInputTypePin BaseTypePin { get; }
 
         /// <summary>
         /// Input type pins for the class's implemented interfaces, one per interface added with

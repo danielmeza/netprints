@@ -111,8 +111,8 @@ public class LocalVariableTests : IDisposable
         var setter = method.Nodes.OfType<VariableSetterNode>().Single();
         setter.PositionX = 42;
         setter.PositionY = 24;
-        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, setter.InputExecPins[0]);
-        GraphUtil.ConnectExecPins(setter.OutputExecPins[0], method.MainReturnNode.ReturnPin);
+        GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, setter.InputExecPins[0]);
+        GraphUtil.ConnectExecPins(setter.OutputExecPins[0], method.MainReturnNode.ExecPin);
         var literal = new LiteralNode(method, TypeSpecifier.FromType<object>());
         GraphUtil.ConnectDataPins(literal.ValuePin, setter.NewValuePin);
 
@@ -124,15 +124,15 @@ public class LocalVariableTests : IDisposable
         Assert.Equal(TypeSpecifier.FromType<int>(), replacement.Variable.Type);
         Assert.Equal(42, replacement.PositionX);
         Assert.Equal(24, replacement.PositionY);
-        Assert.Same(replacement.InputExecPins[0], method.EntryNode.InitialExecutionPin.OutgoingPin);
-        Assert.Same(method.MainReturnNode.ReturnPin, replacement.OutputExecPins[0].OutgoingPin);
+        Assert.Same(replacement.InputExecPins[0], method.EntryNode.ExecPin.OutgoingPin);
+        Assert.Same(method.MainReturnNode.ExecPin, replacement.OutputExecPins[0].OutgoingPin);
         Assert.Null(replacement.NewValuePin.IncomingPin); // data connections are not carried to the new-type node
 
         context.UndoRedo.Undo();
         var restored = method.Nodes.OfType<VariableSetterNode>().Single();
         Assert.Same(setter, restored); // R2-04: undo restores the exact original instance, not a rebuilt one
         Assert.Equal(TypeSpecifier.FromType<object>(), restored.Variable.Type);
-        Assert.Same(restored.InputExecPins[0], method.EntryNode.InitialExecutionPin.OutgoingPin);
+        Assert.Same(restored.InputExecPins[0], method.EntryNode.ExecPin.OutgoingPin);
         Assert.Same(literal.ValuePin, restored.NewValuePin.IncomingPin); // R2-04: the data wire is back too
     }
 
@@ -161,8 +161,8 @@ public class LocalVariableTests : IDisposable
         setter.PositionY = 24;
         var literal = new LiteralNode(method, TypeSpecifier.FromType<object>());
         GraphUtil.ConnectDataPins(literal.ValuePin, setter.NewValuePin);
-        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, setter.InputExecPins[0]);
-        GraphUtil.ConnectExecPins(setter.OutputExecPins[0], method.MainReturnNode.ReturnPin);
+        GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, setter.InputExecPins[0]);
+        GraphUtil.ConnectExecPins(setter.OutputExecPins[0], method.MainReturnNode.ExecPin);
 
         string getterId = getter.Id;
         string setterId = setter.Id;
@@ -194,8 +194,8 @@ public class LocalVariableTests : IDisposable
             Assert.Equal(24, restoredSetter.PositionY);
             Assert.Same(call.InputDataPins[0], restoredGetter.ValuePin.OutgoingPins.Single()); // getter's data wire restored
             Assert.Same(literal.ValuePin, restoredSetter.NewValuePin.IncomingPin); // setter's data wire restored
-            Assert.Same(restoredSetter.InputExecPins[0], method.EntryNode.InitialExecutionPin.OutgoingPin);
-            Assert.Same(method.MainReturnNode.ReturnPin, restoredSetter.OutputExecPins[0].OutgoingPin);
+            Assert.Same(restoredSetter.InputExecPins[0], method.EntryNode.ExecPin.OutgoingPin);
+            Assert.Same(method.MainReturnNode.ExecPin, restoredSetter.OutputExecPins[0].OutgoingPin);
 
             context.UndoRedo.Redo();
 
@@ -208,8 +208,8 @@ public class LocalVariableTests : IDisposable
             Assert.Equal(TypeSpecifier.FromType<int>(), redoneGetter.Variable.Type);
             Assert.Equal(10, redoneGetter.PositionX);
             Assert.Equal(20, redoneGetter.PositionY);
-            Assert.Same(redoneSetter.InputExecPins[0], method.EntryNode.InitialExecutionPin.OutgoingPin);
-            Assert.Same(method.MainReturnNode.ReturnPin, redoneSetter.OutputExecPins[0].OutgoingPin);
+            Assert.Same(redoneSetter.InputExecPins[0], method.EntryNode.ExecPin.OutgoingPin);
+            Assert.Same(method.MainReturnNode.ExecPin, redoneSetter.OutputExecPins[0].OutgoingPin);
         }
     }
 
@@ -233,9 +233,9 @@ public class LocalVariableTests : IDisposable
         s2.PositionX = 42;
         s2.PositionY = 24;
 
-        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, s1.InputExecPins[0]);
+        GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, s1.InputExecPins[0]);
         GraphUtil.ConnectExecPins(s1.OutputExecPins[0], s2.InputExecPins[0]); // S1 -> S2 chain
-        GraphUtil.ConnectExecPins(s2.OutputExecPins[0], method.MainReturnNode.ReturnPin);
+        GraphUtil.ConnectExecPins(s2.OutputExecPins[0], method.MainReturnNode.ExecPin);
 
         var literal1 = new LiteralNode(method, TypeSpecifier.FromType<object>());
         GraphUtil.ConnectDataPins(literal1.ValuePin, s1.NewValuePin);
@@ -252,15 +252,15 @@ public class LocalVariableTests : IDisposable
         var r1 = replacements.Single(n => n.PositionX == 10);
         var r2 = replacements.Single(n => n.PositionX == 42);
         Assert.Same(r2.InputExecPins[0], r1.OutputExecPins[0].OutgoingPin); // chain carried to the replacements
-        Assert.Same(method.EntryNode.InitialExecutionPin.OutgoingPin, r1.InputExecPins[0]);
-        Assert.Same(method.MainReturnNode.ReturnPin, r2.OutputExecPins[0].OutgoingPin);
+        Assert.Same(method.EntryNode.ExecPin.OutgoingPin, r1.InputExecPins[0]);
+        Assert.Same(method.MainReturnNode.ExecPin, r2.OutputExecPins[0].OutgoingPin);
 
         context.UndoRedo.Undo();
 
         Assert.Equal(preRetypeNodeOrder, method.Nodes.ToList()); // same instances, same order
         Assert.Same(s2.InputExecPins[0], s1.OutputExecPins[0].OutgoingPin); // S1 -> S2 restored, not S1 -> R2
-        Assert.Same(s1.InputExecPins[0], method.EntryNode.InitialExecutionPin.OutgoingPin);
-        Assert.Same(method.MainReturnNode.ReturnPin, s2.OutputExecPins[0].OutgoingPin);
+        Assert.Same(s1.InputExecPins[0], method.EntryNode.ExecPin.OutgoingPin);
+        Assert.Same(method.MainReturnNode.ExecPin, s2.OutputExecPins[0].OutgoingPin);
         Assert.Same(literal1.ValuePin, s1.NewValuePin.IncomingPin);
         Assert.Same(literal2.ValuePin, s2.NewValuePin.IncomingPin);
         Assert.DoesNotContain(r1, method.Nodes); // the replacement is fully detached, not left dangling
@@ -271,8 +271,8 @@ public class LocalVariableTests : IDisposable
         Assert.Same(r1, method.Nodes.OfType<VariableSetterNode>().Single(n => n.PositionX == 10));
         Assert.Same(r2, method.Nodes.OfType<VariableSetterNode>().Single(n => n.PositionX == 42));
         Assert.Same(r2.InputExecPins[0], r1.OutputExecPins[0].OutgoingPin); // chain preserved again on redo
-        Assert.Same(method.EntryNode.InitialExecutionPin.OutgoingPin, r1.InputExecPins[0]);
-        Assert.Same(method.MainReturnNode.ReturnPin, r2.OutputExecPins[0].OutgoingPin);
+        Assert.Same(method.EntryNode.ExecPin.OutgoingPin, r1.InputExecPins[0]);
+        Assert.Same(method.MainReturnNode.ExecPin, r2.OutputExecPins[0].OutgoingPin);
     }
 
     [Fact]
@@ -283,22 +283,22 @@ public class LocalVariableTests : IDisposable
         graph.GetSetChooser.Open(local.Specifier, position);
         graph.GetSetChooser.SetCommand.Execute(null);
         var setter = method.Nodes.OfType<VariableSetterNode>().Single();
-        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, setter.InputExecPins[0]);
-        GraphUtil.ConnectExecPins(setter.OutputExecPins[0], method.MainReturnNode.ReturnPin);
+        GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, setter.InputExecPins[0]);
+        GraphUtil.ConnectExecPins(setter.OutputExecPins[0], method.MainReturnNode.ExecPin);
 
         local.RemoveCommand.Execute(null);
 
         Assert.Empty(method.LocalVariables);
         Assert.Empty(method.Nodes.OfType<VariableSetterNode>());
-        Assert.Null(method.EntryNode.InitialExecutionPin.OutgoingPin);
+        Assert.Null(method.EntryNode.ExecPin.OutgoingPin);
 
         context.UndoRedo.Undo();
 
         Assert.Same(local.Local, method.LocalVariables.Single());
         var restored = method.Nodes.OfType<VariableSetterNode>().Single();
         Assert.Same(setter, restored); // undo restores the same instance, not a rebuilt one
-        Assert.Same(restored.InputExecPins[0], method.EntryNode.InitialExecutionPin.OutgoingPin);
-        Assert.Same(method.MainReturnNode.ReturnPin, restored.OutputExecPins[0].OutgoingPin);
+        Assert.Same(restored.InputExecPins[0], method.EntryNode.ExecPin.OutgoingPin);
+        Assert.Same(method.MainReturnNode.ExecPin, restored.OutputExecPins[0].OutgoingPin);
     }
 
     [Fact]

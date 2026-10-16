@@ -37,7 +37,7 @@ namespace NetPrints.Tests.Translator
             var cls = new ClassGraph { Name = "Host", Namespace = "Acme" };
             var method = new MethodGraph("Run") { Class = cls, Modifiers = MethodModifiers.Static };
             var greet = new GreetNode(method);
-            GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, greet.InputExecPins[0]);
+            GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, greet.InputExecPins[0]);
             GraphUtil.ConnectExecPins(greet.OutputExecPins[0], method.ReturnNodes.First().InputExecPins[0]);
             cls.Methods.Add(method);
             return (cls, method, greet);

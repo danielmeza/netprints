@@ -74,7 +74,7 @@ public class CanvasInteractionTests
         await session.Graph.Node("MethodEntryNode").Output("Exec").ConnectToAsync(write.Input("Exec"), Token); // PAR-46
         await session.WaitForRenderedAsync(Token);
 
-        Assert.Same(method.Nodes.OfType<CallMethodNode>().Single().InputExecPins[0], method.EntryNode.InitialExecutionPin.OutgoingPin);
+        Assert.Same(method.Nodes.OfType<CallMethodNode>().Single().InputExecPins[0], method.EntryNode.ExecPin.OutgoingPin);
         Assert.Contains("MethodEntryNode.Exec->CallMethodNode.Exec", await session.Graph.ConnectionNamesAsync(Token));
     }
 
@@ -93,7 +93,7 @@ public class CanvasInteractionTests
         await session.WaitForRenderedAsync(Token);
 
         Assert.Equal(connections, session.GraphViewModel.Connections.Count);
-        Assert.Null(method.EntryNode.InitialExecutionPin.OutgoingPin);
+        Assert.Null(method.EntryNode.ExecPin.OutgoingPin);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

@@ -151,3 +151,17 @@ NetPrints.Graph.TypeOfNode.TypePin.get -> NetPrints.Graph.NodeOutputDataPin<Syst
 *REMOVED*override NetPrints.Graph.MakeArrayTypeNode.HandleInputTypeChanged(object? sender, System.EventArgs? eventArgs) -> void
 *REMOVED*override NetPrints.Graph.MethodEntryNode.HandleInputTypeChanged(object? sender, System.EventArgs? eventArgs) -> void
 *REMOVED*override NetPrints.Graph.ReturnNode.HandleInputTypeChanged(object? sender, System.EventArgs? eventArgs) -> void
+*REMOVED*NetPrints.Graph.ClassReturnNode.SuperTypePin.get -> NetPrints.Graph.NodeInputTypePin!
+*REMOVED*NetPrints.Graph.DefaultNode.DefaultValuePin.get -> NetPrints.Graph.NodeOutputDataPin!
+*REMOVED*NetPrints.Graph.EventEntryNode.InitialExecutionPin.get -> NetPrints.Graph.NodeOutputExecPin!
+*REMOVED*NetPrints.Graph.ExecutionEntryNode.InitialExecutionPin.get -> NetPrints.Graph.NodeOutputExecPin!
+*REMOVED*NetPrints.Graph.ForLoopNode.ExecutionPin.get -> NetPrints.Graph.NodeInputExecPin!
+*REMOVED*NetPrints.Graph.IfElseNode.ExecutionPin.get -> NetPrints.Graph.NodeInputExecPin!
+*REMOVED*NetPrints.Graph.ReturnNode.ReturnPin.get -> NetPrints.Graph.NodeInputExecPin!
+NetPrints.Graph.ClassReturnNode.BaseTypePin.get -> NetPrints.Graph.NodeInputTypePin!
+NetPrints.Graph.DefaultNode.DefaultPin.get -> NetPrints.Graph.NodeOutputDataPin!
+NetPrints.Graph.EventEntryNode.ExecPin.get -> NetPrints.Graph.NodeOutputExecPin!
+NetPrints.Graph.ExecutionEntryNode.ExecPin.get -> NetPrints.Graph.NodeOutputExecPin!
+NetPrints.Graph.ForLoopNode.ExecPin.get -> NetPrints.Graph.NodeInputExecPin!
+NetPrints.Graph.IfElseNode.ExecPin.get -> NetPrints.Graph.NodeInputExecPin!
+NetPrints.Graph.ReturnNode.ExecPin.get -> NetPrints.Graph.NodeInputExecPin!

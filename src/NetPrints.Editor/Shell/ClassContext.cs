@@ -134,7 +134,7 @@ public sealed class ClassContext : IDisposable
         method.EntryNode.PositionY = cell * NewMemberEntryGridOffset;
         method.MainReturnNode.PositionX = method.EntryNode.PositionX + cell * NewMethodReturnGridOffset;
         method.MainReturnNode.PositionY = method.EntryNode.PositionY;
-        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, method.MainReturnNode.ReturnPin);
+        GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, method.MainReturnNode.ExecPin);
 
         UndoRedo.Do(EditorCommands.AddMethod(Class, () =>
         {

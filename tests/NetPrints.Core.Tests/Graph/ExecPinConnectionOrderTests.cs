@@ -12,7 +12,7 @@ namespace NetPrints.Tests.Graph
             var graph = new MethodGraph("M");
             var from = new IfElseNode(graph);
             var to = new IfElseNode(graph);
-            return (from.TruePin, to.ExecutionPin);
+            return (from.TruePin, to.ExecPin);
         }
 
         [Fact]

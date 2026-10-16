@@ -68,7 +68,7 @@ public sealed class GraphScopePerformanceTests(TestEditor editor)
     private static MethodGraph BuildGraph()
     {
         var method = new MethodGraph("Large") { Class = new ClassGraph { Name = "C", Namespace = "N" } };
-        NodeOutputExecPin previous = method.EntryNode.InitialExecutionPin;
+        NodeOutputExecPin previous = method.EntryNode.ExecPin;
         for (int index = 0; index < NodeCount; index++)
         {
             var call = new CallMethodNode(method, WriteLine());
@@ -76,7 +76,7 @@ public sealed class GraphScopePerformanceTests(TestEditor editor)
             previous = call.OutputExecPins[0];
         }
 
-        GraphUtil.ConnectExecPins(previous, method.MainReturnNode.ReturnPin);
+        GraphUtil.ConnectExecPins(previous, method.MainReturnNode.ExecPin);
         return method;
     }
 
