@@ -9,7 +9,7 @@ namespace NetPrints.Graph
     /// <summary>
     /// Represents a node which returns from a method.
     /// </summary>
-    [NodeKind("return")]
+    [NodeKind(NodeKindIds.Return)]
     public sealed partial class ReturnNode : Node, IPinListEditor, IPinNameEditor
     {
         /// <summary>

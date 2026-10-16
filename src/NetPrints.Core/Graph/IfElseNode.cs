@@ -6,7 +6,7 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing an if / else expression.
     /// </summary>
-    [NodeKind("ifElse")]
+    [NodeKind(NodeKindIds.IfElse)]
     public sealed partial class IfElseNode : Node
     {
         /// <summary>

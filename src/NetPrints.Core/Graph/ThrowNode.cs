@@ -7,7 +7,7 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing an exception throw.
     /// </summary>
-    [NodeKind("throw")]
+    [NodeKind(NodeKindIds.Throw)]
     public sealed partial class ThrowNode : Node
     {
         /// <summary>

@@ -8,7 +8,7 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing the initial execution node of a constructor.
     /// </summary>
-    [NodeKind("constructorEntry")]
+    [NodeKind(NodeKindIds.ConstructorEntry)]
     public sealed partial class ConstructorEntryNode : ExecutionEntryNode
     {
         /// <summary>

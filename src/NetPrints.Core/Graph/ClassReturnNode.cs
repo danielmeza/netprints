@@ -13,7 +13,7 @@ namespace NetPrints.Graph
     /// interfaces as input type pins, so inheritance participates in the same connection and
     /// type-inference machinery as any other node.
     /// </summary>
-    [NodeKind("classReturn")]
+    [NodeKind(NodeKindIds.ClassReturn)]
     public sealed partial class ClassReturnNode : Node, IPinListEditor
     {
         /// <summary>

@@ -23,6 +23,7 @@ namespace NetPrints.Graph
                 : throw new ArgumentException("A call node switches between method overloads.", nameof(overload));
 
         private const string ExceptionPinName = "Exception";
+        private const string ParameterKeyPrefix = "param:";
         private const string CatchPinName = "Catch";
 
         /// <summary>
@@ -151,8 +152,20 @@ namespace NetPrints.Graph
         /// </summary>
         public NodeOutputDataPin? ExceptionPin
         {
-            get { return OutputDataPins.SingleOrDefault(p => p.Name == ExceptionPinName); }
+            get { return OutputDataPins.SingleOrDefault(p => p.Role == PinRole.Exception); }
         }
+
+        /// <summary>
+        /// Gives an output pin of a by-reference parameter named like the exception pin the key name
+        /// <c>"param:Exception"</c>, so it never takes the stored key of the exception pin. Every other pin
+        /// uses the base <see cref="Node.GetPinKeyName"/>.
+        /// </summary>
+        /// <param name="pin">Pin of this node to get the key name of.</param>
+        /// <returns>The pin's keyName.</returns>
+        public override string GetPinKeyName(NodePin pin) =>
+            pin is NodeOutputDataPin { Role: PinRole.OutParam } && pin.Name == ExceptionPinName
+                ? ParameterKeyPrefix + pin.Name
+                : base.GetPinKeyName(pin);
 
         /// <summary>
         /// Pin that gets executed when an exception is caught.

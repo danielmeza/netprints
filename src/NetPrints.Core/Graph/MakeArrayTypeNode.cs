@@ -10,7 +10,7 @@ namespace NetPrints.Graph
     /// (eg. a generic argument), as opposed to <see cref="MakeArrayNode"/>, which creates array
     /// values at runtime.
     /// </summary>
-    [NodeKind("makeArrayType")]
+    [NodeKind(NodeKindIds.MakeArrayType)]
     public sealed partial class MakeArrayTypeNode : Node
     {
         private readonly ObservableValue<BaseType> arrayType = new(ArrayOf(TypeSpecifier.FromType<object>()));

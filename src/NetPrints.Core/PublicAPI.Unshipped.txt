@@ -42,6 +42,7 @@ NetPrints.Graph.EventEntryNode.SetArguments(System.Collections.Generic.IReadOnly
 NetPrints.Core.RenameResult
 NetPrints.Core.RenameResult.Undo() -> void
 NetPrints.Graph.CallMethodNode.Retarget(NetPrints.Core.MethodSpecifier! specifier) -> void
+override NetPrints.Graph.CallMethodNode.GetPinKeyName(NetPrints.Graph.NodePin! pin) -> string!
 NetPrints.Graph.MakeDelegateNode.Retarget(NetPrints.Core.MethodSpecifier! specifier) -> void
 NetPrints.Core.MethodSpecifier.WithName(string! name) -> NetPrints.Core.MethodSpecifier!
 static NetPrints.Core.GraphKeys.AllGraphs(NetPrints.Core.ClassGraph! cls) -> System.Collections.Generic.IEnumerable<NetPrints.Core.NodeGraph!>!
@@ -113,6 +114,19 @@ NetPrints.Graph.NodeInputDataPin<T>.NodeInputDataPin(NetPrints.Graph.Node! node,
 NetPrints.Graph.NodeKindAttribute
 NetPrints.Graph.NodeKindAttribute.Id.get -> string!
 NetPrints.Graph.NodeKindAttribute.NodeKindAttribute(string! id) -> void
+NetPrints.Graph.NodeKindIds
+const NetPrints.Graph.NodeKindIds.ClassReturn = "classReturn" -> string!
+const NetPrints.Graph.NodeKindIds.ConstructorEntry = "constructorEntry" -> string!
+const NetPrints.Graph.NodeKindIds.Default = "default" -> string!
+const NetPrints.Graph.NodeKindIds.EventEntry = "eventEntry" -> string!
+const NetPrints.Graph.NodeKindIds.ForLoop = "forLoop" -> string!
+const NetPrints.Graph.NodeKindIds.IfElse = "ifElse" -> string!
+const NetPrints.Graph.NodeKindIds.MakeArrayType = "makeArrayType" -> string!
+const NetPrints.Graph.NodeKindIds.MethodEntry = "methodEntry" -> string!
+const NetPrints.Graph.NodeKindIds.Return = "return" -> string!
+const NetPrints.Graph.NodeKindIds.Throw = "throw" -> string!
+const NetPrints.Graph.NodeKindIds.TypeOf = "typeOf" -> string!
+const NetPrints.Graph.NodeKindIds.TypeReturn = "typeReturn" -> string!
 NetPrints.Graph.NodeOutputDataPin<T>
 NetPrints.Graph.NodeOutputDataPin<T>.NodeOutputDataPin(NetPrints.Graph.Node! node, string! name, NetPrints.Graph.ObservableValue<NetPrints.Core.BaseType!>! pinType) -> void
 NetPrints.Graph.NodeOutputDataPin<T>.NodeOutputDataPin(NetPrints.Graph.Node! node, string! name) -> void

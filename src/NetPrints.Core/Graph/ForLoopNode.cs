@@ -6,7 +6,7 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing an integer-based for-loop.
     /// </summary>
-    [NodeKind("forLoop")]
+    [NodeKind(NodeKindIds.ForLoop)]
     public sealed partial class ForLoopNode : Node
     {
         /// <summary>

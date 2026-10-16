@@ -7,7 +7,7 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node that returns the default value of a type.
     /// </summary>
-    [NodeKind("default")]
+    [NodeKind(NodeKindIds.Default)]
     public sealed partial class DefaultNode : Node
     {
         private readonly ObservableValue<BaseType> defaultType = new(TypeSpecifier.FromType<object>());

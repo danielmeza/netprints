@@ -15,7 +15,7 @@ namespace NetPrints.Graph
     /// (<see cref="EventEntryNode(Core.EventGraph, MethodSpecifier)"/>, argument pins matching the base
     /// signature). Each entry of an event graph is translated into its own method, in node order.
     /// </summary>
-    [NodeKind("eventEntry")]
+    [NodeKind(NodeKindIds.EventEntry)]
     public sealed partial class EventEntryNode : Node
     {
         /// <summary>

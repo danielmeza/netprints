@@ -8,7 +8,7 @@ namespace NetPrints.Graph
     /// Node representing a C# <c>typeof</c> expression: outputs the runtime <see cref="Type"/> for its
     /// input type pin.
     /// </summary>
-    [NodeKind("typeOf")]
+    [NodeKind(NodeKindIds.TypeOf)]
     public sealed partial class TypeOfNode : Node
     {
         /// <summary>

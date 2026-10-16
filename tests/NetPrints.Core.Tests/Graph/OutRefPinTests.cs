@@ -42,6 +42,30 @@ namespace NetPrints.Tests.Graph
         }
 
         [Fact]
+        public void AnOutParameterNamedExceptionNeverTakesTheKeyOfTheExceptionPin()
+        {
+            var method = new MethodGraph("M");
+            var specifier = new MethodSpecifier(
+                "Try",
+                [new MethodParameter("Exception", StringType, MethodParameterPassType.Out, false, null)],
+                [],
+                MethodModifiers.Static,
+                MemberVisibility.Public,
+                IntType,
+                []);
+            var call = new CallMethodNode(method, specifier);
+            NodeOutputDataPin parameterPin = call.OutputDataPins.Single(p => p.Role == PinRole.OutParam);
+
+            GraphUtil.ConnectExecPins(call.CatchPin ?? throw new System.InvalidOperationException("No catch pin."), method.MainReturnNode.ExecPin);
+
+            NodeOutputDataPin exceptionPin = call.OutputDataPins.Single(p => p.Role == PinRole.Exception);
+            Assert.Equal("out.data.Exception", PinKeys.For(exceptionPin));
+            Assert.NotEqual("out.data.Exception", PinKeys.For(parameterPin));
+            Assert.Same(parameterPin, PinKeys.Find(call, PinKeys.For(parameterPin)));
+            Assert.Same(exceptionPin, call.ExceptionPin);
+        }
+
+        [Fact]
         public void ACallWithoutByReferenceParametersHasNoExtraPins()
         {
             var call = new CallMethodNode(new MethodGraph("M"), TryParse(MethodParameterPassType.In));

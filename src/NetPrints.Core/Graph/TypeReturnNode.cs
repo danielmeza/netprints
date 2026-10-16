@@ -7,7 +7,7 @@ namespace NetPrints.Graph
     /// A <see cref="TypeGraph"/>'s single fixed node, analogous to <see cref="ClassReturnNode"/>: it
     /// holds the graph's resolved type as a single input type pin.
     /// </summary>
-    [NodeKind("typeReturn")]
+    [NodeKind(NodeKindIds.TypeReturn)]
     public sealed partial class TypeReturnNode : Node
     {
         /// <summary>

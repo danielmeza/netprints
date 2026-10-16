@@ -9,7 +9,7 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing the initial execution node of a method.
     /// </summary>
-    [NodeKind("methodEntry")]
+    [NodeKind(NodeKindIds.MethodEntry)]
     public sealed partial class MethodEntryNode : ExecutionEntryNode, IPinListEditor, IPinNameEditor
     {
         /// <summary>
