@@ -345,7 +345,7 @@ review, which also reviews the NuGet packages); implementers push and return, an
   - **S1** (first P3 batch): analyzer and generator projects, wiring, and the NPS style rules (attribute on its own line, blank line between members).
   - **S2a, S2b**: typed pins `NodeInputDataPin<T>`/`NodeOutputDataPin<T>`; `[NodeKind]`/`[Pin]`/`[PinType]` and the convention generator (pin key is the property name without the `Pin` suffix); analyzers NPA001-NPA009 with code fixes.
   - **S4**: pin-key tracking seeded from the S0 golden (NPA010/NPA011), before the renames.
-  - **S3**: the 13 pin property renames plus 2 overrides, a hard break in 0.4.0 with `*REMOVED*` entries and release notes, no `[Obsolete]` shims; file keys do not change.
+  - **S3**: the 8 pin property renames, a hard break in 0.4.0 with `*REMOVED*` entries and release notes, no `[Obsolete]` shims; file keys do not change.
   - **L1**: localization infrastructure (stable keys separate from display text, resx, `netprints.language`), before the Extensibility and Serialization packages publish.
   - **S5, S6**: hygiene analyzers (NPH001-NPH006) and the command analyzer.
   - **S7** (P3's tail, owner 2026-10-16; before B11, B18 and U2): node kinds by convention (inferred document, translator and `On<Pin>` dispatch, generated `AddNodes()`).
