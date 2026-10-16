@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace NetPrints.Annotations
+namespace NetPrints.Roslyn
 {
     /// <summary>An immutable array that compares by element, so a value that holds one is a valid incremental pipeline model.</summary>
     /// <typeparam name="T">The element type; compared with its default equality.</typeparam>

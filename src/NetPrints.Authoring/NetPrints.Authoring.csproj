@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <IsPackable>false</IsPackable>
+    <Description>Authoring analyzers and generators of NetPrints (NPA); shipped inside the NetPrints.Core package.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" VersionOverride="5.0.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Shared\Roslyn\**\*.cs" Link="Shared\Roslyn\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+    <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+  </ItemGroup>
+</Project>

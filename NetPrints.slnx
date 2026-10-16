@@ -6,6 +6,8 @@
   </Configurations>
   <Folder Name="/src/">
     <Project Path="src/NetPrints.Annotations/NetPrints.Annotations.csproj" />
+    <Project Path="src/NetPrints.Authoring.CodeFixes/NetPrints.Authoring.CodeFixes.csproj" />
+    <Project Path="src/NetPrints.Authoring/NetPrints.Authoring.csproj" />
     <Project Path="src/NetPrints.Catalog/NetPrints.Catalog.csproj" />
     <Project Path="src/NetPrints.Cli/NetPrints.Cli.csproj" />
     <Project Path="src/NetPrints.Core/NetPrints.Core.csproj" />
@@ -15,6 +17,8 @@
     <Project Path="src/NetPrints.Generation/NetPrints.Generation.csproj" />
     <Project Path="src/NetPrints.Generator/NetPrints.Generator.csproj" />
     <Project Path="src/NetPrints.Reflection/NetPrints.Reflection.csproj" />
+    <Project Path="src/NetPrints.RepoAnalyzers.CodeFixes/NetPrints.RepoAnalyzers.CodeFixes.csproj" />
+    <Project Path="src/NetPrints.RepoAnalyzers/NetPrints.RepoAnalyzers.csproj" />
     <Project Path="src/NetPrints.Sdk/NetPrints.Sdk.csproj" />
     <Project Path="src/NetPrints.Serialization/NetPrints.Serialization.csproj" />
     <Project Path="src/NetPrints.Workspace/NetPrints.Workspace.csproj" />
@@ -39,6 +43,7 @@
     <Project Path="tests/Fixtures/Extensions/NetPrintsFixture.Runtime/NetPrintsFixture.Runtime.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/NetPrints.Analyzers.Tests/NetPrints.Analyzers.Tests.csproj" />
     <Project Path="tests/NetPrints.Catalog.Tests/NetPrints.Catalog.Tests.csproj" />
     <Project Path="tests/NetPrints.Cli.Tests/NetPrints.Cli.Tests.csproj" />
     <Project Path="tests/NetPrints.Core.Tests/NetPrints.Core.Tests.csproj" />

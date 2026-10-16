@@ -110,7 +110,7 @@ namespace NetPrints.Tests.Core
             string[] names = [.. legs.Select(leg => Text(Get(leg, "name")))];
             string[] slugs = [.. legs.Select(leg => Text(Get(leg, "leg")))];
 
-            Assert.Equal(["Core", "Catalog", "CLI", "Editor", "Editor UI (headless) 1/4", "Editor UI (headless) 2/4", "Editor UI (headless) 3/4", "Editor UI (headless) 4/4"], names);
+            Assert.Equal(["Core", "Analyzers", "Catalog", "CLI", "Editor", "Editor UI (headless) 1/4", "Editor UI (headless) 2/4", "Editor UI (headless) 3/4", "Editor UI (headless) 4/4"], names);
             Assert.All(slugs, slug => Assert.NotEmpty(slug));
             Assert.Equal(slugs.Length, slugs.Distinct(StringComparer.Ordinal).Count());
         }

@@ -1,0 +1,9 @@
+<Project>
+  <Import Project="../Directory.Build.targets" />
+
+  <!-- ADR-0024: the authoring analyzers ship inside NetPrints.Core, so a test project that references Core gets them the way a user's project does. -->
+  <ItemGroup Condition="'@(ProjectReference->AnyHaveMetadataValue('Filename', 'NetPrints.Core'))' == 'true'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\src\NetPrints.Authoring\NetPrints.Authoring.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\src\NetPrints.Authoring.CodeFixes\NetPrints.Authoring.CodeFixes.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+</Project>

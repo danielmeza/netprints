@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>NetPrints.Analyzers.Tests</AssemblyName>
+    <WarningsAsErrors>$(WarningsAsErrors);xUnit1051</WarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\src\Shared\Roslyn\**\*.cs" Link="Shared\Roslyn\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NetPrints.Testing\NetPrints.Testing.csproj" />
+    <!-- Built first, never referenced: the tests load each analyzer assembly from its own output folder. -->
+    <ProjectReference Include="..\..\src\NetPrints.Authoring\NetPrints.Authoring.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\src\NetPrints.Authoring.CodeFixes\NetPrints.Authoring.CodeFixes.csproj" ReferenceOutputAssembly="false" />
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>SourceRoot</_Parameter1>
+      <_Parameter2>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', '..', 'src'))</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>Configuration</_Parameter1>
+      <_Parameter2>$(Configuration)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>

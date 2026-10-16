@@ -20,6 +20,12 @@
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.Console.txt" />
   </ItemGroup>
 
+  <!-- ADR-0024: the internal analyzers run over every src project except their own; analyzers do not flow through ProjectReference. -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'NetPrintsVSIX' And '$(MSBuildProjectName)' != 'NetPrints.RepoAnalyzers' And '$(MSBuildProjectName)' != 'NetPrints.RepoAnalyzers.CodeFixes'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)NetPrints.RepoAnalyzers\NetPrints.RepoAnalyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)NetPrints.RepoAnalyzers.CodeFixes\NetPrints.RepoAnalyzers.CodeFixes.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
   <!-- API tracking (extensions contract §5): projects that set NetPrintsTrackPublicApi declare their public API in two files. -->
   <ItemGroup Condition="'$(NetPrintsTrackPublicApi)' == 'true'">
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />

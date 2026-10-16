@@ -5,6 +5,7 @@
 | Project | Covers |
 |---|---|
 | `NetPrints.Core.Tests` | The model, serialization, translation and the repository rules (`SourceHygieneTests`, golden fixtures). |
+| `NetPrints.Analyzers.Tests` | Every Roslyn analyzer, code fix and generator NetPrints owns (ADR-0024): the analyzer assemblies load into a `CompilationWithAnalyzers` host and report their supported diagnostics. |
 | `NetPrints.Catalog.Tests` | The type catalog and its annotations. |
 | `NetPrints.Cli.Tests` | The `netprints` command line, in process (`CliTestHost`); some tests run the real tool or the real project system as child processes. |
 | `NetPrints.Editor.Tests` | Editor view models and hosting services, over fakes (no window), and the checks of the editor guides ([below](#documentation-checks-and-guide-screenshots)). |

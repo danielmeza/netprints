@@ -121,6 +121,9 @@ jobs:
           - name: Core
             leg: core
             project: tests/NetPrints.Core.Tests
+          - name: Analyzers
+            leg: analyzers
+            project: tests/NetPrints.Analyzers.Tests
           - name: Catalog
             leg: catalog
             project: tests/NetPrints.Catalog.Tests

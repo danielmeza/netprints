@@ -6,6 +6,12 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
+  <!-- ADR-0024: the internal analyzers run over the tests too. -->
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\src\NetPrints.RepoAnalyzers\NetPrints.RepoAnalyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\src\NetPrints.RepoAnalyzers.CodeFixes\NetPrints.RepoAnalyzers.CodeFixes.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
   <!-- CI code coverage (build-test job's `dotnet test` run, via its coverage flag).
        Auto-registered by MTP; no code changes needed. Only test hosts (OutputType Exe) need it:
        NetPrints.Testing.Ui is a class library (shared page objects/Screenplay helpers), not a
