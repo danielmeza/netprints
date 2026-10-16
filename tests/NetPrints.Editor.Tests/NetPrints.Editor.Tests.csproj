@@ -41,6 +41,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\NetPrints.Testing.Ui\NodeGraphTestExtensions.cs" Link="Graph\NodeGraphTestExtensions.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\NetPrints.Reflection\NetPrints.Reflection.csproj" />
     <ProjectReference Include="..\..\src\NetPrints.Editor\NetPrints.Editor.csproj" />
     <ProjectReference Include="..\..\src\NetPrints.Workspace\NetPrints.Workspace.csproj" />

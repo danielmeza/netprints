@@ -267,17 +267,17 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
 
 ### Batch B2 — model: sonnet — T021–T023 — 4 units
 
-- [ ] T021 [US2] SUG2: one node creation service (FR-016, FR-117, research R10; 2 units). Test first:
+- [x] T021 [US2] SUG2: one node creation service (FR-016, FR-117, research R10; 2 units). Test first:
   `tests/NetPrints.Editor.Tests/NodeSearch/NodeCreationServiceTests.cs` (clamp, connect and one undo step; prompts
   through a fake adapter; every entry creates its node through a `Func<NodeGraph, Node>` factory). Then
   `INodeCreationService`, a prompts adapter over the dialogs, and factories in place of `Activator` and
   `GetConstructor`; lower `eng/trim-warnings.txt` by the two IL warnings this removes (named in the commit).
-- [ ] T022 [US2] SUG3: one ranker (FR-016, FR-017, SC-002, research R10; 1 unit). Test first:
+- [x] T022 [US2] SUG3: one ranker (FR-016, FR-017, SC-002, research R10; 1 unit). Test first:
   `NodeSearchRankerTests.cs`: the default `ISuggestionRanker` reproduces the goldens with the fixed category order.
   Then the ranker. The one recorded order change (This Variables and This Methods) updates its golden in this commit,
   listed with the reason in implementation-notes. `SearchPerformanceTests.cs` stays within P3a's budget: 30,000 rows,
   open under 2 s, keystroke under 300 ms (FR-017).
-- [ ] T023 [US2] ADR-0028 (research R10, plan ADR schedule; 1 unit). Write
+- [x] T023 [US2] ADR-0028 (research R10, plan ADR schedule; 1 unit). Write
   `docs/adr/0028-node-search-providers-and-creation.md`: providers grouped by kind, the creation service and factories,
   the ranker, providers built once per registry, the recorded order change, and SUG4's public move in C1. Add it to
   `docs/adr/README.md`.

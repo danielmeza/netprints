@@ -366,6 +366,25 @@ kept in `.agent-archive/2026-10-16-p3-m5-spike/` beside the repository.
 - Red/green: NodeSearchProviderTests red as a compile failure (no provider API), then 4 of 4 green; Editor.Tests search classes 79 of 79.
   Suite (Release): 4349 total, 4316 passed, 33 skipped, 0 failed; `dotnet format --verify-no-changes` clean; build 0 warnings.
 
+## Batch B2 (T021-T023)
+
+- T021: `INodeCreationService`/`NodeCreationService` (clamp, connect, one undo step; the entry switch moved out of the view
+  model), `INodeSearchPrompts` with `DialogNodeSearchPrompts` over the dialogs. `NodeGraphViewModel.AddNode(position, pin,
+  Func<NodeGraph, Node>)` replaces `AddNodeRequest` (deleted) and `AddNode<T>`; `Drop` and the Get/Set chooser use factories.
+  The tests' `AddNode<T>` call shape is kept by `NodeGraphTestExtensions` (Testing.Ui, linked into Editor.Tests) using
+  `Activator`, outside the product. Trim ratchet 14 -> 12 (`Activator.CreateInstance` and `GetConstructor` in the editor).
+- Deviation: the new tests sit in `tests/NetPrints.Editor.Tests/Search/` (the existing folder and namespace of the search
+  tests), not `NodeSearch/`: a `...Tests.NodeSearch` namespace would shadow `NetPrints.Editor.NodeSearch`.
+- Deviation: `ConfigureAwait(true)` on the awaits of `NodeCreationService` (VSTHRD111 is an error outside view models and the
+  graph needs the UI context), as `EditorDialogs` does.
+- T022: `ISuggestionRanker` and `DefaultSuggestionRanker` (fixed category order, extension categories after in first-appearance
+  order, stable inside a category), taken by the `NodeSearchViewModel` internal constructor. Recorded order change: This Methods
+  before This Variables. No golden changes: the fixture class has no instance variables, so no golden holds a This Variables
+  category; `NodeSearchRankerTests.ThisMethodsComeBeforeThisVariables` pins it. Existing 9 goldens and `SearchPerformanceTests`
+  (30,000 rows, 2 s, 300 ms) pass unchanged.
+- T023: ADR-0028 written and indexed.
+- Red/green: tests were written before the code; the red state was the compile failure of the missing types, not a separate run.
+
 ## Pack spike
 
 (T026)

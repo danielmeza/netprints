@@ -24,6 +24,8 @@ public sealed partial class NodeSearchViewModel : ObservableObject, IDisposable
 
     private readonly NodeGraphViewModel graph;
     private readonly NodeSearchProviderRegistry providers;
+    private readonly INodeCreationService creation;
+    private readonly ISuggestionRanker ranker;
     private readonly SourceList<SuggestionRowViewModel> source = new();
     private readonly Subject<string> textChanges = new();
     private readonly Subject<string> refreshes = new();
@@ -43,12 +45,14 @@ public sealed partial class NodeSearchViewModel : ObservableObject, IDisposable
     {
     }
 
-    internal NodeSearchViewModel(NodeGraphViewModel graph, NodeSearchProviderRegistry providers)
+    internal NodeSearchViewModel(NodeGraphViewModel graph, NodeSearchProviderRegistry providers, ISuggestionRanker? ranker = null)
     {
         ArgumentNullException.ThrowIfNull(graph);
         ArgumentNullException.ThrowIfNull(providers);
         this.graph = graph;
         this.providers = providers;
+        this.ranker = ranker ?? DefaultSuggestionRanker.Instance;
+        creation = new NodeCreationService(graph, new DialogNodeSearchPrompts(graph.Context));
 
         // Typing is throttled on the context's scheduler (virtual time in tests); new items
         // re-apply the current text immediately.
@@ -251,7 +255,7 @@ public sealed partial class NodeSearchViewModel : ObservableObject, IDisposable
     {
         var context = new NodeSearchContext(graph, pin);
         var registryProviders = providers.For(graph.Context.Extensions.Current);
-        return SuggestionRows.Build(registryProviders.SelectMany(provider => provider.Suggest(context)));
+        return SuggestionRows.Build(ranker.Rank(registryProviders.SelectMany(provider => provider.Suggest(context))));
     }
 
     /// <summary>
@@ -268,93 +272,13 @@ public sealed partial class NodeSearchViewModel : ObservableObject, IDisposable
 
         IsOpen = false;
 
-        var context = graph.Context;
-        var provider = context.Reflection.Provider;
-        var pin = SuggestionPin;
-
-        void AddNode<T>(params object[] arguments) where T : Node => graph.AddNode<T>(Position, pin, arguments);
-
-        async Task<TypeSpecifier?> SelectTypeAsync() =>
-            await context.Dialogs.SelectTypeAsync(context.Reflection.NonStaticTypes, TypeSpecifier.FromType<object>());
-
         try
         {
-            switch (entry)
-            {
-                case NodeKindEntry { Suggestion: var suggestion }:
-                    switch (context.Extensions.Current.NodeKinds.FirstOrDefault(kind => kind.Suggestions.Contains(suggestion))?.Kind)
-                    {
-                        case BuiltInNodeKinds.Constructor:
-                            if (await SelectTypeAsync() is { } constructedType
-                                && provider.GetConstructors(constructedType).FirstOrDefault() is { } constructor)
-                            {
-                                AddNode<ConstructorNode>(constructor);
-                            }
-                            break;
-
-                        case BuiltInNodeKinds.Literal:
-                            if (await SelectTypeAsync() is { } literalType)
-                            {
-                                AddNode<LiteralNode>(literalType);
-                            }
-                            break;
-
-                        case BuiltInNodeKinds.Type:
-                            if (await SelectTypeAsync() is { } nodeType)
-                            {
-                                AddNode<TypeNode>(nodeType);
-                            }
-                            break;
-
-                        default:
-                            graph.AddNode(Position, pin, suggestion);
-                            break;
-                    }
-                    break;
-
-                case MethodEntry { Method: var method }:
-                    // CallMethodNode builds its generic-argument type pins from method.GenericArguments
-                    // itself (T103a): no separate generic-argument-types constructor argument needed.
-                    AddNode<CallMethodNode>(method);
-                    break;
-
-                case VariableEntry { Variable: var variable }:
-                    graph.GetSetChooser.Open(variable, Position, pin);
-                    break;
-
-                case CustomEventEntry:
-                    if (graph.Graph is EventGraph { Class: { } eventClass })
-                    {
-                        string name = MemberNames.Unique(eventClass, CustomEventSuggestion.NamePrefix);
-                        graph.AddEventEntry(Position, g => new EventEntryNode(g, name));
-                    }
-                    break;
-
-                case OverrideEventEntry { Method: var overridden }:
-                    graph.AddEventEntry(Position, g => new EventEntryNode(g, overridden));
-                    break;
-
-                case MakeDelegateEntry { Info: var makeDelegate }:
-                    {
-                        var methods = provider.GetMethods(new ReflectionProviderMethodQuery()
-                            .WithType(makeDelegate.Type)
-                            .WithVisibleFrom(makeDelegate.FromType));
-
-                        if (await context.Dialogs.SelectMethodAsync(methods) is { } chosen)
-                        {
-                            AddNode<MakeDelegateNode>(chosen);
-                        }
-                        break;
-                    }
-
-                case TypeEntry { Type: var type }:
-                    AddNode<TypeNode>(type);
-                    break;
-            }
+            await creation.CreateAsync(entry, Position, SuggestionPin);
         }
         catch (Exception ex)
         {
-            await context.Dialogs.ShowErrorAsync("Failed to create node", ex.ToString());
+            await graph.Context.Dialogs.ShowErrorAsync("Failed to create node", ex.ToString());
         }
     }
 
