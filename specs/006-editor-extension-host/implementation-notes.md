@@ -6,14 +6,45 @@ entries; a decision is written as "Decision: …" with its reason. Tasks are in 
 ## Batch P3-S2c (tasks and analysis)
 
 - Decision: batches are labelled by sub-phase (A1–A5, B1–B7, C1a–C1f, C2a–C2f, D1a–D1g, D2a–D2d, E1–E5, F1–F2,
-  G1–G5), with letters inside C1, C2, D1 and D2 so a batch label never reads as a sub-phase name.
+  G1–G5; G moved to P3b in S2d), with letters inside C1, C2, D1 and D2 so a batch label never reads as a sub-phase
+  name.
 - Decision: a test-first task commits its red test together with the change that makes it green, so every commit
   builds and passes (bisect); both runs are recorded here.
-- Decision: checkpoint tasks carry no units of their own, except T133, which also applies the scope rule.
+- Decision: checkpoint tasks carry no units of their own (T133 also applied the scope rule until S2d removed it).
 - Decision: the NPS rules (T004) land inactive in the repository build and are switched on together with the sweep
   (T005), so no commit fails the build.
 - Decision: the guide and ADR text of each feature lands in the sub-phase that builds it; sub-phase G keeps only the
   release notes, the guide images, the quickstart run and the docs site check.
+
+## Batch P3-S2d (tail to P3b, five checkpoints, process)
+
+Owner-approved 2026-10-16. Docs only; no code.
+
+- Decision: sub-phase G (US16, US17, FR-109–FR-115, tasks T136–T154) moved to roadmap phase P3b. The spec keeps "moved
+  to P3b" stubs for the stories and FRs, as for P3c; tasks.md keeps T136–T154 reserved as one stub section; nothing is
+  renumbered. FR-116 stays in P3. No success criterion was tied only to the moved items (SC-001, SC-002, SC-016 and
+  SC-017 were only partly served by G tasks and stay).
+- Decision: the manifest `themes` field (FR-029, T069) stays in P3: it must exist before the packages publish. T069 is
+  relabelled US3. P3b adds the Appearance page offering and its validation.
+- Decision: NPK014 (graph rules) and the S7 analyzers NPA030–NPA033 move with the tail. The kit ships NPK001–NPK013,
+  NPK015 and NPK016 in P3; NPK014 stays reserved.
+- Decision: the release preparation of G (T147–T151: guide images, the 0.3.0 release notes, the quickstart run, the CI
+  budget and ratchet checks, the docs site, and the SC table of T152) stays in P3. With T147–T154 reserved for P3b it
+  folds into T157 (the merge batch, 5 units), after the final review and its fixes. Ambiguity for the coordinator: the
+  folded work is not itself reviewed; a separate batch before T155 is the alternative.
+- Decision: reviews run at five checkpoints, each one opus review batch plus one sonnet fix batch: A+B (T038, T039),
+  C1+C2 (T077, T078), D1+D2 (T111, T112), E+F (T134, T135) and the final review (T155, T156). T017/T018, T058/T059,
+  T099/T100 and T127/T128 are "merged into" those and keep their IDs. The sub-phase gate reports ("Checkpoint X" tasks)
+  stay. The M5 spike gate in A3 is unchanged.
+- Decision: the scope rule is removed (T133 only records the gate and the ADR-0035 amendment). The Clarifications
+  answer 1 cut lines for R6, N2, N5, S7, SUG5, B1 and C no longer apply to P3.
+- Decision: process. Implementers push and return without waiting for CI; the coordinator watches PR #20's CI in the
+  background; each batch first checks CI at the previous head and fixes any red before its own tasks.
+- Decision: P3 is about 4 weeks in agent time. Plan units are human half-days and overstate calendar time by about 5
+  times, so the roadmap states estimates in agent time. P3b gains the tail; P3c is unchanged.
+- New counts: 12 active stories, 93 active FRs, 14 active SCs; 8 sub-phases; 130 active tasks of 157 IDs (19 stub, 8
+  merged); 42 implementation batches with 155 units, plus PR-M with 5 units of release preparation (160); 53 batches in
+  all (42 implementation, 4 review, 4 fix, PR-R, PR-F, PR-M).
 
 ## Batch A1 (T001-T003)
 
@@ -85,8 +116,8 @@ and is marked "default pending owner" in tasks.md.
 
 ## Checkpoint reports
 
-(T016, T037, T057, T076, T098, T110, T126, T133, T152)
+(T016, T037, T057, T076, T098, T110, T126, T133; the old T152 is part of T157)
 
 ## Reviews
 
-(T017, T038, T058, T077, T099, T111, T127, T134, T153, T155)
+(Review A+B: T038; Review C1+C2: T077; Review D1+D2: T111; Review E+F: T134; Final review: T155)

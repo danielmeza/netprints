@@ -73,8 +73,8 @@ after a restart.
 | View resources and icons | `Editor.AddViewResources` | with the group | DataTemplates, `Icon.<extension id>.<name>` |
 | Node search provider | `AddSuggestionProvider` (flat) | project | node search |
 | Node-data migration | `AddDocumentMigration` (flat) | project | document load |
-| Inspector section, value editor (tail) | `Editor.AddInspectorSection`, `Editor.AddValueEditor` | project | inspector, pin and default editors |
-| Graph rule (tail) | `AddGraphRule` (flat) | project | Errors, `netprints build` and `generate` |
+| Inspector section, value editor (P3b) | `Editor.AddInspectorSection`, `Editor.AddValueEditor` | project | inspector, pin and default editors |
+| Graph rule (P3b) | `AddGraphRule` (flat) | project | Errors, `netprints build` and `generate` |
 
 ### Contribution group
 
@@ -215,7 +215,7 @@ Unloading a project while an `Executable` run is alive asks whether to leave it 
 |---|---|---|
 | Token (catalogue entry) | key, kind (colour, brush, thickness, size, radius, opacity, font, shape), Dark default, Light default, contrast partners | every visual element of the editor is a token (ADR-0035 decision 1) |
 | Preset | id, label, variant (`dark`, `light` or both), base Semi variant, token values | built-in: `netprints.dark`, `netprints.light`, `netprints.classicDark`, `netprints.highContrast`; gated by the contrast tests |
-| Theme file (`*.nptheme.json`) | `schemaVersion`, `id`, `label`, `base`, `tokens` (sparse), Semi keys | the same format as the embedded presets; unknown token: ignored with a warning; bad value: keeps the base value with a warning; newer schema: skipped; size capped; no URLs, fonts or images |
+| Theme file (`*.nptheme.json`; user files and extension themes are P3b) | `schemaVersion`, `id`, `label`, `base`, `tokens` (sparse), Semi keys | the same format as the embedded presets; unknown token: ignored with a warning; bad value: keeps the base value with a warning; newer schema: skipped; size capped; no URLs, fonts or images |
 
 A preset applies as an overlay into `ThemeDictionaries[Dark]` or `[Light]`, so a Dark preset changes no Light value.
 An unknown preset id falls back to the variant's default and is logged.

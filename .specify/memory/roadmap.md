@@ -31,9 +31,9 @@ when it is started.
 | P1 | Core refactor + extension points | ~3.5 w | P0 | **merged** 2026-09-29 (PR #6, cc96a93); released `v0.1.0`, `v0.1.1` |
 | P2 | Catalog tooling + Spectre CLI | ~2.5 w | P1 | **merged** 2026-10-01 (PR #9, 3a6eafc); released `v0.2.0` |
 | P3a | Editor shell | ~2–3 w | P0, P1 | **merged** 2026-10-15 (PR #12, bf3496e9); owner-feedback follow-up PR #19 |
-| P3 | Editor extension host | ~2.5 w (re-estimated in the P3 plan) | P0, P1, P3a | in progress (spec in `specs/006-editor-extension-host/`) |
+| P3 | Editor extension host | ~4 w agent time (re-estimated in the P3 plan, 2026-10-16) | P0, P1, P3a | in progress (spec in `specs/006-editor-extension-host/`) |
 | P3c | Packages and extension manager | ~4.5 w (about 23 days; re-estimated in its plan) | P3 | not started (split from P3, owner-approved 2026-10-16) |
-| P3b | Declarations and code style | ~3–4 w | P1, P3a, P3 | not started (owner-approved 2026-09-26) |
+| P3b | Declarations and code style, plus the P3 tail | ~3–4 w, plus about 17 units for the tail (re-estimated in its plan) | P1, P3a, P3 | not started (owner-approved 2026-09-26; tail moved here 2026-10-16) |
 | P4 | VSIX (WpfAvaloniaHost) | ~2 w | P3 | **deferred** by owner (2026-09-24) |
 | P5 | VS Code extension + browser build + sidecar | ~2.5–3 w | P3 | not started |
 | P6 | Usability (Blueprint-level ease of use) | ~4–5 w | P2, P3 | not started |
@@ -42,6 +42,9 @@ when it is started.
 | U1 | UnrealSharp codegen + catalog (NetPrintsUnreal) | ~2 w | P2 | not started |
 | U2 | Unreal nodes | ~2–3 w | U1, P3b | not started |
 | U3 | UE plugin, launcher, upstream PR | ~1.5 w | U1, P3 | not started |
+
+Estimates are in agent time from 2026-10-16 (owner-approved): plan units are human half-days and overstate calendar time
+by about 5 times. Rows written before that date keep their earlier basis until each phase is re-estimated in its plan.
 
 ### P0 — Modernize build + Avalonia editor at parity
 - `global.json` (.NET 10 SDK), Central Package Management, `Directory.Build.props`.
@@ -228,6 +231,10 @@ packages for extension authors. No performance work here (owner decision 2026-09
 The package service, the NuGet package manager (B7), the extension manager (B17) and samples from remote sources moved
 to P3c on 2026-10-16 (see there). P3 keeps what those need from the host: loading extensions from local folders, the
 extension package format that the author kit packs and verifies, and the start page's existing samples tile.
+The tail (inspector sections and value editors, graph rules, translator helpers, node kinds by convention, user and
+extension themes: R6, N2, N5, S7, SUG5, B1 and C) moved to P3b on 2026-10-16 (see there); wherever this section says the
+tail is at "the P3 tail" or "P3 if capacity allows", read P3b. P3 is about 4 weeks in agent time. Its reviews run at five
+checkpoints (A+B, C1+C2, D1+D2, E+F, the final review); implementers push and return, and the coordinator watches CI.
 - **Carried over from P3a** (closeout 2026-10-15; P3a final notes):
   - regenerate the start-page guide images that carry the build version before the next release;
   - the per-user session log on Windows is unverified (pure resolver tests only; no Desktop code runs on Windows in CI);
@@ -316,14 +323,14 @@ extension package format that the author kit packs and verifies, and the start p
   - **S3**: the 13 pin property renames plus 2 overrides, a hard break in 0.3.0 with `*REMOVED*` entries and release notes, no `[Obsolete]` shims; file keys do not change.
   - **L1**: localization infrastructure (stable keys separate from display text, resx, `netprints.language`), before the Extensibility and Serialization packages publish.
   - **S5, S6**: hygiene analyzers (NPH001-NPH006) and the command analyzer.
-  - **S7** (late P3 or early P6, before B11, B18 and U2): node kinds by convention (inferred document, translator and `On<Pin>` dispatch, generated `AddNodes()`).
+  - **S7** (moved to P3b on 2026-10-16; before B11, B18 and U2): node kinds by convention (inferred document, translator and `On<Pin>` dispatch, generated `AddNodes()`).
   - Planned ADRs, not yet written: 0024 (analyzer and generator infrastructure), 0025 (declarative node pins by convention), 0026 (node kinds by convention), 0027 (localization: stable keys vs display text). Planned amendments: ADR-0003 (hygiene rules promoted to analyzers), ADR-0007 (XAML rule E7 stays a test), ADR-0020 (label keys, menu ids split from labels), ADR-0023 (Semi and Ursa locale follow the app culture).
 - **SOLID plan (owner decisions 2026-10-08)**: search, node capabilities, editor composition and extension contracts. Design and decisions:
   `.agent-archive/2026-10-08-solid-plan/` (outside this repo). P3a takes only T094a, the T082 `IMemberReferencingNode` amendment and the T091a header-role fallback. In P3, the shape-defining work lands before the package publish gate, in this order, merged with the attribute-driven slices above:
   - S1; SUG1 (internal search providers grouped by node kind; `SuggestionListViewModel` becomes `NodeSearchViewModel`, `SuggestionItem` becomes `SuggestionRowViewModel`) with R5-0 (M1, M2 and M4 baselines); SUG2 + SUG3 (creation service, ranker); S2a → S2b → S4 → S3 (Core 0.3.0); R2 (node capabilities as role interfaces, same window);
   - R7 (Stairway split: `NetPrints.Extensibility.Abstractions`, contracts only) before SUG4; SUG4 + L1 (public search provider contracts, experimental); R5a/b (typed contribution contexts, editor abstractions); N1 + N8 (editor facet with a Null Object, per-session contribution groups, view resources and icons); R4 (dialogs); N3 (templates, with files) + N4 (document migrations);
   - **publish gate** (Abstractions, Extensibility, Serialization), then S5, S6;
-  - additive and experimental, at the P3 tail or in P6: R6 (inspector sections and pin editors), N2 (graph rules, also in CLI build and generate), N9 (settings page, with AOP S10), N5 (translator context); S7 + SUG5 with S7.
+  - additive and experimental, moved to P3b on 2026-10-16 (it may place any of them in P6): R6 (inspector sections and pin editors), N2 (graph rules, also in CLI build and generate), N9 (settings page, with AOP S10), N5 (translator context); S7 + SUG5 with S7.
   - **DI in the editor** (reopened and decided 2026-10-08, [ADR-0031](../../docs/adr/0031-editor-composition-and-di.md); it replaces the earlier hand-written root with no container): MS.DI 10 with our `[Singleton<T>]`/`[SessionScoped<T>]` attributes and a registration generator that emits factory lambdas. The container exists only at the root and per project session; class and graph contexts use generated typed factories; nothing is resolved per row, node or pin. Migration path (each step has its gate):
     - **R5-0**: baselines for M1 (shell start), M2 (graph scope) and M4 (trimming), plus the M5 spike that gates MS.DI with our generator against Pure.DI;
     - **with S1**: the attributes, the registration generator, its analyzers and snapshot tests, and the hygiene test in its new form;
@@ -348,8 +355,8 @@ extension package format that the author kit packs and verifies, and the start p
   - **CLI trust**: project-declared extensions load in the CLI without a trust check, the same as analyzers and build tasks; the guide and the ADR say so.
   - **M4 trimming ratchet**: a non-blocking CI step (`eng/trim-warnings.txt`) counts the IL2xxx/IL3xxx warnings of `NetPrints.Editor`; the count may only go down. Prepares P5.
   - Planned ADRs (0024–0027 above): 0028 (node search providers and node creation), 0029 (node capabilities as role interfaces, including `IMemberReferencingNode`), 0030 (Extensibility Stairway split and the editor facet), 0031 (editor composition and DI; written 2026-10-08), 0032 (graph rules). Also written, with unreserved numbers: 0033 (logging and per-user folders), 0034 (smart enums and generic math). Planned amendments: ADR-0020 (typed descriptor contexts, per-session contribution groups, `AppliesTo`, new contribution kinds), ADR-0021 (extension icon ids), ADR-0026 (`PrepareFromSearchAsync`, offers from typed pins), ADR-0010 (conformance checks for providers, rules and contributions).
-  - **Editor themes** ([ADR-0035](../../docs/adr/0035-editor-themes-are-data.md), owner 2026-10-13): every visual element is a token a theme can set; themes are data and never run code. **B0** (about 4-5 units): the token catalogue in product code with the contrast math, a per-variant overlay in `Application.Resources.ThemeDictionaries[Dark|Light]`, `darkPreset`/`lightPreset` string settings, embedded presets (NetPrints Dark, NetPrints Light, Classic Dark, High contrast on Semi's own HC variants), wire opacity and thickness tokens, a theme settings page, the reserved manifest `themes` field before the publish gate, and a test of the overlay precedence. **B1** (about 9 more): user `*.nptheme.json` files, validation messages, Reload and Duplicate. **C** (themes declared by ordinary extensions, via B17; since the 2026-10-16 split, P3 offers the themes of loaded extensions, and their distribution through B17's Browse tab follows in P3c). B1 and C go in P3 if capacity allows, otherwise P6. Contrast: warn and apply; the built-in presets are gated by tests. Semi keys are passed through and validated at runtime, never curated.
-  - **Value-editor contract** ([ADR-0036](../../docs/adr/0036-member-defaults-and-editor-metadata.md)): R6's `PinEditorDescriptor` widens into a value-editor contract shared by pins, variable and parameter defaults and grid rows (no extra cost while experimental). The model-driven grid with plugin-contributed editors (c, about 13-15 units) lands at the P3 tail if it fits, otherwise in P3b.
+  - **Editor themes** ([ADR-0035](../../docs/adr/0035-editor-themes-are-data.md), owner 2026-10-13): every visual element is a token a theme can set; themes are data and never run code. **B0** (about 4-5 units): the token catalogue in product code with the contrast math, a per-variant overlay in `Application.Resources.ThemeDictionaries[Dark|Light]`, `darkPreset`/`lightPreset` string settings, embedded presets (NetPrints Dark, NetPrints Light, Classic Dark, High contrast on Semi's own HC variants), wire opacity and thickness tokens, a theme settings page, the reserved manifest `themes` field before the publish gate, and a test of the overlay precedence. **B1** (about 9 more): user `*.nptheme.json` files, validation messages, Reload and Duplicate. **C** (themes declared by ordinary extensions, via B17; since the 2026-10-16 split, P3 offers the themes of loaded extensions, and their distribution through B17's Browse tab follows in P3c). B1 and C moved to P3b on 2026-10-16 (P3 keeps B0 and the manifest `themes` field). Contrast: warn and apply; the built-in presets are gated by tests. Semi keys are passed through and validated at runtime, never curated.
+  - **Value-editor contract** ([ADR-0036](../../docs/adr/0036-member-defaults-and-editor-metadata.md)): R6's `PinEditorDescriptor` widens into a value-editor contract shared by pins, variable and parameter defaults and grid rows (no extra cost while experimental). The model-driven grid with plugin-contributed editors (c, about 13-15 units) lands in P3b (the whole value-editor contract moved there from the P3 tail on 2026-10-16).
 - **C# target (owner 2026-10-14; ADR-0038)**: one stable `CSharpTarget` per project, carried by `ProjectSnapshot` and reached through
   `Project` and `IProjectSession`.
   - Emission depends on the language version only. It is computed from the evaluated `LangVersion`, `MaxSupportedLangVersion` and
@@ -498,6 +505,15 @@ CLI reference, ADRs as applicable).
 One extensible engine for what NetPrints can declare and how it writes C#. It is **extensible from the
 start**: the built-in kinds, styles and modifiers are registered through the same public API that
 profiles and P3 extensions use, so custom emitters need no core changes.
+- **Moved here from the P3 tail (owner-approved 2026-10-16; about 17 units; spec `specs/006-editor-extension-host/`
+  keeps the IDs marked "moved to P3b")**:
+  - R6: inspector sections, value editors and the ADR-0036 value-editor contract (NPXE0014), with the model-driven grid;
+  - N2: graph rules (NPXE0015, ADR-0032) and the conformance check NPK014;
+  - N5: translation context additions (NPXE0016);
+  - S7 and SUG5: node kinds by convention (NPXE0017, NPA030-NPA033, ADR-0026 with its amendment);
+  - B1 and C of ADR-0035: user theme files (Reload, Duplicate) and the themes of loaded extensions (the manifest
+    `themes` field already exists from P3).
+  P3b's plan may place any of these in P6.
 - **Declaration kinds registry.** Each kind's descriptor has:
   - its creation template;
   - the members, graphs and modifiers it allows;

@@ -29,8 +29,9 @@ P3 opens the editor to extensions and builds the user features that need that ho
   configuration selector, console input and an external terminal. Research R22, R23.
 - **Command line and the C# target in the editor.** `netprints new`, the `dotnet new` templates, and node search that
   hides what the project's C# version cannot use. Research R17, R19.
-- **Tail.** Inspector sections and value editors, graph rules, translator helpers, node kinds by convention, and user
-  and extension themes. Checkpoint F applies the spec's scope rule to all of these. Research R1, R24.
+- **Tail (moved to P3b, 2026-10-16).** Inspector sections and value editors, graph rules, translator helpers, node kinds
+  by convention, and user and extension themes are P3b's. P3 ends with the release preparation and the final review.
+  Research R1, R24.
 
 ## Technical Context
 
@@ -94,11 +95,14 @@ libraries and Roslyn components, a `dotnet new` template package, and a sample e
 - No publishing: tags, NuGet pushes and releases need the owner's approval.
 
 **Scale/Scope**:
-- 14 active user stories, 100 active FRs and 14 active SCs (US12–US14 moved to P3c).
-- 9 sub-phases and about 180 units of implementation (a unit is about half a day), plus about 18 units of checkpoint
-  reviews and fix batches.
+- 12 active user stories, 93 active FRs and 14 active SCs (US12–US14 moved to P3c; US16 and US17 and FR-109–FR-115
+  moved to P3b).
+- 8 sub-phases and about 160 units of implementation (a unit is about half a day; 155 in sub-phases A–F plus 5 of
+  release preparation in the merge batch), plus about 10 units of checkpoint reviews and fix batches (5 checkpoints).
+  The units are human half-days; in agent time P3 is about 4 weeks.
 - 8 new `src/` projects, 2 new test projects and 1 sample extension.
-- 9 new ADRs: 0024–0030, 0032 and 0041. Amendments to ADR-0003, 0007, 0010, 0020, 0021, 0023, 0026 and 0035.
+- 7 new ADRs: 0024, 0025, 0027–0030 and 0041 (0026 and 0032 moved to P3b). Amendments to ADR-0003, 0007, 0010, 0020,
+  0021, 0023 and 0035.
 
 ## Process (owner-confirmed 2026-10-16)
 
@@ -108,14 +112,15 @@ libraries and Roslyn components, a `dotnet new` template package, and a sample e
   1. the analyzer and generator foundation (A);
   2. the node model reshape before the API freeze (B);
   3. the stable extension API and the publish gate (C1, C2).
-  The features built on them follow (D1 to G).
+  The features built on them follow (D1 to F).
 - **The P3a batch and review process**:
   - Implementer batches run sequentially. Each holds 2–4 related tasks, or up to 6 when they are mechanical, which is
     3–6 units. A design-heavy task counts as 2 units.
-  - Each batch ends pushed, with its own CI green.
-  - Each sub-phase ends at a checkpoint: an adversarial review of the sub-phase's whole diff, then a reserved fix
-    batch, green before the next sub-phase starts.
-  - A light final PR review comes before the merge.
+  - Each batch ends pushed (see "Process: CI and checkpoints" below for who waits on CI).
+  - Reviews run at five checkpoints, not one per sub-phase: A+B, C1+C2, D1+D2, E+F and the final review. Each is one
+    adversarial opus review batch of the checkpoint's whole diff plus one reserved sonnet fix batch. The next
+    checkpoint's work starts after the fix batch is pushed and its CI is green.
+  - The sub-phase gate reports (the "Checkpoint X" tasks) stay: they record each sub-phase's evidence.
   - Merge and release need the owner's OK.
 - **Test locations and tooling follow P3a and AGENTS.md**:
   - MTP with xunit.v3, passing `TestContext.Current.CancellationToken`;
@@ -125,6 +130,14 @@ libraries and Roslyn components, a `dotnet new` template package, and a sample e
   - the existing test projects, except the two exceptions research R28 justifies.
 - **Sizing**: the sub-phases below are sized so that `tasks.md` (the next batch, with `speckit-analyze`) can split
   each into batches of 3–6 units.
+
+## Process: CI and checkpoints (owner, 2026-10-16)
+
+- Implementers push and return; they do not wait for CI.
+- The coordinator watches PR #20's CI in the background.
+- Each batch first checks CI at the previous head and fixes any red before its own tasks. Fixing a red head is the
+  batch's first commit, separate from the task commits.
+- Estimates are in agent time (see the Governance proposals).
 
 ## Standing constraints (every batch)
 
@@ -182,7 +195,7 @@ none needs a constitution amendment.*
 | V. Tests gate every change | Every FR has a test obligation in the contracts. Goldens, the S0 layout golden, the search goldens and the snapshot baselines guard drift. Every analyzer rule has a positive and a negative test; every generator has a snapshot test | Pass |
 | VI. Readable, deterministic output | Generated C# is identical across the editor, `regen` and the SDK (one language-version resolver with a shared `MaxKnown`). `settings.json`, the schema, `NodePins` files and the unknown members are written canonically. Schema v1 stays additive | Pass |
 | VII. Abstractions for I/O | Settings go through `ISettingsStore`, documents through `IDocumentFormat`, processes through `IProcessLauncher`/`ProgramRunner`, and type discovery through `IReflectionProvider` | Pass |
-| VIII. Simplicity, incremental delivery | One PR. The P3c, P3b and P6 items stay out (research R1, R31). The tail sits behind the Checkpoint F scope rule. The new projects are justified below | Pass (Complexity Tracking) |
+| VIII. Simplicity, incremental delivery | One PR. The P3c, P3b and P6 items stay out (research R1, R31); the tail moved to P3b. The new projects are justified below | Pass (Complexity Tracking) |
 | Technology constraints | CommunityToolkit.Mvvm; System.Text.Json source generation; `[LoggerMessage]`; source generators instead of weaving. MS.DI in the editor is ADR-0031's decision, and the constitution names no container | Pass |
 
 ## Project Structure
@@ -262,11 +275,12 @@ research R2, R12, R25 and R26 and are justified in Complexity Tracking. Dock sta
 
 ## Implementation sub-phases (drives tasks.md)
 
-Units are about half a day each. "Batches" assumes 3–6 units per batch. Each checkpoint is an adversarial review of
-the sub-phase's diff plus a reserved fix batch, which the units do not include. The units and batches are the ones
-tasks.md refined from this plan's first estimate (A 16, B 25, D1 25, D2 14, G at most 31 units and 8 batches); the
-total stays about 180. FR-116 (docs) and FR-118 (test locations) apply to every sub-phase: each one's guides and ADRs
-land in its own tasks.
+Units are about half a day each. "Batches" assumes 3–6 units per batch. The five review checkpoints (A+B, C1+C2,
+D1+D2, E+F, final) are each an adversarial review of the pair's diff plus a reserved fix batch, which the units do not
+include. The units and batches are the ones tasks.md refined from this plan's first estimate (A 16, B 25, D1 25, D2 14);
+sub-phase G (at most 22 units and 5 batches) moved to P3b except its release preparation (5 units), which joins the
+merge batch. The total is about 160 units. FR-116 (docs) and FR-118 (test locations) apply to every sub-phase: each
+one's guides and ADRs land in its own tasks.
 
 | Sub-phase | Stories, FRs | Content | Units | Batches | Checkpoint gate |
 |---|---|---|---|---|---|
@@ -277,8 +291,9 @@ land in its own tasks.
 | **D1. Extension host in the editor** | US4, US5, US6, US8; FR-032–FR-036, FR-039–FR-050, FR-066–FR-069, FR-088 | Contribution groups, snapshots, surface rebuilds and the owner shown in the palette and the sheet. Failure isolation (research R27) with NPX009–NPX011 in Errors. The per-user app group and NPX012. `--profile`. The Settings document: generated pages, search, validation, the restart bar, the built-in pages, the S10 schema file and docs table, store preservation, the unreadable copy. The Keyboard shortcuts page: overrides, conflicts, reset, "Not loaded", the `RebindShortcuts` E2E. B0 presets: catalogue, contrast math, overlay, the four presets, the Appearance page. FR-088: the `IsPinned` warning, the cable-middle hover, the `ShellMainFlow` watch, the Dock bump check. The settings and theming guides | 26 | 7 | D1: SC-004, SC-006, SC-007, SC-009 |
 | **D2. Author kit and the Godot sample** | US10; FR-037, FR-076–FR-081 | `NetPrints.Extensibility.Testing` and the xUnit adapter; NPK001–NPK016 and a failing fixture for each; `NetPrints.TestExtension` tested only through the kit; the ADR-0010 amendment. The extension package format and the `netprints-extension` template. `netprints extension verify` (NPK017, JSON) and ADR-0041. The reusable author workflow. `extensions/NetPrints.Godot`, built from the packed packages in CI. The extension testing guide | 15 | 4 | D2: SC-003, SC-011 |
 | **E. Run and build** | US7; FR-051–FR-065 | Launch settings reader; the resolver (expansion, splitter and joiner, paths, NPR codes); `ProcessStartRequest` additions; the MSBuild variable scrub; `Project`/`Executable` in the editor and in `netprints run` (`-lp`, `--no-launch-profile`, `-- <args>`); the split button, Run enablement, the first-run line; stop and kill tree; the unload prompt; Project settings › Run; the configuration selector (B23); the Output input line and the external terminal (B5); `RunExecutableProfile` E2E; the run profiles guide and CLI reference | 17 | 5 | E: SC-008 |
-| **F. Command line and the C# target in the editor** | US15, US9 (editor); FR-073, FR-074, FR-107, FR-108 | `netprints new` and `--list`; the `NetPrints.Templates` package and the parity test; node-search availability (hidden count, "Show unavailable"), quick fixes ("Set LangVersion", PolySharp hint). **The scope rule for the tail** | 6 | 2 | F: the US15 tests and SC-010 (editor); the tail decision recorded (with the ADR-0035 amendment for B1 and C) |
-| **G. Tail and release preparation** | US16, US17; FR-109–FR-116 | R6: the value-editor contract, inspector sections, value editors (NPXE0014). N2: graph rules (NPXE0015) and ADR-0032. N5 (NPXE0016). S7 and SUG5 (NPXE0017, NPA030–NPA033) and ADR-0026 with its amendment. B1: user theme files. C: extension themes. The regenerated guide images. Docs: the 0.3.0 release notes and a check of FR-116's list (the guides and the API reference land in the sub-phases that build them). The quickstart run | ≤22 | ≤5 | G: SC-016, SC-017, all SCs; then the final review |
+| **F. Command line and the C# target in the editor** | US15, US9 (editor); FR-073, FR-074, FR-107, FR-108 | `netprints new` and `--list`; the `NetPrints.Templates` package and the parity test; node-search availability (hidden count, "Show unavailable"), quick fixes ("Set LangVersion", PolySharp hint). The ADR-0035 amendment records B1 and C in P3b | 6 | 2 | F: the US15 tests and SC-010 (editor); the ADR-0035 amendment |
+| **G. Tail (moved to P3b)** | US16, US17; FR-109–FR-115 | R6: the value-editor contract, inspector sections, value editors (NPXE0014). N2: graph rules (NPXE0015) and ADR-0032. N5 (NPXE0016). S7 and SUG5 (NPXE0017, NPA030–NPA033) and ADR-0026 with its amendment. B1: user theme files. C: extension themes. P3b plans them; tasks T136–T154 stay reserved | 0 (17 moved to P3b) | 0 (4 moved) | — |
+| **Release preparation (in the merge batch)** | FR-116, FR-117, FR-118, SC-016, SC-017 | The regenerated guide images. The 0.3.0 release notes and a check of FR-116's list (the guides and the API reference land in the sub-phases that build them). The quickstart run. The CI budget, ratchet and docs-site checks | 5 | in PR-M | SC-016, SC-017, all SCs; with the final review |
 
 **Order rationale.**
 - A gives every later batch the analyzers, the DI attributes and the typed gestures.
@@ -288,7 +303,7 @@ land in its own tasks.
 - D1 builds the visible host on the frozen API.
 - D2 builds the kit and the sample on the published packages.
 - E and F do not depend on D, but come after it by story priority.
-- G is the tail.
+- The tail (G) is P3b's. The release preparation and the final review close P3.
 - The MVP slice is A–C plus D1's contribution groups (US1–US4).
 
 **Gate outcomes.**
@@ -298,9 +313,8 @@ land in its own tasks.
   for the owner.
 - **Pack spike (B).** If the `PrivateAssets` route does not deliver the analyzers exactly once, the template
   references Core directly (research R12). The coordinator adjusts the D2 template task.
-- **Scope rule (F).** Checkpoint F decides, item by item, what of G stays in P3. The cut items are recorded in the
-  implementation notes and as follow-ups (B1, C, S7, SUG5, N2, N5 and R6 to P6; R6's grid to P3b). The ADR-0035
-  amendment records the B1 and C placement.
+- **No scope rule.** The tail left P3 for P3b on 2026-10-16, so Checkpoint F cuts nothing. The ADR-0035 amendment
+  records the B1 and C placement.
 
 ## ADR schedule
 
@@ -313,9 +327,9 @@ land in its own tasks.
 | 0027 | Localization: stable keys and display text | C1 |
 | 0030 | The Extensibility split and the editor facet; CLI trust for project-declared extensions | C1 (split), C2 (facet) |
 | 0041 (new) | Extension packages, `netprints extension verify` and the author workflow | D2 |
-| 0032 | Graph rules | G |
-| 0026 | Node kinds by convention | G |
-| Amendments | ADR-0023 (Semi and Ursa locale) in C1; ADR-0003 and ADR-0007 (S5) in C2; ADR-0020 (typed contexts, groups, `AppliesTo`, new kinds, label keys, menu ids, factories through DI) and ADR-0021 (extension icon ids) in C2; ADR-0010 (conformance checks) in D2; ADR-0035 (B1 and C placement) at Checkpoint F; ADR-0026 (`PrepareFromSearchAsync`, offers from typed pins) in G | |
+| 0032 | Graph rules | P3b (moved from G) |
+| 0026 | Node kinds by convention | P3b (moved from G) |
+| Amendments | ADR-0023 (Semi and Ursa locale) in C1; ADR-0003 and ADR-0007 (S5) in C2; ADR-0020 (typed contexts, groups, `AppliesTo`, new kinds, label keys, menu ids, factories through DI) and ADR-0021 (extension icon ids) in C2; ADR-0010 (conformance checks) in D2; ADR-0035 (B1 and C placement: P3b) in F; ADR-0026 (`PrepareFromSearchAsync`, offers from typed pins) in P3b | |
 
 ## Complexity Tracking
 
@@ -333,9 +347,10 @@ land in its own tasks.
 
 ## Governance proposals
 
-- **Roadmap phases table (coordinator, with the owner's OK).** P3's estimate becomes about 20 weeks of sequential
-  batches: about 180 implementation units plus checkpoints, against the table's "~2.5 w". The spec's Sizing section
-  asks the plan to re-estimate. This batch does not edit the roadmap.
+- **Roadmap phases table (owner-approved 2026-10-16).** P3's estimate is about 4 weeks in agent time: about 160
+  implementation units plus 5 review checkpoints. Plan units are human half-days and overstate calendar time by about
+  5 times, so the roadmap now states estimates in agent time. P3b gains the tail (about 17 units of R6, N2, N5, S7,
+  SUG5, B1 and C); P3c is unchanged.
 - **Roadmap P3 section (optional wording).** Name the C1/C2 and D1/D2 checkpoints. Name ADR-0041 for the extension
   package format and `verify`, with "`netprints-verify` is `netprints extension verify`" (already a spec decision).
 - **Constitution.** No change needed.
@@ -345,9 +360,11 @@ land in its own tasks.
 - **P3c**: the package service, the Packages tab, the extension manager and its per-user folder, remote samples, the
   samples gallery's `--profile` filter, and installing extension packages. P3c may change the package format after
   its feed spike.
-- **P3b**: declaration kinds, member defaults and metadata, the model-driven grid (unless G lands it), user attributes,
-  NPT010 and NPT011, target probes, the style matrix, and `Requires` on the other descriptors.
-- **P6**: L2 and L3, plus whatever the Checkpoint F scope rule moves.
+- **P3b**: declaration kinds, member defaults and metadata, the model-driven grid, user attributes, NPT010 and NPT011,
+  target probes, the style matrix, and `Requires` on the other descriptors; and the tail moved from P3 (inspector
+  sections and value editors with the ADR-0036 contract, graph rules and NPK014, translator helpers, node kinds by
+  convention with SUG5, user and extension themes; NPXE0014–NPXE0017, NPA030–NPA033, ADR-0026, ADR-0032).
+- **P6**: L2 and L3.
 - **Later**:
   - hot enable and disable, collectible load contexts and extension seams;
   - `AddRunProfileKind` (U3 or NetPrintsUnity);

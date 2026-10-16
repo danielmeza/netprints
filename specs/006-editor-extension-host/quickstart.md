@@ -1,6 +1,6 @@
 # Quickstart: validating P3 end to end
 
-This runs every active story's main flow (US1–US11, US15–US17) against a local build. The behaviour is in the
+This runs every active story's main flow (US1–US11, US15) against a local build. The behaviour is in the
 [spec](./spec.md), the surfaces in [contracts/](./contracts/), the formats in [data-model.md](./data-model.md). Most
 steps are also automated tests; this guide is the manual and checkpoint walk-through.
 
@@ -168,14 +168,10 @@ netprints new nope --name X        # exits 2
 The created project builds and runs; its files equal `dotnet new netprints-console -n Hello` and the editor's New
 project with the Console template (the test `TemplateParityTests`).
 
-## 13. Tail (US16, US17), if Checkpoint F keeps them
+## 13. Tail (US16, US17): moved to P3b
 
-1. US16: select a variable in the test extension's fixture: its inspector section appears below the built-ins and
-   edits with undo; its value editor edits a pin of its type; its graph rule's code shows in Errors and fails
-   `netprints build`.
-2. US17: Appearance › Duplicate theme writes `$XDG_CONFIG_HOME/NetPrints/themes/<id>.nptheme.json`; edit two tokens and
-   a Semi key, Reload themes: applied. A bad value keeps the base value with a warning; a newer schema is skipped; an
-   extension's theme appears under its name while the extension is loaded.
+Nothing to run in P3. P3b's quickstart covers inspector sections, value editors, graph rules, user theme files and
+extension themes.
 
 ## 14. Docs and release readiness
 

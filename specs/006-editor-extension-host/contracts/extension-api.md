@@ -89,8 +89,8 @@ public interface IEditorContributions
   `netprints.editor`, before any other extension (FR-021).
 - The CLI, the SDK generator and the build hand out the Null Object facet: an extension that registers editor
   contributions loads there without error (US3 scenario 3).
-- In the tail (sub-phase G): `AddInspectorSection`, `AddValueEditor` (NPXE0014) on the facet; `AddGraphRule`
-  (NPXE0015) on the builder.
+- Moved to P3b (2026-10-16): `AddInspectorSection`, `AddValueEditor` (NPXE0014) on the facet; `AddGraphRule`
+  (NPXE0015) on the builder. P3 does not publish them.
 
 ## 3. Typed contexts (R5a, R5b)
 

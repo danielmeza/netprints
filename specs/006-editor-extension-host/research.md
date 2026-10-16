@@ -23,10 +23,12 @@ ADR-0031, ADR-0033 to ADR-0040.
 
 ## R1. Scope
 
-- **Decision**: P3 is the spec's 14 active stories (US1–US11, US15–US17). US12–US14 and FR-089–FR-106, SC-012–SC-014
-  moved to P3c on 2026-10-16 and are not planned. The tail (US16, US17) is planned in sub-phase G, and Checkpoint F
-  applies the spec's scope rule to it: R6's grid may move to P3b, and B1, C, S7, SUG5, N2, N5 and R6 may move to P6.
-  No other cut is allowed (Clarifications answer 1, narrowed on 2026-10-16).
+- **Decision**: P3 is the spec's 12 active stories (US1–US11, US15). US12–US14 and FR-089–FR-106, SC-012–SC-014
+  moved to P3c on 2026-10-16 and are not planned. The tail (US16, US17, FR-109–FR-115: R6, N2, N5, S7, SUG5, B1 and C)
+  moved to P3b on the same day, so the Checkpoint F scope rule is gone; P3b decides whether any of it goes to P6. The
+  release preparation of the old sub-phase G stays in P3. No other cut is allowed (Clarifications answer 1, narrowed
+  on 2026-10-16). R6, R14, R16 and R24 below describe the designs P3b picks up; P3 builds only the parts they name for
+  A–F.
 - **Rationale**: the owner placed these items in P3 and named the only fallbacks.
 - **Alternatives rejected**: splitting P3 into more phases now (the owner confirmed one spec and one PR on
   2026-10-16); planning the P3c items "in case they fit" (that would re-scope silently).
@@ -281,10 +283,10 @@ ADR-0031, ADR-0033 to ADR-0040.
   - **Kinds on the facet**: commands, panels, dashboard tiles, context-menu items (with `AppliesTo`), tooltip
     providers, go-to providers, status-bar items (C-15), settings pages (NPXE0009, custom views NPXE0010), dialogs
     (R4: a registered dialog view model shown by id through `IDialogService`), view resources and icon ids (N8:
-    `Icon.<extension id>.<name>`; an unknown id draws the fallback glyph and records an issue), and in the tail
-    inspector sections and value editors (NPXE0014). Model-side kinds stay flat on the builder because the CLI uses
-    them: project templates (NPXE0012), node search providers (NPXE0006), document migrations (NPXE0013), graph rules
-    (NPXE0015, tail).
+    `Icon.<extension id>.<name>`; an unknown id draws the fallback glyph and records an issue); inspector sections and
+    value editors (NPXE0014) are P3b's. Model-side kinds stay flat on the builder because the CLI uses
+    them: project templates (NPXE0012), node search providers (NPXE0006), document migrations (NPXE0013); graph rules
+    (NPXE0015) are P3b's.
   - **Groups (D1)**: the registry keeps the app group (built-ins first, then per-user extensions in load order) and
     one session group per open project; it is no longer frozen. Adding or removing a group raises `Changed` with a new
     immutable snapshot; menus, the command bar, key bindings, the palette, the shortcuts sheet, context menus, the
@@ -324,10 +326,10 @@ ADR-0031, ADR-0033 to ADR-0040.
   | NPXE0011 | Extension string resources (`AddStringResources`) | C1 |
   | NPXE0012 | Project templates with files | C2 |
   | NPXE0013 | Extension node-data migrations | C2 |
-  | NPXE0014 | Inspector sections and value editors (R6) | G |
-  | NPXE0015 | Graph rules (N2) | G |
-  | NPXE0016 | Translation context additions (N5) | G |
-  | NPXE0017 | Node kinds by convention (S7, SUG5) | G |
+  | NPXE0014 | Inspector sections and value editors (R6) | P3b (was G) |
+  | NPXE0015 | Graph rules (N2) | P3b (was G) |
+  | NPXE0016 | Translation context additions (N5) | P3b (was G) |
+  | NPXE0017 | Node kinds by convention (S7, SUG5) | P3b (was G) |
 
   Stable from 0.3.0: the typed pins and pin attributes (`[NodeKind]`, `[NodeBase]`, `[Pin]`, `[PinType]`),
   `PinRole`, `CSharpLanguageVersion`, the minimal `CSharpTarget`, `LocalizedText`, `GraphPoint`, the manifest's
@@ -462,8 +464,8 @@ ADR-0031, ADR-0033 to ADR-0040.
   use for user files (embedded presets are trusted and gated by tests); a per-variant overlay writer for
   `Application.Resources.ThemeDictionaries[Dark|Light]`; High contrast selects Semi's high-contrast variant for its
   slot (Aquatic for Dark, Desert for Light) plus its tuned tokens; `darkPreset` and `lightPreset` strings with a
-  choices provider; the Appearance page; wire opacity and thickness and the ADR-0036 inspector tokens. B1 and C are
-  planned in G behind the Checkpoint F scope rule (ADR-0035 amendment then).
+  choices provider; the Appearance page; wire opacity and thickness and the ADR-0036 inspector tokens. B1 and C moved
+  to P3b on 2026-10-16 (the ADR-0035 amendment in F records it).
 - **Rationale**: ADR-0035 decisions 1–9; one format for presets and user files means B1 adds only validation messages
   and the Reload and Duplicate commands.
 - **Alternatives rejected**: presets as C# dictionaries (a second format for B1 to parse).
@@ -547,12 +549,12 @@ ADR-0031, ADR-0033 to ADR-0040.
 - **Rationale**: they touch code A and D1 rewrite; fixing them first keeps the later diffs verifiable.
 - **Alternatives rejected**: none.
 
-## R30. Sizing and the scope rule
+## R30. Sizing
 
-- **Decision**: units of about half a day, as in the AOP and SOLID plans. P3 is about 180 units of implementation
-  plus about 18 for the nine checkpoint reviews and fix batches; the sub-phase table in [plan.md](plan.md) has the
-  split. The roadmap's phases table says about 2.5 weeks; the re-estimate (about 20 weeks of sequential batches) is a
-  roadmap change proposed in the plan's governance section, not made here.
+- **Decision**: units of about half a day, as in the AOP and SOLID plans. P3 is about 160 units of implementation
+  plus about 10 for the five checkpoint reviews and fix batches; the sub-phase table in [plan.md](plan.md) has the
+  split. The units are human half-days and overstate calendar time by about 5 times, so the roadmap states P3 as about
+  4 weeks in agent time (owner-approved 2026-10-16). The scope rule this section once described is gone with the tail.
 - **Rationale**: the spec's Sizing section asks the plan to re-estimate.
 - **Alternatives rejected**: none.
 

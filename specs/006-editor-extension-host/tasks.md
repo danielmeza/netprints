@@ -10,7 +10,8 @@ description: "Task list for P3 — Editor extension host"
 **Start condition**: met when batch P3-S2c (this file, the speckit-analyze fixes and `implementation-notes.md`) is on
 draft PR #20 and CI is green. Branch `006-editor-extension-host` from `master` after the P3a merge (PR #12, `bf3496e9`).
 ADR-0040 is committed with the spec. User Stories 12–14 (FR-089–FR-106, SC-012–SC-014) moved to P3c and have no task
-here.
+here. User Stories 16 and 17 (FR-109–FR-115) moved to P3b on 2026-10-16 (batch P3-S2d); their tasks T136–T154 are
+reserved, not renumbered, in "Phase 9" below.
 
 **Tests**: REQUIRED (constitution V). A behaviour task names its test class first. "Test first" means: write the test,
 run it, see it fail for the expected reason (red), then change the code until it passes (green). The red test is
@@ -39,8 +40,10 @@ through its `PublicAPI.*.txt`; the 0.3.0 breaks use `*REMOVED*` entries and rele
 settling surface carries its NPXE id (research R16) and a row in the extension guide's "API stability" table. Contracts
 in Abstractions are UI-free. New UI text comes from resources once L1 lands (T044), and the XAML literal ratchet never
 grows. Code comments stay short; rationale goes in the commit message and in
-`specs/006-editor-extension-host/implementation-notes.md` as "Decision: …". Commit per task (pathspec of your own
-files), tick the task here, push, and wait for your own CI. Never leave changes under `samples/`; no machine paths in
+`specs/006-editor-extension-host/implementation-notes.md` as "Decision: …". **Start of every batch**: check CI at the
+previous head (`gh run list` once, or ask the coordinator) and fix any red first, in a separate first commit, before
+your own tasks. Commit per task (pathspec of your own files), tick the task here, push, and return: do not wait for
+CI; the coordinator watches PR #20's CI in the background (plan "Process: CI and checkpoints"). Never leave changes under `samples/`; no machine paths in
 repository files (grep the diff); edit repository files only with the Edit and Write tools; never use `DISPLAY=:1`. No
 publishing (tags, NuGet pushes, releases, upstream issues). `.specify/memory/*` and the roadmap are not edited by
 implementers; proposals go in implementation-notes.md. Commits, PR text and review comments carry no tool or model
@@ -51,28 +54,31 @@ attribution. Every user-visible change gets an entry under "Unreleased" in `.git
 
 - **[P]**: can run in parallel with the other tasks of the same batch (different files, no dependency). Batches still
   run one after another.
-- **[Story]**: US1–US11 and US15–US17 from spec.md. Checkpoint, review, fix and merge tasks have no story label.
+- **[Story]**: US1–US11 and US15 from spec.md (US16 and US17 moved to P3b). Checkpoint, review, fix and merge tasks have no story label.
 - **Batch header**: `Batch <id> — model: <sonnet|opus> — T<first>–T<last> — <n> units`; one agent per batch, batches run
   in order. The model tag is the owner-approved process role (AGENTS.md "Model selection"): implementation and fix
   batches are sonnet, reviews are opus.
 - **Batch sizing** (plan.md "Process"): an implementation batch carries 2–4 related tasks, or up to 6 when they are
   mechanical, for 3–6 units; a unit is about half a day, a task is 1 unit, and a design-heavy task is 2 (3 for the
-  typed contexts). A batch must end under about 150K context with everything pushed and CI green. A checkpoint task
-  carries no units of its own, except T133, which also applies the scope rule.
+  typed contexts). A batch must end under about 150K context with everything pushed (the coordinator confirms CI). A
+  gate task carries no units of its own.
 - **"Default pending owner"**: the task applies the plan's default for a product question the owner has not answered
   (research R3, R13, R23, R31). Implement the default, record it in implementation-notes under "Owner questions taken
   by default", and keep the change easy to reverse.
-- **Checkpoints**: the last task of each sub-phase's implementation batches is its checkpoint: the whole suite plus the
-  E2E pass, CI green (including `CLI (Windows)` when it runs), and a report in implementation-notes with evidence (test
+- **Sub-phase gates** ("Checkpoint X" tasks): the last task of each sub-phase's implementation batches is its gate:
+  the whole suite plus the E2E pass, CI green (including `CLI (Windows)` when it runs), and a report in implementation-notes with evidence (test
   names, CI run ids, artifact names, timings) for the sub-phase's gate in plan.md, the longest CI job (SC-016), the
   Dock check (has a Dock release that includes wieslawsoltes/Dock#1191 shipped? if so, the fix batch does T085's bump),
-  and a "Docs updated:" line. A sub-phase is not done until its docs are updated.
-- **Reviews** (owner rule): every sub-phase ends with an adversarial opus review of its whole diff (`<X>-R`) by an agent
-  that did not implement it, then a reserved sonnet fix batch (`<X>-F`) that must be green on CI before the next
-  sub-phase starts. The reviewer first enumerates the decision corpus (constitution, AGENTS.md, the ADRs the sub-phase
-  touches, spec.md, plan.md, the contracts) and checks each applicable document against the diff. Before the merge, a
-  light final review of the whole PR (PR-R), its fix batch (PR-F) and the merge preparation (PR-M). The owner merges;
-  any release needs the owner's OK.
+  and a "Docs updated:" line. A sub-phase is not done until its docs are updated. The gate task's "CI green" is checked
+  by the coordinator, and the CI run ids it names are filled in by the next batch's start-of-batch check.
+- **Reviews** (owner rule, five checkpoints since 2026-10-16): A+B, C1+C2, D1+D2, E+F and the final review. Each is
+  one adversarial opus review batch of the pair's whole diff (`B-R`, `C2-R`, `D2-R`, `F-R`, `PR-R`) by an agent that
+  did not implement it, then one reserved sonnet fix batch (`B-F`, `C2-F`, `D2-F`, `F-F`, `PR-F`) that must be green on
+  CI before the next checkpoint's work starts. The review of the first sub-phase of a pair (A, C1, D1, E) is "merged
+  into" the second's task; the IDs stay. The reviewer first enumerates the decision corpus (constitution, AGENTS.md,
+  the ADRs the pair touches, spec.md, plan.md, the contracts) and checks each applicable document against the diff. The
+  final review is light and covers the whole PR; the merge preparation (PR-M) follows. The owner merges; any release
+  needs the owner's OK.
 
 ---
 
@@ -220,19 +226,13 @@ trip; Windows CLI tests green; SC-015; R5-0 numbers and the M5 outcome recorded.
   info-level hits); the R5-0 numbers and the M5 verdict; the longest CI job; the Dock check. Docs updated: ADR-0024,
   ADR-0003, `docs/guide/diagnostics.md`, `docs/guide/graph-format.md`, `docs/contributing/testing.md`.
 
-### Batch A-R — model: opus — T017 (sub-phase review)
+### Batch A-R — no batch (T017 merged into T038)
 
-- [ ] T017 Review sub-phase A: an opus reviewer who did not implement it reviews the whole diff of batches A1–A5 (from
-  the commit before T001 to HEAD) against the decision corpus (constitution, AGENTS.md, ADR-0003, ADR-0024, ADR-0031,
-  ADR-0034, ADR-0040, spec US1 and US11, plan "Standing constraints", contracts/analyzer-diagnostics.md) and runs US1's
-  independent test. Findings (severity, file:line, fix) go to the PR as review comments and to implementation-notes
-  under "Review A". No code changes in this task.
+- [x] T017 Merged into T038: the review of sub-phase A runs with sub-phase B's, at the A+B checkpoint (batch B-R).
 
-### Batch A-F — model: sonnet — T018 (reserved: fix review findings)
+### Batch A-F — no batch (T018 merged into T039)
 
-- [ ] T018 Fix every finding of T017 (test first for behaviour findings), reply on each review thread with the fixing
-  commit or the reason for deferral, whole suite plus the E2E pass, push; if the review had no findings, tick this task
-  with "no findings". Sub-phase B starts only after this batch is green on CI.
+- [x] T018 Merged into T039: the fixes for sub-phase A's findings run in batch B-F.
 
 ---
 
@@ -367,17 +367,21 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
   check. Docs updated: ADR-0025, ADR-0028, ADR-0029, the extension guide's "Declaring pins", `releasing.md`,
   `graph-format.md`, the release notes.
 
-### Batch B-R — model: opus — T038 (sub-phase review)
+### Batch B-R — model: opus — T038 (checkpoint A+B review)
 
-- [ ] T038 Review sub-phase B against its decision corpus (constitution V and VI, ADR-0025, ADR-0028, ADR-0029,
-  ADR-0034, spec US2, research R8–R11, contracts/analyzer-diagnostics.md §3, data-model §7–§8); check every golden
-  change against its recorded reason and every `*REMOVED*` line against the release notes; run US2's independent test.
-  Findings to the PR and to implementation-notes under "Review B". No code changes.
+- [ ] T038 Review sub-phases A and B (the A+B checkpoint): an opus reviewer who did not implement them reviews the
+  whole diff of batches A1–B7 (from the commit before T001 to HEAD) against the decision corpus (constitution, AGENTS.md,
+  ADR-0003, ADR-0024, ADR-0025, ADR-0028, ADR-0029, ADR-0031, ADR-0034, ADR-0040, spec US1, US2 and US11, research
+  R8–R11, plan "Standing constraints", contracts/analyzer-diagnostics.md §1–§3, §5, §7, §8, data-model §7–§8). Check every
+  golden change against its recorded reason and every `*REMOVED*` line against the release notes; run US1's and US2's
+  independent tests. Findings (severity, file:line, fix) go to the PR as review comments and to implementation-notes
+  under "Review A+B". No code changes in this task.
 
-### Batch B-F — model: sonnet — T039 (reserved: fix review findings)
+### Batch B-F — model: sonnet — T039 (checkpoint A+B fixes)
 
-- [ ] T039 Fix every finding of T038 (test first for behaviour findings), reply on each thread, whole suite plus the
-  E2E pass, push; "no findings" if there were none. Sub-phase C1 starts only after this batch is green on CI.
+- [ ] T039 Fix every finding of T038 (test first for behaviour findings), reply on each review thread with the fixing
+  commit or the reason for deferral, whole suite plus the E2E pass, push; if the review had no findings, tick this task
+  with "no findings". Sub-phase C1 starts only after this batch is pushed and green on CI (the coordinator checks).
 
 ---
 
@@ -516,17 +520,15 @@ SC-010; US3 scenarios 5–6. **Gate (plan)**: SC-005; SC-010 (the three writers)
   run); the API shape review of T056; the longest CI job; the Dock check. Docs updated: ADR-0027, ADR-0030 (split),
   ADR-0023, the extension guide's "API stability", the diagnostics guide.
 
-### Batch C1-R — model: opus — T058 (sub-phase review)
+### Batch C1-R — no batch (T058 merged into T077)
 
-- [ ] T058 Review sub-phase C1 against its decision corpus (constitution II and IV, ADR-0017, ADR-0020, ADR-0023,
-  ADR-0027, ADR-0030, ADR-0031, ADR-0038, ADR-0040, spec US3 and US9, research R4, R10, R12–R14, R16, R19,
-  contracts/extension-api.md §1–§6); check the composition gates' evidence and that Abstractions stays UI-free. Findings
-  to the PR and to implementation-notes under "Review C1". No code changes.
+- [x] T058 Merged into T077: the review of sub-phase C1 runs with sub-phase C2's, at the C1+C2 checkpoint (batch C2-R).
+  Its extra checks (the composition gates' evidence; Abstractions stays UI-free; ADR-0017, ADR-0023, ADR-0027, ADR-0038,
+  research R4, R10, R13, R19, contracts/extension-api.md §1–§6) are listed in T077.
 
-### Batch C1-F — model: sonnet — T059 (reserved: fix review findings)
+### Batch C1-F — no batch (T059 merged into T078)
 
-- [ ] T059 Fix every finding of T058 (test first for behaviour findings), reply on each thread, whole suite plus the
-  E2E pass, push; "no findings" if there were none. Sub-phase C2 starts only after this batch is green on CI.
+- [x] T059 Merged into T078: the fixes for sub-phase C1's findings run in batch C2-F.
 
 ---
 
@@ -600,8 +602,8 @@ SC-005 rechecked (research R4).
   `[RequiresRestart]`, `[SettingPath(PathKind.File|Folder)]`, `[Description]` and a choices provider id into
   `x-netprints-restart`, `x-netprints-path`, `description` and `x-netprints-choices`. Then `SettingsPageDescriptor`
   (NPXE0009; `CreateViewModel` under NPXE0010), the attributes and `AddSettingsPage`. The Settings document is T089.
-- [ ] T069 [US17] The manifest's `themes` field (FR-029, contracts/extension-api.md §9, data-model §1; 1 unit). Test
-  first: manifest tests: `themes` is accepted from `netprintsApi` 0.3; with an older `netprintsApi` it is NPX001;
+- [ ] T069 [US3] The manifest's `themes` field (FR-029, contracts/extension-api.md §9, data-model §1; 1 unit; P3b
+  consumes it, FR-115). Test first: manifest tests: `themes` is accepted from `netprintsApi` 0.3; with an older `netprintsApi` it is NPX001;
   unknown manifest fields are ignored with an info message. Then the manifest model and its validation.
 - [ ] T070 [US3] The `ExtensionApi.Version` tie (FR-020, research R12; 1 unit). Test first:
   `tests/NetPrints.Core.Tests/Extensibility/ExtensionApiVersionTests.cs`: a recorded hash of the Abstractions and
@@ -650,18 +652,21 @@ SC-005 rechecked (research R4).
   job; the longest CI job; the Dock check. Docs updated: the extensions guide, ADR-0030, ADR-0020, ADR-0021, ADR-0003,
   ADR-0007, `releasing.md`, `graph-format.md`, `docs/api/docfx.json`, AGENTS.md.
 
-### Batch C2-R — model: opus — T077 (sub-phase review)
+### Batch C2-R — model: opus — T077 (checkpoint C1+C2 review)
 
-- [ ] T077 Review sub-phase C2 against its decision corpus (constitution II, III and V, ADR-0003, ADR-0007, ADR-0010,
-  ADR-0017, ADR-0020, ADR-0021, ADR-0030, ADR-0031, ADR-0040, spec US3 and FR-019–FR-031, FR-038, research R12, R14–R18,
-  contracts/extension-api.md, data-model §1–§2). The publish gate gets extra weight: every public shape, every NPXE id,
-  every `*REMOVED*` line and every allow-list entry. Findings to the PR and to implementation-notes under "Review C2".
-  No code changes.
+- [ ] T077 Review sub-phases C1 and C2 (the C1+C2 checkpoint) against their decision corpus (constitution II, III, IV and
+  V, ADR-0003, ADR-0007, ADR-0010, ADR-0017, ADR-0020, ADR-0021, ADR-0023, ADR-0027, ADR-0030, ADR-0031, ADR-0038,
+  ADR-0040, spec US3 and US9, FR-019–FR-031, FR-038, FR-070–FR-072, FR-075, research R4, R10, R12–R19,
+  contracts/extension-api.md, data-model §1–§2): the whole diff of batches C1a–C2f. Check the composition gates'
+  evidence and that Abstractions stays UI-free. The publish gate gets extra weight: every public shape, every NPXE id,
+  every `*REMOVED*` line and every allow-list entry. Findings to the PR and to implementation-notes under "Review
+  C1+C2". No code changes.
 
-### Batch C2-F — model: sonnet — T078 (reserved: fix review findings)
+### Batch C2-F — model: sonnet — T078 (checkpoint C1+C2 fixes)
 
 - [ ] T078 Fix every finding of T077 (test first for behaviour findings), reply on each thread, whole suite plus the
-  E2E pass, push; "no findings" if there were none. Sub-phase D1 starts only after this batch is green on CI.
+  E2E pass, push; "no findings" if there were none. Sub-phase D1 starts only after this batch is pushed and green on CI
+  (the coordinator checks).
 
 ---
 
@@ -795,7 +800,7 @@ tests. **Gate (plan)**: SC-004, SC-006, SC-007, SC-009.
   (scenario 1); Classic Dark gives the `#000` canvas, triangle pins and the `#AA202020` card; High contrast uses Semi's
   high-contrast variants (Aquatic for Dark, Desert for Light) plus its tuned tokens (scenario 4); an unknown
   `darkPreset` falls back to the variant's default with a log entry and keeps the other appearance keys (scenario 3).
-  Then the embedded `*.nptheme.json` presets in `src/NetPrints.Editor/Theming/Presets/`, the loader that B1 will reuse,
+  Then the embedded `*.nptheme.json` presets in `src/NetPrints.Editor/Theming/Presets/`, the loader that P3b's B1 will reuse,
   the overlay writer for `ThemeDictionaries[Dark|Light]`, and the Appearance page fields with the preview strip.
 - [ ] T097 [P] [US8] The theming guide (FR-066, FR-116; 1 unit). Write `docs/guide/editor/themes.md`: modes, presets,
   the contrast policy and the token list generated from the catalogue (a staleness test). Guide index.
@@ -804,17 +809,16 @@ tests. **Gate (plan)**: SC-004, SC-006, SC-007, SC-009.
   and T086 runs), SC-007 (`RebindShortcutsTests`), SC-009 (contrast and overlay tests); the longest CI job; the Dock
   check. Docs updated: the settings, themes and shortcuts guides, the diagnostics guide, the release notes.
 
-### Batch D1-R — model: opus — T099 (sub-phase review)
+### Batch D1-R — no batch (T099 merged into T111)
 
-- [ ] T099 Review sub-phase D1 against its decision corpus (constitution I and VII, ADR-0006, ADR-0007, ADR-0020,
-  ADR-0033, ADR-0035, ADR-0036, ADR-0040, spec US4–US6, US8 and FR-088, research R20, R21, R24, R27,
-  contracts/settings-and-keybindings.md, contracts/cli.md §4, data-model §2–§3, §5, the avalonia skills). Findings to
-  the PR and to implementation-notes under "Review D1". No code changes.
+- [x] T099 Merged into T111: the review of sub-phase D1 runs with sub-phase D2's, at the D1+D2 checkpoint (batch D2-R).
+  Its extra checks (constitution I and VII, ADR-0006, ADR-0007, ADR-0020, ADR-0033, ADR-0035, ADR-0036, spec US4–US6,
+  US8 and FR-088, research R20, R21, R24, R27, contracts/settings-and-keybindings.md, contracts/cli.md §4, data-model
+  §2–§3, §5, the avalonia skills) are listed in T111.
 
-### Batch D1-F — model: sonnet — T100 (reserved: fix review findings)
+### Batch D1-F — no batch (T100 merged into T112)
 
-- [ ] T100 Fix every finding of T099 (test first for behaviour findings), reply on each thread, whole suite plus the
-  E2E pass, push; "no findings" if there were none. Sub-phase D2 starts only after this batch is green on CI.
+- [x] T100 Merged into T112: the fixes for sub-phase D1's findings run in batch D2-F.
 
 ---
 
@@ -843,11 +847,11 @@ contracts/cli.md §2–§3. **Independent test**: US10's independent test. **Gat
 
 - [ ] T103 [US10] Checks NPK009–NPK013, NPK015 and NPK016 (FR-076–FR-078, SC-011; 2 units). Same pattern as T102.
   NPK016 scans the extension's `.axaml` sources with the repository's E2/E8 XAML rules, from
-  `ConformanceOptions.SourceDirectory` or the folder holding `netprints-extension.json`. NPK014 (graph rules) lands with
-  N2 in T138.
+  `ConformanceOptions.SourceDirectory` or the folder holding `netprints-extension.json`. NPK014 (graph rules) is
+  reserved: it lands with N2 in P3b.
 - [ ] T104 [US10] `NetPrints.TestExtension` through the kit only (FR-078, US10 scenario 4; 1 unit). Replace its direct
   tests with a `ConformanceTests<TestExtension>` class and kit-based tests; amend ADR-0010 (conformance checks for
-  service providers, graph rules and editor contributions; NPK013–NPK016).
+  service providers and editor contributions; NPK013, NPK015, NPK016; the graph rules check NPK014 is P3b's).
 - [ ] T105 [P] [US10] The extension testing guide (FR-116; 1 unit). Write `docs/guide/extension-testing.md`: the kit,
   the xUnit adapter, and each NPK check with its rule and its fix. Guide index.
 
@@ -890,17 +894,20 @@ contracts/cli.md §2–§3. **Independent test**: US10's independent test. **Gat
   quickstart §4 step 5 with the Godot extension; the longest CI job; the Dock check. Docs updated: the extension
   testing guide, `cli.md`, ADR-0041, ADR-0010.
 
-### Batch D2-R — model: opus — T111 (sub-phase review)
+### Batch D2-R — model: opus — T111 (checkpoint D1+D2 review)
 
-- [ ] T111 Review sub-phase D2 against its decision corpus (constitution III and V, ADR-0010, ADR-0015, ADR-0017,
-  ADR-0037, ADR-0041, spec US10 and FR-037, research R25, R26, R28, contracts/extension-api.md §10,
-  contracts/analyzer-diagnostics.md §6, contracts/cli.md §2–§3). Findings to the PR and to implementation-notes under
-  "Review D2". No code changes.
+- [ ] T111 Review sub-phases D1 and D2 (the D1+D2 checkpoint) against their decision corpus (constitution I, III, V and
+  VII, ADR-0006, ADR-0007, ADR-0010, ADR-0015, ADR-0017, ADR-0020, ADR-0033, ADR-0035, ADR-0036, ADR-0037, ADR-0040,
+  ADR-0041, spec US4–US6, US8, US10, FR-037 and FR-088, research R20, R21, R24–R28, contracts/settings-and-keybindings.md,
+  contracts/extension-api.md §10, contracts/analyzer-diagnostics.md §6, contracts/cli.md §2–§4, data-model §2–§3, §5, the
+  avalonia skills): the whole diff of batches D1a–D2d. Findings to the PR and to implementation-notes under "Review
+  D1+D2". No code changes.
 
-### Batch D2-F — model: sonnet — T112 (reserved: fix review findings)
+### Batch D2-F — model: sonnet — T112 (checkpoint D1+D2 fixes)
 
 - [ ] T112 Fix every finding of T111 (test first for behaviour findings), reply on each thread, whole suite plus the
-  E2E pass, push; "no findings" if there were none. Sub-phase E starts only after this batch is green on CI.
+  E2E pass, push; "no findings" if there were none. Sub-phase E starts only after this batch is pushed and green on CI
+  (the coordinator checks).
 
 ---
 
@@ -1005,26 +1012,24 @@ contracts/run-profiles.md. **Independent test**: US7's independent test. **Gate 
   longest CI job; the Dock check. Docs updated: the run profiles guide, `cli.md`, the diagnostics guide, the release
   notes.
 
-### Batch E-R — model: opus — T127 (sub-phase review)
+### Batch E-R — no batch (T127 merged into T134)
 
-- [ ] T127 Review sub-phase E against its decision corpus (constitution I and VII, ADR-0015, ADR-0033, ADR-0037, spec
-  US7 and FR-051–FR-065, research R22, R23, contracts/run-profiles.md, data-model §4). Check the argument handling for
-  shell re-parsing and injection, the environment scrub, and the process-tree kill. Findings to the PR and to
-  implementation-notes under "Review E". No code changes.
+- [x] T127 Merged into T134: the review of sub-phase E runs with sub-phase F's, at the E+F checkpoint (batch F-R). Its
+  extra checks (constitution I and VII, ADR-0033, ADR-0037, spec US7 and FR-051–FR-065, research R22, R23,
+  contracts/run-profiles.md, data-model §4; the argument handling for shell re-parsing and injection, the environment
+  scrub, and the process-tree kill) are listed in T134.
 
-### Batch E-F — model: sonnet — T128 (reserved: fix review findings)
+### Batch E-F — no batch (T128 merged into T135)
 
-- [ ] T128 Fix every finding of T127 (test first for behaviour findings), reply on each thread, whole suite plus the
-  E2E pass, push; "no findings" if there were none. Sub-phase F starts only after this batch is green on CI.
+- [x] T128 Merged into T135: the fixes for sub-phase E's findings run in batch F-F.
 
 ---
 
 ## Phase 8: The command line and the C# target in the editor (sub-phase F, User Stories 15 and 9, Priority P2–P3)
 
 **Goal**: `netprints new` and `dotnet new` create the same projects as the editor; node search hides what the
-project's C# version cannot use and offers fixes; Checkpoint F applies the scope rule to the tail. Contract:
-contracts/cli.md §1–§2. **Independent test**: US15's independent test; US9 scenarios 3–4. **Gate (plan)**: the US15
-tests and SC-010 (editor); the tail decision recorded with the ADR-0035 amendment.
+project's C# version cannot use and offers fixes. Contract: contracts/cli.md §1–§2. **Independent test**: US15's
+independent test; US9 scenarios 3–4. **Gate (plan)**: the US15 tests and SC-010 (editor); the ADR-0035 amendment.
 
 ### Batch F1 — model: sonnet — T129–T130 — 3 units
 
@@ -1052,157 +1057,106 @@ tests and SC-010 (editor); the tail decision recorded with the ADR-0035 amendmen
   at most to the framework's maximum (US9 scenario 4), edits the project body even when an imported props file sets
   it, and says so; a PolySharp hint appears when only types are missing; a missing type is a warning, not an error.
   Then the fixes.
-- [ ] T133 **Checkpoint F and the scope rule** (plan "Gate outcomes", Clarifications answer 1; 1 unit). Whole suite
-  plus the E2E pass; CI green. Report the plan's gate F: the US15 tests (`NewCommandTests`, `TemplateParityTests`) and
-  SC-010 for the editor path (`CSharpTargetWriterIdentityTests`). **Scope rule** (the coordinator decides, item by
-  item, from this file's unit counts and the elapsed budget): R6 (T136–T137; its model-driven grid goes to P3b unless
-  kept), N2 (T138–T139), N5 (T140), S7 and SUG5 (T141–T143), B1 (T144, T146) and C (T145) stay in G or move to P6. Record
-  the decision in implementation-notes and as follow-ups, write the ADR-0035 amendment for the B1 and C placement, and
-  mark each cut task here "moved to P6 (Checkpoint F)" or "moved to P3b (Checkpoint F)" instead of deleting it.
-  Docs updated: `cli.md`, the projects guide, ADR-0035.
+- [ ] T133 **Checkpoint F** (plan "Gate outcomes"; 1 unit). Whole suite plus the E2E pass; CI green. Report the plan's
+  gate F: the US15 tests (`NewCommandTests`, `TemplateParityTests`) and SC-010 for the editor path
+  (`CSharpTargetWriterIdentityTests`). The scope rule no longer exists: the tail (old T136–T154) moved to P3b on
+  2026-10-16. Write the ADR-0035 amendment: B1 (user theme files) and C (extension themes) are P3b's, and P3 keeps B0
+  and the manifest `themes` field. Docs updated: `cli.md`, the projects guide, ADR-0035.
 
-### Batch F-R — model: opus — T134 (sub-phase review)
+### Batch F-R — model: opus — T134 (checkpoint E+F review)
 
-- [ ] T134 Review sub-phase F against its decision corpus (ADR-0015, ADR-0035, ADR-0038, spec US9 and US15, FR-073,
-  FR-074, FR-107, FR-108, research R17, R19, R31, contracts/cli.md §1–§2) and the scope decision against the spec's
-  Clarifications answer 1 (no cut beyond the named fallbacks). Findings to the PR and to implementation-notes under
-  "Review F". No code changes.
+- [ ] T134 Review sub-phases E and F (the E+F checkpoint) against their decision corpus (constitution I and VII,
+  ADR-0015, ADR-0033, ADR-0035, ADR-0037, ADR-0038, spec US7, US9 and US15, FR-051–FR-065, FR-073, FR-074, FR-107,
+  FR-108, research R17, R19, R22, R23, R31, contracts/run-profiles.md, contracts/cli.md §1–§2, data-model §4): the whole
+  diff of batches E1–F2. Check the argument handling for shell re-parsing and injection, the environment scrub, and the
+  process-tree kill. Findings to the PR and to implementation-notes under "Review E+F". No code changes.
 
-### Batch F-F — model: sonnet — T135 (reserved: fix review findings)
+### Batch F-F — model: sonnet — T135 (checkpoint E+F fixes)
 
 - [ ] T135 Fix every finding of T134 (test first for behaviour findings), reply on each thread, whole suite plus the
-  E2E pass, push; "no findings" if there were none. Sub-phase G starts only after this batch is green on CI.
+  E2E pass, push; "no findings" if there were none. The final review (T155) starts only after this batch is pushed and
+  green on CI (the coordinator checks).
 
 ---
 
-## Phase 9: The tail and release preparation (sub-phase G, User Stories 16 and 17, Priority P4)
+## Phase 9: The tail (sub-phase G, User Stories 16 and 17): moved to P3b
 
-**Goal**: what Checkpoint F keeps of the tail lands (inspector sections and value editors, graph rules, translator
-helpers, node kinds by convention, user and extension themes), then the release preparation closes the phase. Every
-task in batches G1–G4 is subject to T133's scope rule. **Independent test**: US16 and US17 independent tests, if kept;
-quickstart.md end to end. **Gate (plan)**: SC-016, SC-017, all SCs; then the final review.
+### Reserved: T136–T154 moved to P3b (batches G1–G5, G-R and G-F)
 
-### Batch G1 — model: sonnet — T136–T137 — 4 units
+The tasks were never started. Their original text is in the git history (`git show 9ac912c9:specs/006-editor-extension-host/tasks.md`),
+and P3b plans them with its own IDs. The IDs stay reserved so nothing else is renumbered.
 
-- [ ] T136 [US16] The value-editor contract and inspector sections (FR-109, ADR-0036, research R14, R16; 2 units; load
-  `avalonia-xaml` and `avalonia-styling`). Test first: the built-in inspectors and the pin and default editors register
-  through the contract; an extension inspector section for variables appears below the built-in ones and edits the
-  model with undo (US16 scenario 1). Then `AddInspectorSection` (NPXE0014) on the facet and the value-editor contract
-  shared by pins, variable and parameter defaults and grid rows; the built-ins register the same way. The model-driven
-  grid stays in P3b unless T133 kept it (FR-112).
-- [ ] T137 [US16] Value editors (FR-109; 2 units). Test first: an extension value editor for its type edits an
-  unconnected pin and a default of that type, and without the extension the generic editor does (US16 scenario 2);
-  `NetPrints.TestExtension` contributes one, and NPK015 covers it. Then `AddValueEditor` (NPXE0014).
-
-### Batch G2 — model: sonnet — T138–T140 — 4 units
-
-- [ ] T138 [US16] Graph rules and NPK014 (FR-110, FR-077, FR-078, research R16; 2 units). Test first: an `Fx` graph
-  rule's diagnostic appears in Errors and in `netprints build` and `generate` with the same code (US16 scenario 3);
-  NPK014 (deterministic, graph unchanged, cancellation honoured, isolated when throwing) with its failing fixture
-  `Fx.Fail.GraphRules`. Then `AddGraphRule` (NPXE0015) on the builder and the rule runner shared by the editor and the
-  CLI.
-- [ ] T139 [P] [US16] ADR-0032 (FR-110, FR-116; 1 unit). Write `docs/adr/0032-graph-rules.md` and the graph rules
-  section of `docs/guide/extensions.md`. ADR index.
-- [ ] T140 [US16] Translation context additions (FR-111, N5; 1 unit). Test first: a node translator adds a using and a
-  helper member; the output is deterministic and each addition is written once. Then the context API (NPXE0016).
-
-### Batch G3 — model: sonnet — T141–T143 — 5 units
-
-- [ ] T141 [US16] Node kinds by convention (FR-112, S7, contracts/analyzer-diagnostics.md §3; 2 units). Test first:
-  generator snapshots (the inferred document, the translator and `On<Pin>` dispatch, the generated registration),
-  compile and incrementality tests, and NPA030–NPA033 cases. Then the generator in `src/NetPrints.Authoring/NodeKinds/`
-  (NPXE0017) and guide rows.
-- [ ] T142 [US16] Built-in fixed kinds by convention and SUG5 (FR-112, SC-002; 2 units). Red/green: the goldens, the S0
-  golden and the search goldens stay unchanged. Convert the built-in fixed node kinds; their search entries become
-  generated metadata (SUG5).
-- [ ] T143 [P] [US16] ADR-0026 (FR-112, FR-116; 1 unit). Write `docs/adr/0026-node-kinds-by-convention.md`, including
-  the amendment content the plan names (`PrepareFromSearchAsync`, offers from typed pins). ADR index.
-
-### Batch G4 — model: sonnet — T144–T146 — 4 units
-
-- [ ] T144 [US17] User theme files (FR-113, FR-114, research R24 B1; 2 units; load `avalonia-styling`). Test first:
-  "Duplicate theme" writes `<config>/NetPrints/themes/<id>.nptheme.json` with the active preset's values and selects
-  it (US17 scenario 1); "Reload themes" applies edits; an unknown token is ignored with a warning, a bad value keeps the
-  base value with a warning, a newer schema is skipped with a message, and a contrast failure applies with a warning
-  naming the pairs (scenario 2); the size cap; no URLs, fonts or images; a Semi key is checked against the resources
-  loaded at runtime (unknown: warning) and its value parsed by the type of the resource it replaces, with no list of
-  Semi keys in NetPrints. Then the commands and the validation on T096's loader.
-- [ ] T145 [US17] Extension themes (FR-115, C; 1 unit). Test first: a loaded per-user `Fx` extension whose manifest
-  lists themes offers them on the Appearance page under its name, with the same validation (US17 scenario 3); a theme
-  never runs code or loads XAML. Then the wiring.
-- [ ] T146 [P] [US17] The theming guide for user and extension themes (FR-114, FR-116; 1 unit). Extend
-  `docs/guide/editor/themes.md`: the file format, the commands, the warnings, and a link to Semi's own documentation.
-
-### Batch G5 — model: sonnet — T147–T152 — 5 units
-
-- [ ] T147 Guide images (FR-088, FR-116; 1 unit). Regenerate the guide images that carry the build version with
-  `scripts/guide-screenshots.sh` on your own Xvfb display; inspect each changed PNG with the Read tool.
-- [ ] T148 The 0.3.0 release notes (FR-012, FR-116; 1 unit). Consolidate the "Unreleased" entries of
-  `.github/release-notes.md` into the 0.3.0 section: the hard break (the pin renames and every `*REMOVED*` line), the new
-  packages, the experimental ids, and the user-visible features. Check FR-116's list of guides and ADRs against `docs/`.
-- [ ] T149 The quickstart run (1 unit). Run every section of `specs/006-editor-extension-host/quickstart.md` on your own
-  display with an isolated `NETPRINTS_STATE_DIR` and `XDG_CONFIG_HOME`; record each step's result in
-  implementation-notes; fix a deviation in this batch (test first) or record it for G-F.
-- [ ] T150 SC-016, the ratchets and SC-001 (FR-117, FR-118; 1 unit). From the last CI run: every job's duration (none
-  over 15 minutes; a fifth UI shard if a shard passes 12 minutes); the trim count at most its value at the start of the
-  phase; the XAML literal ratchet not grown; 0 NPS, NPA and NPH hits in `src/`, and a test that every analyzer
-  descriptor NetPrints ships has at least one passing and one failing test (SC-001).
-- [ ] T151 The docs site (SC-017, FR-116; 1 unit). `scripts/build-docs.sh` builds with 0 broken links; every guide of
-  FR-116 and every ADR of the plan's schedule is present; `docs/adr/README.md` lists them all.
-- [ ] T152 **Checkpoint G**. Whole suite plus the E2E pass; CI green, including `CLI (Windows)`, `packages` and the
-  Godot job. Report the plan's gate G: the SC table SC-001 to SC-017 with evidence for each (SC-012 to SC-014 marked
-  "moved to P3c"), SC-016 and SC-017 from T150 and T151; the quickstart results; the owner's manual list (Windows and
-  macOS editor behaviour, two-DPI check, Cmd mapping, external terminals); the Dock check. Docs updated: the release
-  notes, the guide images, the themes guide, the extensions guide, ADR-0026, ADR-0032.
-
-### Batch G-R — model: opus — T153 (sub-phase review)
-
-- [ ] T153 Review sub-phase G against its decision corpus (ADR-0026, ADR-0032, ADR-0035, ADR-0036, spec US16 and US17,
-  FR-109–FR-116, research R14, R24, R31, contracts/extension-api.md §2, §6, contracts/analyzer-diagnostics.md §3, §6)
-  and the Checkpoint G SC table. Findings to the PR and to implementation-notes under "Review G". No code changes.
-
-### Batch G-F — model: sonnet — T154 (reserved: fix review findings)
-
-- [ ] T154 Fix every finding of T153 (test first for behaviour findings), reply on each thread, whole suite plus the
-  E2E pass, push; "no findings" if there were none.
+| IDs | Content | Where it went |
+|---|---|---|
+| T136–T137 | R6: the value-editor contract, inspector sections, value editors (FR-109, NPXE0014) | P3b |
+| T138–T140 | N2 graph rules with NPK014 (FR-110), ADR-0032, N5 translation context (FR-111, NPXE0015, NPXE0016) | P3b |
+| T141–T143 | S7 node kinds by convention, SUG5, ADR-0026 (FR-112, NPXE0017, NPA030–NPA033) | P3b |
+| T144–T146 | B1 user theme files, C extension themes, the themes guide additions (FR-113–FR-115) | P3b |
+| T147–T151 | Guide images, the 0.3.0 release notes, the quickstart run, SC-016 and the ratchets, the docs site | stays in P3: folded into T157 |
+| T152 | Checkpoint G and its SC table | stays in P3: the SC table is folded into T157 |
+| T153–T154 | Review and fixes of sub-phase G | P3b (the P3 reviews are the five checkpoints) |
 
 ---
 
-## Phase 10: Final review and merge preparation
+## Phase 10: Final review and merge preparation (the fifth checkpoint)
 
-### Batch PR-R — model: opus — T155 (final PR review)
+### Batch PR-R — model: opus — T155 (final review, checkpoint 5)
 
 - [ ] T155 A light final review of the whole PR by a reviewer who did not implement it. It covers integration across
   sub-phases, not each sub-phase again: the analyzers ↔ the sweep ↔ the hygiene analyzers that replaced tests; the
   composition gates ↔ the perf numbers; the typed pins ↔ the renames ↔ the S0 golden ↔ `NodePins` files ↔ the release
   notes; the Abstractions split ↔ the facet ↔ the Null Object in the CLI; the packages ↔ validation ↔ the kit ↔ the
   template ↔ `verify` ↔ the Godot sample; groups ↔ every surface ↔ failure isolation; settings ↔ the schema ↔ the
-  pages ↔ key bindings ↔ presets; run profiles in the editor ↔ the CLI; docs ↔ behaviour; and the Checkpoint G SC
-  table. Findings to the PR and to implementation-notes under "Final review".
+  pages ↔ key bindings ↔ presets; run profiles in the editor ↔ the CLI; docs ↔ behaviour; and the SC table so far
+  (SC-001 to SC-015 from the sub-phase gate reports; SC-016 and SC-017 are checked in T157). Findings to the PR and to
+  implementation-notes under "Final review".
 
 ### Batch PR-F — model: sonnet — T156 (reserved: fix final review findings)
 
 - [ ] T156 Fix every finding of T155 (test first for behaviour findings), reply on each thread, whole suite plus the
   E2E pass, push; "no findings" if there were none.
 
-### Batch PR-M — model: sonnet — T157 (merge preparation)
+### Batch PR-M — model: sonnet — T157 (release preparation and merge preparation; 5 units)
 
-- [ ] T157 Merge `origin/master` into `006-editor-extension-host` (a merge commit, no rebase; resolve conflicts keeping
-  both sides' intent), whole suite plus the E2E pass, push, and wait until `CI` and `CLI (Windows)` are green. Update the
-  PR description (summary, decisions, deferrals, the owner's manual list, a link to the SC table), then mark PR #20
-  ready (`gh pr ready 20 --repo danielmeza/netprints`). The owner merges. The v0.3.0 release, tags and NuGet pushes
-  need the owner's OK; the roadmap and constitution edits after the merge belong to the coordinator.
+- [ ] T157 Release preparation (the old T147–T152, kept in P3), then merge preparation. In this order:
+  1. Guide images (FR-088, FR-116; 1 unit). Regenerate the guide images that carry the build version with
+     `scripts/guide-screenshots.sh` on your own Xvfb display; inspect each changed PNG with the Read tool.
+  2. The 0.3.0 release notes (FR-012, FR-116; 1 unit). Consolidate the "Unreleased" entries of
+     `.github/release-notes.md` into the 0.3.0 section: the hard break (the pin renames and every `*REMOVED*` line), the
+     new packages, the experimental ids, and the user-visible features. Check FR-116's list of guides and ADRs against
+     `docs/`.
+  3. The quickstart run (1 unit). Run every section of `specs/006-editor-extension-host/quickstart.md` (section 13 is
+     P3b's) on your own display with an isolated `NETPRINTS_STATE_DIR` and `XDG_CONFIG_HOME`; record each step's result
+     in implementation-notes; fix a deviation here (test first).
+  4. SC-016, the ratchets and SC-001 (FR-117, FR-118; 1 unit). From the last CI run: every job's duration (none over 15
+     minutes; a fifth UI shard if a shard passes 12 minutes); the trim count at most its value at the start of the
+     phase; the XAML literal ratchet not grown; 0 NPS, NPA and NPH hits in `src/`, and a test that every analyzer
+     descriptor NetPrints ships has at least one passing and one failing test (SC-001).
+  5. The docs site (SC-017, FR-116; 1 unit). `scripts/build-docs.sh` builds with 0 broken links; every guide of FR-116
+     and every ADR of the plan's schedule is present; `docs/adr/README.md` lists them all.
+  6. The SC table: SC-001 to SC-017 with evidence for each (SC-012 to SC-014 marked "moved to P3c"); the quickstart
+     results; the owner's manual list (Windows and macOS editor behaviour, two-DPI check, Cmd mapping, external
+     terminals); the Dock check. Docs updated: the release notes, the guide images, the themes guide, the extensions
+     guide.
+  7. Merge `origin/master` into `006-editor-extension-host` (a merge commit, no rebase; resolve conflicts keeping both
+     sides' intent), whole suite plus the E2E pass, and push; do not wait for CI. Update the PR description (summary,
+     decisions, deferrals, the owner's manual list, a link to the SC table). The coordinator watches `CI` and `CLI
+     (Windows)` and marks PR #20 ready (`gh pr ready 20 --repo danielmeza/netprints`) once both are green. The owner
+     merges. The v0.3.0 release, tags and NuGet pushes need the owner's OK; the roadmap and constitution edits after the
+     merge belong to the coordinator.
 
 ---
 
 ## Dependencies and execution order
 
-- Batches run strictly in order: A1 → … → A5 → A-R → A-F → B1 → … → B-F → C1a → … → C1-F → C2a → … → C2-F → D1a → …
-  → D1-F → D2a → … → D2-F → E1 → … → E-F → F1 → F2 → F-R → F-F → G1 → … → G-F → PR-R → PR-F → PR-M (one agent at a
-  time, AGENTS.md). A review batch reads the finished sub-phase; its fix batch closes it.
+- Batches run strictly in order: A1 → … → A5 → B1 → … → B7 → B-R → B-F → C1a → … → C1f → C2a → … → C2f → C2-R → C2-F
+  → D1a → … → D1g → D2a → … → D2d → D2-R → D2-F → E1 → … → E5 → F1 → F2 → F-R → F-F → PR-R → PR-F → PR-M (one agent at
+  a time, AGENTS.md). A review batch reads the finished pair of sub-phases; its fix batch closes the checkpoint.
+  A-R, A-F, C1-R, C1-F, D1-R, D1-F, E-R and E-F do not exist (merged); G1–G5, G-R and G-F moved to P3b.
+- Every batch starts by checking CI at the previous head and fixing any red first (plan "Process: CI and checkpoints").
 - Gates stop the chain: T007 (M5) decides T008 and T053–T055; T053's M1 and T055's M2 stop the migration at the failed
   step (FR-004); T026 (pack spike) decides T106's reference; T073 (publish gate) freezes the public shape for every
-  later batch; T133 (scope rule) decides which of T136–T146 run.
+  later batch.
 - Within A: the NPS rules (T004) and the sweep (T005) come before every other code change, so later batches follow the
   layout from the start. T012 (unknown members) lands before any new document field: the `out`/`ref` pins (T035) and
   `kindVersion` (T067). T008 (registration generator) and T011 (validators) feed the composition steps T053–T055.
@@ -1213,10 +1167,10 @@ quickstart.md end to end. **Gate (plan)**: SC-016, SC-017, all SCs; then the fin
   contexts (T052) before the facet's descriptors (T060–T065); the C# target types (T047) before `Requires` (T051) and
   the availability filter (T131); the templates with files (T066) before the template package (T106, T130) and
   `netprints new` (T129); the settings page kind (T068) before the Settings document (T089); the manifest `themes`
-  field (T069) before extension themes (T145).
+  field (T069) is consumed by P3b's extension themes.
 - D1: groups (T079) before surfaces (T080) and isolation (T081); the store and schema (T086–T088) before the pages
   (T089, T090); the resolver of gestures (T092) before the page (T093) and the E2E (T094); the catalogue (T095) before
-  the presets (T096), whose loader B1 reuses (T144).
+  the presets (T096), whose loader P3b's B1 reuses.
 - D2 needs C2's packages (T071) and D1's settings pages (the Godot sample's page). The kit (T101) comes before every
   check; `NetPrints.Templates` is created in T106 and gains the project templates in T130. The Godot sample (T109) ships
   the template whose profiles E tests (T125).
@@ -1226,7 +1180,7 @@ quickstart.md end to end. **Gate (plan)**: SC-016, SC-017, all SCs; then the fin
 ## Parallel opportunities (inside a batch, for a single agent)
 
 - A1: T003 ∥ T001–T002. B6: T032 ∥ T033 (and both ∥ T031). C1a: T042 ∥ T040–T041. D1e: T091 ∥ T089–T090. D1g: T097 ∥
-  T095–T096. D2b: T105 ∥ T103–T104. G2: T139 ∥ T138, T140. G3: T143 ∥ T141–T142. G4: T146 ∥ T144–T145.
+  T095–T096. D2b: T105 ∥ T103–T104.
 
 ## Implementation strategy
 
@@ -1234,37 +1188,37 @@ quickstart.md end to end. **Gate (plan)**: SC-016, SC-017, all SCs; then the fin
    packages with the stable API, and extensions on every editor surface (plan "Order rationale").
 2. Then the features on the frozen API, in story-priority order: settings, shortcuts, presets and `--profile` (D1);
    the author kit and the Godot sample (D2); run profiles (E); `netprints new` and the C# target in the editor (F).
-3. G is the tail behind the scope rule, then the release preparation, the final review (T155), its fixes (T156) and
-   the merge preparation (T157).
-4. Every sub-phase X is closed by its review (X-R) and fix batch (X-F), so defects are caught per sub-phase, and the
-   final review checks only integration.
+3. The tail (old G) is P3b's. P3 ends with the final review (T155), its fixes (T156) and the release and merge
+   preparation (T157).
+4. Defects are caught at five checkpoints: A+B, C1+C2, D1+D2, E+F (each a review batch and a fix batch) and the final
+   review, which checks only integration.
 
 ## Task counts
 
-| Sub-phase | Tasks | Implementation batches (units) | Review, fix, merge |
+| Sub-phase | Active tasks | Implementation batches (units) | Review, fix, merge |
 |---|---|---|---|
-| A — foundation | 18 (T001–T018) | A1 4, A2 3, A3 3, A4 4, A5 5 = 19 | A-R, A-F |
-| B — node model and search | 21 (T019–T039) | B1 3, B2 4, B3 4, B4 3, B5 4, B6 3, B7 5 = 26 | B-R, B-F |
-| C1 — public contracts | 20 (T040–T059) | C1a 4, C1b 4, C1c 4, C1d 5, C1e 4, C1f 3 = 24 | C1-R, C1-F |
-| C2 — facets and the publish gate | 19 (T060–T078) | C2a 4, C2b 4, C2c 4, C2d 3, C2e 4, C2f 3 = 22 | C2-R, C2-F |
-| D1 — extension host in the editor | 22 (T079–T100) | D1a 4, D1b 4, D1c 3, D1d 4, D1e 4, D1f 3, D1g 4 = 26 | D1-R, D1-F |
-| D2 — author kit and the Godot sample | 12 (T101–T112) | D2a 4, D2b 4, D2c 4, D2d 3 = 15 | D2-R, D2-F |
-| E — run and build | 16 (T113–T128) | E1 4, E2 3, E3 4, E4 3, E5 3 = 17 | E-R, E-F |
-| F — command line and the C# target in the editor | 7 (T129–T135) | F1 3, F2 3 = 6 | F-R, F-F |
-| G — tail and release preparation | 19 (T136–T154) | G1 4, G2 4, G3 5, G4 4, G5 5 = 22 | G-R, G-F |
-| Final review and merge | 3 (T155–T157) | — | PR-R, PR-F, PR-M |
-| **Total** | **157** | **47 batches, 177 units** | **21 batches** |
+| A — foundation | 16 (T001–T016); T017, T018 merged | A1 4, A2 3, A3 3, A4 4, A5 5 = 19 | into B-R, B-F (A+B) |
+| B — node model and search | 21 (T019–T039) | B1 3, B2 4, B3 4, B4 3, B5 4, B6 3, B7 5 = 26 | B-R (T038), B-F (T039) |
+| C1 — public contracts | 18 (T040–T057); T058, T059 merged | C1a 4, C1b 4, C1c 4, C1d 5, C1e 4, C1f 3 = 24 | into C2-R, C2-F (C1+C2) |
+| C2 — facets and the publish gate | 19 (T060–T078) | C2a 4, C2b 4, C2c 4, C2d 3, C2e 4, C2f 3 = 22 | C2-R (T077), C2-F (T078) |
+| D1 — extension host in the editor | 20 (T079–T098); T099, T100 merged | D1a 4, D1b 4, D1c 3, D1d 4, D1e 4, D1f 3, D1g 4 = 26 | into D2-R, D2-F (D1+D2) |
+| D2 — author kit and the Godot sample | 12 (T101–T112) | D2a 4, D2b 4, D2c 4, D2d 3 = 15 | D2-R (T111), D2-F (T112) |
+| E — run and build | 14 (T113–T126); T127, T128 merged | E1 4, E2 3, E3 4, E4 3, E5 3 = 17 | into F-R, F-F (E+F) |
+| F — command line and the C# target in the editor | 7 (T129–T135) | F1 3, F2 3 = 6 | F-R (T134), F-F (T135) |
+| G — tail: moved to P3b | 0 (T136–T154 reserved, 19 IDs) | — (was G1–G5, 22 units; 5 units of release preparation moved to PR-M) | — |
+| Final review and merge | 3 (T155–T157) | PR-M carries 5 units of release preparation | PR-R, PR-F, PR-M |
+| **Total** | **130 active of 157 IDs** (19 reserved for P3b, 8 merged) | **42 batches, 155 units** (+5 units in PR-M = 160) | **11 batches** (4 review, 4 fix, PR-R, PR-F, PR-M) |
 
-68 batches in all. The units refine plan.md's first estimate per sub-phase, and its table now carries them: A 19 (was
-16: the M5 spike and the carry-overs are sized separately), B 26 (25), D1 26 (25), D2 15 (14), G 22 in 5 batches (at
-most 31 in 8: the docs moved into the sub-phases they belong to, and the tail's sizes stay estimates until Checkpoint
-F); C1, C2, E and F are unchanged. The total, 177 units, stays within the plan's "about 180", so the roadmap
-re-estimate in plan.md's governance proposals is unchanged.
+53 batches in all (68 before S2d). The units refine plan.md's first estimate per sub-phase, and its table carries them:
+A 19 (was 16: the M5 spike and the carry-overs are sized separately), B 26 (25), D1 26 (25), D2 15 (14); C1, C2, E and F
+are unchanged. The total, 160 units, is within the plan's "about 160". Five review checkpoints replace the nine
+per-sub-phase reviews.
 
 ## Requirement coverage
 
 Every active FR and SC maps to at least one task. US12–US14, FR-089–FR-106 and SC-012–SC-014 moved to P3c and have no
-task (T152 lists them as moved).
+task (T157 lists them as moved). US16, US17 and FR-109–FR-115 moved to P3b and have no task (T136–T154 are
+reserved).
 
 | Requirement | Tasks |
 |---|---|
@@ -1275,11 +1229,11 @@ task (T152 lists them as moved).
 | FR-005 | T009, T010 |
 | FR-006 | T011, T088 |
 | FR-007 | T012 |
-| FR-008 | T001, T003, and every rule and generator task (T004, T008, T009, T025, T027, T030, T045, T074, T075, T141) |
+| FR-008 | T001, T003, and every rule and generator task (T004, T008, T009, T025, T027, T030, T045, T074, T075) |
 | FR-009 | T024 |
 | FR-010 | T024, T025, T027, T028, T029, T032 |
 | FR-011 | T030 |
-| FR-012 | T031, T148 |
+| FR-012 | T031, T157 |
 | FR-013, FR-014 | T035 |
 | FR-015 | T034 |
 | FR-016 | T019, T020, T021, T022 |
@@ -1287,7 +1241,7 @@ task (T152 lists them as moved).
 | FR-018 | T033 |
 | FR-019 | T040, T042 |
 | FR-020 | T070, T071, T073 |
-| FR-021 | T051, T060, T061, T062, T064, T065, T068 (tail kinds: T136, T137, T138) |
+| FR-021 | T051, T060, T061, T062, T064, T065, T068 (inspector sections, value editors and graph rules: P3b) |
 | FR-022 | T052 |
 | FR-023 | T060 |
 | FR-024 | T063 |
@@ -1335,29 +1289,23 @@ task (T152 lists them as moved).
 | FR-074 | T132 |
 | FR-075 | T050 |
 | FR-076 | T101, T102, T103 |
-| FR-077 | T103, T138 |
-| FR-078 | T102, T103, T104, T138 |
+| FR-077 | T103 (NPK014: P3b) |
+| FR-078 | T102, T103, T104 |
 | FR-079 | T106 |
 | FR-080 | T106, T107 |
 | FR-081 | T108, T109 |
 | FR-082, FR-083 | T013 |
 | FR-084 | T015 |
 | FR-085–FR-087 | T014 |
-| FR-088 | T085, T147, every checkpoint (Dock check, `ShellMainFlow`) |
+| FR-088 | T085, T157, every sub-phase gate (Dock check, `ShellMainFlow`) |
 | FR-107 | T129 |
 | FR-108 | T106, T130 |
-| FR-109 | T136, T137 |
-| FR-110 | T138, T139 |
-| FR-111 | T140 |
-| FR-112 | T141, T142, T143 |
-| FR-113 | T144 |
-| FR-114 | T144, T146 |
-| FR-115 | T145 |
-| FR-116 | T003, T023, T032, T036, T042, T046, T056, T071, T072, T091, T094, T097, T105, T107, T125, T129, T139, T143, T146, T147, T148, T151 |
-| FR-117 | T021, T033, T150 |
-| FR-118 | T002, T084, T094, T101, T124, T150 |
-| SC-001 | T004, T005, T027, T074, T075, T076, T150 |
-| SC-002 | T019, T022, T029, T031, T035, T037, T142 |
+| FR-109–FR-115 | moved to P3b (T136–T146 reserved) |
+| FR-116 | T003, T023, T032, T036, T042, T046, T056, T071, T072, T091, T094, T097, T105, T107, T125, T129, T157 |
+| FR-117 | T021, T033, T157 |
+| FR-118 | T002, T084, T094, T101, T124, T157 |
+| SC-001 | T004, T005, T027, T074, T075, T076, T157 |
+| SC-002 | T019, T022, T029, T031, T035, T037 |
 | SC-003 | T071, T073, T109, T110 |
 | SC-004 | T081, T083, T098 |
 | SC-005 | T006, T053, T055, T057, T076 |
@@ -1366,10 +1314,10 @@ task (T152 lists them as moved).
 | SC-008 | T114, T115, T118, T124, T126 |
 | SC-009 | T096, T098 |
 | SC-010 | T049, T057, T133 |
-| SC-011 | T102, T103, T106, T110, T138 |
+| SC-011 | T102, T103, T106, T110 |
 | SC-015 | T014, T015, T016 |
-| SC-016 | every checkpoint, T150 |
-| SC-017 | T151 |
+| SC-016 | every sub-phase gate, T157 |
+| SC-017 | T157 |
 
 ## ADR schedule coverage
 
@@ -1380,8 +1328,8 @@ task (T152 lists them as moved).
 | 0027 | T046 |
 | 0030 | T042 (split), T072 (facet, CLI trust) |
 | 0041 | T107 |
-| 0032, 0026 | T139, T143 |
-| Amendments | ADR-0003: T003 (StyleCop note), T015 (FU-5 records), T074; ADR-0007: T074; ADR-0023: T046; ADR-0020, ADR-0021: T072; ADR-0010: T104; ADR-0035: T133; ADR-0026: T143 |
+| 0032, 0026 | moved to P3b |
+| Amendments | ADR-0003: T003 (StyleCop note), T015 (FU-5 records), T074; ADR-0007: T074; ADR-0023: T046; ADR-0020, ADR-0021: T072; ADR-0010: T104; ADR-0035: T133 (B1 and C placement: P3b); the ADR-0026 amendment moved to P3b |
 
 ## Analysis
 
@@ -1413,12 +1361,16 @@ LOW, recorded and left as they are:
 
 - The spec's Clarifications answer 1 still names B17's v1, the gallery cut lines and Checkpoint E; the 2026-10-16
   session narrows it in place, and the clarifications stay a dated record.
-- plan.md lists ADR-0026 both as a new ADR and among the amendments. ADR-0026 is not written yet, so T143 writes it once,
+- plan.md lists ADR-0026 both as a new ADR and among the amendments. ADR-0026 is not written yet; P3b writes it once,
   with the amendment content (`PrepareFromSearchAsync`, offers from typed pins).
 - research R4 says "Checkpoints C1 and C"; C is C2. Research is the decision record and is not edited here.
 - Batch A5 holds five 1-unit tasks (the plan's rule is 2–4 related tasks, up to 6 when mechanical); three are small
   carry-over fixes and one is a mechanical triage. The coordinator may move T015 to a batch of its own if A5's context
   grows.
-- The model-driven grid (FR-112, "MAY") has no task: it stays in P3b unless T133 keeps it.
-- The roadmap's P3 estimate (about 2.5 weeks against about 20 weeks of batches) waits for the owner; this batch does not
-  edit the roadmap.
+- The model-driven grid (FR-112) has no task: it moved to P3b with the tail.
+- The roadmap's P3 estimate (about 2.5 weeks against about 20 weeks of batches) waited for the owner; batch P3-S2d
+  states it as about 4 weeks in agent time.
+
+Batch P3-S2d (2026-10-16) later moved the tail (T136–T154) to P3b, merged the per-sub-phase reviews into five
+checkpoints and changed the CI process. This analysis is the record of S2c; the counts above are superseded by "Task
+counts" (12 active stories, 93 active FRs, 14 SCs).

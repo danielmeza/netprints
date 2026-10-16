@@ -36,7 +36,8 @@
   them; the design choices behind them belong to plan.md, research.md and the ADRs the plan lists.
 - User Stories 1 and 2 are contributor-facing (analyzer and generator infrastructure, the node model before the API
   freezes); their criteria (SC-001, SC-002, SC-005) are measured on the build, the goldens and the perf job.
-- The roadmap's size for P3 is stale; the scope rule (Clarifications, question 1) bounds what may be cut and where.
+- The roadmap's size for P3 was stale; since 2026-10-16 it is about 4 weeks in agent time (the tail moved to P3b and
+  the scope rule is gone).
 - Validated in one iteration on 2026-10-15; the clarify session's five answers are in the spec's Clarifications, and
   the two architectural ones in ADR-0040.
 - Revalidated on 2026-10-16 after the owner moved the package work to roadmap phase P3c (Clarifications, session

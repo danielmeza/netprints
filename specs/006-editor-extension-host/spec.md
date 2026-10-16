@@ -24,6 +24,10 @@ manager and samples from remote sources moved to roadmap phase P3c (Clarificatio
 (User Stories 12 to 14, FR-089 to FR-106, SC-012 to SC-014) stay below, marked "moved to P3c", and are not reused; the
 boundary calls are in the Assumptions.
 
+**Scope split 2 (owner, 2026-10-16)**: the tail (inspector sections, value editors, graph rules and user and extension
+themes, plan sub-phase G) moved to roadmap phase P3b. Its IDs (User Stories 16 and 17, FR-109 to FR-115) stay below,
+marked "moved to P3b", and are not reused. FR-116 stays in P3. P3 is about 4 weeks in agent time.
+
 **Sources reused**: the roadmap's P3 section, including "Carried over from P2" and "Carried over from P3a"; the
 deferrals of the P3a spec (`specs/005-editor-shell/spec.md`: Assumptions and the deferred lines after FR-089) and its
 final notes; constitution 1.2.4; ADR-0010, ADR-0017, ADR-0020, ADR-0021, ADR-0023, ADR-0031 and ADR-0033 to ADR-0039;
@@ -47,7 +51,8 @@ ADRs; the reason follows each answer. Answers 3 and 4 are architectural and are 
   the sample gallery's screenshots, `localized` and update badge to v1.1; B1 and C (user and extension themes) to P6;
   the model-driven property grid to P3b; S7 and SUG5, R6, N2 and N5 to P6. Each is taken only at the checkpoint before
   the work it cuts (B17's v1 and the gallery's v1.1 items at Checkpoint E, the tail items at Checkpoint F) and recorded
-  in the implementation notes. Items the roadmap marks "v1.1" (the `netprints
+  in the implementation notes (the session 2026-10-16 answers below supersede the Checkpoint E and F cut lines). Items
+  the roadmap marks "v1.1" (the `netprints
   package` and `netprints extension` command verbs other than `verify`) are out of P3. Reason: the owner placed these
   items in P3, and the named fallbacks are already-decided cut lines, so nothing is re-scoped silently.
 - Q: How long do an extension's editor contributions live, and which copy wins when the same extension comes from a
@@ -101,12 +106,23 @@ The owner answered the two questions the coordinator asked after the spec was wr
   New project and the template list; the samples gallery filter moves to P3c with the sample manifest's `profile`.
 - Q: Are the coordinator's process defaults (one spec and one PR, core first, the P3a batch and review process)
   confirmed? → A: Yes, by the same answer; the Planning Notes record them.
+- Q: Should the tail (sub-phase G: inspector sections, value editors, graph rules, translator helpers, node kinds by
+  convention, user and extension themes) stay in P3 behind the Checkpoint F scope rule? → A: No. The owner approved
+  moving it to P3b. User Stories 16 and 17 and FR-109 to FR-115 moved there, with their IDs kept and marked "moved to
+  P3b". No success criterion was tied only to them. FR-116 (the docs) and the 0.3.0 release preparation stay in P3.
+  This narrows answer 1: the Checkpoint F scope rule no longer exists, and the P6 fallbacks it named for R6, N2, N5, S7,
+  SUG5, B1 and C are no longer P3 cut lines (P3b decides their placement). The manifest `themes` field (FR-029) stays
+  in P3, because it must exist before the packages publish; P3b consumes it.
+- Q: Does each sub-phase end with its own review? → A: No. Reviews run at five checkpoints: A+B, C1+C2, D1+D2, E+F and
+  the final review. Each checkpoint is one adversarial review batch plus one fix batch. The sub-phase gate reports stay
+  in tasks.md. The implementers push and return without waiting for CI; the coordinator watches the PR's CI.
 
 ## User Scenarios & Testing *(mandatory)*
 
 The stories are ordered by priority. **MVP slice: User Stories 1–4**, core first: the analyzer and generator
 foundation, the node model reshaped before the API freezes, the published packages, and extensions contributing to the
-editor. Each later story is independently testable on top of the MVP. Priority P4 marks the tail, which the scope rule
+editor. Each later story is independently testable on top of the MVP. The tail (User Stories 16 and 17, priority P4)
+moved to P3b.
 in the Clarifications may move out of P3.
 
 ### User Story 1 - Analyzer and generator foundation (Priority: P1)
@@ -475,51 +491,17 @@ files as the editor's New project with the Console template, and the project bui
 
 ---
 
-### User Story 16 - Inspector sections, value editors and graph rules (Priority: P4)
+### User Story 16 - Inspector sections, value editors and graph rules (moved to P3b)
 
-An extension author adds sections to the inspector for variables, methods and classes, contributes editors for pin and
-default values of its types, adds graph rules whose diagnostics appear in Errors and in `netprints build`, and reaches
-the translation context for helper members; built-in node kinds are declared by convention.
-
-**Why this priority**: The additive tail of the SOLID plan (R6, N2, N5, S7 and SUG5); each is experimental, and each
-can move to P6 (R6's grid to P3b) under the scope rule.
-
-**Independent Test**: The test extension contributes an inspector section, a value editor for one of its types and a
-graph rule: each appears, the rule's diagnostic shows in Errors and fails `netprints build`, and the extension's
-conformance tests cover all three.
-
-**Acceptance Scenarios**:
-
-1. **Given** an extension inspector section that applies to variables, **When** a variable is selected, **Then** the
-   section appears below the built-in ones and edits the model with undo.
-2. **Given** an extension value editor for a type, **When** an unconnected pin or a default of that type is edited,
-   **Then** the extension's editor is used; without the extension, the generic editor is.
-3. **Given** a graph rule that flags a pattern, **When** the graph has it, **Then** Errors lists the diagnostic in the
-   editor, and `netprints build` and `generate` report it with the same code.
+Moved to roadmap phase P3b on 2026-10-16 (Clarifications, session 2026-10-16), with FR-109 to FR-112 (R6, N2, N5, S7
+and SUG5). The experimental ids NPXE0014 to NPXE0017, ADR-0032, ADR-0026 and the check NPK014 move with it.
 
 ---
 
-### User Story 17 - Themes from users and extensions (Priority: P4)
+### User Story 17 - Themes from users and extensions (moved to P3b)
 
-A user duplicates a preset into a theme file, edits it, reloads it, and adds extensions that ship themes to their user
-extension directories. Themes are data and never run code.
-
-**Why this priority**: B1 and C of ADR-0035; the owner wants community themes as plugins, and both move to P6 if P3 has
-no room. Distributing theme extensions through the extension manager's Browse tab comes with P3c.
-
-**Independent Test**: Duplicate NetPrints Dark, change two tokens and a Semi key in the file, Reload: the editor shows
-the change; a token with a bad value keeps the base value and is warned about; an extension's theme appears in the
-preset lists while the extension is loaded.
-
-**Acceptance Scenarios**:
-
-1. **Given** "Duplicate theme", **When** the user runs it, **Then** a `*.nptheme.json` file with the active preset's
-   values is written to the per-user themes folder and selected.
-2. **Given** a theme file with an unknown token, a bad value, a newer schema or a failing contrast pair, **When** it is
-   loaded, **Then** the unknown token is ignored with a warning, the bad value keeps the base value with a warning, the
-   newer file is skipped with a message, and a contrast failure applies with a warning naming the pairs.
-3. **Given** a loaded per-user extension whose manifest lists themes, **When** the Appearance page opens, **Then**
-   those themes are offered under the extension's name.
+Moved to roadmap phase P3b on 2026-10-16, with FR-113 to FR-115 (B1 and C of ADR-0035). P3 keeps the theme presets (US8)
+and the manifest `themes` field (FR-029), which P3b consumes.
 
 ---
 
@@ -625,7 +607,7 @@ preset lists while the extension is loaded.
 - **FR-021**: The contribution kinds MUST be public descriptors in the Abstractions package: commands, panels, dashboard
   tiles, project templates, context-menu items, tooltip providers, go-to providers (P3a), plus status-bar items (C-15),
   settings pages, dialogs (R4), node search providers (SUG4), document migrations (N4), view resources and icon ids
-  (N8, ADR-0021) and, in the tail, inspector sections, value editors and graph rules (US16). The built-in editor MUST
+  (N8, ADR-0021); inspector sections, value editors and graph rules moved to P3b (FR-109, FR-110). The built-in editor MUST
   register all of its own contributions through the same public API, as the built-in editor extension; the built-in
   status-bar segments (error and warning counts, build state, run state, zoom, selection count) MUST be status-bar
   items.
@@ -650,7 +632,8 @@ preset lists while the extension is loaded.
 - **FR-028**: `CSharpLanguageVersion` and a minimal `CSharpTarget` MUST be public and stable before the publish gate;
   `CSharpFeature` and `Requires` on node-search entries MUST be experimental under a new NPXE id (ADR-0038 decision 9).
 - **FR-029**: The extension manifest MUST accept a `themes` field (a list of theme files) before the packages publish,
-  with a `netprintsApi` minor version that declares it (ADR-0035).
+  with a `netprintsApi` minor version that declares it (ADR-0035). The field is accepted and validated in P3; offering
+  those themes on the Appearance page is FR-115, in P3b.
 - **FR-030**: Every API that is still settling MUST carry `[Experimental]` with an NPXE id listed in the extension
   guide (ADR-0017); the plan assigns the ids.
 - **FR-031**: After the publish gate, the hygiene analyzers NPH001 to NPH006 (S5) and the command analyzer (S6) MUST run
@@ -869,28 +852,17 @@ These IDs moved to roadmap phase P3c on 2026-10-16 and are not reused in P3.
   `netprints-library` and `netprints-extension`, generated from the same files as the registry's templates; a test MUST
   compare their output with the editor's New project.
 
-**Tail: inspector sections, value editors, graph rules (US16)**
+**Tail: inspector sections, value editors, graph rules (US16), themes from users and extensions (US17): moved to P3b**
 
-- **FR-109**: Extensions MUST be able to contribute inspector sections for variables, methods and classes, and editors
-  for pin and default values (R6), through the value-editor contract of ADR-0036 shared by pins, variable and parameter
-  defaults and grid rows; the built-in inspectors MUST register the same way. All of it is experimental.
-- **FR-110**: Extensions MUST be able to contribute graph rules (N2, ADR-0032) whose diagnostics appear in Errors and in
-  `netprints build` and `generate` with the same codes.
-- **FR-111**: Node translators MUST be able to add usings and helper members through the translation context (N5).
-- **FR-112**: Built-in fixed node kinds SHOULD be declared by convention (S7: inferred document, translator and
-  `On<Pin>` dispatch, generated registration) with their search entries as generated metadata (SUG5, ADR-0026); the
-  model-driven grid with contributed editors MAY land here, otherwise in P3b.
+These IDs moved to roadmap phase P3b on 2026-10-16 and are not reused in P3.
 
-**Tail: themes from users and extensions (US17)**
-
-- **FR-113**: User theme files (`*.nptheme.json` in the per-user themes folder, ADR-0033) MUST follow ADR-0035 decision
-  8 (schema version, id, label, base, a sparse token map, alias table, size cap; no URLs, fonts or images) with Reload
-  themes and Duplicate theme; contrast failures warn and apply.
-- **FR-114**: A theme MAY set Semi resources; each key MUST be checked against the resources loaded at runtime (unknown
-  key: warning) and each value parsed by the type of the resource it replaces; NetPrints MUST NOT keep a list of Semi
-  keys, and the theming guide links to Semi's own documentation.
-- **FR-115**: Themes listed in a loaded per-user extension's manifest `themes` field MUST be offered on the Appearance
-  page under the extension's name, with the same validation; a theme never runs code or loads XAML.
+- **FR-109**: Moved to P3b (inspector sections and value editors, R6, with the value-editor contract of ADR-0036).
+- **FR-110**: Moved to P3b (graph rules, N2, ADR-0032).
+- **FR-111**: Moved to P3b (translation context additions, N5).
+- **FR-112**: Moved to P3b (node kinds by convention, S7 and SUG5, and the model-driven grid).
+- **FR-113**: Moved to P3b (user theme files, Reload themes and Duplicate theme).
+- **FR-114**: Moved to P3b (Semi resources in themes, checked at runtime).
+- **FR-115**: Moved to P3b (themes from a loaded extension's manifest `themes` field).
 
 **Docs, release and CI (all stories)**
 
@@ -993,7 +965,7 @@ These IDs moved to roadmap phase P3c on 2026-10-16 and are not reused in P3.
   P3's scope.
 - Boundary calls of the P3c split (2026-10-16). The package work moved out; each remaining story keeps the minimum it
   needs from the host:
-  - **Per-user extensions (Clarifications answer 2, FR-032, US4, US15, US17)**: the app group loads, at editor start,
+  - **Per-user extensions (Clarifications answer 2, FR-032, US4, US15)**: the app group loads, at editor start,
     the extensions in the configured extension directories (`netprints.extensionPaths`, `NETPRINTS_EXTENSION_PATH`),
     which the editor already reads; the Settings page for extension directories (FR-044) is how a user adds one. The
     managed per-user folder `<data>/extensions/<id>/<version>/`, its enabled or disabled state and the "Incompatible"
@@ -1010,8 +982,8 @@ These IDs moved to roadmap phase P3c on 2026-10-16 and are not reused in P3.
     samples carry no profile, so the samples gallery filter comes with the sample manifest's `profile` in P3c.
   - **Start page samples**: P3a's samples tile and its bundled HelloWorld sample stay as they are until P3c replaces
     them (FR-106).
-  - **Extension themes (US17, ADR-0035 C)**: the Appearance page offers the themes of loaded per-user extensions; their
-    distribution through the extension manager's Browse tab is P3c's.
+  - **Extension themes (US17, ADR-0035 C)**: moved to P3b with US17 (the Appearance page offering the themes of loaded
+    extensions); their distribution through the extension manager's Browse tab is P3c's.
   - **Trust**: P3 keeps the per-project trust prompt and the trusted projects setting (FR-044); the per-publisher install
     trust and its revoke list are P3c's (FR-097).
   - **Restart to apply**: the bar stays in P3 for settings that need a restart (FR-042); P3c reuses it for extension
@@ -1022,13 +994,15 @@ These IDs moved to roadmap phase P3c on 2026-10-16 and are not reused in P3.
 - **PR #19** (the owner's visual feedback on the merged P3a shell: wire follow, redock duplicates, document tabs, the
   compact Variables panel, the theme palette) is its own follow-up PR, not part of P3.
 - **P3b**: the declaration kinds registry and the SmartEnum kind example; member defaults (ADR-0036 a), editor metadata
-  (b), and the model-driven grid (c) if it does not land in the tail; user attributes and the plugin attribute
+  (b), and the model-driven grid (c); user attributes and the plugin attribute
   contracts (ADR-0039); declaration-only partial members; emission styles with requirements, NPT010, NPT011, the target
   probes, the CLI target line and the style matrix (ADR-0038's P3b slice); re-enabling Const; parameter modifiers.
+  Also the tail moved from P3 on 2026-10-16: User Stories 16 and 17, FR-109 to FR-115 (R6 inspector sections and value
+  editors with the ADR-0036 contract, N2 graph rules with ADR-0032 and NPK014, N5, S7 and SUG5 with ADR-0026, B1 user
+  themes and C extension themes, NPXE0014 to NPXE0017, NPA030 to NPA033). P3b may place any of them in P6.
 - **P6**: moving existing strings into resources (L2) and the first translation (L3); node clipboard, nudge,
   Tab-to-search, the undo history list, the Self node, keyboard access to every connection (GR-1), mouse back and
-  forward, "show all members", the custom title bar, the Publish dialog, live instance inspection; B1, C, S7, SUG5,
-  R6, N2 and N5 if the scope rule moves them.
+  forward, "show all members", the custom title bar, the Publish dialog, live instance inspection.
 - **P3c** (split from P3 on 2026-10-16): the `NetPrints.Packages` service, NuGet packages in the References dialog, the
   extension manager and its per-user folder, samples from remote sources (User Stories 12 to 14, FR-089 to FR-106,
   SC-012 to SC-014), the sample Godot extension's own sample, and the samples gallery's `--profile` filter.
@@ -1053,12 +1027,13 @@ These IDs moved to roadmap phase P3c on 2026-10-16 and are not reused in P3.
   kit).
 - The P3a execution process applies: implementation batches of 2 to 4 tasks run one after another; each sub-phase
   checkpoint gets an adversarial review and a fix batch; the PR gets a light final review; tests go in the existing
-  test projects.
+  test projects. Since 2026-10-16 the reviews run at five checkpoints (A+B, C1+C2, D1+D2, E+F, the final review),
+  implementers push and return without waiting for CI, and the coordinator watches the PR's CI (plan "Process").
 - PR #19 is not part of P3.
 
 ### Sub-phases (outline for the plan)
 
-The plan refines this outline into nine sub-phases: C splits into C1 (public contracts) and C2 (facets and the publish
+The plan refines this outline into eight sub-phases (the ninth, G, moved to P3b on 2026-10-16): C splits into C1 (public contracts) and C2 (facets and the publish
 gate), D into D1 (the host in the editor) and D2 (the author kit and the Godot sample), and F also holds the editor half
 of the C# target (US9). plan.md's sub-phase table is the one tasks.md follows.
 
@@ -1077,9 +1052,10 @@ of the C# target (US9). plan.md's sub-phase table is the one tasks.md follows.
   terminal. Checkpoint E.
 - **F, command-line templates**: `netprints new` and the `dotnet new` templates (US15). The package service, the
   Packages tab, the extension manager and the remote samples that F held moved to P3c on 2026-10-16. Checkpoint F
-  applies the scope rule to the tail.
-- **G, tail and release preparation**: R6 and the value-editor contract; N2; N5; S7 and SUG5; B1 and C; the
-  regenerated guide images; docs. Checkpoint G, then the final review.
+  has no scope rule any more.
+- **G, tail (moved to P3b on 2026-10-16)**: R6 and the value-editor contract; N2; N5; S7 and SUG5; B1 and C. The
+  release preparation it held (regenerated guide images, the 0.3.0 release notes, the quickstart run, the CI budget and
+  docs checks) stays in P3 and runs with the final review.
 
 ### ADRs
 
@@ -1091,7 +1067,7 @@ of the C# target (US9). plan.md's sub-phase table is the one tasks.md follows.
   as analyzers), ADR-0007 (E7 stays a test), ADR-0010 (conformance checks for providers, rules and contributions),
   ADR-0020 (typed contexts, contribution groups, `AppliesTo`, new kinds, label keys, menu ids, factories through DI),
   ADR-0021 (extension icon ids), ADR-0023 (Semi and Ursa locale), ADR-0026 (`PrepareFromSearchAsync`, offers from typed
-  pins), ADR-0035 (B1 and C placement once Checkpoint F decides).
+  pins), ADR-0035 (B1 and C placement: moved to P3b on 2026-10-16). ADR-0026 and ADR-0032 are written in P3b.
 
 ### Decisions taken while specifying
 
@@ -1125,4 +1101,6 @@ The item sizes in the roadmap's P3 section added up to far more than the phases 
 the Packages tab, the extension manager and the samples, about 23 days, moved to P3c on 2026-10-16. What remains still
 exceeds it: the attribute-driven core path is about 25 units and run profiles about 7 days, before the SOLID shape
 work, themes, the C# target and the kit. The plan re-estimates P3 per sub-phase and proposes the phases table update,
-which the coordinator makes with the owner's OK.
+which the coordinator makes with the owner's OK. On 2026-10-16 the tail moved to P3b as well (about 17 units), and the
+roadmap now states P3 as about 4 weeks in agent time (plan units are human half-days and overstate calendar time by
+about 5 times).
