@@ -15,6 +15,9 @@ const NetPrints.Translator.TranslationDiagnosticCodes.ConstVariableUnsupported =
 [NPXE0003]NetPrints.Translator.IMemberEmitter.EmitMember(NetPrints.Translator.MemberEmitContext! context) -> void
 [NPXE0003]NetPrints.Translator.IMemberEmitter.Id.get -> string!
 const NetPrints.Core.ExperimentalApiIds.CatalogProfiles = "NPXE0004" -> string!
+const NetPrints.Core.ExperimentalApiIds.CSharpFeatures = "NPXE0007" -> string!
+const NetPrints.Core.ExperimentalApiIds.EditorContributions = "NPXE0005" -> string!
+const NetPrints.Core.ExperimentalApiIds.NodeSearchProviders = "NPXE0006" -> string!
 const NetPrints.Core.ExperimentalApiIds.Emitters = "NPXE0003" -> string!
 const NetPrints.Core.ExperimentalApiIds.HostChannel = "NPXE0001" -> string!
 const NetPrints.Core.ExperimentalApiIds.Settings = "NPXE0002" -> string!

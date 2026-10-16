@@ -5,4 +5,27 @@ NetPrints.Reflection.ICatalogScope.GetHidingCatalogId(NetPrints.Core.TypeSpecifi
 NetPrints.Reflection.ITypeAssemblyLocator
 NetPrints.Reflection.ITypeAssemblyLocator.GetAssemblyName(NetPrints.Core.TypeSpecifier! type) -> string?
 NetPrints.Reflection.MemoizedReflectionProvider.GetHidingCatalogId(NetPrints.Core.TypeSpecifier! type) -> string?
+NetPrints.Reflection.CompositeReflectionProvider.GetMethodHint(NetPrints.Core.MethodSpecifier! method) -> NetPrints.Reflection.NodeHint?
+NetPrints.Reflection.CompositeReflectionProvider.GetTypeHint(NetPrints.Core.TypeSpecifier! type) -> NetPrints.Reflection.NodeHint?
+NetPrints.Reflection.INodeHintSource
+NetPrints.Reflection.INodeHintSource.GetMethodHint(NetPrints.Core.MethodSpecifier! method) -> NetPrints.Reflection.NodeHint?
+NetPrints.Reflection.INodeHintSource.GetTypeHint(NetPrints.Core.TypeSpecifier! type) -> NetPrints.Reflection.NodeHint?
+NetPrints.Reflection.MemoizedReflectionProvider.GetMethodHint(NetPrints.Core.MethodSpecifier! method) -> NetPrints.Reflection.NodeHint?
+NetPrints.Reflection.MemoizedReflectionProvider.GetTypeHint(NetPrints.Core.TypeSpecifier! type) -> NetPrints.Reflection.NodeHint?
+NetPrints.Reflection.NodeHint
+NetPrints.Reflection.NodeHint.Category.get -> string?
+NetPrints.Reflection.NodeHint.Category.init -> void
+NetPrints.Reflection.NodeHint.<Clone>$() -> NetPrints.Reflection.NodeHint!
+NetPrints.Reflection.NodeHint.Deconstruct(out string? DisplayName, out string? Category, out System.Collections.Generic.IReadOnlyList<string!>! Keywords) -> void
+NetPrints.Reflection.NodeHint.DisplayName.get -> string?
+NetPrints.Reflection.NodeHint.DisplayName.init -> void
+NetPrints.Reflection.NodeHint.Equals(NetPrints.Reflection.NodeHint? other) -> bool
+NetPrints.Reflection.NodeHint.Keywords.get -> System.Collections.Generic.IReadOnlyList<string!>!
+NetPrints.Reflection.NodeHint.Keywords.init -> void
+NetPrints.Reflection.NodeHint.NodeHint(string? DisplayName, string? Category, System.Collections.Generic.IReadOnlyList<string!>! Keywords) -> void
 NetPrints.Reflection.ReflectionProvider.GetAssemblyName(NetPrints.Core.TypeSpecifier! type) -> string?
+override NetPrints.Reflection.NodeHint.Equals(object? obj) -> bool
+override NetPrints.Reflection.NodeHint.GetHashCode() -> int
+override NetPrints.Reflection.NodeHint.ToString() -> string!
+static NetPrints.Reflection.NodeHint.operator !=(NetPrints.Reflection.NodeHint? left, NetPrints.Reflection.NodeHint? right) -> bool
+static NetPrints.Reflection.NodeHint.operator ==(NetPrints.Reflection.NodeHint? left, NetPrints.Reflection.NodeHint? right) -> bool

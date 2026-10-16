@@ -1,28 +1,33 @@
+using System.Diagnostics.CodeAnalysis;
 using NetPrints.Core;
-using NetPrints.Editor.Graph;
-using NetPrints.Extensibility.Nodes;
 using NetPrints.Graph;
+using NetPrints.Projects;
 using NetPrints.Reflection;
 
-namespace NetPrints.Editor.NodeSearch;
+namespace NetPrints.Extensibility.Nodes;
 
 /// <summary>What a provider needs to know about the search being built: the pin, the graph, its class and the reflection provider.</summary>
-internal sealed class NodeSearchContext
+[Experimental(ExperimentalApiIds.NodeSearchProviders, UrlFormat = ExperimentalApiIds.UrlFormat)]
+public sealed class NodeSearchContext
 {
     /// <summary>Initializes a new instance of the <see cref="NodeSearchContext"/> class.</summary>
-    /// <param name="graph">The graph view model the search is opened for.</param>
+    /// <param name="graph">The graph the node is added to.</param>
     /// <param name="pin">The pin the search was opened from, or <see langword="null"/> for the canvas.</param>
-    public NodeSearchContext(NodeGraphViewModel graph, NodePin? pin)
+    /// <param name="reflection">The reflection provider of the open project.</param>
+    /// <param name="nodeKinds">The node kinds of the extension registry in use.</param>
+    public NodeSearchContext(NodeGraph graph, NodePin? pin, IReflectionProvider reflection, IReadOnlyList<NodeKindDescriptor> nodeKinds)
     {
         ArgumentNullException.ThrowIfNull(graph);
+        ArgumentNullException.ThrowIfNull(reflection);
+        ArgumentNullException.ThrowIfNull(nodeKinds);
         Pin = pin;
-        Graph = graph.Graph;
-        Reflection = graph.Context.Reflection.Provider;
-        Class = Graph.Class;
+        Graph = graph;
+        Reflection = reflection;
+        Class = graph.Class;
         ClassType = Class?.Type;
         BaseTypes = Class?.AllBaseTypes.ToList() ?? [];
-        GraphKind = NodeGraphKinds.Of(Graph);
-        NodeKinds = graph.Context.Extensions.Current.NodeKinds;
+        GraphKind = NodeGraphKinds.Of(graph);
+        NodeKinds = nodeKinds;
     }
 
     /// <summary>Gets the pin the search was opened from, or <see langword="null"/> for the canvas.</summary>
@@ -60,6 +65,9 @@ internal sealed class NodeSearchContext
 
     /// <summary>Gets the node kinds of the extension registry in use.</summary>
     public IReadOnlyList<NodeKindDescriptor> NodeKinds { get; }
+
+    /// <summary>Gets the C# target of the open project; <see cref="CSharpTarget.Unconstrained"/> for a graph with no project.</summary>
+    public CSharpTarget Target => Graph.Project?.CSharpTarget ?? CSharpTarget.Unconstrained;
 
     /// <summary>Gets the node kinds that offer suggestions in the graph.</summary>
     public IReadOnlyList<NodeKindDescriptor> SuggestedKinds =>

@@ -3,6 +3,7 @@ using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.NodeSearch;
 using NetPrints.Editor.Tests.Hosting;
+using NetPrints.Extensibility.Nodes;
 using NetPrints.Serialization.Documents;
 
 namespace NetPrints.Editor.Tests.Search;

@@ -74,9 +74,9 @@ public sealed class NodeCreationServiceTests : FixtureGraphTestBase
         Assert.False(ClassContext.UndoRedo.CanUndo);
     }
 
-    private sealed record OwnFactoryEntry() : NodeSearchEntry("Own", "Own factory", "none")
+    private sealed record OwnFactoryEntry() : EditorSearchEntry("Own", "Own factory", "none")
     {
-        public override Task<Node?> CreateAsync(NodeCreationContext context, GraphPoint position, NodePin? pin) =>
+        protected override Task<Node?> CreateInEditorAsync(NodeCreationContext context, GraphPoint position, NodePin? pin) =>
             Task.FromResult<Node?>(context.Service.Create(position, pin, g => new IfElseNode(g)));
     }
 

@@ -119,4 +119,13 @@ public interface IExtensionBuilder
     /// <returns>This builder.</returns>
     [Experimental(ExperimentalApiIds.StringResources, UrlFormat = ExperimentalApiIds.UrlFormat)]
     IExtensionBuilder AddStringResources(ResourceManager resources);
+
+    /// <summary>
+    /// Adds a node search provider. Its <see cref="INodeSuggestionProvider.Id"/> must start with the manifest id (<c>NPX013</c> otherwise)
+    /// and be unique across extensions (<c>NPX004</c> for a duplicate); a provider that breaks either rule is dropped.
+    /// </summary>
+    /// <param name="provider">The provider.</param>
+    /// <returns>This builder.</returns>
+    [Experimental(ExperimentalApiIds.NodeSearchProviders, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    IExtensionBuilder AddSuggestionProvider(INodeSuggestionProvider provider);
 }

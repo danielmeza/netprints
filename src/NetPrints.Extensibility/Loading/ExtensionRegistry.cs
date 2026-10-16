@@ -38,6 +38,7 @@ public sealed class ExtensionRegistry : IAsyncDisposable
         IReadOnlyList<ExtensionSettingsDescriptor> settings,
         IReadOnlyList<CatalogProfile> catalogProfiles,
         IReadOnlyList<ResourceManager> stringResources,
+        IReadOnlyList<INodeSuggestionProvider> suggestionProviders,
         IReadOnlyList<ExtensionContributionIssue> issues,
         TranslationEnvironment translation,
         NodeDocumentConverterRegistry nodeConverters,
@@ -57,6 +58,7 @@ public sealed class ExtensionRegistry : IAsyncDisposable
         Settings = settings;
         CatalogProfiles = catalogProfiles;
         StringResources = stringResources;
+        SuggestionProviders = suggestionProviders;
         Issues = issues;
         Translation = translation;
         NodeConverters = nodeConverters;
@@ -136,7 +138,13 @@ public sealed class ExtensionRegistry : IAsyncDisposable
     public IReadOnlyList<ResourceManager> StringResources { get; }
 
     /// <summary>
-    /// The contributions that were rejected (<c>NPX006</c>) while their extension stayed loaded.
+    /// The node search providers extensions contributed, in registry order; node search asks each one.
+    /// </summary>
+    [Experimental(ExperimentalApiIds.NodeSearchProviders, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    public IReadOnlyList<INodeSuggestionProvider> SuggestionProviders { get; }
+
+    /// <summary>
+    /// The contributions that were rejected (<c>NPX006</c>, or <c>NPX004</c> and <c>NPX013</c> for an id problem) while their extension stayed loaded.
     /// </summary>
     public IReadOnlyList<ExtensionContributionIssue> Issues { get; }
 

@@ -18,6 +18,15 @@ public static class ExperimentalApiIds
     /// <summary>The catalog engine and profile API.</summary>
     public const string CatalogProfiles = "NPXE0004";
 
+    /// <summary>The editor contributions API: the typed contexts (<c>ICommandContext</c>, <c>IProjectSession</c>, <c>IGraphEditor</c>) and the editor descriptors.</summary>
+    public const string EditorContributions = "NPXE0005";
+
+    /// <summary>The node search provider API: <c>INodeSuggestionProvider</c>, <c>NodeSearchContext</c>, <c>NodeSearchEntry</c>, <c>IExtensionBuilder.AddSuggestionProvider</c>.</summary>
+    public const string NodeSearchProviders = "NPXE0006";
+
+    /// <summary>The C# feature API: <c>CSharpFeature</c>, <c>CSharpFeatureId</c>, <c>Availability</c> and <c>NodeSearchEntry.Requires</c>.</summary>
+    public const string CSharpFeatures = "NPXE0007";
+
     /// <summary>The extension string resources API: <c>IExtensionBuilder.AddStringResources</c> and the registry's <c>StringResources</c>.</summary>
     public const string StringResources = "NPXE0011";
 

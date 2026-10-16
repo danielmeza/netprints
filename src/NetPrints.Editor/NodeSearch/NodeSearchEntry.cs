@@ -8,32 +8,42 @@ using NetPrints.Reflection;
 namespace NetPrints.Editor.NodeSearch;
 
 /// <summary>
-/// A suggestion a provider offers: the category it is grouped under, the text and icon of its row, and the value that creates the node.
+/// An entry of the editor's own providers: it creates its node through the editor's <see cref="NodeCreationContext"/> and may take its
+/// title and keywords from a catalog's node hint.
 /// </summary>
 /// <param name="Category">Category the entry is grouped under.</param>
 /// <param name="Text">Text of the row.</param>
 /// <param name="IconKey">Icon id of the row.</param>
-internal abstract record NodeSearchEntry(string Category, string Text, string IconKey)
+internal abstract record EditorSearchEntry(string Category, string Text, string IconKey) : NodeSearchEntry(Category, Text, IconKey)
 {
-    /// <summary>Gets extra words the search matches besides the category and the text.</summary>
-    public IReadOnlyList<string> Keywords { get; init; } = [];
+    /// <inheritdoc/>
+    public sealed override Task<Node?> CreateAsync(INodeCreationContext context, GraphPoint position, NodePin? pin) =>
+        context is NodeCreationContext editor ? CreateInEditorAsync(editor, position, pin) : Task.FromResult<Node?>(null);
+
+    /// <summary>Gets the node hint a catalog gives this entry.</summary>
+    /// <param name="hints">The catalogs' hints.</param>
+    /// <returns>The hint, or <see langword="null"/> when the entry has none to look up or no catalog describes it.</returns>
+    public virtual NodeHint? HintFrom(INodeHintSource hints) => null;
 
     /// <summary>Creates the node of this entry, asking for a type or method first where the entry needs one.</summary>
     /// <param name="context">The graph, prompts and creation service the entry may use.</param>
     /// <param name="position">Where the node is created (graph coordinates).</param>
     /// <param name="pin">Pin the search was opened for, or <see langword="null"/>.</param>
     /// <returns>The new node, or <see langword="null"/> when the prompt was cancelled or the entry opens a chooser instead.</returns>
-    public abstract Task<Node?> CreateAsync(NodeCreationContext context, GraphPoint position, NodePin? pin);
+    protected abstract Task<Node?> CreateInEditorAsync(NodeCreationContext context, GraphPoint position, NodePin? pin);
 }
 
 /// <summary>A method to call.</summary>
 /// <param name="Category">Category of the entry.</param>
 /// <param name="Method">The method.</param>
 internal sealed record MethodEntry(string Category, MethodSpecifier Method)
-    : NodeSearchEntry(Category, SuggestionRowViewModel.FormatMethod(Method), OperatorUtil.IsOperator(Method) ? IconIds.CategoryOperator : IconIds.CategoryMethod)
+    : EditorSearchEntry(Category, SuggestionRowViewModel.FormatMethod(Method), OperatorUtil.IsOperator(Method) ? IconIds.CategoryOperator : IconIds.CategoryMethod)
 {
     /// <inheritdoc/>
-    public override Task<Node?> CreateAsync(NodeCreationContext context, GraphPoint position, NodePin? pin) =>
+    public override NodeHint? HintFrom(INodeHintSource hints) => hints.GetMethodHint(Method);
+
+    /// <inheritdoc/>
+    protected override Task<Node?> CreateInEditorAsync(NodeCreationContext context, GraphPoint position, NodePin? pin) =>
         Task.FromResult<Node?>(context.Service.Create(position, pin, g => new CallMethodNode(g, Method)));
 }
 
@@ -41,10 +51,10 @@ internal sealed record MethodEntry(string Category, MethodSpecifier Method)
 /// <param name="Category">Category of the entry.</param>
 /// <param name="Variable">The variable.</param>
 internal sealed record VariableEntry(string Category, VariableSpecifier Variable)
-    : NodeSearchEntry(Category, $"{Variable.Type} {Variable.Name} : {Variable.Type}", IconIds.CategoryProperty)
+    : EditorSearchEntry(Category, $"{Variable.Type} {Variable.Name} : {Variable.Type}", IconIds.CategoryProperty)
 {
     /// <inheritdoc/>
-    public override Task<Node?> CreateAsync(NodeCreationContext context, GraphPoint position, NodePin? pin)
+    protected override Task<Node?> CreateInEditorAsync(NodeCreationContext context, GraphPoint position, NodePin? pin)
     {
         context.Graph.GetSetChooser.Open(Variable, position, pin);
         return Task.FromResult<Node?>(null);
@@ -55,10 +65,13 @@ internal sealed record VariableEntry(string Category, VariableSpecifier Variable
 /// <param name="Category">Category of the entry.</param>
 /// <param name="Type">The type.</param>
 internal sealed record TypeEntry(string Category, TypeSpecifier Type)
-    : NodeSearchEntry(Category, Type.FullCodeName, IconIds.CategoryType)
+    : EditorSearchEntry(Category, Type.FullCodeName, IconIds.CategoryType)
 {
     /// <inheritdoc/>
-    public override Task<Node?> CreateAsync(NodeCreationContext context, GraphPoint position, NodePin? pin) =>
+    public override NodeHint? HintFrom(INodeHintSource hints) => hints.GetTypeHint(Type);
+
+    /// <inheritdoc/>
+    protected override Task<Node?> CreateInEditorAsync(NodeCreationContext context, GraphPoint position, NodePin? pin) =>
         Task.FromResult<Node?>(context.Service.Create(position, pin, g => new TypeNode(g, Type)));
 }
 
@@ -66,10 +79,10 @@ internal sealed record TypeEntry(string Category, TypeSpecifier Type)
 /// <param name="Category">Category of the entry.</param>
 /// <param name="Suggestion">The suggestion of the node kind.</param>
 internal sealed record NodeKindEntry(string Category, NodeSuggestion Suggestion)
-    : NodeSearchEntry(Category, Suggestion.DisplayName, Suggestion.IconKey ?? IconIds.CategoryNone)
+    : EditorSearchEntry(Category, Suggestion.DisplayName, Suggestion.IconKey ?? IconIds.CategoryNone)
 {
     /// <inheritdoc/>
-    public override Task<Node?> CreateAsync(NodeCreationContext context, GraphPoint position, NodePin? pin)
+    protected override Task<Node?> CreateInEditorAsync(NodeCreationContext context, GraphPoint position, NodePin? pin)
     {
         string? kind = context.Graph.Context.Extensions.Current.NodeKinds.FirstOrDefault(k => k.Suggestions.Contains(Suggestion))?.Kind;
         return NodeKindCreation.For(kind).CreateAsync(context, Suggestion, position, pin);
@@ -80,16 +93,16 @@ internal sealed record NodeKindEntry(string Category, NodeSuggestion Suggestion)
 /// <param name="Category">Category of the entry.</param>
 /// <param name="Info">The type and the type the delegate is made from.</param>
 internal sealed record MakeDelegateEntry(string Category, MakeDelegateTypeInfo Info)
-    : NodeSearchEntry(Category, $"Make Delegate For A Method Of {Info.Type.ShortName}", IconIds.CategoryDelegate)
+    : EditorSearchEntry(Category, $"Make Delegate For A Method Of {Info.Type.ShortName}", IconIds.CategoryDelegate)
 {
     /// <inheritdoc/>
-    public override async Task<Node?> CreateAsync(NodeCreationContext context, GraphPoint position, NodePin? pin)
+    protected override async Task<Node?> CreateInEditorAsync(NodeCreationContext context, GraphPoint position, NodePin? pin)
     {
         var methods = context.Graph.Context.Reflection.Provider.GetMethods(new ReflectionProviderMethodQuery()
             .WithType(Info.Type)
             .WithVisibleFrom(Info.FromType));
 
-        return await context.Prompts.SelectMethodAsync(methods).ConfigureAwait(true) is { } chosen
+        return await context.SelectMethodAsync(methods).ConfigureAwait(true) is { } chosen
             ? context.Service.Create(position, pin, g => new MakeDelegateNode(g, chosen))
             : null;
     }
@@ -98,10 +111,10 @@ internal sealed record MakeDelegateEntry(string Category, MakeDelegateTypeInfo I
 /// <summary>A custom event entry of an event graph.</summary>
 /// <param name="Category">Category of the entry.</param>
 internal sealed record CustomEventEntry(string Category)
-    : NodeSearchEntry(Category, CustomEventSuggestion.DisplayText, IconIds.CategoryNone)
+    : EditorSearchEntry(Category, CustomEventSuggestion.DisplayText, IconIds.CategoryNone)
 {
     /// <inheritdoc/>
-    public override Task<Node?> CreateAsync(NodeCreationContext context, GraphPoint position, NodePin? pin)
+    protected override Task<Node?> CreateInEditorAsync(NodeCreationContext context, GraphPoint position, NodePin? pin)
     {
         if (context.Graph.Graph is EventGraph { Class: { } eventClass })
         {
@@ -117,9 +130,9 @@ internal sealed record CustomEventEntry(string Category)
 /// <param name="Category">Category of the entry.</param>
 /// <param name="Method">The base method to override.</param>
 internal sealed record OverrideEventEntry(string Category, MethodSpecifier Method)
-    : NodeSearchEntry(Category, $"Override {Method.Name}", IconIds.CategoryMethod)
+    : EditorSearchEntry(Category, $"Override {Method.Name}", IconIds.CategoryMethod)
 {
     /// <inheritdoc/>
-    public override Task<Node?> CreateAsync(NodeCreationContext context, GraphPoint position, NodePin? pin) =>
+    protected override Task<Node?> CreateInEditorAsync(NodeCreationContext context, GraphPoint position, NodePin? pin) =>
         Task.FromResult<Node?>(context.Graph.AddEventEntry(position, g => new EventEntryNode(g, Method)));
 }

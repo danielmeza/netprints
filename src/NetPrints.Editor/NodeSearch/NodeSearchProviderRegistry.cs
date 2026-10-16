@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using NetPrints.Extensibility.Loading;
+using NetPrints.Extensibility.Nodes;
 
 namespace NetPrints.Editor.NodeSearch;
 
@@ -7,7 +8,7 @@ namespace NetPrints.Editor.NodeSearch;
 internal sealed class NodeSearchProviderRegistry
 {
     private readonly Func<IReadOnlyList<INodeSearchProvider>> factory;
-    private readonly ConditionalWeakTable<ExtensionRegistry, IReadOnlyList<INodeSearchProvider>> built = new();
+    private readonly ConditionalWeakTable<ExtensionRegistry, IReadOnlyList<INodeSuggestionProvider>> built = new();
 
     /// <summary>Initializes a new instance of the <see cref="NodeSearchProviderRegistry"/> class.</summary>
     /// <param name="factory">Creates the providers in display order; called once for each extension registry.</param>
@@ -22,10 +23,10 @@ internal sealed class NodeSearchProviderRegistry
 
     /// <summary>Gets the providers for an extension registry.</summary>
     /// <param name="registry">The registry in use.</param>
-    /// <returns>The providers in display order, built on the first call for <paramref name="registry"/>.</returns>
-    public IReadOnlyList<INodeSearchProvider> For(ExtensionRegistry registry)
+    /// <returns>The editor's providers in display order followed by the extensions' providers, built on the first call for <paramref name="registry"/>.</returns>
+    public IReadOnlyList<INodeSuggestionProvider> For(ExtensionRegistry registry)
     {
         ArgumentNullException.ThrowIfNull(registry);
-        return built.GetValue(registry, _ => factory());
+        return built.GetValue(registry, key => [.. factory(), .. key.SuggestionProviders]);
     }
 }

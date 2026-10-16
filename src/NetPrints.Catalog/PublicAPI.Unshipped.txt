@@ -4,6 +4,8 @@ NetPrints.Catalog.CatalogTypeCatalog
 NetPrints.Catalog.CatalogTypeCatalog.CatalogTypeCatalog(NetPrints.Catalog.CatalogDocument! document) -> void
 NetPrints.Catalog.CatalogTypeCatalog.GetConstructors(NetPrints.Core.TypeSpecifier! typeSpecifier) -> System.Collections.Generic.IEnumerable<NetPrints.Core.ConstructorSpecifier!>!
 NetPrints.Catalog.CatalogTypeCatalog.GetEnumNames(NetPrints.Core.TypeSpecifier! typeSpecifier) -> System.Collections.Generic.IEnumerable<string!>!
+NetPrints.Catalog.CatalogTypeCatalog.GetMethodHint(NetPrints.Core.MethodSpecifier! method) -> NetPrints.Reflection.NodeHint?
+NetPrints.Catalog.CatalogTypeCatalog.GetTypeHint(NetPrints.Core.TypeSpecifier! type) -> NetPrints.Reflection.NodeHint?
 NetPrints.Catalog.CatalogTypeCatalog.GetMethodDocumentation(NetPrints.Core.MethodSpecifier! methodSpecifier) -> string?
 NetPrints.Catalog.CatalogTypeCatalog.GetMethodParameterDocumentation(NetPrints.Core.MethodSpecifier! methodSpecifier, int parameterIndex) -> string?
 NetPrints.Catalog.CatalogTypeCatalog.GetMethodReturnDocumentation(NetPrints.Core.MethodSpecifier! methodSpecifier, int returnIndex) -> string?

@@ -26,7 +26,8 @@ internal sealed record ExtensionContributions(
     IReadOnlyList<IHostChannelFactory> HostChannels,
     IReadOnlyList<ExtensionSettingsDescriptor> Settings,
     IReadOnlyList<CatalogProfile> CatalogProfiles,
-    IReadOnlyList<ResourceManager> StringResources);
+    IReadOnlyList<ResourceManager> StringResources,
+    IReadOnlyList<INodeSuggestionProvider> SuggestionProviders);
 
 /// <summary>
 /// The builder handed to <see cref="INetPrintsExtension.Register"/>: it buffers, and the loader commits the
@@ -45,6 +46,7 @@ internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactor
     private readonly List<ExtensionSettingsDescriptor> settings = [];
     private readonly List<CatalogProfile> catalogProfiles = [];
     private readonly List<ResourceManager> stringResources = [];
+    private readonly List<INodeSuggestionProvider> suggestionProviders = [];
     private bool sealedBuilder;
 
     public ExtensionManifest Manifest { get; } = manifest;
@@ -78,6 +80,8 @@ internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactor
 
     public IExtensionBuilder AddStringResources(ResourceManager resources) => Add(stringResources, resources);
 
+    public IExtensionBuilder AddSuggestionProvider(INodeSuggestionProvider provider) => Add(suggestionProviders, provider);
+
     /// <summary>
     /// Ends registration: later builder calls throw. Returns what was buffered.
     /// </summary>
@@ -86,7 +90,7 @@ internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactor
         sealedBuilder = true;
         return new ExtensionContributions(
             [.. nodeLibraries], [.. classEmitters], [.. memberEmitters], [.. typeCatalogs], [.. profiles], [.. jsonResolvers], [.. projectProperties],
-            [.. hostChannels], [.. settings], [.. catalogProfiles], [.. stringResources]);
+            [.. hostChannels], [.. settings], [.. catalogProfiles], [.. stringResources], [.. suggestionProviders]);
     }
 
     private ExtensionBuilder Add<T>(List<T> list, T item)

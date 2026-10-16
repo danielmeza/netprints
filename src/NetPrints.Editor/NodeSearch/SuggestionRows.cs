@@ -1,3 +1,5 @@
+using NetPrints.Extensibility.Nodes;
+
 namespace NetPrints.Editor.NodeSearch;
 
 /// <summary>Turns the entries of the providers into the rows of the list.</summary>

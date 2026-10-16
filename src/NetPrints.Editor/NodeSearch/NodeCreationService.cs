@@ -1,6 +1,7 @@
 using NetPrints.Core;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
+using NetPrints.Extensibility.Nodes;
 using NetPrints.Graph;
 
 namespace NetPrints.Editor.NodeSearch;
@@ -27,7 +28,17 @@ internal interface INodeCreationService
 /// <param name="Graph">The graph view model the node is created in.</param>
 /// <param name="Prompts">The questions the entry may ask first.</param>
 /// <param name="Service">The creation service that adds a factory-built node as one undo step.</param>
-internal sealed record NodeCreationContext(NodeGraphViewModel Graph, INodeSearchPrompts Prompts, INodeCreationService Service);
+internal sealed record NodeCreationContext(NodeGraphViewModel Graph, INodeSearchPrompts Prompts, INodeCreationService Service) : INodeCreationContext
+{
+    /// <inheritdoc/>
+    public Node Create(GraphPoint position, NodePin? pin, Func<NodeGraph, Node> factory) => Service.Create(position, pin, factory);
+
+    /// <inheritdoc/>
+    public Task<TypeSpecifier?> SelectTypeAsync() => Prompts.SelectTypeAsync();
+
+    /// <inheritdoc/>
+    public Task<MethodSpecifier?> SelectMethodAsync(IEnumerable<MethodSpecifier> methods) => Prompts.SelectMethodAsync(methods);
+}
 
 /// <summary>The questions a search entry may ask before it creates its node.</summary>
 internal interface INodeSearchPrompts

@@ -193,3 +193,101 @@ const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.RegisterFailed = 
 [NPXE0001]static NetPrints.Extensibility.Hosting.InMemoryHostChannel.CreatePair(string! id) -> (NetPrints.Extensibility.Hosting.InMemoryHostChannel! Editor, NetPrints.Extensibility.Hosting.InMemoryHostChannel! Host)
 [NPXE0001]NetPrints.Extensibility.Hosting.InMemoryHostChannel.SendAsync(NetPrints.Extensibility.Hosting.HostMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
 [NPXE0001]NetPrints.Extensibility.Hosting.InMemoryHostChannel.DisposeAsync() -> System.Threading.Tasks.ValueTask
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.IdPrefix = "NPX013" -> string!
+[NPXE0006]abstract NetPrints.Extensibility.Nodes.NodeSearchEntry.<Clone>$() -> NetPrints.Extensibility.Nodes.NodeSearchEntry!
+[NPXE0006]abstract NetPrints.Extensibility.Nodes.NodeSearchEntry.CreateAsync(NetPrints.Extensibility.Nodes.INodeCreationContext! context, NetPrints.Graph.GraphPoint position, NetPrints.Graph.NodePin? pin) -> System.Threading.Tasks.Task<NetPrints.Graph.Node?>!
+[NPXE0006]NetPrints.Extensibility.IExtensionBuilder.AddSuggestionProvider(NetPrints.Extensibility.Nodes.INodeSuggestionProvider! provider) -> NetPrints.Extensibility.IExtensionBuilder!
+[NPXE0006]NetPrints.Extensibility.Nodes.INodeCreationContext
+[NPXE0006]NetPrints.Extensibility.Nodes.INodeCreationContext.Create(NetPrints.Graph.GraphPoint position, NetPrints.Graph.NodePin? pin, System.Func<NetPrints.Core.NodeGraph!, NetPrints.Graph.Node!>! factory) -> NetPrints.Graph.Node!
+[NPXE0006]NetPrints.Extensibility.Nodes.INodeCreationContext.SelectMethodAsync(System.Collections.Generic.IEnumerable<NetPrints.Core.MethodSpecifier!>! methods) -> System.Threading.Tasks.Task<NetPrints.Core.MethodSpecifier?>!
+[NPXE0006]NetPrints.Extensibility.Nodes.INodeCreationContext.SelectTypeAsync() -> System.Threading.Tasks.Task<NetPrints.Core.TypeSpecifier?>!
+[NPXE0006]NetPrints.Extensibility.Nodes.INodeSuggestionProvider
+[NPXE0006]NetPrints.Extensibility.Nodes.INodeSuggestionProvider.Id.get -> string!
+[NPXE0006]NetPrints.Extensibility.Nodes.INodeSuggestionProvider.Suggest(NetPrints.Extensibility.Nodes.NodeSearchContext! context) -> System.Collections.Generic.IEnumerable<NetPrints.Extensibility.Nodes.NodeSearchEntry!>!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.BaseTypes.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Core.TypeSpecifier!>!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.Class.get -> NetPrints.Core.ClassGraph?
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.ClassType.get -> NetPrints.Core.TypeSpecifier?
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.Graph.get -> NetPrints.Core.NodeGraph!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.GraphKind.get -> NetPrints.Extensibility.Nodes.GraphKinds
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.InputDataType.get -> NetPrints.Core.TypeSpecifier?
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.IsExecPin.get -> bool
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.IsExecutionCanvas.get -> bool
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.MethodQuery() -> NetPrints.Reflection.ReflectionProviderMethodQuery!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.NodeKinds.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Nodes.NodeKindDescriptor!>!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.NodeSearchContext(NetPrints.Core.NodeGraph! graph, NetPrints.Graph.NodePin? pin, NetPrints.Reflection.IReflectionProvider! reflection, System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Nodes.NodeKindDescriptor!>! nodeKinds) -> void
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.OutputDataType.get -> NetPrints.Core.TypeSpecifier?
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.Pin.get -> NetPrints.Graph.NodePin?
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.Reflection.get -> NetPrints.Reflection.IReflectionProvider!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.SuggestedKinds.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Nodes.NodeKindDescriptor!>!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.Target.get -> NetPrints.Projects.CSharpTarget!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.VariableQuery() -> NetPrints.Reflection.ReflectionProviderVariableQuery!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.Category.get -> string!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.Category.init -> void
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.Deconstruct(out string! Category, out string! Text, out string! IconKey) -> void
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.IconKey.get -> string!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.IconKey.init -> void
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.Keywords.get -> System.Collections.Generic.IReadOnlyList<string!>!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.Keywords.init -> void
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.NodeSearchEntry(NetPrints.Extensibility.Nodes.NodeSearchEntry! original) -> void
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.NodeSearchEntry(string! Category, string! Text, string! IconKey) -> void
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.Text.get -> string!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.Text.init -> void
+[NPXE0006]override NetPrints.Extensibility.Nodes.NodeSearchEntry.Equals(object? obj) -> bool
+[NPXE0006]override NetPrints.Extensibility.Nodes.NodeSearchEntry.GetHashCode() -> int
+[NPXE0006]override NetPrints.Extensibility.Nodes.NodeSearchEntry.ToString() -> string!
+[NPXE0006]static NetPrints.Extensibility.Nodes.NodeSearchEntry.operator !=(NetPrints.Extensibility.Nodes.NodeSearchEntry? left, NetPrints.Extensibility.Nodes.NodeSearchEntry? right) -> bool
+[NPXE0006]static NetPrints.Extensibility.Nodes.NodeSearchEntry.operator ==(NetPrints.Extensibility.Nodes.NodeSearchEntry? left, NetPrints.Extensibility.Nodes.NodeSearchEntry? right) -> bool
+[NPXE0006]virtual NetPrints.Extensibility.Nodes.NodeSearchEntry.EqualityContract.get -> System.Type!
+[NPXE0006]virtual NetPrints.Extensibility.Nodes.NodeSearchEntry.Equals(NetPrints.Extensibility.Nodes.NodeSearchEntry? other) -> bool
+[NPXE0006]virtual NetPrints.Extensibility.Nodes.NodeSearchEntry.PrintMembers(System.Text.StringBuilder! builder) -> bool
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability.Availability(bool IsAvailable, string? Reason, System.Collections.Generic.IReadOnlyList<string!>! Fixes) -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability.<Clone>$() -> NetPrints.Extensibility.Nodes.Availability!
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability.Deconstruct(out bool IsAvailable, out string? Reason, out System.Collections.Generic.IReadOnlyList<string!>! Fixes) -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability.Equals(NetPrints.Extensibility.Nodes.Availability? other) -> bool
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability.Fixes.get -> System.Collections.Generic.IReadOnlyList<string!>!
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability.Fixes.init -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability.IsAvailable.get -> bool
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability.IsAvailable.init -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability.Reason.get -> string?
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability.Reason.init -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.Check(NetPrints.Projects.CSharpTarget! target, System.Func<string!, bool>? typeExists = null) -> NetPrints.Extensibility.Nodes.Availability!
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.<Clone>$() -> NetPrints.Extensibility.Nodes.CSharpFeature!
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.CSharpFeature(NetPrints.Extensibility.Nodes.CSharpFeatureId Id, NetPrints.Projects.CSharpLanguageVersion MinimumVersion, System.Collections.Generic.IReadOnlyList<string!>! RequiredTypes) -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.Deconstruct(out NetPrints.Extensibility.Nodes.CSharpFeatureId Id, out NetPrints.Projects.CSharpLanguageVersion MinimumVersion, out System.Collections.Generic.IReadOnlyList<string!>! RequiredTypes) -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.Equals(NetPrints.Extensibility.Nodes.CSharpFeature? other) -> bool
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeatureId
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeatureId.CSharpFeatureId(string! Value) -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeatureId.CSharpFeatureId() -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeatureId.Deconstruct(out string! Value) -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeatureId.Equals(NetPrints.Extensibility.Nodes.CSharpFeatureId other) -> bool
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.Id.get -> NetPrints.Extensibility.Nodes.CSharpFeatureId
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.Id.init -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeatureId.Value.get -> string!
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeatureId.Value.init -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.MinimumVersion.get -> NetPrints.Projects.CSharpLanguageVersion
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.MinimumVersion.init -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.RequiredTypes.get -> System.Collections.Generic.IReadOnlyList<string!>!
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.RequiredTypes.init -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.NodeSearchEntry.Requires.get -> NetPrints.Extensibility.Nodes.CSharpFeature?
+[NPXE0007]NetPrints.Extensibility.Nodes.NodeSearchEntry.Requires.init -> void
+[NPXE0007]override NetPrints.Extensibility.Nodes.Availability.Equals(object? obj) -> bool
+[NPXE0007]override NetPrints.Extensibility.Nodes.Availability.GetHashCode() -> int
+[NPXE0007]override NetPrints.Extensibility.Nodes.Availability.ToString() -> string!
+[NPXE0007]override NetPrints.Extensibility.Nodes.CSharpFeature.Equals(object? obj) -> bool
+[NPXE0007]override NetPrints.Extensibility.Nodes.CSharpFeature.GetHashCode() -> int
+~[NPXE0007]override NetPrints.Extensibility.Nodes.CSharpFeatureId.Equals(object obj) -> bool
+[NPXE0007]override NetPrints.Extensibility.Nodes.CSharpFeatureId.GetHashCode() -> int
+[NPXE0007]override NetPrints.Extensibility.Nodes.CSharpFeatureId.ToString() -> string!
+[NPXE0007]override NetPrints.Extensibility.Nodes.CSharpFeature.ToString() -> string!
+[NPXE0007]static NetPrints.Extensibility.Nodes.Availability.Available.get -> NetPrints.Extensibility.Nodes.Availability!
+[NPXE0007]static NetPrints.Extensibility.Nodes.Availability.operator !=(NetPrints.Extensibility.Nodes.Availability? left, NetPrints.Extensibility.Nodes.Availability? right) -> bool
+[NPXE0007]static NetPrints.Extensibility.Nodes.Availability.operator ==(NetPrints.Extensibility.Nodes.Availability? left, NetPrints.Extensibility.Nodes.Availability? right) -> bool
+[NPXE0007]static NetPrints.Extensibility.Nodes.Availability.Unavailable(string! reason, params string![]! fixes) -> NetPrints.Extensibility.Nodes.Availability!
+[NPXE0007]static NetPrints.Extensibility.Nodes.CSharpFeatureId.operator !=(NetPrints.Extensibility.Nodes.CSharpFeatureId left, NetPrints.Extensibility.Nodes.CSharpFeatureId right) -> bool
+[NPXE0007]static NetPrints.Extensibility.Nodes.CSharpFeatureId.operator ==(NetPrints.Extensibility.Nodes.CSharpFeatureId left, NetPrints.Extensibility.Nodes.CSharpFeatureId right) -> bool
+[NPXE0007]static NetPrints.Extensibility.Nodes.CSharpFeature.operator !=(NetPrints.Extensibility.Nodes.CSharpFeature? left, NetPrints.Extensibility.Nodes.CSharpFeature? right) -> bool
+[NPXE0007]static NetPrints.Extensibility.Nodes.CSharpFeature.operator ==(NetPrints.Extensibility.Nodes.CSharpFeature? left, NetPrints.Extensibility.Nodes.CSharpFeature? right) -> bool

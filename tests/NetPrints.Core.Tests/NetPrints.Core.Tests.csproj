@@ -10,6 +10,8 @@
   <ItemGroup>
     <NetPrintsExperimentalOptIn Include="NPXE0001" />
     <NetPrintsExperimentalOptIn Include="NPXE0002" />
+    <NetPrintsExperimentalOptIn Include="NPXE0006" />
+    <NetPrintsExperimentalOptIn Include="NPXE0007" />
     <NetPrintsExperimentalOptIn Include="NPXE0003" />
     <NetPrintsExperimentalOptIn Include="NPXE0004" />
     <NetPrintsExperimentalOptIn Include="NPXE0011" />

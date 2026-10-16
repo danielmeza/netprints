@@ -43,6 +43,8 @@ internal sealed class RegistryBuilder(ILogger logger)
     private readonly List<CatalogProfile> catalogProfiles = [];
     private readonly HashSet<string> catalogProfileIds = new(BuiltInCatalogProfiles.Ids, StringComparer.Ordinal);
     private readonly List<ResourceManager> stringResources = [];
+    private readonly List<INodeSuggestionProvider> suggestionProviders = [];
+    private readonly HashSet<string> suggestionProviderIds = new(StringComparer.Ordinal);
     private readonly List<object> owned = [];
     private readonly List<ExtensionContributionIssue> issues = [];
 
@@ -146,6 +148,23 @@ internal sealed class RegistryBuilder(ILogger logger)
 
         stringResources.AddRange(contributions.StringResources);
 
+        foreach (INodeSuggestionProvider provider in contributions.SuggestionProviders)
+        {
+            if (!HasIdPrefix(provider.Id, manifest.Id))
+            {
+                Reject(manifest, ExtensionDiagnosticCodes.IdPrefix, $"suggestion provider {provider.Id}", $"the id must start with the manifest id '{manifest.Id}'.");
+            }
+            else if (!suggestionProviderIds.Add(provider.Id))
+            {
+                Reject(manifest, ExtensionDiagnosticCodes.DuplicateId, $"suggestion provider {provider.Id}", "a suggestion provider with this id is already registered.");
+            }
+            else
+            {
+                suggestionProviders.Add(provider);
+                owned.Add(provider);
+            }
+        }
+
         foreach (string property in contributions.ProjectProperties)
         {
             if (!projectProperties.Contains(property, StringComparer.OrdinalIgnoreCase))
@@ -189,6 +208,7 @@ internal sealed class RegistryBuilder(ILogger logger)
             settings,
             catalogProfiles,
             stringResources,
+            suggestionProviders,
             issues,
             translation,
             converters,
@@ -339,9 +359,15 @@ internal sealed class RegistryBuilder(ILogger logger)
         Log.NodeKindConflict(logger, kind, manifest.Id, reason);
     }
 
-    private void RejectOther(ExtensionManifest manifest, string contribution, string reason)
+    private static bool HasIdPrefix(string id, string extensionId) =>
+        !string.IsNullOrEmpty(id) && id.Length > extensionId.Length + 1 && id.StartsWith(extensionId, StringComparison.Ordinal) && id[extensionId.Length] is '.' or '/';
+
+    private void RejectOther(ExtensionManifest manifest, string contribution, string reason) =>
+        Reject(manifest, ExtensionDiagnosticCodes.ContributionRejected, contribution, reason);
+
+    private void Reject(ExtensionManifest manifest, string code, string contribution, string reason)
     {
-        issues.Add(new ExtensionContributionIssue(manifest.Id, ExtensionDiagnosticCodes.ContributionRejected, contribution, reason));
+        issues.Add(new ExtensionContributionIssue(manifest.Id, code, contribution, reason));
         Log.ContributionRejected(logger, contribution, manifest.Id, reason);
     }
 }

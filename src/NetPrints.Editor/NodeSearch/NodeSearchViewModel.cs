@@ -8,6 +8,7 @@ using DynamicData;
 using NetPrints.Core;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
+using NetPrints.Extensibility.Nodes;
 using NetPrints.Graph;
 using NetPrints.Reflection;
 using NetPrints.Serialization.Documents;
@@ -253,9 +254,10 @@ public sealed partial class NodeSearchViewModel : ObservableObject, IDisposable
     /// </summary>
     internal List<SuggestionRowViewModel> BuildItems(NodePin? pin)
     {
-        var context = new NodeSearchContext(graph, pin);
+        NodeSearchContext context = NodeSearchContexts.For(graph, pin);
         var registryProviders = providers.For(graph.Context.Extensions.Current);
-        return SuggestionRows.Build(ranker.Rank(registryProviders.SelectMany(provider => provider.Suggest(context))));
+        var hints = graph.Context.Reflection.Provider as INodeHintSource;
+        return SuggestionRows.Build(ranker.Rank(registryProviders.SelectMany(provider => provider.Suggest(context)).Select(entry => NodeSearchHints.Apply(entry, hints))));
     }
 
     /// <summary>

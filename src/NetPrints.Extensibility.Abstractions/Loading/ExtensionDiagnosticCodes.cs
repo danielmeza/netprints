@@ -28,4 +28,7 @@ public static class ExtensionDiagnosticCodes
 
     /// <summary>A dependency provides an older version of an assembly than the extension was built against.</summary>
     public const string DependencyVersion = "NPX008";
+
+    /// <summary>A contributed id does not start with the manifest id of the extension that contributed it.</summary>
+    public const string IdPrefix = "NPX013";
 }

@@ -1,3 +1,5 @@
+using NetPrints.Extensibility.Nodes;
+
 namespace NetPrints.Editor.NodeSearch;
 
 /// <summary>Orders the entries of the providers before they are grouped into rows; the host's one ranking point.</summary>

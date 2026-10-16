@@ -2,6 +2,7 @@ using NetPrints.Core;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.NodeSearch;
+using NetPrints.Extensibility.Nodes;
 
 namespace NetPrints.Editor.Tests.Search;
 

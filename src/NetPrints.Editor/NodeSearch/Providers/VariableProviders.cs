@@ -1,4 +1,5 @@
 using NetPrints.Core;
+using NetPrints.Extensibility.Nodes;
 using NetPrints.Reflection;
 using NetPrints.Serialization.Documents;
 
