@@ -940,8 +940,8 @@ These IDs moved to roadmap phase P3c on 2026-10-16 and are not reused in P3.
   C# goldens are byte-identical except the changes listed for `out` and `ref` pins; node search matches 100% of the P3a
   characterization goldens apart from the one recorded order change.
 - **SC-003**: The sample Godot extension, built only against the locally packed packages, loads in the editor and
-  passes all 12 conformance checks; package validation and the public API checks pass for every packable project; 100%
-  of public members of the published packages have XML docs.
+  passes every conformance check of the kit (the roadmap's 12 and the checks FR-077 adds); package validation and the
+  public API checks pass for every packable project; 100% of public members of the published packages have XML docs.
 - **SC-004**: An extension contributing one item of every public contribution kind shows each item on its surface, and
   after its project unloads 0 of its items remain (automated test over every kind); 100% of registration and handler
   failures in the failure fixtures leave the editor usable and produce a diagnostic naming the extension.
@@ -960,8 +960,9 @@ These IDs moved to roadmap phase P3c on 2026-10-16 and are not reused in P3.
   Dark preset changes 0 Light token values (overlay test).
 - **SC-010**: For all 6 C# target workspace fixtures, the editor, `netprints regen` and the SDK generate target write
   byte-identical files.
-- **SC-011**: A project created from `dotnet new netprints-extension` builds and passes the kit with 0 edits; each of the
-  12 conformance checks has a fixture that fails it with a message naming the rule.
+- **SC-011**: A project created from `dotnet new netprints-extension` builds and passes the kit with 0 edits; each
+  conformance check of the kit (the roadmap's 12 and the checks FR-077 adds) has a fixture that fails it with a message
+  naming the rule.
 - **SC-012**: Moved to P3c on 2026-10-16 (package changes match `dotnet package add` and roll back byte-identical).
 - **SC-013**: Moved to P3c on 2026-10-16 (the install rejection table).
 - **SC-014**: Moved to P3c on 2026-10-16 (no bundled sample; a sample installed from a folder source opens and runs).
@@ -1057,6 +1058,10 @@ These IDs moved to roadmap phase P3c on 2026-10-16 and are not reused in P3.
 
 ### Sub-phases (outline for the plan)
 
+The plan refines this outline into nine sub-phases: C splits into C1 (public contracts) and C2 (facets and the publish
+gate), D into D1 (the host in the editor) and D2 (the author kit and the Godot sample), and F also holds the editor half
+of the C# target (US9). plan.md's sub-phase table is the one tasks.md follows.
+
 - **A, foundation**: S1 (analyzer and generator projects, NPS rules, DI attributes and registration generator,
   `[SmartEnum]` and `CommandKey`, `CommandGesture` parsing, options validators); R5-0 baselines and the M5 spike;
   unknown document members preserved; the P2 code carry-overs (FR-082 to FR-087). Checkpoint A.
@@ -1119,4 +1124,5 @@ Each was decided autonomously from the roadmap and the ADRs; the reason follows.
 The item sizes in the roadmap's P3 section added up to far more than the phases table's "~2.5 w". The package service,
 the Packages tab, the extension manager and the samples, about 23 days, moved to P3c on 2026-10-16. What remains still
 exceeds it: the attribute-driven core path is about 25 units and run profiles about 7 days, before the SOLID shape
-work, themes, the C# target and the kit. The plan re-estimates P3 per sub-phase and updates the phases table.
+work, themes, the C# target and the kit. The plan re-estimates P3 per sub-phase and proposes the phases table update,
+which the coordinator makes with the owner's OK.
