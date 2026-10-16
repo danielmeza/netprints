@@ -220,7 +220,7 @@ trip; Windows CLI tests green; SC-015; R5-0 numbers and the M5 outcome recorded.
   `GitInstallCommandTests` proves the `--command` path survives `sh` on Windows (US11 scenario 4). The Windows tests run
   on the `CLI (Windows)` leg and are red there first. Then the fixes, `.gitattributes` `*.npcat.json text eol=lf`, and
   the `cli-windows.yml` path filter if it misses a file. Both Windows tests green.
-- [ ] T015 [US11] FU-5 triage (FR-084, SC-015; 1 unit). Run `dotnet format analyzers NetPrints.slnx --severity info
+- [x] T015 [US11] FU-5 triage (FR-084, SC-015; 1 unit). Run `dotnet format analyzers NetPrints.slnx --severity info
   --verify-no-changes --no-restore` over `src/` (210 hits at P3a's final run). For each rule: fix the code (preferred)
   or record the rule in ADR-0003 with its reason. No suppression in code and no severity change. End state: 0
   unrecorded info-level hits in `src/`; the counts per rule before and after in implementation-notes.

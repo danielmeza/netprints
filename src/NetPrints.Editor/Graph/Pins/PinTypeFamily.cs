@@ -14,7 +14,7 @@ public sealed class PinTypeFamily
 
     private static readonly TypeSpecifier MulticastDelegateType = TypeSpecifier.FromType<MulticastDelegate>();
 
-    private static readonly TypeSpecifier ValueTypeType = TypeSpecifier.FromType(typeof(System.ValueType));
+    private static readonly TypeSpecifier ValueTypeType = TypeSpecifier.FromType<System.ValueType>();
 
     private static readonly TypeSpecifier ObjectType = TypeSpecifier.FromType<object>();
 

@@ -150,7 +150,7 @@ namespace NetPrints.Core
             ArgumentNullException.ThrowIfNull(profile);
 
             string qualifiedName = NetPrintsUtil.GetUniqueName($"{DefaultNamespace}.MyClass", Classes.Select(c => c.FullName).ToList());
-            string name = qualifiedName.Split('.').Last();
+            string name = qualifiedName.Split('.')[^1];
 
             ClassGraph cls = profile.ClassTemplates[0].Create(this, name);
             cls.MarkDirty();

@@ -83,7 +83,7 @@ internal static class CSharpLiteral
         Guard.NotNull(indent, nameof(indent));
 
         byte[] bytes = new UTF8Encoding(false).GetBytes(value);
-        builder.Append("new byte[]\n").Append(indent).Append("{");
+        builder.Append("new byte[]\n").Append(indent).Append('{');
         for (int index = 0; index < bytes.Length; index++)
         {
             builder.Append(index % BytesPerLine == 0 ? "\n" + indent + "    " : " ");

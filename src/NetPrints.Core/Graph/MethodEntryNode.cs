@@ -94,8 +94,8 @@ namespace NetPrints.Graph
         {
             if (OutputDataPins.Count > 0)
             {
-                NodeOutputDataPin odpToRemove = OutputDataPins.Last();
-                NodeInputTypePin itpToRemove = InputTypePins.Last();
+                NodeOutputDataPin odpToRemove = OutputDataPins[^1];
+                NodeInputTypePin itpToRemove = InputTypePins[^1];
 
                 GraphUtil.DisconnectOutputDataPin(odpToRemove);
                 GraphUtil.DisconnectInputTypePin(itpToRemove);
@@ -123,7 +123,7 @@ namespace NetPrints.Graph
         {
             if (OutputTypePins.Count > 0)
             {
-                NodeOutputTypePin otpToRemove = OutputTypePins.Last();
+                NodeOutputTypePin otpToRemove = OutputTypePins[^1];
 
                 GraphUtil.DisconnectOutputTypePin(otpToRemove);
 

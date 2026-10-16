@@ -24,7 +24,7 @@ public sealed class StorageFilePickerService(Func<TopLevel?> topLevel) : IFilePi
             FileTypeFilter = ToFileTypes(filters),
         });
 
-        return files.FirstOrDefault()?.TryGetLocalPath();
+        return files.Count > 0 ? files[0].TryGetLocalPath() : null;
     }
 
     /// <inheritdoc/>
@@ -53,6 +53,6 @@ public sealed class StorageFilePickerService(Func<TopLevel?> topLevel) : IFilePi
             AllowMultiple = false,
         });
 
-        return folders.FirstOrDefault()?.TryGetLocalPath();
+        return folders.Count > 0 ? folders[0].TryGetLocalPath() : null;
     }
 }

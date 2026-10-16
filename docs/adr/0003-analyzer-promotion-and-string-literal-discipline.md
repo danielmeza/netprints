@@ -387,6 +387,58 @@ unchanged (`git status samples/ tests/NetPrints.Core.Tests/Fixtures` clean) and 
     (`NoNullForgivingOperator`, `NoUnlistedSuppressions`) — landed in the batch before this one (`RS0030`,
     and the hygiene tests respectively). Nothing remains from the original research draft's table.
 
+### Info-level backlog in `src/` (FU-5, P3 batch A5)
+
+`dotnet format analyzers NetPrints.slnx --severity info --verify-no-changes --no-restore` reports the rules that sit at
+`suggestion`. Over `src/` it found 932 hits (2026-10-17, A5 start). The rules whose fix is mechanical and local were fixed in
+code (zero-length arrays, `IndexOf(string)` on one character, `Last()` and `First()` on lists and arrays, `Append(string)` of a
+constant character, `AsSpan` for a hex parse, `FromType<T>()`, `FirstOrDefault()` on indexable lists), taking the count to 905.
+Every rule that remains is recorded here with its reason, so the count of unrecorded hits is 0. No suppression was added in
+code and no severity changed; a recorded rule stays at `suggestion` and is reconsidered when the code it flags is next
+rewritten. A new hit of a rule that is not in this table is unrecorded and is fixed or added here by the batch that causes it.
+
+| Rule | Hits | Reason it stays |
+|---|---|---|
+| NPS003 | 532 | A hint by design ([ADR-0024](0024-analyzer-and-generator-infrastructure.md)): grouped private fields without comments are the accepted layout, and the rule never fails a build. |
+| S3267 | 59 | A loop that also skips, accumulates or throws inside the body reads better than `Where` plus `foreach`; no defect risk. |
+| CA1859 | 48 | Locals, parameters and fields are typed by `IReadOnlyList<T>` and similar interfaces on purpose, to keep contracts narrow; the devirtualisation gain is not measurable on these paths. |
+| S1135 | 33 | Each `TODO` marks a follow-up tracked in the specs or the roadmap (for example the constraint handling of `GenericType`); the marker leaves with its follow-up. |
+| S3358 | 25 | Flat `a ? x : b ? y : z` chains; splitting them into statements adds variables without clarity. |
+| S2325, CA1822 | 19, 19 | Instance members that a view binds to, an interface requires or a test replaces; making them static changes the shape of the API for no gain. |
+| S2365 | 15 | Computed properties of the pre-P1 model (`ExecutionGraph` argument types and similar); turning them into methods breaks the editor and its tests. |
+| S1075 | 15 | The schema, SchemaStore and documentation URLs are fixed constants of the file formats. |
+| S4136 | 11 | Overload adjacency is layout only; moving members churns diffs. |
+| S1104 | 11 | The `ExtensionData` fields of the document records (T012): `System.Text.Json` source generation cannot bind an `init` or non-public-set extension-data member (constructor binding, and extension contexts cannot reach it), and CA2227 forbids a settable collection property. |
+| S3875 | 7 | The `==` overloads of `GenericType` and `TypeSpecifier` carry pre-P1 value semantics that callers rely on. |
+| S3218 | 7 | A member of a private nested helper named like a member of its outer type (`Key`, `Write`); renaming adds noise. |
+| S125 | 7 | Comment blocks of the original WPF code that quote old code; removed when the file is next rewritten. |
+| S8949, CA1873 | 6, 6 | The calls end when the listener or the slot gate is disposed at shutdown, and the logging arguments are plain property reads under a source-generated logger that checks the level. |
+| S127 | 6 | Scanners that consume a two-character escape (`value[++index]`) by design. |
+| CA2227 | 5 | Setters on the `ClassGraph` collections, assigned by the editor and by tests; removing them is a model change outside P3. |
+| CA1854 | 5 | `ContainsKey` followed by the indexer on small dictionaries, in pre-P1 translator and documentation code; no defect. |
+| S1244 | 4 | Exact comparison with an assigned sentinel (`GraphPoint.Zero`, zoom `1`), never with a computed value. |
+| S1006 | 4 | `ShellOverlayServices` implements the overlay interfaces; the defaults live on the interface. |
+| CA1865, CA2249 | 4, 2 | In the projects that target `netstandard2.0` (`Catalog`, `Annotations`) there is no `Contains(char, StringComparison)`, and CA1307 forbids the `IndexOf(char)` that the rule suggests. |
+| S3604 | 3 | `[ObservableProperty]` partial properties: the generated code does not reassign the initializer, which the analyzer cannot see. |
+| S2094 | 3 | Marker types by design: the `IsExternalInit` polyfills and the abstract record root of the What's New segments. |
+| S5766 | 2 | `GenericType` and `TypeSpecifier` constructors are not deserialization constructors (the model has no serializer; documents map through `DocumentMapper`). |
+| S4456 | 2 | `ListAsync` of the stores validates when the enumeration starts; splitting the method changes when the exception surfaces. |
+| S3398 | 2 | Static helpers kept next to their only caller in the outer type. |
+| S2346 | 2 | The zero members `Invalid` and `Global` carry meaning that `None` would lose. |
+| S2245 | 2 | `new Random(0)` makes the names of generated temporaries deterministic; it is not a security use. |
+| S2234 | 2 | The swapped arguments of `CanConnectNodePins(pinB, pinA)` are the symmetric retry. |
+| S1643 | 2 | Concatenation in loops over the dimensions of an array type and the arguments of one event; both are a handful of iterations. |
+| S1144 | 2 | The unused `OperatorPrefix` and `GetPinIncomingValues` of the pre-P1 translator, removed with the translator rewrite. |
+| S1066 | 2 | Nested `if` statements in the pre-P1 graph utilities and translator; merging them changes no behaviour and is left to the next rewrite of those methods. |
+| CA1806, S1848 | 1, 1 | `new ReturnNode(this)` in `MethodGraph` registers the node with the graph in its constructor. |
+| S1123, S1133, CA1041 | 1, 1, 1 | `[Obsolete]` without a message on `Variable.IsStatic`, a pre-P1 member whose removal belongs with the variable model rework. |
+| S2386, S3887 | 1, 1 | `TranslatorUtil.VisibilityTokens` is a public static dictionary of the pre-P1 translator. |
+| SYSLIB1045, S6444 | 1, 1 | The compiled `Regex` in `GraphUtil.SplitCamelCase` (pre-P1); it takes only editor-controlled input. |
+| S3168 | 1 | `GraphDragDrop.Moved` is an event-style handler called from a pointer event. |
+| S3264 | 1 | `NodeGraphViewModel.NodeRevealRequested` is subscribed by `GraphEditorView`; the analyzer sees no raise inside the declaring type. |
+| S3427, S1939, S1994, S1871 | 1 each | Overload and interface shapes that mirror the contract tables (`OpenSearchAsync`, `IBuiltInTranslationContext`) and a unique-name search loop (`ProjectLoader`). |
+| S3241, S3881, S3442, S3376, S3928, S2306, S2219, S1199, S1186, S927, S6618, S6607, S4487, MVVMTK0042, CA1868, CA1846 | 1 each | One-off style hints in pre-P1 or generated-pattern code (an `await` identifier mirroring a node kind, `ClassTranslationFailure` naming, an empty built-in translator, the `fileSystem` field of `BackupService`, which only its constructor reads); none points at a defect. |
+
 ## References
 
 - `docs/adr/0001-repo-layout.md`, `docs/adr/0002-designer-comments-scheduled-p3b.md` — format precedent.

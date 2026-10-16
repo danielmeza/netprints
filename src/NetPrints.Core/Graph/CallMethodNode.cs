@@ -243,7 +243,7 @@ namespace NetPrints.Graph
                 // Set default parameter value if set
                 if (argument.HasExplicitDefaultValue)
                 {
-                    var newPin = InputDataPins.Last();
+                    var newPin = InputDataPins[^1];
                     newPin.UsesExplicitDefaultValue = true;
                     newPin.ExplicitDefaultValue = argument.ExplicitDefaultValue;
                 }

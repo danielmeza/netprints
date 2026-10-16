@@ -45,7 +45,7 @@ namespace NetPrints.Core
         {
             get
             {
-                string shortName = Name.Split('.').Last();
+                string shortName = Name.Split('.')[^1];
 
                 if (GenericArguments.Count > 0)
                 {
@@ -161,7 +161,7 @@ namespace NetPrints.Core
                 throw new ArgumentException("Type must not be a generic parameter.", nameof(type));
             }
 
-            string typeName = type.Name.Split('`').First();
+            string typeName = type.Name.Split('`')[0];
             if (!string.IsNullOrEmpty(type.Namespace))
             {
                 typeName = type.Namespace + "." + typeName;

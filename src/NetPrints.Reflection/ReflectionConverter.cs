@@ -69,7 +69,7 @@ namespace NetPrints.Reflection
                 containingType = containingType.ContainingType;
             }
 
-            string typeName = nestedPrefix + type.Name.Split('`').First();
+            string typeName = nestedPrefix + type.Name.Split('`')[0];
             if (type.ContainingNamespace != null && !type.ContainingNamespace.IsGlobalNamespace)
             {
                 typeName = type.ContainingNamespace + "." + typeName;
@@ -237,7 +237,7 @@ namespace NetPrints.Reflection
             }
 
             BaseType[] returnTypes = method.ReturnsVoid ?
-                new BaseType[] { } :
+                [] :
                 new BaseType[] { BaseTypeSpecifierFromSymbol(method.ReturnType) };
 
             MethodParameter[] parameters = method.Parameters.Select(
