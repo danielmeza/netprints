@@ -344,6 +344,14 @@ kept in `.agent-archive/2026-10-16-p3-m5-spike/` beside the repository.
   Still to read from PR #20 CI at this head: the Analyzers leg, `CLI (Windows)` run id with the CRLF and `git-install` tests, the
   longest CI job; the R5-0 numbers and the M5 verdict are in their sections above. T016 stays unticked until that CI is green.
 
+## Batch B1 (T019-T020)
+
+- T019 scenarios in `NodeSearchGoldenTests` (9 goldens, already complete, none added): `rows-{method,constructor,class,event}` each over
+  7 pins (canvas `none`, exec in, exec out, string data in, string data out, type in, int type out; the last two are the type-scoped
+  search) and `filter-{for, write-line, static, netprints-loop, zzz}`. New `NodeSearchInvariantTests` (3): opening the search for five
+  pin kinds creates no node and leaves the undo stack alone (US2 scenario 6); filtering and closing change no graph; a second open
+  builds the same rows. All 12 pass on the code before SUG1.
+
 ## Pack spike
 
 (T026)

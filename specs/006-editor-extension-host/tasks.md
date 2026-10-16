@@ -250,7 +250,7 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
 
 ### Batch B1 — model: sonnet — T019–T020 — 3 units
 
-- [ ] T019 [US2] Pin the search behaviour first (FR-016, FR-017, research R10; 1 unit). Before any search change, list
+- [x] T019 [US2] Pin the search behaviour first (FR-016, FR-017, research R10; 1 unit). Before any search change, list
   the scenarios of `tests/NetPrints.Editor.Tests/Search/NodeSearchGoldenTests.cs` in implementation-notes and add any
   P3a characterization scenario it lacks (exec output, typed input, typed output, canvas, type-scoped search); add
   `NodeSearchInvariantTests.cs`: opening the search creates no node and leaves the graph and the undo stack unchanged
