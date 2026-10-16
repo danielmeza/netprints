@@ -8,7 +8,7 @@ using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Editor.UndoRedo;
 using NetPrints.Serialization;
-using DocumentId = NetPrints.Editor.Shell.DocumentId;
+using DocumentId = NetPrints.Extensibility.Editor.DocumentId;
 
 namespace NetPrints.Editor.Tests.Shell;
 

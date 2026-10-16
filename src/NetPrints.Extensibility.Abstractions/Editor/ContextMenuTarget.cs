@@ -1,6 +1,10 @@
-namespace NetPrints.Editor.Contributions;
+using System.Diagnostics.CodeAnalysis;
+using NetPrints.Core;
+
+namespace NetPrints.Extensibility.Editor;
 
 /// <summary>The item a context menu opens on.</summary>
+[Experimental(ExperimentalApiIds.EditorContributions, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public enum ContextMenuTarget
 {
     /// <summary>A graph node.</summary>

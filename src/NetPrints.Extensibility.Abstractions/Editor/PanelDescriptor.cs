@@ -1,6 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 using NetPrints.Core;
 
-namespace NetPrints.Editor.Contributions;
+namespace NetPrints.Extensibility.Editor;
 
 /// <summary>A dockable tool panel.</summary>
 /// <param name="Id">The namespaced id.</param>
@@ -9,6 +10,7 @@ namespace NetPrints.Editor.Contributions;
 /// <param name="DefaultDock">Where the panel docks by default.</param>
 /// <param name="Order">The position among the panels of the same dock.</param>
 /// <param name="IconId">Icon id (see IconIds), or null.</param>
+[Experimental(ExperimentalApiIds.EditorContributions, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public sealed record PanelDescriptor(
     string Id,
     LocalizedText Title,
@@ -19,7 +21,4 @@ public sealed record PanelDescriptor(
 {
     /// <summary>Gets the title with its convention key (FR-027): a literal title is keyed <c>Panel.&lt;id&gt;.Title</c>.</summary>
     public LocalizedText Title { get; init; } = ConventionKeys.Panel(Id, Title);
-
-    /// <summary>Gets the title as the editor shows it: the translation for the UI culture, the default text, or the key.</summary>
-    public string DisplayTitle => Title.Resolve(Strings.ResourceManager, null);
 }

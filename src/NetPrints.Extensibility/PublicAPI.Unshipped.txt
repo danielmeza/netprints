@@ -155,3 +155,5 @@ NetPrints.Extensibility.Settings.NetPrintsSettings.EnableAnimations.get -> bool
 NetPrints.Extensibility.Settings.NetPrintsSettings.EnableAnimations.init -> void
 NetPrints.Extensibility.Settings.NetPrintsSettings.Language.get -> string!
 NetPrints.Extensibility.Settings.NetPrintsSettings.Language.init -> void
+[NPXE0005]NetPrints.Extensibility.Loading.ExtensionLoaderOptions.EditorContributions.get -> System.Func<NetPrints.Extensibility.Loading.ExtensionManifest!, NetPrints.Extensibility.Editor.IEditorContributions!>?
+[NPXE0005]NetPrints.Extensibility.Loading.ExtensionLoaderOptions.EditorContributions.init -> void

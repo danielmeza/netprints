@@ -17,7 +17,7 @@ using NetPrints.Editor.UndoRedo;
 using NetPrints.Graph;
 using NetPrints.Testing.Ui.Driving;
 using NetPrints.Testing.Ui.Shell;
-using DocumentId = NetPrints.Editor.Shell.DocumentId;
+using DocumentId = NetPrints.Extensibility.Editor.DocumentId;
 
 namespace NetPrints.Editor.UITests.Shell;
 

@@ -1,14 +1,16 @@
 using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
+using NetPrints.Core;
 using NetPrints.SmartEnums;
 
-namespace NetPrints.Editor.Contributions;
+namespace NetPrints.Extensibility.Editor;
 
 /// <summary>
 /// A key a <see cref="CommandGesture"/> can use: a letter, a digit, <c>F1</c> to <c>F24</c> or a named key (ADR-0034). The members
 /// are singletons that override what differs; <see cref="CommandKeyId"/> and <see cref="All"/> are generated from the member fields,
 /// so a member is a field, a nested class where it differs, and nothing else. Texts parse and format without allocating.
 /// </summary>
+[Experimental(ExperimentalApiIds.EditorContributions, UrlFormat = ExperimentalApiIds.UrlFormat)]
 [SmartEnum]
 public abstract partial class CommandKey : ISpanParsable<CommandKey>, ISpanFormattable
 {

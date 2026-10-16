@@ -530,7 +530,7 @@ SC-010; US3 scenarios 5–6. **Gate (plan)**: SC-005; SC-010 (the three writers)
   `docs/guide/extensions.md` (research R16's table, the opt-in `<NetPrintsExperimentalOptIn Include="NPXE00nn" />`).
   Test: a compile test in `tests/NetPrints.Analyzers.Tests/` shows an `Fx` source using an NPXE API without the opt-in
   fails with that id (US3 scenario 5). Shape findings in implementation-notes.
-- [ ] T057 **Checkpoint C1**. Whole suite plus the E2E pass; CI green. Report the plan's gate C1: SC-005 (M1 and M2
+- [x] T057 **Checkpoint C1**. Whole suite plus the E2E pass; CI green. Report the plan's gate C1: SC-005 (M1 and M2
   against the R5-0 baselines, perf job run ids; the M1 composition time); SC-010 (`CSharpTargetWriterIdentityTests`
   run); the API shape review of T056; the longest CI job; the Dock check. Docs updated: ADR-0027, ADR-0030 (split),
   ADR-0023, the extension guide's "API stability", the diagnostics guide.
@@ -558,7 +558,7 @@ SC-005 rechecked (research R4).
 
 ### Batch C2a — model: sonnet — T060–T062 — 4 units
 
-- [ ] T060 [US3] The editor facet and its Null Object (FR-023, research R14, contracts/extension-api.md §2; 1 unit).
+- [x] T060 [US3] The editor facet and its Null Object (FR-023, research R14, contracts/extension-api.md §2; 1 unit).
   Test first: in `tests/NetPrints.Cli.Tests/`, `netprints build` and the SDK generator load an `Fx` extension that
   registers editor contributions and ignore them without error (US3 scenario 3). Then `IExtensionBuilder.Editor`
   returning `IEditorContributions` (NPXE0005) in Abstractions, the descriptor types moved there from

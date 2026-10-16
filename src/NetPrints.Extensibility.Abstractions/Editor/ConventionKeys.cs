@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using NetPrints.Core;
 
-namespace NetPrints.Editor.Contributions;
+namespace NetPrints.Extensibility.Editor;
 
 /// <summary>The resource keys that follow from a declaration's id (research R13, data-model section 11).</summary>
+[Experimental(ExperimentalApiIds.EditorContributions, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public static class ConventionKeys
 {
     /// <summary>Gets the prefix of a menu key.</summary>

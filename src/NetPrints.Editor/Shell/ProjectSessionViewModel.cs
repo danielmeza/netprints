@@ -97,7 +97,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     public event EventHandler? MembersChanged;
 
     /// <summary>
-    /// Gets the path of a class's graph file relative to the project, with <c>/</c> separators (the class path of its <see cref="DocumentId"/>s).
+    /// Gets the path of a class's graph file relative to the project, with <c>/</c> separators (the class path of its <see cref="NetPrints.Extensibility.Editor.DocumentId"/>s).
     /// The path is fixed the first time it is asked for, so renaming a class that has never been saved, or changing its namespace, does not change
     /// the ids of its open documents.
     /// </summary>

@@ -1,6 +1,10 @@
-namespace NetPrints.Editor.Contributions;
+using System.Diagnostics.CodeAnalysis;
+using NetPrints.Core;
+
+namespace NetPrints.Extensibility.Editor;
 
 /// <summary>Where a panel docks by default.</summary>
+[Experimental(ExperimentalApiIds.EditorContributions, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public enum PanelDock
 {
     /// <summary>The left dock.</summary>

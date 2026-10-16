@@ -1,4 +1,7 @@
-namespace NetPrints.Editor.Contributions;
+using System.Diagnostics.CodeAnalysis;
+using NetPrints.Core;
+
+namespace NetPrints.Extensibility.Editor;
 
 /// <summary>A context-menu entry that runs a registered command.</summary>
 /// <param name="Id">The namespaced id.</param>
@@ -7,4 +10,5 @@ namespace NetPrints.Editor.Contributions;
 /// <param name="Group">The group within the menu.</param>
 /// <param name="Order">The position within the group.</param>
 /// <param name="AppliesTo">Tells whether the entry is shown for the context of the open menu; <see langword="null"/> shows it always. An entry it rejects is hidden, not disabled.</param>
+[Experimental(ExperimentalApiIds.EditorContributions, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public sealed record ContextMenuItemDescriptor(string Id, ContextMenuTarget Target, string CommandId, string Group, int Order, Func<ICommandContext, bool>? AppliesTo = null);

@@ -4,7 +4,7 @@ using NetPrints.Editor.ProjectTree;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Shell;
 using NetPrints.Editor.UndoRedo;
-using DocumentId = NetPrints.Editor.Shell.DocumentId;
+using DocumentId = NetPrints.Extensibility.Editor.DocumentId;
 
 namespace NetPrints.Editor.Tests.ProjectTree;
 

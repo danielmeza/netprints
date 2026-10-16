@@ -5,7 +5,7 @@ using NetPrints.Editor.Graph;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.ProjectTree;
 using NetPrints.Editor.Tests.Shell;
-using DocumentId = NetPrints.Editor.Shell.DocumentId;
+using DocumentId = NetPrints.Extensibility.Editor.DocumentId;
 
 namespace NetPrints.Editor.Tests.ErrorList;
 

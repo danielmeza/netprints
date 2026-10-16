@@ -3,6 +3,7 @@ using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
 using NetPrints.Catalog;
 using NetPrints.Core;
+using NetPrints.Extensibility.Editor;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Nodes;
@@ -48,8 +49,16 @@ internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactor
     private readonly List<ResourceManager> stringResources = [];
     private readonly List<INodeSuggestionProvider> suggestionProviders = [];
     private bool sealedBuilder;
+    private BufferedEditorContributions? editor;
 
     public ExtensionManifest Manifest { get; } = manifest;
+
+    public IEditorContributions Editor => BufferedEditor;
+
+    /// <summary>
+    /// Gets the buffer behind <see cref="Editor"/>; the loader replays it to the host's facet once registration has succeeded.
+    /// </summary>
+    internal BufferedEditorContributions BufferedEditor => editor ??= new BufferedEditorContributions(Manifest.Id, () => sealedBuilder);
 
     public ILoggerFactory LoggerFactory { get; } = loggerFactory;
 

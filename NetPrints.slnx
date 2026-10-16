@@ -38,6 +38,7 @@
     <Project Path="tests/Fixtures/Extensions/Fx.Beta/Fx.Beta.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.Catalog/Fx.Catalog.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.Diamond/Fx.Diamond.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Fx.Editor/Fx.Editor.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.HostConflict/Fx.HostConflict.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.LibV1/Fx.LibV1.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.LibV2/Fx.LibV2.csproj" />

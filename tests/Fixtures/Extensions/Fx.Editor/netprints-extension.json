@@ -1,0 +1,8 @@
+{
+  "id": "fx.editor",
+  "name": "NetPrints editor facet fixture extension",
+  "version": "1.0.0",
+  "assembly": "Fx.Editor.dll",
+  "netprintsApi": "1.0",
+  "dependsOn": []
+}

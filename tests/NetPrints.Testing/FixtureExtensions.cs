@@ -16,6 +16,19 @@ public static class FixtureExtensions
         "extensions",
         "fx.catalog");
 
+    /// <summary>The extension folder of <c>fx.editor</c>: it registers editor contributions through the facet.</summary>
+    /// <returns>The folder holding <c>netprints-extension.json</c>, in the configuration of the running tests.</returns>
+    public static string EditorFolder() => Path.Combine(
+        LocalSdkLayout.FindRepositoryRoot(),
+        "tests",
+        "Fixtures",
+        "Extensions",
+        "Fx.Editor",
+        "bin",
+        LocalSdkLayout.DetectConfiguration(),
+        "extensions",
+        "fx.editor");
+
     /// <summary>The built <c>CatalogFixtureLib.dll</c> the fixture catalog describes; the test projects build it first and never reference it.</summary>
     /// <returns>The assembly path, in the configuration of the running tests.</returns>
     public static string CatalogLibraryAssembly() => Path.Combine(

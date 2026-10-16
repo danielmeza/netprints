@@ -1,6 +1,10 @@
-namespace NetPrints.Editor.Shell;
+using System.Diagnostics.CodeAnalysis;
+using NetPrints.Core;
+
+namespace NetPrints.Extensibility.Editor;
 
 /// <summary>What a <see cref="DocumentId"/> identifies.</summary>
+[Experimental(ExperimentalApiIds.EditorContributions, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public enum DocumentKind
 {
     /// <summary>A graph of a class: a method, constructor, event graph or the class graph.</summary>
@@ -19,6 +23,7 @@ public enum DocumentKind
 /// <c>setter:&lt;variableId&gt;</c>, <c>type:&lt;variableId&gt;</c> or <c>class</c>),
 /// <c>start</c> or <c>project-settings</c> (contracts/shell.md §2).
 /// </summary>
+[Experimental(ExperimentalApiIds.EditorContributions, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public sealed record DocumentId
 {
     private const string GraphPrefix = "graph:";

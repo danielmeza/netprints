@@ -17,7 +17,7 @@ using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.UITests.Hosting;
 using NetPrints.Editor.UITests.Shell;
 using NetPrints.Testing.Ui.Driving;
-using DocumentId = NetPrints.Editor.Shell.DocumentId;
+using DocumentId = NetPrints.Extensibility.Editor.DocumentId;
 
 namespace NetPrints.Editor.UITests.ProjectTree;
 

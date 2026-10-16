@@ -1,7 +1,8 @@
 using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
+using NetPrints.Core;
 
-namespace NetPrints.Editor.Contributions;
+namespace NetPrints.Extensibility.Editor;
 
 /// <summary>
 /// A keyboard gesture such as <c>Ctrl+Shift+B</c>, free of any UI toolkit. Text is parsed and formatted only at the boundaries
@@ -9,6 +10,7 @@ namespace NetPrints.Editor.Contributions;
 /// </summary>
 /// <param name="Modifiers">The modifier keys.</param>
 /// <param name="Key">The key.</param>
+[Experimental(ExperimentalApiIds.EditorContributions, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public sealed record CommandGesture(CommandModifiers Modifiers, CommandKey Key) : ISpanParsable<CommandGesture>, ISpanFormattable
 {
     private const char Separator = '+';
@@ -194,6 +196,7 @@ public sealed record CommandGesture(CommandModifiers Modifiers, CommandKey Key) 
 }
 
 /// <summary>The modifier keys of a <see cref="CommandGesture"/>.</summary>
+[Experimental(ExperimentalApiIds.EditorContributions, UrlFormat = ExperimentalApiIds.UrlFormat)]
 [Flags]
 public enum CommandModifiers
 {

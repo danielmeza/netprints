@@ -4,6 +4,7 @@ using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
 using NetPrints.Catalog;
 using NetPrints.Core;
+using NetPrints.Extensibility.Editor;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Nodes;
@@ -128,4 +129,11 @@ public interface IExtensionBuilder
     /// <returns>This builder.</returns>
     [Experimental(ExperimentalApiIds.NodeSearchProviders, UrlFormat = ExperimentalApiIds.UrlFormat)]
     IExtensionBuilder AddSuggestionProvider(INodeSuggestionProvider provider);
+
+    /// <summary>
+    /// Gets the editor contributions of this extension. A host without an editor (the CLI, the SDK generator, the build) ignores
+    /// every call without error; the editor commits them with the rest of the extension's contributions when <see cref="INetPrintsExtension.Register"/> returns.
+    /// </summary>
+    [Experimental(ExperimentalApiIds.EditorContributions, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    IEditorContributions Editor { get; }
 }

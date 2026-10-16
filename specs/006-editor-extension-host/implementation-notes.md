@@ -794,7 +794,7 @@ consumers restore from `local-packages/` plus a scratch feed and build with `-p:
   18824b36: Desktop E2E (Linux, Xvfb) 13 min 34 s; longest test leg Editor UI 3/4, 8 min 57 s. Dock check: pin stays 12.1.0.6 (no release since v12.1.0.9 holds
   Dock#1191; not rechecked in this batch). Trim ratchet: `eng/trim-warnings.txt` is 11 (B6); not re-measured locally, the trim job at 18824b36 passed. Docs:
   ADR-0027 (display switched), ADR-0030 (split, C1d), ADR-0023 (language amendment, C1b), the extension guide's "API stability"; the diagnostics guide has the
-  NPX013 and NPW006 to NPW008 rows (C1c, C1d). T057 is left unticked until CI is green at the push of this batch.
+  NPX013 and NPW006 to NPW008 rows (C1c, C1d). T057 ticked: CI green at 7a426036 (CI run 38977152765, CLI (Windows) 38977152766, Release 38977152776, Docs 38977152809).
 
 ## Build-time budget (ADR-0024, S2a; B-F3)
 

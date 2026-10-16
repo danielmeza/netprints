@@ -1,8 +1,10 @@
-using NetPrints.Editor.Shell;
+using System.Diagnostics.CodeAnalysis;
+using NetPrints.Core;
 
-namespace NetPrints.Editor.Contributions;
+namespace NetPrints.Extensibility.Editor;
 
 /// <summary>One go-to-anything result: it either navigates to a <see cref="Target"/> or runs the command <see cref="CommandId"/>, never both and never neither.</summary>
+[Experimental(ExperimentalApiIds.EditorContributions, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public sealed record GoToItem
 {
     /// <summary>Creates a result.</summary>

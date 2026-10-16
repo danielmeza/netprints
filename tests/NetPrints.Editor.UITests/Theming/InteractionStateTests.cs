@@ -29,7 +29,7 @@ using NetPrints.Editor.UITests.Shell;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Projects;
 using NetPrints.Testing.Ui.Driving;
-using DocumentId = NetPrints.Editor.Shell.DocumentId;
+using DocumentId = NetPrints.Extensibility.Editor.DocumentId;
 using ShellWindow = NetPrints.Editor.Shell.ShellWindow;
 
 namespace NetPrints.Editor.UITests.Theming;

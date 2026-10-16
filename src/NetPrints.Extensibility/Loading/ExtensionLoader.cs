@@ -309,6 +309,7 @@ public sealed class ExtensionLoader
 
         contributions = builder.Seal();
         registryBuilder.Commit(manifest, contributions);
+        builder.BufferedEditor.ReplayTo(options.EditorContributions?.Invoke(manifest) ?? NullEditorContributions.Instance);
         return new ExtensionLoadResult.Loaded(manifest.Id, candidate.ManifestPath, manifest);
     }
 

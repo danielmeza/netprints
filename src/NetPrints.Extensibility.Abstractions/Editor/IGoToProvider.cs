@@ -1,6 +1,10 @@
-namespace NetPrints.Editor.Contributions;
+using System.Diagnostics.CodeAnalysis;
+using NetPrints.Core;
+
+namespace NetPrints.Extensibility.Editor;
 
 /// <summary>Supplies results to go-to-anything.</summary>
+[Experimental(ExperimentalApiIds.EditorContributions, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public interface IGoToProvider
 {
     /// <summary>Gets the group the results appear under: Graphs, Nodes, Variables, Methods or Commands.</summary>

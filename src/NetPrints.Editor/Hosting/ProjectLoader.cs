@@ -11,6 +11,7 @@ using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Projects;
 using NetPrints.Serialization;
+using DocumentId = NetPrints.Serialization.DocumentId;
 using ProjectSessionViewModel = NetPrints.Editor.Shell.ProjectSessionViewModel;
 using ShellViewModel = NetPrints.Editor.Shell.ShellViewModel;
 

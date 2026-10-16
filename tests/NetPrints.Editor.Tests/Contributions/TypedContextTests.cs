@@ -10,7 +10,7 @@ using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Editor.Tests.Shell;
 using NetPrints.Editor.UndoRedo;
 using NetPrints.Graph;
-using DocumentId = NetPrints.Editor.Shell.DocumentId;
+using DocumentId = NetPrints.Extensibility.Editor.DocumentId;
 
 namespace NetPrints.Editor.Tests.Contributions;
 
