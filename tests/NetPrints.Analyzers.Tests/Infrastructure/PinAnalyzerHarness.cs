@@ -158,6 +158,18 @@ internal static class PinAnalyzerHarness
         return new TrackedFix(fixedSource, unshipped);
     }
 
+    /// <summary>Runs the analyzers over a sample and resx files given as additional files, and returns the diagnostics of the ids.</summary>
+    /// <param name="source">The sample source, without markers.</param>
+    /// <param name="resx">The resx files as path and text.</param>
+    /// <param name="ids">The ids to report.</param>
+    /// <returns>The diagnostics, ordered by file and position.</returns>
+    public static async Task<ImmutableArray<Diagnostic>> AnalyzeWithResxAsync(string source, IReadOnlyList<(string Path, string Text)> resx, params string[] ids)
+    {
+        AnalyzerOptions options = new([.. resx.Select(file => (AdditionalText)new MemoryText(file.Path, file.Text))]);
+        ImmutableArray<Diagnostic> diagnostics = await AnalyzeAsync(AuthoringHarness.Compile(source), ids, options);
+        return [.. diagnostics.OrderBy(diagnostic => diagnostic.Location.GetLineSpan().Path, StringComparer.Ordinal).ThenBy(diagnostic => diagnostic.Location.SourceSpan.Start)];
+    }
+
     private const string ShippedName = "NodePins.Shipped.txt";
 
     private const string UnshippedName = "NodePins.Unshipped.txt";

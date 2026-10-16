@@ -39,6 +39,15 @@ internal static class NpaDiagnosticCodes
     /// <summary>A node kind declares pins, but the project has neither <c>NodePins.Shipped.txt</c> nor <c>NodePins.Unshipped.txt</c>, so no key is tracked.</summary>
     public const string TrackingMissing = "NPA012";
 
+    /// <summary>A convention resource key is missing from the neutral resx.</summary>
+    public const string MissingResourceKey = "NPA040";
+
+    /// <summary>A satellite resx has a key the neutral one lacks, or a placeholder count differs.</summary>
+    public const string SatelliteMismatch = "NPA041";
+
+    /// <summary>A resx key that no declaration uses.</summary>
+    public const string UnusedResourceKey = "NPA042";
+
     /// <summary>The category of every NPA diagnostic.</summary>
     public const string Category = "Authoring";
 }

@@ -32,6 +32,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <AdditionalFiles Include="Graph\NodeStrings.resx" />
     <AdditionalFiles Include="NodePins.Shipped.txt" />
     <AdditionalFiles Include="NodePins.Unshipped.txt" />
   </ItemGroup>

@@ -17,3 +17,6 @@ NPA009 | Authoring | Error | Pin properties in a class without NodeKind or NodeB
 NPA010 | Authoring | Warning | A declared pin key is in neither NodePins.Shipped.txt nor NodePins.Unshipped.txt
 NPA011 | Authoring | Error | A shipped pin key is no longer declared; the old and the new key are named
 NPA012 | Authoring | Info | A node kind declares pins, but the project has neither NodePins.Shipped.txt nor NodePins.Unshipped.txt
+NPA040 | Authoring | Warning | A convention resource key of a node kind is missing from the neutral resx
+NPA041 | Authoring | Error | A satellite resx has a key the neutral one lacks, or a placeholder count differs
+NPA042 | Authoring | Info | A Node resx key of a node kind in the project that no declaration uses

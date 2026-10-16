@@ -116,35 +116,11 @@ public sealed class PinKeyTrackingAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static List<DeclaredPin> Declared(INamedTypeSymbol type)
-    {
-        List<DeclaredPin> pins = [];
-        foreach (INamedTypeSymbol member in PinSymbols.Ancestors(type).Reverse().Concat([type]))
-        {
-            List<PinProperty> properties = [.. PinSymbols.PinProperties(member).Where(pin => pin.Symbol.IsPartialDefinition)];
-            if (properties.Count > 0)
-            {
-                pins.AddRange(properties.Select(pin => new DeclaredPin(pin.Kind, PinSymbols.KeyOf(pin.Symbol), pin.Symbol)));
-            }
-            else
-            {
-                pins.AddRange(PinSymbols.DeclaredKeys(member).Select(entry => new DeclaredPin(entry.Kind, entry.Key, null)));
-            }
-        }
-
-        return pins;
-    }
+    private static List<DeclaredPin> Declared(INamedTypeSymbol type) => DeclaredPin.Of(type);
 
     private static string Line(string kind, DeclaredPin pin) => kind + " " + Reference(pin);
 
-    private static string Reference(DeclaredPin pin) => Group(pin.Kind) + "." + pin.Key;
-
-    private static string Group(PinKind kind)
-    {
-        string direction = kind is PinKind.InputExec or PinKind.InputData or PinKind.InputType ? "in" : "out";
-        string collection = kind is PinKind.InputExec or PinKind.OutputExec ? "exec" : kind is PinKind.InputType or PinKind.OutputType ? "type" : "data";
-        return direction + "." + collection;
-    }
+    private static string Reference(DeclaredPin pin) => pin.Reference;
 
     private static string Group(string reference)
     {
@@ -152,6 +128,4 @@ public sealed class PinKeyTrackingAnalyzer : DiagnosticAnalyzer
         int second = first < 0 ? -1 : reference.IndexOf('.', first + 1);
         return second < 0 ? reference : reference.Substring(0, second);
     }
-
-    private sealed record DeclaredPin(PinKind Kind, string Key, IPropertySymbol? Property);
 }
