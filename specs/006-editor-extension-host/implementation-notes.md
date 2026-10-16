@@ -586,3 +586,45 @@ consumers restore from `local-packages/` plus a scratch feed and build with `-p:
 ## Reviews
 
 (Review A+B: T038; Review C1+C2: T077; Review D1+D2: T111; Review E+F+G: T153; Final review with Review H: T155)
+
+### Review A+B
+
+(T038, at 0a37ba60; PR #20 review 5551162363, one inline thread per finding.) 0 blocker, 2 major, 9 minor, 8 nit. Evidence:
+Release build 0 warnings; Analyzers.Tests 155/155, Core.Tests 906/906, Cli.Tests 279/279, Editor.Tests 1955/1955,
+Catalog.Tests 346/346; CLI (Windows) run 38934517781 ran the git-install path test and the CRLF test; scratch probes for
+NPS, NPA003/NPA005/NPA011 and the STJ extension-data shapes.
+
+- AB-1 major `docs/guide/graph-format.md:105`: the editor's open and save drop unknown members (`DocumentMapper.cs:91`, `:250`,
+  `:267`; `ProjectPersistence.cs:163`, `:245`); FR-007 and US1 scenario 6 hold only for `format`, `show` and `merge`.
+- AB-2 major `src/NetPrints.Authoring/Pins/PinSymbols.cs:41`: NPA003/NPA005 miss `AddInputDataPin`/`AddOutputDataPin`;
+  `PinRulesAnalyzer.cs:140` never checks a kind whose pins all come from a `[NodeBase]`.
+- AB-3 minor `src/NetPrints.Authoring.CodeFixes/Pins/NpaSyntax.cs:58`: S1905 here and S3459 at `MakeArrayTypeNode.cs:18` are
+  unrecorded info-level rules; no gate keeps SC-015 at zero.
+- AB-4 minor `docs/adr/0003-analyzer-promotion-and-string-literal-discipline.md:405`: the S1135 and S1144 (:431) reasons do
+  not hold.
+- AB-5 minor `.github/release-notes.md:3`: typed getters, sealed node classes and removed overrides missing; the shipped
+  0.3.0 section stays in the release body (`release.yml:214`).
+- AB-6 minor `src/NetPrints.Serialization/Documents/UnknownMembers.cs:14`: the reference records (`Refs.cs:18-82`) drop
+  unknown members.
+- AB-7 minor `specs/006-editor-extension-host/spec.md:654`: recorded deviations not amended (13/2 counts, S0 golden, IL2057,
+  `default(T)` resets, NPI003 wording, NodePins line format).
+- AB-8 minor `docs/adr/0029-node-capabilities-and-pin-roles.md:44`: the overload button is unreachable through
+  `IOverloadableNode` (`NodeViewModel.cs:230`, `:240-243`); the role interfaces have no stability class (R16).
+- AB-9 minor `src/NetPrints.Editor/NodeSearch/NodeCreationService.cs:91`: two switches (also `:139`) against ADR-0028:39 and
+  data-model §8.
+- AB-10 minor `src/NetPrints.Editor/NodeSearch/NodeSearchEntry.cs:17`: titles and keywords from catalog metadata not filled,
+  no follow-up.
+- AB-11 minor `docs/adr/0024-analyzer-and-generator-infrastructure.md:82`: the S2a build-time budget was not measured.
+- AB-12 nit `src/NetPrints.Authoring/Pins/PinKeyTrackingAnalyzer.cs:50`: tracking silently off without the NodePins files.
+- AB-13 nit `src/NetPrints.Editor/NodeSearch/SuggestionRanker.cs:23`: the This Methods / This Variables direction is not in
+  "Owner questions taken by default".
+- AB-14 nit `src/NetPrints.Authoring.CodeFixes/Pins/AddNodeMarkerCodeFix.cs:51`: the NPA009 fix writes the class name as
+  the kind id.
+- AB-15 nit `src/Shared/Roslyn/DiagnosticHelpLinks.cs:12`: help links point to `#npaNNN` anchors the guide lacks.
+- AB-16 nit `specs/006-editor-extension-host/implementation-notes.md:515`: red-first for the sbyte/decimal defect was a
+  compile failure (also B2, :386).
+- AB-17 nit `docs/adr/README.md:51`: leftovers (reserved-number sentence, ADR-0003:393 date, trim baseline at :552, checkpoint
+  A longest job).
+- AB-18 nit `src/NetPrints.Core/Graph/CallMethodNode.cs:261`: an out/ref parameter named `Exception` takes the exception
+  pin's stored key.
+- AB-19 nit `src/NetPrints.Core/Graph/ForLoopNode.cs:9`: kind ids repeat the `BuiltInNodeKinds` literals (a test ties them).

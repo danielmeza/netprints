@@ -373,7 +373,7 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
 
 ### Batch B-R — model: opus — T038 (checkpoint A+B review)
 
-- [ ] T038 Review sub-phases A and B (the A+B checkpoint): an opus reviewer who did not implement them reviews the
+- [x] T038 Review sub-phases A and B (the A+B checkpoint): an opus reviewer who did not implement them reviews the
   whole diff of batches A1–B7 (from the commit before T001 to HEAD) against the decision corpus (constitution, AGENTS.md,
   ADR-0003, ADR-0024, ADR-0025, ADR-0028, ADR-0029, ADR-0031, ADR-0034, ADR-0040, spec US1, US2 and US11, research
   R8–R11, plan "Standing constraints", contracts/analyzer-diagnostics.md §1–§3, §5, §7, §8, data-model §7–§8). Check every
