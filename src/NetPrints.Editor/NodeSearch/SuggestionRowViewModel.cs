@@ -1,4 +1,6 @@
 using NetPrints.Core;
+using NetPrints.Editor.Graph;
+using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Nodes;
 using NetPrints.Graph;
 
@@ -39,14 +41,18 @@ public sealed class SuggestionRowViewModel
     public string SearchText { get; }
 
     /// <summary>Creates a category header row.</summary>
-    /// <param name="category">Category name, shown as the row's text.</param>
-    /// <returns>A header row for the category.</returns>
-    public static SuggestionRowViewModel Header(string category) => new(category, null, category, "", isHeader: true);
+    /// <param name="category">Category name, which groups the rows.</param>
+    /// <param name="registry">The registry whose strings translate the header; <see langword="null"/> for the built-in strings alone.</param>
+    /// <returns>A header row for the category, whose text is the category's translation.</returns>
+    internal static SuggestionRowViewModel Header(string category, ExtensionRegistry? registry = null) =>
+        new(category, null, NodeTexts.Category(category, registry), "", isHeader: true);
 
     /// <summary>Creates a suggestion row from an entry.</summary>
     /// <param name="entry">The suggestion; its category, text and icon become the row's.</param>
+    /// <param name="registry">The registry whose strings translate the name of a node kind's suggestion; <see langword="null"/> for the built-in strings alone.</param>
     /// <returns>A suggestion row for the entry.</returns>
-    internal static SuggestionRowViewModel Create(NodeSearchEntry entry) => new(entry.Category, entry, entry.Text, entry.IconKey, isHeader: false);
+    internal static SuggestionRowViewModel Create(NodeSearchEntry entry, ExtensionRegistry? registry = null) =>
+        new(entry.Category, entry, entry is NodeKindEntry ? NodeTexts.Suggestion(entry.Text, registry) : entry.Text, entry.IconKey, isHeader: false);
 
     /// <summary>Whether every search term occurs in <see cref="SearchText"/> (case-insensitive).</summary>
     public bool Matches(IReadOnlyList<string> terms)

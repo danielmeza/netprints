@@ -68,5 +68,8 @@ namespace NetPrints.Graph
         {
             return "For Loop";
         }
+
+        /// <inheritdoc />
+        public override bool TitleIsFixed => true;
     }
 }

@@ -174,6 +174,13 @@ namespace NetPrints.Graph
         public virtual string GetPinKeyName(NodePin pin) => pin.Name;
 
         /// <summary>
+        /// Whether the node's <see cref="ToString"/> text is the same for every instance of its kind, so the editor
+        /// shows the text of the <c>Node.&lt;kind&gt;.Title</c> resource instead (FR-027). A node whose text depends
+        /// on its content (a type, a method, a name) keeps the default <see langword="false"/> and shows its text as is.
+        /// </summary>
+        public virtual bool TitleIsFixed => false;
+
+        /// <summary>
         /// Adds the new node to <paramref name="graph"/>'s <see cref="NodeGraph.Nodes"/>, allocates its
         /// <see cref="Id"/> and assigns it a name unique among the graph's existing nodes, derived from
         /// the concrete node type name.

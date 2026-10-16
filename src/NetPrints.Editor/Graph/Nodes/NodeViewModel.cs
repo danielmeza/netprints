@@ -139,8 +139,8 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
     /// <summary>The wrapped node's name.</summary>
     public string Name => Node.Name;
 
-    /// <summary>The wrapped node's display string (<c>Node.ToString()</c>).</summary>
-    public string Label => Node.ToString();
+    /// <summary>The header text: the node's display string (<c>Node.ToString()</c>), or the resource of its kind when the node's title is fixed (FR-027).</summary>
+    public string Label => NodeTexts.Title(Node, Graph.Context.Extensions.Current);
 
     /// <summary>Whether the wrapped node is a <see cref="RerouteNode"/> (drawn without a body).</summary>
     public bool IsRerouteNode => Node is RerouteNode;

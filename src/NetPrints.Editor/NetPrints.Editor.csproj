@@ -12,6 +12,7 @@
     <NetPrintsExperimentalOptIn Include="NPXE0005" />
     <NetPrintsExperimentalOptIn Include="NPXE0006" />
     <NetPrintsExperimentalOptIn Include="NPXE0007" />
+    <NetPrintsExperimentalOptIn Include="NPXE0011" />
     <Using Include="NetPrints.Composition" />
     <Using Include="NetPrints.Extensibility.Editor" />
   </ItemGroup>

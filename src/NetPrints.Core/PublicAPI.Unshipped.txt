@@ -341,3 +341,13 @@ static NetPrints.Projects.CSharpTarget.Unconstrained.get -> NetPrints.Projects.C
 static readonly NetPrints.Projects.CSharpLanguageVersion.MaxKnown -> NetPrints.Projects.CSharpLanguageVersion
 NetPrints.Translator.IExecutionTranslationContext.Target.get -> NetPrints.Projects.CSharpTarget!
 static NetPrints.Translator.TranslatorUtil.ObjectToLiteral(object? obj, NetPrints.Core.TypeSpecifier! type, NetPrints.Projects.CSharpTarget! target) -> string!
+virtual NetPrints.Graph.Node.TitleIsFixed.get -> bool
+override NetPrints.Graph.AwaitNode.TitleIsFixed.get -> bool
+override NetPrints.Graph.ClassReturnNode.TitleIsFixed.get -> bool
+override NetPrints.Graph.ForLoopNode.TitleIsFixed.get -> bool
+override NetPrints.Graph.IfElseNode.TitleIsFixed.get -> bool
+override NetPrints.Graph.RerouteNode.TitleIsFixed.get -> bool
+override NetPrints.Graph.ReturnNode.TitleIsFixed.get -> bool
+override NetPrints.Graph.ThrowNode.TitleIsFixed.get -> bool
+override NetPrints.Graph.TypeOfNode.TitleIsFixed.get -> bool
+override NetPrints.Graph.TypeReturnNode.TitleIsFixed.get -> bool

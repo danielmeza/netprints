@@ -42,17 +42,21 @@ owner; they are marked and listed in the P3 notes under "Owner questions taken b
 
 ## Defaults pending the owner
 
-- **Pin labels with no resource show the raw key** (AOP follow-up question 4). Today a pin shows its name; nothing
-  changes until a pin label is resolved through `LocalizedText`.
+- **Pin labels with no resource show the raw key** (AOP follow-up question 4). A pin with no resource shows its name,
+  as before.
 - **The built-in node category stays the single "NetPrints" category** (question 9), key `Category.netprints`.
 - **A language change applies after a restart** (question 5). There is no live switch: compiled `x:Static` text and the
   Semi and Ursa locale are read at start, which matches the "Restart to apply" bar of the settings pages (ADR-0040).
 
 ## Consequences
 
-- Command labels, panel titles and menu headers resolve through `Strings` today; node titles, pin labels, category names
-  and the resources of extensions are keyed and checked, but the views that show them still show the model's names. The
-  views switch to the resources in the tasks that touch them, and L2 moves the rest.
+- Command labels, panel titles and menu headers resolve through `Strings`; node titles, pin labels, search category headers
+  and suggestion names resolve through `LocalizedText` over the strings of the extensions and then `CoreStrings.Resources`
+  (the extensions first, so a language pack can translate a built-in key). A node shows its `Node.<kind>.Title` only when
+  `Node.TitleIsFixed` is true (its text is the same for every instance); a title that depends on content stays as built. A
+  pin shows `Node.<kind>.Pin.<pinRef>` for its name and keeps what its own text adds after the name (a data pin's type). A
+  category header uses `Category.<name in lower case, spaces as hyphens>`; a node suggestion's display name is the key of
+  its translation. L2 moves the rest.
 - Satellite resx files are not shipped yet; the fallback chain is tested against in-memory resources, and the first
   translation adds a satellite and NPA041 starts to apply to it.
 - Semi has locales for 16 cultures and Ursa for 7 (versions pinned in `Directory.Packages.props`); any other culture shows

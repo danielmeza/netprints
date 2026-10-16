@@ -90,5 +90,8 @@ namespace NetPrints.Graph
 
         /// <inheritdoc />
         void IPinListEditor.RemovePin() => RemoveInterfacePin();
+
+        /// <inheritdoc />
+        public override bool TitleIsFixed => true;
     }
 }

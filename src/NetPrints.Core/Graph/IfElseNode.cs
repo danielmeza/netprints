@@ -50,5 +50,8 @@ namespace NetPrints.Graph
         {
             return "If Else";
         }
+
+        /// <inheritdoc />
+        public override bool TitleIsFixed => true;
     }
 }

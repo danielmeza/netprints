@@ -24,5 +24,8 @@ namespace NetPrints.Graph
         {
             DeclarePins();
         }
+
+        /// <inheritdoc />
+        public override bool TitleIsFixed => true;
     }
 }

@@ -1,3 +1,4 @@
+using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Nodes;
 
 namespace NetPrints.Editor.NodeSearch;
@@ -10,8 +11,9 @@ internal static class SuggestionRows
     /// (ported from the WPF <c>UpdateSuggestions</c>).
     /// </summary>
     /// <param name="entries">The entries of every provider, in provider order.</param>
+    /// <param name="registry">The registry whose strings translate the headers and the node kinds' names; <see langword="null"/> for the built-in strings alone.</param>
     /// <returns>The header and suggestion rows in display order.</returns>
-    public static List<SuggestionRowViewModel> Build(IEnumerable<NodeSearchEntry> entries)
+    public static List<SuggestionRowViewModel> Build(IEnumerable<NodeSearchEntry> entries, ExtensionRegistry? registry = null)
     {
         var groups = new List<(string Category, List<SuggestionRowViewModel> Rows)>();
         var groupIndex = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -31,13 +33,13 @@ internal static class SuggestionRows
                 groups.Add((entry.Category, []));
             }
 
-            groups[index].Rows.Add(SuggestionRowViewModel.Create(entry));
+            groups[index].Rows.Add(SuggestionRowViewModel.Create(entry, registry));
         }
 
         var rows = new List<SuggestionRowViewModel>(seen.Count + groups.Count);
         foreach (var (category, categoryRows) in groups)
         {
-            rows.Add(SuggestionRowViewModel.Header(category));
+            rows.Add(SuggestionRowViewModel.Header(category, registry));
             rows.AddRange(categoryRows);
         }
 

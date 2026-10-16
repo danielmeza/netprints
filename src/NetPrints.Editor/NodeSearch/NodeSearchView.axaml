@@ -61,7 +61,7 @@
                   Command="{Binding $parent[ListBox].((edsearch:NodeSearchViewModel)DataContext).SelectCommand}"
                   CommandParameter="{Binding}" />
               </Interaction.Behaviors>
-              <TextBlock Text="{Binding Category}" IsVisible="{Binding IsHeader}" FontWeight="Bold"
+              <TextBlock Text="{Binding Text}" IsVisible="{Binding IsHeader}" FontWeight="Bold"
                          Foreground="{DynamicResource SystemAccentColor}" />
               <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding !IsHeader}" Margin="12,0,0,0">
                 <icons:IconPresenter IconId="{Binding IconKey}" VerticalAlignment="Center" AutomationProperties.AccessibilityView="Content"

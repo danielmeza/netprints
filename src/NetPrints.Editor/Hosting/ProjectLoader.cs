@@ -579,7 +579,7 @@ internal sealed class ProjectLoader : IDisposable
         Unsubscribe();
         ProjectSessionViewModel? previous = session;
         CloseBackups();
-        session = project is null ? null : new ProjectSessionViewModel(project, context);
+        session = project is null ? null : new ProjectSessionViewModel(project, context, scope?.ClassContexts);
         sessionScope = session is null ? null : scope;
         if (session is not null)
         {

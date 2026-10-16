@@ -178,6 +178,9 @@ namespace NetPrints.Graph
             return "Return";
         }
 
+        /// <inheritdoc />
+        public override bool TitleIsFixed => true;
+
         /// <summary>
         /// For a return-value pin (an input data pin of this node), returns <c>"Output&lt;i&gt;"</c>
         /// (<paramref name="pin"/>'s position among <see cref="Node.InputDataPins"/>), so a user

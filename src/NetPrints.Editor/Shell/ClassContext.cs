@@ -1,6 +1,7 @@
 using System.Collections.Specialized;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.DependencyInjection;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.CodeView;
@@ -42,16 +43,26 @@ public sealed class ClassContext : IDisposable
     /// <param name="undoRedo">The class's undo stack; every applied command marks the class dirty.</param>
     /// <param name="projectClasses">The classes whose nodes a rename must reach; defaults to <paramref name="cls"/> alone.</param>
     public ClassContext(ClassGraph cls, EditorContext context, UndoRedoStack undoRedo, Func<IReadOnlyList<ClassGraph>>? projectClasses = null)
+        : this(cls, ClassContextFactory.For(context).CreateScope(cls, undoRedo, projectClasses))
+    {
+    }
+
+    /// <summary>Creates the context of <paramref name="cls"/> on a graph scope the container built.</summary>
+    /// <param name="cls">The class.</param>
+    /// <param name="services">The services of the class's graph scope: the host services, the undo stack, the messenger and the project's classes.</param>
+    [ActivatorUtilitiesConstructor]
+    public ClassContext(ClassGraph cls, ClassEditorServices services)
     {
         ArgumentNullException.ThrowIfNull(cls);
-        ArgumentNullException.ThrowIfNull(context);
-        ArgumentNullException.ThrowIfNull(undoRedo);
+        ArgumentNullException.ThrowIfNull(services);
         Class = cls;
-        this.projectClasses = projectClasses ?? (() => [cls]);
+        projectClasses = services.ProjectClasses;
+        EditorContext context = services.Context;
+        UndoRedoStack undoRedo = services.UndoRedo;
         Context = context;
         UndoRedo = undoRedo;
-        Messenger = context.CreateMessenger();
-        Services = new ClassEditorServices(context, undoRedo, Messenger, this.projectClasses);
+        Messenger = services.Messenger;
+        Services = services;
 
         Methods = new ObservableViewModelCollection<MethodViewModel, MethodGraph>(cls.Methods, m => new MethodViewModel(m, RenameMethod, undoRedo), m => m.Dispose());
         Constructors = new ObservableViewModelCollection<MethodViewModel, ConstructorGraph>(cls.Constructors, c => new MethodViewModel(c, undoRedo: undoRedo), m => m.Dispose());

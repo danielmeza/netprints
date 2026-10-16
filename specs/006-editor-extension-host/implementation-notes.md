@@ -746,6 +746,56 @@ consumers restore from `local-packages/` plus a scratch feed and build with `-p:
   until it existed; they were not run red.
 - Suite (Release, solution-wide, `--ignore-exit-code 8`): 4643 total, 4610 passed, 33 skipped, 0 failed. No E2E run.
 
+## Batch C1f (T171, T055, T056, Checkpoint C1)
+
+- T171: `NodeTexts` (Editor, `Graph/`) resolves node titles, pin labels, search category headers and node-suggestion names as `LocalizedText` over
+  the extensions' string resources and then `CoreStrings.Resources`, for the UI culture. The extensions come first so that a language pack can translate a
+  built-in key; the neutral Core text answers when no pack has the key. `Node.TitleIsFixed` (new, virtual, false by default; true for await, classReturn,
+  forLoop, ifElse, return, reroute, throw, typeOf, typeReturn) marks a node whose text is the same for every instance: only those show `Node.<kind>.Title`;
+  a title built from content (call method, default, literal, variable, entry names, explicit cast) keeps its text. The kind id comes from the registry's node
+  converter for the node type (`NodeConverters.FindByNodeType`), so extension kinds work. A pin shows `Node.<kind>.Pin.<pinRef>` for its name (`PinKeys.For`)
+  and keeps what `Pin.ToString()` adds after the name (a data pin's type); with no resource it shows its name (the owner default "raw key"). A category header
+  is `Category.<name in lower case, spaces as hyphens>` (so `Category.netprints`; the group key stays the name); a node suggestion's display name is the key
+  of its translation (the `NodeSuggestion` record is unchanged, no API change). `NPXE0011` opt-in added to Editor and Editor.Tests; ADR-0027 updated.
+- Goldens: none changed. `NodeStrings.resx` neutral values of await, classReturn, throw and typeReturn changed to the text the nodes already showed
+  ("Await Node", "Class Return Node", "Throw Exception", "Type Return Node"), because the default text must be the current text; `FixedNodeTitleTests` pins it.
+  The resx values of kinds with content-built titles stay as they were (unused as titles).
+- Deviation: built-in node kinds in the search rows are not translated (their display names are not keys); the search header and extension suggestions are.
+- T055: `ClassContextFactory` and `GraphScopeFactory` (`[ScopeFactory]` partial classes, `[Singleton]`, in `Hosting/`) replace the `new ClassContext` /
+  `new ClassEditorServices` calls: `GraphScopeFactory.CreateServices(undo, messenger, projectClasses)` and `ClassContextFactory.CreateContext(cls, scope)` are
+  generated; `Create`/`CreateScope` compose them. `ClassContext` has a second constructor over a `ClassEditorServices` (the one the generator picks); the old one
+  stays for tests and calls the factory. `ProjectSessionViewModel` takes the factory (optional; `ClassContextFactory.For(context)` for hosts with no container);
+  `ProjectSessionScope.ClassContexts` resolves it from the session container and the loader passes it. Nothing is resolved per row, node or pin: the
+  scope is built once per class. `ICommandContext.Services` and `IProjectSession.Services` stay the empty provider: they belong to the per-extension providers of C2
+  (T062 and following, research R15), not to T055 or T056.
+- M2 (gate, local Release, the T006 test with counting fakes, now through the generated factory): messenger calls 0, project-classes calls 0 (0.000 per pin);
+  35,766 to 35,829 bytes per node against the baseline 35,080 (+2.0% to +2.1%, gate +10%, asserted in the test); median time 25.9 to 26.8 ms against 14.8 ms:
+  the median picks run 3, which is still JIT warm-up (runs 1 to 3: 88, 44, 27 ms; runs 4 and 5: 13.7 and 13.5 ms, the baseline's steady 13 ms), and
+  the factory is not on the timed path (it runs before the stopwatch). The strict time gate waits for the perf job.
+- T056: API shape review of Core, Serialization, Abstractions and Extensibility against contracts/extension-api.md, by symbol: `CommandScope` and
+  `CommandSelection` (NPXE0005 surface, T052) carried no `[Experimental]`; both now do (API file lines prefixed `[NPXE0005]`). Every other type of the
+  Editor/Nodes/Settings/Hosting namespaces of Abstractions is either marked or part of the stable surface. Finding left as is: `CommandSelection.Nodes` is
+  `IReadOnlyList<object>` (the editor's view models), the model nodes are `IGraphEditor.SelectedNodes` (C1d deviation). The "API stability" section of
+  `docs/guide/extensions.md` lists NPXE0005, 0006, 0007 and 0011 and the stable-from-0.4.0 surface; ids for later surfaces are added with their API.
+  `ExperimentalOptInTests` (Analyzers.Tests, references Abstractions): for NPXE0003, 0005, 0006, 0007 and 0011 a source using the API fails with that id, compiles with
+  that opt-in alone, and another id does not help.
+- Red/green. `FixedNodeTitleTests`: 5 of 9 red on assertions (resx text differs from the node's text; explicitCast is content-built and left the list after
+  that run), 8 of 8 green; the `TitleIsFixed` case was written with the property already present at `false`, so it was not run as a separate red.
+  `NodeDisplayTextTests` 5 of 9 red on assertions, 9 of 9 green. T055: the M2 gates and the factory were written together (the factory did not exist before),
+  so no separate red; `CompositionResolveAllTests` resolves the new singletons in both containers. `ExperimentalOptInTests` 11 of 11 green at the first run
+  (it characterises the existing attribute behaviour), not red.
+- Suite (Release, solution-wide, `--ignore-exit-code 8`): 4672 total, 4639 passed, 33 skipped, 0 failed (UITests 15 min 02 s, Editor.Tests 2 min 03 s,
+  Cli.Tests 47 s, Catalog.Tests 52 s, Core.Tests 40 s, Analyzers.Tests 3 s). E2E (`NETPRINTS_E2E=1`, `--fail-skips on`, display start 200): 53 total, 52 passed,
+  1 skipped (`GuideScreenshotTests`, not run for explicit filtering), 0 failed, 2 min 22 s. Solution build 0 warnings; `dotnet format --verify-no-changes` clean.
+- Checkpoint C1, gate items. SC-005: M1 local `ShellApp.Start` cold 816 ms (A3 baseline 756, C1e 818), warm median 182 ms (A3 213), 16.56 MB (A3 16.06 MB, +3.1%);
+  composition alone 0.2 ms warm (budget 150 ms). M2 as above. The perf job (PR #20 run 38973466744, job 117217142615, green at 18824b36) does not print M1 or
+  M2 numbers (no live output), so the +10% median comparison against R5-0 rests on the local figures; it passed its strict budgets. SC-010:
+  `CSharpTargetWriterIdentityTests` 8 of 8 (editor path, `netprints regen`, `netprints build`, 6 fixtures). API shape review: T056 above. Longest CI job at
+  18824b36: Desktop E2E (Linux, Xvfb) 13 min 34 s; longest test leg Editor UI 3/4, 8 min 57 s. Dock check: pin stays 12.1.0.6 (no release since v12.1.0.9 holds
+  Dock#1191; not rechecked in this batch). Trim ratchet: `eng/trim-warnings.txt` is 11 (B6); not re-measured locally, the trim job at 18824b36 passed. Docs:
+  ADR-0027 (display switched), ADR-0030 (split, C1d), ADR-0023 (language amendment, C1b), the extension guide's "API stability"; the diagnostics guide has the
+  NPX013 and NPW006 to NPW008 rows (C1c, C1d). T057 is left unticked until CI is green at the push of this batch.
+
 ## Build-time budget (ADR-0024, S2a; B-F3)
 
 - `dotnet build NetPrints.slnx -c Release --no-incremental`, warm compile server, 6 runs at the end of B: 24.2, 19.1 and 12.2 s

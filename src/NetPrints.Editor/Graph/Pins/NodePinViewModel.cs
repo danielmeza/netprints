@@ -133,8 +133,8 @@ public sealed partial class NodePinViewModel : ObservableObject, IDisposable
     /// <summary>Whether the wrapped pin belongs to a <see cref="RerouteNode"/> (drawn without a label).</summary>
     public bool IsRerouteNodePin => Pin.Node is RerouteNode;
 
-    /// <summary>The wrapped pin's display string (<c>Pin.ToString()</c>).</summary>
-    public string DisplayName => Pin.ToString();
+    /// <summary>The wrapped pin's display string (<c>Pin.ToString()</c>) with its name translated through the resources (FR-027).</summary>
+    public string DisplayName => NodeTexts.PinLabel(Pin, Node.Graph.Context.Extensions.Current);
 
     /// <summary>Editable for method entry outputs and return node inputs (PAR-45).</summary>
     public bool IsNameEditable => Pin.Node is IPinNameEditor editor && editor.CanRenamePin(Pin);

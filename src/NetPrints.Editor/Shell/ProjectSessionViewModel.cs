@@ -26,6 +26,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     private const string BuildSucceededText = "Build succeeded";
 
     private readonly EditorContext context;
+    private readonly ClassContextFactory classContexts;
     private readonly Dictionary<ClassGraph, UndoRedoStack> undoStacks = [];
     private readonly Dictionary<ClassGraph, string> classPaths = [];
     private readonly Dictionary<ClassGraph, ClassContext> contexts = [];
@@ -41,12 +42,14 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     /// <summary>Creates the session of <paramref name="project"/>.</summary>
     /// <param name="project">The open project.</param>
     /// <param name="context">Host services shared across the editor.</param>
-    public ProjectSessionViewModel(Project project, EditorContext context)
+    /// <param name="classContexts">Creates the context of each class from the session's container; defaults to a factory over <paramref name="context"/> alone.</param>
+    public ProjectSessionViewModel(Project project, EditorContext context, ClassContextFactory? classContexts = null)
     {
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(context);
         Project = project;
         this.context = context;
+        this.classContexts = classContexts ?? ClassContextFactory.For(context);
         wasRunning = IsRunning;
         context.RunState.PhaseChanged += OnRunPhaseChanged;
         project.PropertyChanged += OnProjectPropertyChanged;
@@ -147,7 +150,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(cls);
         if (!contexts.ContainsKey(cls))
         {
-            var created = new ClassContext(cls, context, UndoStackFor(cls), () => Project.Classes);
+            var created = classContexts.Create(cls, UndoStackFor(cls), () => Project.Classes);
             created.MembersChanged += OnContextMembersChanged;
             created.DirtyChanged += OnContextDirtyChanged;
             created.Edited += OnContextEdited;

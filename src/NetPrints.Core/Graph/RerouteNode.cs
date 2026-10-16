@@ -127,5 +127,8 @@ namespace NetPrints.Graph
         {
             return "Reroute";
         }
+
+        /// <inheritdoc />
+        public override bool TitleIsFixed => true;
     }
 }

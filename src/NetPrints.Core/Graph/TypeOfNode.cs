@@ -41,5 +41,8 @@ namespace NetPrints.Graph
         {
             return $"Type Of";
         }
+
+        /// <inheritdoc />
+        public override bool TitleIsFixed => true;
     }
 }

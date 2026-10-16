@@ -509,7 +509,7 @@ SC-010; US3 scenarios 5–6. **Gate (plan)**: SC-005; SC-010 (the three writers)
 
 ### Batch C1f — model: sonnet — T055–T057, T171 — 5 units
 
-- [ ] T171 [US3] Display of node titles, pin labels, category names and extension resources through the resx (FR-027,
+- [x] T171 [US3] Display of node titles, pin labels, category names and extension resources through the resx (FR-027,
   research R13, ADR-0027; 2 units; added after C1d: C1b and C1c left the display on the C# strings, and no task owned
   it). Test first: with the UI culture set to a culture that has a translation of `Node.<kind>.Title`, a built-in
   node's header, a shipped pin's label and the `Category.netprints` search header show the translation; an extension
@@ -519,12 +519,12 @@ SC-010; US3 scenarios 5–6. **Gate (plan)**: SC-005; SC-010 (the three writers)
   `ExtensionRegistry.StringResources`; the XAML literal ratchet does not grow and the goldens of T019 stay green (the
   default text is the current text). Remove the "not switched yet" deviation from ADR-0027.
 
-- [ ] T055 [US1] Composition step 3: classes and graphs (FR-003, FR-004, SC-005, research R4 step 5, gate M2; 2 units).
+- [x] T055 [US1] Composition step 3: classes and graphs (FR-003, FR-004, SC-005, research R4 step 5, gate M2; 2 units).
   Red/green: T006's M2 test with counting fakes. The generated `ClassContextFactory` and `GraphScopeFactory`
   (`[ScopeFactory]`) replace the hand-written ones; nothing is resolved per row, node or pin. Gate M2: zero per-pin
   resolutions, allocations per node at most the baseline plus 10%, and M2 time at most 10% over its R5-0 baseline. A
   failed gate stops here and is reported.
-- [ ] T056 [US3] The API shape review and the stability table (FR-030, FR-116, research R16; 1 unit). Review the API
+- [x] T056 [US3] The API shape review and the stability table (FR-030, FR-116, research R16; 1 unit). Review the API
   files of Core, Serialization, Abstractions and Extensibility against contracts/extension-api.md; every settling
   surface so far carries its NPXE id (NPXE0005, NPXE0006, NPXE0007, NPXE0011). Write the "API stability" section of
   `docs/guide/extensions.md` (research R16's table, the opt-in `<NetPrintsExperimentalOptIn Include="NPXE00nn" />`).

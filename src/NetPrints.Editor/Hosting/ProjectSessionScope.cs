@@ -32,6 +32,9 @@ internal sealed class ProjectSessionScope : IDisposable
     /// <summary>Gets the backups of the session, or <see langword="null"/> before <see cref="CreateBackups"/> or when the host configured none.</summary>
     public SessionBackups? Backups => backups;
 
+    /// <summary>Gets the factory of the session's class contexts.</summary>
+    public ClassContextFactory ClassContexts => Services.GetRequiredService<ClassContextFactory>();
+
     /// <summary>Gets the project template service of the session.</summary>
     public ProjectTemplateService Templates => Services.GetRequiredService<ProjectTemplateService>();
 

@@ -194,26 +194,26 @@ const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.RegisterFailed = 
 [NPXE0001]NetPrints.Extensibility.Hosting.InMemoryHostChannel.SendAsync(NetPrints.Extensibility.Hosting.HostMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
 [NPXE0001]NetPrints.Extensibility.Hosting.InMemoryHostChannel.DisposeAsync() -> System.Threading.Tasks.ValueTask
 const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.IdPrefix = "NPX013" -> string!
-NetPrints.Extensibility.Editor.CommandScope
-NetPrints.Extensibility.Editor.CommandScope.Global = 0 -> NetPrints.Extensibility.Editor.CommandScope
-NetPrints.Extensibility.Editor.CommandScope.Graph = 1 -> NetPrints.Extensibility.Editor.CommandScope
-NetPrints.Extensibility.Editor.CommandScope.ProjectTree = 2 -> NetPrints.Extensibility.Editor.CommandScope
-NetPrints.Extensibility.Editor.CommandScope.VariablesPanel = 4 -> NetPrints.Extensibility.Editor.CommandScope
-NetPrints.Extensibility.Editor.CommandSelection
-NetPrints.Extensibility.Editor.CommandSelection.<Clone>$() -> NetPrints.Extensibility.Editor.CommandSelection!
-NetPrints.Extensibility.Editor.CommandSelection.CommandSelection(System.Collections.Generic.IReadOnlyList<object!>! Nodes, object? TreeItem = null) -> void
-NetPrints.Extensibility.Editor.CommandSelection.Deconstruct(out System.Collections.Generic.IReadOnlyList<object!>! Nodes, out object? TreeItem) -> void
-NetPrints.Extensibility.Editor.CommandSelection.Equals(NetPrints.Extensibility.Editor.CommandSelection? other) -> bool
-NetPrints.Extensibility.Editor.CommandSelection.Nodes.get -> System.Collections.Generic.IReadOnlyList<object!>!
-NetPrints.Extensibility.Editor.CommandSelection.Nodes.init -> void
-NetPrints.Extensibility.Editor.CommandSelection.TreeItem.get -> object?
-NetPrints.Extensibility.Editor.CommandSelection.TreeItem.init -> void
-override NetPrints.Extensibility.Editor.CommandSelection.Equals(object? obj) -> bool
-override NetPrints.Extensibility.Editor.CommandSelection.GetHashCode() -> int
-override NetPrints.Extensibility.Editor.CommandSelection.ToString() -> string!
-static NetPrints.Extensibility.Editor.CommandSelection.None.get -> NetPrints.Extensibility.Editor.CommandSelection!
-static NetPrints.Extensibility.Editor.CommandSelection.operator !=(NetPrints.Extensibility.Editor.CommandSelection? left, NetPrints.Extensibility.Editor.CommandSelection? right) -> bool
-static NetPrints.Extensibility.Editor.CommandSelection.operator ==(NetPrints.Extensibility.Editor.CommandSelection? left, NetPrints.Extensibility.Editor.CommandSelection? right) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.CommandScope
+[NPXE0005]NetPrints.Extensibility.Editor.CommandScope.Global = 0 -> NetPrints.Extensibility.Editor.CommandScope
+[NPXE0005]NetPrints.Extensibility.Editor.CommandScope.Graph = 1 -> NetPrints.Extensibility.Editor.CommandScope
+[NPXE0005]NetPrints.Extensibility.Editor.CommandScope.ProjectTree = 2 -> NetPrints.Extensibility.Editor.CommandScope
+[NPXE0005]NetPrints.Extensibility.Editor.CommandScope.VariablesPanel = 4 -> NetPrints.Extensibility.Editor.CommandScope
+[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection
+[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.<Clone>$() -> NetPrints.Extensibility.Editor.CommandSelection!
+[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.CommandSelection(System.Collections.Generic.IReadOnlyList<object!>! Nodes, object? TreeItem = null) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.Deconstruct(out System.Collections.Generic.IReadOnlyList<object!>! Nodes, out object? TreeItem) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.Equals(NetPrints.Extensibility.Editor.CommandSelection? other) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.Nodes.get -> System.Collections.Generic.IReadOnlyList<object!>!
+[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.Nodes.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.TreeItem.get -> object?
+[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.TreeItem.init -> void
+[NPXE0005]override NetPrints.Extensibility.Editor.CommandSelection.Equals(object? obj) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.CommandSelection.GetHashCode() -> int
+[NPXE0005]override NetPrints.Extensibility.Editor.CommandSelection.ToString() -> string!
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandSelection.None.get -> NetPrints.Extensibility.Editor.CommandSelection!
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandSelection.operator !=(NetPrints.Extensibility.Editor.CommandSelection? left, NetPrints.Extensibility.Editor.CommandSelection? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandSelection.operator ==(NetPrints.Extensibility.Editor.CommandSelection? left, NetPrints.Extensibility.Editor.CommandSelection? right) -> bool
 [NPXE0005]NetPrints.Extensibility.Editor.ICommandContext
 [NPXE0005]NetPrints.Extensibility.Editor.ICommandContext.ActiveGraph.get -> NetPrints.Extensibility.Editor.IGraphEditor?
 [NPXE0005]NetPrints.Extensibility.Editor.ICommandContext.Dialogs.get -> NetPrints.Extensibility.Editor.IDialogService!

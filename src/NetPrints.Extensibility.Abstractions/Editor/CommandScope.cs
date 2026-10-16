@@ -1,6 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
+using NetPrints.Core;
+
 namespace NetPrints.Extensibility.Editor;
 
 /// <summary>Where a command's gestures are active; a command may name several scopes (<c>Graph | ProjectTree</c>).</summary>
+[Experimental(ExperimentalApiIds.EditorContributions, UrlFormat = ExperimentalApiIds.UrlFormat)]
 [Flags]
 public enum CommandScope
 {

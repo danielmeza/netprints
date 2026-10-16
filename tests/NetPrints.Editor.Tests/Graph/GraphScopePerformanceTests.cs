@@ -21,6 +21,8 @@ public sealed class GraphScopePerformanceTests(TestEditor editor)
 {
     private const int NodeCount = 1000;
     private const int Runs = 5;
+    private const double BaselineBytesPerNode = 35_080;
+    private const double AllocationTolerance = 1.10;
 
     [Fact(Timeout = 300_000)]
     [Trait("Category", "Performance")]
@@ -63,6 +65,10 @@ public sealed class GraphScopePerformanceTests(TestEditor editor)
 
         Assert.Equal(NodeCount + 2, nodes);
         Assert.InRange(pins, NodeCount * 3, NodeCount * 6);
+        Assert.Equal(0, counting.MessengerCalls);
+        Assert.Equal(0, counting.ProjectClassesCalls);
+        Assert.True(medianBytes / nodes <= BaselineBytesPerNode * AllocationTolerance,
+            $"A node allocates {medianBytes / nodes:F0} bytes; the gate is {BaselineBytesPerNode * AllocationTolerance:F0} (R5-0 baseline {BaselineBytesPerNode} plus 10%).");
     }
 
     private static MethodGraph BuildGraph()
@@ -100,7 +106,7 @@ public sealed class GraphScopePerformanceTests(TestEditor editor)
         private int projectClassesCalls;
 
         public CountingServices(EditorContext context) =>
-            Services = new ClassEditorServices(context, new UndoRedoStack(), messenger, () =>
+            Services = new GraphScopeFactory(new ContextServices(context)).CreateServices(new UndoRedoStack(), messenger, () =>
             {
                 projectClassesCalls++;
                 return [];
@@ -111,6 +117,11 @@ public sealed class GraphScopePerformanceTests(TestEditor editor)
         public int MessengerCalls => messenger.Calls;
 
         public int ProjectClassesCalls => projectClassesCalls;
+    }
+
+    private sealed class ContextServices(EditorContext context) : IServiceProvider
+    {
+        public object? GetService(Type serviceType) => serviceType == typeof(EditorContext) ? context : null;
     }
 
     private sealed class CountingMessenger(IMessenger inner) : IMessenger

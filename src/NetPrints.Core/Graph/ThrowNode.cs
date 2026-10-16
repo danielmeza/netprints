@@ -38,5 +38,8 @@ namespace NetPrints.Graph
         {
             return $"Throw Exception";
         }
+
+        /// <inheritdoc />
+        public override bool TitleIsFixed => true;
     }
 }
