@@ -515,6 +515,45 @@ kept in `.agent-archive/2026-10-16-p3-m5-spike/` beside the repository.
 - Red/green T033: `PrimitiveKindsTests` written first; red as a compile failure (no `PrimitiveKinds` type), green 7 of 7 after.
 - Suite (Release): 4469 total, 4436 passed, 33 skipped, 0 failed; build 0 warnings; `dotnet format` clean; trim ratchet 11.
 
+## Batch B7 (T034-T037)
+
+- T034: `IPinListEditor`, `IOverloadableNode` and `IPinNameEditor` (Core, `NetPrints.Graph`) join `IMemberReferencingNode`. The editor asks
+  for the role in `NodeViewModel` (+/- buttons, tooltips, the add and remove commands), `ModelOperations` (current overload and the
+  change), `NodePinViewModel.IsNameEditable` and `GraphSelectionInspectorTarget` (any `IMemberReferencingNode` resolves to the variable or
+  method it names, so a make-delegate node now selects its method too). The built-in nodes implement the interfaces explicitly, so
+  their public surface does not grow; `MakeArrayNode` gained two public overload-name constants that `ModelOperations` aliases.
+- Decision: node search and navigation had no node-type checks left to replace (the creation service builds nodes from factories), so
+  the callers that changed are the pin buttons, overloads, pin names and the inspector. The overload list still comes from the
+  reflection provider in `NodeViewModel`, and the right-hand +/- buttons (generic parameters, a second list) stay on `MethodEntryNode`.
+- Red/green T034: `NodeCapabilityTests` 5 of 8 red on assertions with only the interface declarations in place (the three that passed
+  were negative or in-place cases), 8 of 8 green after; NodeViewModelTests and the inspector tests stayed green.
+- T035: `NodePin.Role` (default `Argument`); the generator reads `[Pin(Role = ...)]` on data pins and emits `Role = ...` in the pin
+  initializer, merged with `UnconnectedValue`. `CallMethodNode` sets `Target`, `Result`, `OutParam` (input and output pin of each
+  `out`/`ref` parameter) and `Exception`; the output pins `out.data.<parameterName>` follow the return values, and the translator
+  assigns each from the variable passed to its parameter after the call. `Node.CanSetPure` is one rule over the output roles; the
+  overrides of `CallMethodNode`, `ConstructorNode`, `TernaryNode` and `ExplicitCastNode` are gone (`*REMOVED*` lines) and those kinds
+  mark their value pin `Result`. `AwaitNode` keeps its override: its result pin comes and goes with the task type, so a role rule would
+  stop an await of a plain `Task` from loading pure. `ReturnValuePins` and `ReturnTypes` of a call now list the `Result` pins only.
+- Deviation: the out/ref check in the translator (NPT008) reads the input pin role for calls; constructors keep the parameter pass
+  type, and a constructor gets no output pins for its `out`/`ref` arguments (the spec names calls).
+- Decision: no built-in convention kind needs a role, because giving `Result` to a pin of an always-pure or exec-driven kind (`Default`,
+  `ForLoop`) would let the UI offer a purity toggle that does nothing. The generator's role support is covered by generator tests.
+- Goldens: no C# golden and no fixture or sample graph changed (none calls a method with an `out` or `ref` parameter); SC-002 holds.
+  `NotificationMap.golden.json` gained `"Role": []` for the six pin classes (the new property raises no notification);
+  `CallMethodPurityTests.VoidCallWithOnlyAnOutArgumentCannotBePure` became `...CanBePure` (US2 scenario 5).
+- Red/green T035: `PinRoleTests` and `OutRefPinTests` 9 of 12 red on assertions (roles all `Argument`, no output pins, no assignment)
+  with `NodePin.Role` declared and nothing else; generator tests 2 of 8 red (the role in the initializer); green after: 12 of 12, 155 of
+  155 in Analyzers.Tests.
+- T036: ADR-0029, its index entry, a section in `docs/guide/graph-format.md`, and two entries under "Unreleased" in the release notes.
+- Process slip: one `sed -i` tick of T034 in `tasks.md` (a one-line mechanical edit, diff checked); every other edit used Edit or Write.
+- Checkpoint B, evidence (Release, before CI): suite 4490 total, 4457 passed, 33 skipped, 0 failed (UITests 13 min 40 s, Editor.Tests
+  1 min 47 s, Cli.Tests 41 s, Catalog.Tests 48 s, Core.Tests 34 s, Analyzers.Tests 2 s). E2E (`NETPRINTS_E2E=1`, `--fail-skips on`,
+  display start 180): 53 total, 52 passed, 1 skipped (`GuideScreenshotTests`, not run for explicit filtering), 0 failed. Solution
+  build 0 warnings; `dotnet format --verify-no-changes` clean. Trim ratchet 11 (R5-0 start of the phase was 12 before T033, so down
+  by 1 from T033 alone; the second drop the plan expects from the FR-117 factories is not in this batch's numbers: read it from the
+  trim job). Still to read from PR #20 CI at this head: the longest CI job, `SearchPerformanceTests` numbers from the perf job, the pack
+  spike (see "Pack spike": passed), the Dock check (pin stays 12.1.0.6, see Checkpoint A). T037 stays unticked until CI is green.
+
 ## Pack spike
 
 T026, run on `scripts/pack-local.sh` version `0.1.0-local.20261016141953`, scratch projects outside the repository (the
