@@ -85,10 +85,10 @@ public sealed class CommandPaletteViewModelTests
     public void TheQueryFiltersWithThePrefixWordStartSubstringRanking()
     {
         Add("resave", "Resave");
-        Add("undo", "Undo save");
+        Add("undoSave", "Undo save");
         Add("saveall", "Save all");
         Add("close", "Close tab");
-        Add("save", "Save");
+        Add("saveOnly", "Save");
         CommandPaletteViewModel palette = Open();
 
         palette.Query = "sa";

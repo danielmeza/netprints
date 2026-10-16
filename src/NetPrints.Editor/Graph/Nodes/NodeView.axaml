@@ -138,10 +138,10 @@
               <Grid ColumnDefinitions="*,*" MinHeight="32">
                 <Grid.Styles>
                   <Style Selector="Panel.pinLeft" x:DataType="ednodes:PinRowViewModel">
-                    <Setter Property="AutomationProperties.AutomationId" Value="{Binding Left.PinAutomationId}" />
+                    <Setter Property="AutomationProperties.AutomationId" Value="{Binding LeftAutomationId}" />
                   </Style>
                   <Style Selector="Panel.pinRight" x:DataType="ednodes:PinRowViewModel">
-                    <Setter Property="AutomationProperties.AutomationId" Value="{Binding Right.PinAutomationId}" />
+                    <Setter Property="AutomationProperties.AutomationId" Value="{Binding RightAutomationId}" />
                   </Style>
                 </Grid.Styles>
                 <Panel Classes="pinLeft">

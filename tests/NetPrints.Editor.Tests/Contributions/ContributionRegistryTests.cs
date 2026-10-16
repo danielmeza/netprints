@@ -208,7 +208,7 @@ public class ContributionRegistryTests
 
         registry.AddCommand(Command("netprints.command.save", "Second"));
 
-        Assert.Equal("First", Assert.Single(registry.Commands).DisplayLabel);
+        Assert.Equal("First", Assert.Single(registry.Commands).Label.Text);
         var issue = Assert.Single(registry.Issues);
         Assert.Equal(ContributionIssueKind.DuplicateId, issue.Kind);
         Assert.Equal("netprints.command.save", issue.Id);

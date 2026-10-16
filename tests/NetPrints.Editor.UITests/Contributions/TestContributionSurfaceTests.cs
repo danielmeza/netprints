@@ -181,7 +181,7 @@ public class TestContributionSurfaceTests
         var palette = new CommandPaletteViewModel(rig.Registry, rig.Invoker);
         var sheet = new KeyboardShortcutsViewModel(rig.Registry);
 
-        Assert.Equal("Notes", show.Label);
+        Assert.Equal("Notes", show.DisplayLabel);
         Assert.Contains(palette.Items, item => item.Command.Id == show.Id);
         Assert.Contains(sheet.Groups.SelectMany(group => group.Rows), row => row.CommandId == show.Id);
     }
