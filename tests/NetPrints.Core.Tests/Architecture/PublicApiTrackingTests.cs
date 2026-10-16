@@ -20,7 +20,7 @@ namespace NetPrints.Tests.Architecture
         private const string AnalyzerPathMetadataKey = "PublicApiAnalyzersPath";
 
         public static TheoryData<string> TrackedProjects() =>
-            ["NetPrints.Extensibility", "NetPrints.Core", "NetPrints.Reflection", "NetPrints.Serialization", "NetPrints.Catalog"];
+            ["NetPrints.Extensibility", "NetPrints.Extensibility.Abstractions", "NetPrints.Core", "NetPrints.Reflection", "NetPrints.Serialization", "NetPrints.Catalog"];
 
         [Theory]
         [MemberData(nameof(TrackedProjects))]

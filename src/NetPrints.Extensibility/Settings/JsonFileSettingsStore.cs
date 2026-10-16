@@ -201,13 +201,13 @@ public sealed class JsonFileSettingsStore : ISettingsStore
                 return descriptor.Default;
             }
 
-            ValidateOptionsResult? result = descriptor.Validator?.Invoke(null, value);
-            if (result is null || !result.Failed)
+            IReadOnlyList<string>? failures = descriptor.Validator?.Invoke(value);
+            if (failures is null || failures.Count == 0)
             {
                 return value;
             }
 
-            Log.SettingsSectionInvalid(logger, null, descriptor.ExtensionId, filePath, string.Join("; ", result.Failures ?? []));
+            Log.SettingsSectionInvalid(logger, null, descriptor.ExtensionId, filePath, string.Join("; ", failures));
         }
         catch (Exception ex) when (ex is JsonException or NotSupportedException or InvalidOperationException)
         {

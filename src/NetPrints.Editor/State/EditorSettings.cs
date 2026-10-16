@@ -19,8 +19,11 @@ public sealed record EditorSettings
     public static ExtensionSettingsDescriptor<EditorSettings> Descriptor { get; } =
         new(SectionId, EditorSettingsJsonContext.Default.EditorSettings, new EditorSettings())
         {
-            Validator = new EditorSettingsValidator().Validate,
+            Validator = Validate,
         };
+
+    private static string[] Validate(EditorSettings value)
+        => [.. new EditorSettingsValidator().Validate(null, value).Failures ?? []];
 }
 
 /// <summary>Validates <see cref="EditorSettings"/> through the DataAnnotations on its members (generated).</summary>

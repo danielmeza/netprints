@@ -17,6 +17,7 @@
     <PackageReference Include="Microsoft.Extensions.Options" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\NetPrints.Extensibility.Abstractions\NetPrints.Extensibility.Abstractions.csproj" />
     <ProjectReference Include="..\NetPrints.Catalog\NetPrints.Catalog.csproj" />
     <ProjectReference Include="..\NetPrints.Core\NetPrints.Core.csproj" />
     <ProjectReference Include="..\NetPrints.Reflection\NetPrints.Reflection.csproj" />

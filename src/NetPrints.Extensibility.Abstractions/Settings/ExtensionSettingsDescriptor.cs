@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization.Metadata;
-using Microsoft.Extensions.Options;
 using NetPrints.Core;
 
 namespace NetPrints.Extensibility.Settings;
@@ -26,8 +25,9 @@ public sealed record ExtensionSettingsDescriptor<T>(string ExtensionId, JsonType
     : ExtensionSettingsDescriptor(ExtensionId, typeof(T))
 {
     /// <summary>
-    /// Gets the validator the settings store runs on a section it has read; a failing section is replaced by
-    /// <see cref="Default"/> and the failures are logged. <see langword="null"/> accepts every value.
+    /// Gets the validator the settings store runs on a section it has read. It returns the failure messages; a
+    /// non-empty result replaces the section by <see cref="Default"/> and the messages are logged.
+    /// <see langword="null"/> accepts every value.
     /// </summary>
-    public Func<string?, T, ValidateOptionsResult>? Validator { get; init; }
+    public Func<T, IReadOnlyList<string>>? Validator { get; init; }
 }

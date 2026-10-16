@@ -62,7 +62,7 @@ namespace NetPrints.Tests.Core
             string[] declaringFiles =
             [
                 Path.Combine("NetPrints.Core", "Translator", "TranslationDiagnosticCodes.cs"),
-                Path.Combine("NetPrints.Extensibility", "Loading", "ExtensionDiagnosticCodes.cs"),
+                Path.Combine("NetPrints.Extensibility.Abstractions", "Loading", "ExtensionDiagnosticCodes.cs"),
                 Path.Combine("NetPrints.Serialization", "DocumentIssue.cs"),
                 Path.Combine("NetPrints.Generation", "GraphCodeGenerator.cs"),
                 Path.Combine("NetPrints.Core", "Projects", "ProjectSystemException.cs"),

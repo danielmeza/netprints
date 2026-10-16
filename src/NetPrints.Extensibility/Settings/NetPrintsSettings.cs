@@ -43,8 +43,11 @@ public sealed record NetPrintsSettings
     public static ExtensionSettingsDescriptor<NetPrintsSettings> Descriptor { get; } =
         new(SectionId, NetPrintsSettingsJsonContext.Default.NetPrintsSettings, Empty)
         {
-            Validator = new NetPrintsSettingsValidator().Validate,
+            Validator = Validate,
         };
+
+    private static string[] Validate(NetPrintsSettings value)
+        => [.. new NetPrintsSettingsValidator().Validate(null, value).Failures ?? []];
 }
 
 /// <summary>
