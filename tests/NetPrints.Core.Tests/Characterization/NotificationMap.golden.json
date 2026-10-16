@@ -83,6 +83,7 @@
       "Path"
     ],
     "Snapshot": [
+      "CSharpTarget",
       "ProfileId",
       "Snapshot",
       "TargetFramework"

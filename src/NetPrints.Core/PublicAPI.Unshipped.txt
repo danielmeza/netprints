@@ -336,3 +336,5 @@ static NetPrints.Projects.CSharpTargetResolution.operator ==(NetPrints.Projects.
 static NetPrints.Projects.CSharpTarget.Resolve(string! projectFilePath, System.Collections.Generic.IReadOnlyList<NetPrints.Projects.CSharpFrameworkInput!>! frameworks) -> NetPrints.Projects.CSharpTargetResolution!
 static NetPrints.Projects.CSharpTarget.Unconstrained.get -> NetPrints.Projects.CSharpTarget!
 static readonly NetPrints.Projects.CSharpLanguageVersion.MaxKnown -> NetPrints.Projects.CSharpLanguageVersion
+NetPrints.Translator.IExecutionTranslationContext.Target.get -> NetPrints.Projects.CSharpTarget!
+static NetPrints.Translator.TranslatorUtil.ObjectToLiteral(object? obj, NetPrints.Core.TypeSpecifier! type, NetPrints.Projects.CSharpTarget! target) -> string!

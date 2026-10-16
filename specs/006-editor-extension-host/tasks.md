@@ -464,7 +464,7 @@ SC-010; US3 scenarios 5–6. **Gate (plan)**: SC-005; SC-010 (the three writers)
   save path, `netprints regen` and the SDK's generate target write byte-identical files. Then the language version
   travels in the generate request (`src/NetPrints.Generator/`, the target in `src/NetPrints.Sdk/`, `netprints regen`, the
   editor's save).
-- [ ] T050 [US9] The translator's `Target` and literal formatting (FR-075; 1 unit). Test first: translator tests in
+- [x] T050 [US9] The translator's `Target` and literal formatting (FR-075; 1 unit). Test first: translator tests in
   `tests/NetPrints.Core.Tests/Translator/`: `Target` is reachable from the execution translation context through a
   default-implemented member (existing translators compile unchanged), and literals are formatted for the target's
   language version. Then the member and the formatting in `src/NetPrints.Core/Translator/`. Goldens of the default

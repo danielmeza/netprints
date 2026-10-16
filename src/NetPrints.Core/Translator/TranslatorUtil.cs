@@ -3,11 +3,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Formatting;
 using NetPrints.Core;
 using NetPrints.Graph;
+using NetPrints.Projects;
 
 namespace NetPrints.Translator
 {
@@ -59,6 +61,12 @@ namespace NetPrints.Translator
 
         private const int TemporaryVariableNameLength = 16;
 
+        private const string LongEscapeCharacter = "\\u001b";
+
+        private const string ShortEscapeCharacter = "\\e";
+
+        private static readonly CSharpLanguageVersion EscapeCharacterVersion = new(13, 0);
+
         /// <summary>
         /// Gets a temporary variable name.
         /// </summary>
@@ -85,8 +93,21 @@ namespace NetPrints.Translator
         /// <param name="obj">Object value to translate. Null translates to the "null" literal.</param>
         /// <param name="type">Specifier for the type of the literal.</param>
         /// <returns></returns>
-        public static string ObjectToLiteral(object? obj, TypeSpecifier type)
+        public static string ObjectToLiteral(object? obj, TypeSpecifier type) =>
+            ObjectToLiteral(obj, type, CSharpTarget.Unconstrained);
+
+        /// <summary>
+        /// Translates an object into a literal value for a C# target (eg. a float 32.32 -> "32.32f"). The escape character
+        /// is written <c>\e</c> from C# 13 and <c>\u001b</c> before.
+        /// </summary>
+        /// <param name="obj">Object value to translate. Null translates to the "null" literal.</param>
+        /// <param name="type">Specifier for the type of the literal.</param>
+        /// <param name="target">The C# language the literal is written for.</param>
+        /// <returns>The C# literal.</returns>
+        public static string ObjectToLiteral(object? obj, TypeSpecifier type, CSharpTarget target)
         {
+            ArgumentNullException.ThrowIfNull(target);
+
             // Interpret object string as enum field
             if (type.IsEnum)
             {
@@ -108,11 +129,11 @@ namespace NetPrints.Translator
             if (type == TypeSpecifier.FromType<string>())
             {
                 // type == string means obj is the literal's own boxed string value.
-                return Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral((string)obj, quote: true);
+                return UseShortEscape(Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral((string)obj, quote: true), target);
             }
             else if (type == TypeSpecifier.FromType<char>() && obj is char c)
             {
-                return Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(c, quote: true);
+                return UseShortEscape(Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(c, quote: true), target);
             }
             else if (type == TypeSpecifier.FromType<bool>() && obj is bool b)
             {
@@ -136,9 +157,43 @@ namespace NetPrints.Translator
         }
 
         /// <summary>
+        /// Rewrites the <c>\u001b</c> escape of a formatted literal to <c>\e</c> for a target with C# 13, reading the literal
+        /// one escape at a time so that an escaped backslash followed by <c>u001b</c> is left as it is.
+        /// </summary>
+        private static string UseShortEscape(string literal, CSharpTarget target)
+        {
+            if (!target.Check(EscapeCharacterVersion))
+            {
+                return literal;
+            }
+
+            var result = new StringBuilder(literal.Length);
+            for (int i = 0; i < literal.Length; i++)
+            {
+                if (literal[i] != '\\' || i + 1 >= literal.Length)
+                {
+                    result.Append(literal[i]);
+                    continue;
+                }
+
+                if (string.CompareOrdinal(literal, i, LongEscapeCharacter, 0, LongEscapeCharacter.Length) == 0)
+                {
+                    result.Append(ShortEscapeCharacter);
+                    i += LongEscapeCharacter.Length - 1;
+                    continue;
+                }
+
+                result.Append(literal[i]).Append(literal[i + 1]);
+                i++;
+            }
+
+            return result.ToString();
+        }
+
+        /// <summary>
         /// The static-field spelling of a non-finite float or double ("float.NaN",
         /// "double.PositiveInfinity", …), or null for a finite value. NaN and Infinity have no
-        /// numeric literal in C#, so <see cref="ObjectToLiteral"/> must not emit them as a suffixed
+        /// numeric literal in C#, so <see cref="ObjectToLiteral(object?, TypeSpecifier, CSharpTarget)"/> must not emit them as a suffixed
         /// number ("NaND", "InfinityD"), which fails to compile.
         /// </summary>
         private static string? NonFiniteLiteral(double value, string typeName) => value switch

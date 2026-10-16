@@ -645,6 +645,46 @@ consumers restore from `local-packages/` plus a scratch feed and build with `-p:
   with no analyzer, 15 of 15 green. T046: `LanguageSettingTests` 4 of 4 red with a no-op `ApplyLanguageSetting`, 5 of 5 green (one case added after a
   run showed Ursa reading back `zh-CN` for an unsupported culture); `SettingsValidationTests` 2 of 14 red (invalid language accepted), 14 of 14 green.
 
+## Batch C1c (T047-T050)
+
+- T047: `CSharpLanguageVersion` (readonly record struct, `MaxKnown` 14.0, `TryParse`, `IsKeyword`, ordering), `CSharpTarget` (`Version`, `Specified`,
+  `TargetFrameworks`, `Check`, `Unconstrained`, `Resolve`) and `CSharpFrameworkInput` in `NetPrints.Core/Projects/`; `ProjectSnapshot.CSharpTarget` is a
+  non-positional `init` member (default `Unconstrained`), `Project.CSharpTarget` reads it. NPW006 to NPW008 are `ProjectMessage` constants and
+  `Resolve` returns the messages, so the project system only adds them.
+- Decision: `Resolve` takes one `CSharpFrameworkInput` per target framework (`LangVersion`, `MaxSupportedLangVersion`); the writers that cannot evaluate
+  MSBuild in process (the SDK target) send those same inputs and the generator calls `Resolve`, so all three writers run one function.
+- Decision: an empty `LangVersion` resolves like `default` without a message; the SDK sets `LangVersion` to the framework default when the project sets
+  none (`14.0` on net10.0), so NPW006 fires only for a keyword the project wrote. A missing `MaxSupportedLangVersion` reads as `MaxKnown`.
+- Decision: "common capabilities" of a multi-targeted project is the minimum version only for now; `CSharpFeature` and the capability intersection
+  land with SUG4 (F).
+- Red/green T047: `CSharpTargetTests` red as a compile failure (types absent), 37 of 37 green.
+- T048: `MsBuildProjectSystem.ReadFrameworkInputs` evaluates every target framework of a multi-targeted project (the first from the existing evaluation, the
+  others in throwaway collections) and sets `ProjectSnapshot.CSharpTarget`; fixtures in `tests/Fixtures/CSharpTarget/` (`NoLangVersion`, `Latest`,
+  `Preview`, `Pinned10`, `Unknown16`, `MultiTarget` = net10.0;net8.0), linked into the Core and Cli test outputs and copied to a temp folder per test
+  (the repository's `Directory.Build.props` sets `LangVersion`). Guide rows NPW006 to NPW008. Red/green: `CSharpTargetWorkspaceTests` 6 of 6 red on
+  assertions (target stayed `Unconstrained`), 6 of 6 green (one expectation fixed: `Specified` is `14.0` for a project with no `LangVersion`).
+- T049: `GenerateRequest.Target` (non-positional `init`), a `framework=<moniker>|<LangVersion>|<MaxSupportedLangVersion>` request line parsed by
+  `GenerateRequestFile` (none means `Unconstrained`), `GenerateRequestFactory` copies the snapshot's target, `GraphCodeGenerator` puts it on its
+  throwaway snapshot. `NetPrints.Sdk.targets`: `_NetPrintsCollectFrameworks` calls the project once per target framework through the `MSBuild` task and
+  `_NetPrintsWriteRequest` writes one line each, so every inner build of a multi-targeted project writes the same request. Contract line added to
+  project-system.md section 2. `CSharpTargetWriterIdentityTests` (6 fixtures x editor path, `netprints regen`, `netprints build` with the real SDK
+  target) plus two request-parse tests: red as a compile failure (`GenerateRequest.Target` absent), 8 of 8 green. The identity assertions held from
+  the start because nothing yet reads the version; the request assertions are what pin the plumbing.
+- Deviation: the editor's save path renders through `ClassTranslator`, not through a request; it reaches the target through the class's `Project`
+  (T050). The test renders like the editor does (mapper, `ClassTranslator`, `RenderFile`) over the project the workspace loaded.
+- T050: `IExecutionTranslationContext.Target` is a default-implemented member (`Class?.Project ?? Graph.Project`, else `Unconstrained`);
+  `TranslatorUtil.ObjectToLiteral(obj, type, target)` is the new overload (the two-argument one is `Unconstrained`); `ExecutionGraphTranslator` passes
+  the context's target. Decision: the one version-dependent rule is the escape character, written `\e` from C# 13 and `\u001b` before (Roslyn's
+  `FormatLiteral` emits `\u001b` for both, valid everywhere; the rule makes the version visible in the output and is read one escape at a time so an
+  escaped backslash before `u001b` is untouched). Output for a project on C# 13 or newer changes only for an ESC character; no golden holds one.
+  Red/green: `TranslatorTargetTests` 7; the class-level case red on assertion while `Target` read `Graph.Project` only (the method graph had no
+  project), green after reading the class's project first.
+- Suite (Release, solution-wide, `--ignore-exit-code 8`): Core.Tests 983, Cli.Tests, Catalog.Tests, Editor.Tests, Editor.UITests, Analyzers.Tests and
+  Desktop.E2ETests passed. One failure on the first run, `NotificationMapTests`: `Project.Snapshot` now also notifies `CSharpTarget`; the golden map gained
+  that entry (intended). Core.Tests then 983 of 983.
+- Not owned by C1c: the display of node titles, pin labels, category names and extension resources still does not use the resx (see C1b deviation);
+  no task in T047 to T050 covers it, so it stays open for the batch that owns the editor's node views.
+
 ## Build-time budget (ADR-0024, S2a; B-F3)
 
 - `dotnet build NetPrints.slnx -c Release --no-incremental`, warm compile server, 6 runs at the end of B: 24.2, 19.1 and 12.2 s

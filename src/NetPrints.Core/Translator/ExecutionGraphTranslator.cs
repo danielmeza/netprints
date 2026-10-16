@@ -157,7 +157,7 @@ namespace NetPrints.Translator
                 {
                     // The translator only ever runs on a fully type-resolved graph (GraphTypeInference
                     // already ran during deserialization), so PinType.Value is set here.
-                    return TranslatorUtil.ObjectToLiteral(pin.UnconnectedValue, (TypeSpecifier)ResolvedPinType(pin));
+                    return TranslatorUtil.ObjectToLiteral(pin.UnconnectedValue, (TypeSpecifier)ResolvedPinType(pin), ((IExecutionTranslationContext)this).Target);
                 }
                 else if (pin.UsesExplicitDefaultValue)
                 {
