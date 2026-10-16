@@ -36,6 +36,10 @@
 - Every icon is a vector, so icons stay sharp at 150% and 200% display scaling.
 - Pins and wires on the canvas are coloured by data type, and node headers use the same colours in both themes.
 - Panes with nothing to show say so with an icon and one sentence.
+- Document tabs are compact, and the line under the tab strip stays clean at every display scale.
+- Breadcrumbs float over the top left of the graph canvas, and the canvas keeps responding under them.
+- The Variables panel is one compact row per variable: F2 or a double click renames it in place, Delete removes it, and dragging the name onto the canvas places a getter or setter.
+- Fixed: the execution wire follows a node rewired by inserting a node into a connection, and docking a floated pane back no longer duplicates it.
 
 ## Guides
 
