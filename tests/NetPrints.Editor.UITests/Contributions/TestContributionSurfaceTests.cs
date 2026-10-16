@@ -78,7 +78,7 @@ public class TestContributionSurfaceTests
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    private static void AddTestContributions(IContributionRegistry registry)
+    private static void AddTestContributions(ContributionRegistry registry)
     {
         registry.AddCommand(new CommandDescriptor(HelloId, "Say hello", new HelloHandler(), DefaultGestures: [new CommandGesture(CommandModifiers.Ctrl | CommandModifiers.Alt, CommandKey.H)], Menu: new MenuPlacement("File", "testext", 0)));
         registry.AddPanel(new PanelDescriptor(NotesPanelId, "Notes", _ => new object(), PanelDock.Bottom, 9));

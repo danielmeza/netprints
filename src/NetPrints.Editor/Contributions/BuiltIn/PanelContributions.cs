@@ -34,7 +34,7 @@ public static class PanelContributions
 
     /// <summary>Registers the built-in panels; each creates its own view model.</summary>
     /// <param name="registry">The registry to add to.</param>
-    public static void Register(IContributionRegistry registry)
+    public static void Register(IEditorContributions registry)
     {
         ArgumentNullException.ThrowIfNull(registry);
         registry.AddPanel(new PanelDescriptor(ProjectTreeId, "Project", _ => new ProjectTreePanelViewModel(), PanelDock.Left, 0, "FileTree"));

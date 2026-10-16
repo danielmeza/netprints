@@ -11,7 +11,14 @@
     <Setter Property="AutomationProperties.AccessibilityView" Value="Raw" />
     <Setter Property="Template">
       <ControlTemplate>
-        <mi:MaterialIcon AutomationProperties.AccessibilityView="Raw" Kind="{Binding Glyph.Kind, RelativeSource={RelativeSource TemplatedParent}}" x:DataType="icons:IconPresenter" Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" />
+        <Panel>
+          <mi:MaterialIcon AutomationProperties.AccessibilityView="Raw" Kind="{Binding Glyph.Kind, RelativeSource={RelativeSource TemplatedParent}}" x:DataType="icons:IconPresenter"
+                           IsVisible="{Binding Glyph.Geometry, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static ObjectConverters.IsNull}}"
+                           Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" />
+          <PathIcon AutomationProperties.AccessibilityView="Raw" Data="{Binding Glyph.Geometry, RelativeSource={RelativeSource TemplatedParent}}" x:DataType="icons:IconPresenter"
+                    IsVisible="{Binding Glyph.Geometry, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static ObjectConverters.IsNotNull}}"
+                    Width="{TemplateBinding Width}" Height="{TemplateBinding Height}" />
+        </Panel>
       </ControlTemplate>
     </Setter>
     <Style Selector="^.medium">

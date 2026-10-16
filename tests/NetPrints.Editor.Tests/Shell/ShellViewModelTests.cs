@@ -31,7 +31,7 @@ public sealed class ShellViewModelTests : IAsyncDisposable
         await editor.DisposeAsync();
     }
 
-    private ShellViewModel CreateShell(Action<IContributionRegistry>? extra = null)
+    private ShellViewModel CreateShell(Action<ContributionRegistry>? extra = null)
     {
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         BuiltInContributions.Register(registry);

@@ -14,7 +14,7 @@ public static class BuildContributions
 
     /// <summary>Registers the Build menu's commands.</summary>
     /// <param name="registry">The registry to add to.</param>
-    public static void Register(IContributionRegistry registry)
+    public static void Register(IEditorContributions registry)
     {
         ArgumentNullException.ThrowIfNull(registry);
 

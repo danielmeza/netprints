@@ -796,6 +796,45 @@ consumers restore from `local-packages/` plus a scratch feed and build with `-p:
   ADR-0027 (display switched), ADR-0030 (split, C1d), ADR-0023 (language amendment, C1b), the extension guide's "API stability"; the diagnostics guide has the
   NPX013 and NPW006 to NPW008 rows (C1c, C1d). T057 ticked: CI green at 7a426036 (CI run 38977152765, CLI (Windows) 38977152766, Release 38977152776, Docs 38977152809).
 
+## Batch C2a (T060-T062, T057 ticked)
+
+- T057: ticked on the coordinator's word, CI green at 7a426036 (see Batch C1f).
+- T060: `IExtensionBuilder.Editor` returns `IEditorContributions` (NPXE0005; commands, panels, dashboard tiles, context-menu items, tooltip and go-to
+  providers, `AddViewResources`; status bar, dialog and settings page members come with their descriptors). `ExtensionBuilder` hands out a
+  `BufferedEditorContributions`: it checks and buffers each call (null guard, `InvalidOperationException` once `Register` returned) and the loader
+  replays the buffer to `ExtensionLoaderOptions.EditorContributions(manifest)` only after `Register` returned normally, so a throwing extension
+  contributes nothing to the editor either. With no factory (CLI, SDK generator, build) the replay target is the internal `NullEditorContributions`.
+  The descriptor types (`CommandDescriptor`, `PanelDescriptor`, `DashboardTileDescriptor`, `ContextMenuItemDescriptor`, `ITooltipProvider`, `IGoToProvider`,
+  `GoToItem`, `TooltipContent/Target`, `MenuPlacement`, `PanelDock`, `ContextMenuTarget`, `CommandGesture/Key/Modifiers`, `ConventionKeys`) moved to
+  `NetPrints.Extensibility.Editor` in Abstractions, with `DocumentId` and `NavigationTarget` (a `GoToItem` needs them). All are NPXE0005. The
+  editor projects already import that namespace, so only the `DocumentId` aliases of test files changed. `DisplayLabel` and `DisplayTitle` stay in the
+  editor as C# 14 extension properties (`DescriptorDisplay`), because they read the editor's resx.
+- Decision: `ICommandContext.Services` and `IProjectSession.Services` are not wired here: the per-extension providers are T063 (batch C2b), which owns
+  `ExtensionRegistry` providers and the accessor behind `IProjectSession.Services`. They stay the empty provider until then.
+- T061: the built-in editor registers through the facet as `netprints.editor` (`BuiltInContributions.OwnerId`). `ContributionRegistry.For(owner)` is the
+  facet the registry hands out and records the owner of each id (`OwnerOf`, the owner of an issue). `IContributionRegistry` lost the six `Add*` members
+  (the concrete registry keeps them as the implementation behind the facet) and gained `OwnerOf` and `ViewResources`; project templates stay a direct
+  registry call (the builder-level `AddProjectTemplate` is not in this batch). The built-in files take `IEditorContributions` (parameter still named
+  `registry`, to keep the diff small). The 12 application DataTemplates moved to `BuiltInViews.axaml` (root `DataTemplates`), declared with
+  `AddViewResources("avares://NetPrints.Editor/BuiltInViews.axaml")` and added to the application by `ViewResourceLoader` when `ShellHost` is created
+  (once for each application and URI). The loader accepts a `DataTemplates`, `ResourceDictionary` or `Styles` document, because a resource
+  dictionary cannot hold templates in Avalonia.
+- Deviation: `netprints.editor` is not an `INetPrintsExtension` loaded by the extension loader; the registry calls the same registration code with its
+  own facet (the editor registry is built before and apart from the loader until the dynamic groups of D1).
+- Deviation: the moved types keep the `NetPrints.Extensibility.Editor` namespace of the contexts, not `NetPrints.Editor.*`, so extension authors need one
+  `using`; the editor projects import it globally.
+- T062: `IconGlyph` carries an optional `Geometry`; `IconRegistry` takes a lookup (`IconRegistry.ForApplication` reads `Icon.<id>` from the application
+  resources, where `ViewResourceLoader` merged the extension's dictionary). `IconPresenter` shows a `PathIcon` for a geometry glyph and the Material glyph
+  otherwise. An unknown id draws the fallback glyph, logs 1080 once and records an `IconIssue` with the new code `NPX010`
+  (`ExtensionDiagnosticCodes.UnknownReference`, row added to the diagnostics guide).
+- Red/green. T060: `EditorFacetTests` (Cli.Tests, 2) and the Core.Tests `EditorFacetTests` (4) were written with the types in place and did not compile
+  without `IExtensionBuilder.Editor`; no assertion-level red run. T061: the P3a snapshot (`Contributions/Goldens/builtin-registry.txt`) was generated
+  from the registry before the refactor (it is unchanged after it); `OwnerOf`, `For` and `ViewResources` tests were red as compile failures.
+  T062: `ExtensionIconTests` (3) red as compile failures, green.
+- Suite (Release, solution-wide, `--ignore-exit-code 8`): 4685 total, 33 skipped, 13 failed at the first run: `CommandKeyTests.NothingSwitchesOverTheKeys` (the source path
+  moved) and 12 UITests (`ShellAdapterTests`, `DockLayoutRoundTripTests`: `ShellRig` composes no `ShellHost`, so the built-in templates were not
+  added; it now applies the registry's view resources). Both classes re-run green (101 and 34 tests); the whole suite was not run again. No E2E run.
+
 ## Build-time budget (ADR-0024, S2a; B-F3)
 
 - `dotnet build NetPrints.slnx -c Release --no-incremental`, warm compile server, 6 runs at the end of B: 24.2, 19.1 and 12.2 s

@@ -563,13 +563,13 @@ SC-005 rechecked (research R4).
   registers editor contributions and ignore them without error (US3 scenario 3). Then `IExtensionBuilder.Editor`
   returning `IEditorContributions` (NPXE0005) in Abstractions, the descriptor types moved there from
   `src/NetPrints.Editor/Contributions/`, and a Null Object handed out by the CLI, the generator and the build.
-- [ ] T061 [US4] The built-in editor as an extension (FR-021, research R14; 2 units; load `avalonia-xaml` and
+- [x] T061 [US4] The built-in editor as an extension (FR-021, research R14; 2 units; load `avalonia-xaml` and
   `avalonia-styling`). Test first: `tests/NetPrints.Editor.Tests/Contributions/BuiltInEditorExtensionTests.cs`: every
   built-in contribution is registered through the facet by `netprints.editor`, before any other extension, and the
   built-in registry content equals P3a's (a snapshot of ids, order and gestures). Then
   `src/NetPrints.Editor/Contributions/BuiltIn/` registers through the facet; the DataTemplates move to
   `src/NetPrints.Editor/BuiltInViews.axaml`, added with `AddViewResources`; the internal registry API goes.
-- [ ] T062 [US4] View resources and icon ids (FR-021, research R14 N8, ADR-0021; 1 unit). Test first: an extension icon
+- [x] T062 [US4] View resources and icon ids (FR-021, research R14 N8, ADR-0021; 1 unit). Test first: an extension icon
   id `<extension id>.<name>` resolves through `Icon.<extension id>.<name>` in its `AddViewResources` dictionary; an
   unknown id draws the fallback glyph and records NPX010. Then the resolver in `src/NetPrints.Editor/Icons/`.
 

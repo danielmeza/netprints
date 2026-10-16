@@ -14,7 +14,7 @@ public static class GoContributions
 
     /// <summary>Registers the Go menu's commands.</summary>
     /// <param name="registry">The registry to add to.</param>
-    public static void Register(IContributionRegistry registry)
+    public static void Register(IEditorContributions registry)
     {
         ArgumentNullException.ThrowIfNull(registry);
 
@@ -64,7 +64,7 @@ public static class GoContributions
         AddConnectionCommand(registry, "goToTarget", "Go to target", ConnectionEnd.Target, 1);
     }
 
-    private static void AddConnectionCommand(IContributionRegistry registry, string name, string label, ConnectionEnd end, int order)
+    private static void AddConnectionCommand(IEditorContributions registry, string name, string label, ConnectionEnd end, int order)
     {
         registry.AddCommand(new CommandDescriptor(
             ContributionIds.CommandPrefix + name,

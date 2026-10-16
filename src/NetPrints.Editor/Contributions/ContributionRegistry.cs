@@ -34,6 +34,68 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
     private readonly List<ITooltipProvider> tooltipProviders = [];
     private readonly List<IGoToProvider> goToProviders = [];
     private readonly List<ContributionIssue> issues = [];
+    private readonly List<ViewResourceDeclaration> viewResources = [];
+    private readonly Dictionary<string, string> owners = new(StringComparer.Ordinal);
+    private string currentOwner = ContributionIds.Owner;
+
+    /// <inheritdoc/>
+    public IReadOnlyList<ViewResourceDeclaration> ViewResources => viewResources;
+
+    /// <summary>Gets the editor facet of one extension: what it adds is recorded as owned by <paramref name="owner"/>.</summary>
+    /// <param name="owner">The extension id.</param>
+    /// <returns>The facet.</returns>
+    public IEditorContributions For(string owner)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(owner);
+        return new OwnerFacet(this, owner);
+    }
+
+    /// <inheritdoc/>
+    public string? OwnerOf(string id) => owners.GetValueOrDefault(id);
+
+    private void AddViewResources(string owner, string resourceUri)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(resourceUri);
+        ThrowIfFrozen();
+        viewResources.Add(new ViewResourceDeclaration(owner, resourceUri));
+    }
+
+    private void As(string owner, Action add)
+    {
+        string previous = currentOwner;
+        currentOwner = owner;
+        try
+        {
+            add();
+        }
+        finally
+        {
+            currentOwner = previous;
+        }
+    }
+
+    private sealed class OwnerFacet(ContributionRegistry registry, string owner) : IEditorContributions
+    {
+        public IEditorContributions AddCommand(CommandDescriptor command) => Forward(() => registry.AddCommand(command));
+
+        public IEditorContributions AddPanel(PanelDescriptor panel) => Forward(() => registry.AddPanel(panel));
+
+        public IEditorContributions AddDashboardTile(DashboardTileDescriptor tile) => Forward(() => registry.AddDashboardTile(tile));
+
+        public IEditorContributions AddContextMenuItem(ContextMenuItemDescriptor item) => Forward(() => registry.AddContextMenuItem(item));
+
+        public IEditorContributions AddTooltipProvider(ITooltipProvider provider) => Forward(() => registry.AddTooltipProvider(provider));
+
+        public IEditorContributions AddGoToProvider(IGoToProvider provider) => Forward(() => registry.AddGoToProvider(provider));
+
+        public IEditorContributions AddViewResources(string resourceUri) => Forward(() => registry.AddViewResources(owner, resourceUri));
+
+        private OwnerFacet Forward(Action add)
+        {
+            registry.As(owner, add);
+            return this;
+        }
+    }
 
     /// <inheritdoc/>
     public IReadOnlyList<CommandDescriptor> Commands => commands;
@@ -187,12 +249,12 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
         {
             if (!commands.Exists(command => command.Handler is ShowPanelCommandHandler { PanelId: var shown } && shown == panel.Id))
             {
-                AddCommand(new CommandDescriptor(
+                As(owners.GetValueOrDefault(panel.Id, currentOwner), () => AddCommand(new CommandDescriptor(
                     ContributionIds.CommandPrefix + "showPanel." + panel.Id,
                     panel.Title,
                     new ShowPanelCommandHandler(panel.Id),
                     IconId: panel.IconId,
-                    Menu: new MenuPlacement(ViewContributions.MenuName, ViewContributions.PanelsGroup, UnlistedPanelOrder + index++)));
+                    Menu: new MenuPlacement(ViewContributions.MenuName, ViewContributions.PanelsGroup, UnlistedPanelOrder + index++))));
             }
         }
 
@@ -232,12 +294,13 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
             return false;
         }
 
+        owners[id] = currentOwner;
         return true;
     }
 
     private void Report(ContributionIssueKind kind, string id, string message)
     {
-        issues.Add(new ContributionIssue(kind, id, ContributionIds.Owner, message));
-        Log.ContributionIssue(logger, kind, id, ContributionIds.Owner, message);
+        issues.Add(new ContributionIssue(kind, id, currentOwner, message));
+        Log.ContributionIssue(logger, kind, id, currentOwner, message);
     }
 }

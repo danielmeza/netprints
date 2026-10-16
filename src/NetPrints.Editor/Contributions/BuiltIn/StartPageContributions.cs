@@ -8,7 +8,7 @@ public static class StartPageContributions
 {
     /// <summary>Registers the tiles.</summary>
     /// <param name="registry">The registry to add to.</param>
-    public static void Register(IContributionRegistry registry)
+    public static void Register(IEditorContributions registry)
     {
         ArgumentNullException.ThrowIfNull(registry);
 

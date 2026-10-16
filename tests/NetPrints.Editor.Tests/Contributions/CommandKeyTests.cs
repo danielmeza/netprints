@@ -63,7 +63,7 @@ public class CommandKeyTests
     [Fact]
     public void NothingSwitchesOverTheKeys()
     {
-        string source = File.ReadAllText(Path.Combine(RepositoryPaths.Root(), "src", "NetPrints.Editor", "Contributions", "CommandKey.cs"));
+        string source = File.ReadAllText(Path.Combine(RepositoryPaths.Root(), "src", "NetPrints.Extensibility.Abstractions", "Editor", "CommandKey.cs"));
 
         Assert.DoesNotContain("switch", source, StringComparison.Ordinal);
     }

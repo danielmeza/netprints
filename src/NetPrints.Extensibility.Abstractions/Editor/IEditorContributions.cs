@@ -43,8 +43,8 @@ public interface IEditorContributions
     IEditorContributions AddGoToProvider(IGoToProvider provider);
 
     /// <summary>
-    /// Adds the resources of this extension's views: an <c>avares</c> URI of a resource dictionary holding its DataTemplates and its
-    /// <c>Icon.&lt;extension id&gt;.&lt;name&gt;</c> geometries.
+    /// Adds the resources of this extension's views: an <c>avares</c> URI of a document whose root is a <c>DataTemplates</c> list (view templates),
+    /// a <c>ResourceDictionary</c> (its <c>Icon.&lt;extension id&gt;.&lt;name&gt;</c> geometries) or a <c>Styles</c> file. An extension with more than one kind calls this once for each.
     /// </summary>
     /// <param name="resourceUri">The <c>avares://</c> URI of the dictionary.</param>
     /// <returns>This facet.</returns>

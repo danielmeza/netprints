@@ -5,7 +5,7 @@ public static class TooltipContributions
 {
     /// <summary>Registers the providers.</summary>
     /// <param name="registry">The registry to add to.</param>
-    public static void Register(IContributionRegistry registry)
+    public static void Register(IEditorContributions registry)
     {
         ArgumentNullException.ThrowIfNull(registry);
         registry.AddTooltipProvider(new ConnectionTooltipProvider());

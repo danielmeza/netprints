@@ -14,7 +14,7 @@ public class HelpMenuTests
 {
     private static readonly string[] MenuOrder = ["File", "Edit", "View", "Go", "Build", "Help"];
 
-    private static ContributionRegistry Registered(Action<IContributionRegistry>? extra = null)
+    private static ContributionRegistry Registered(Action<ContributionRegistry>? extra = null)
     {
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         BuiltInContributions.Register(registry);

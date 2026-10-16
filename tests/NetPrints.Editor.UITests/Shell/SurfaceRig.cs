@@ -53,7 +53,7 @@ internal sealed class SurfaceRig : IDisposable
 
     public List<Exception> Faults { get; }
 
-    public static SurfaceRig Create(Action<IContributionRegistry>? extra = null, ProjectSessionViewModel? session = null)
+    public static SurfaceRig Create(Action<ContributionRegistry>? extra = null, ProjectSessionViewModel? session = null)
     {
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         BuiltInContributions.Register(registry);

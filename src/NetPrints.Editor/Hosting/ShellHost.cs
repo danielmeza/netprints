@@ -68,7 +68,16 @@ internal sealed class ShellHost : IDisposable
     public static ShellHost Create(EditorContext context, IContributionRegistry registry)
     {
         ILogger logger = context.LoggerFactory.CreateLogger<ShellHost>();
-        IconRegistry.Shared = new IconRegistry(context.LoggerFactory.CreateLogger<IconRegistry>());
+        ILogger<IconRegistry> iconLogger = context.LoggerFactory.CreateLogger<IconRegistry>();
+        if (global::Avalonia.Application.Current is { } application)
+        {
+            ViewResourceLoader.Apply(application, registry.ViewResources);
+            IconRegistry.Shared = IconRegistry.ForApplication(application, iconLogger);
+        }
+        else
+        {
+            IconRegistry.Shared = new IconRegistry(iconLogger);
+        }
 
         var composed = new ComposedShell();
         var panelContext = new PanelFactoryContext(

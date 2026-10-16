@@ -155,6 +155,7 @@ Extension codes are also described in [Extensions](extensions.md).
 | NPX006 | warning | A contribution was rejected because of a conflict or inconsistency; the extension stays loaded. |
 | NPX007 | error | The extension assembly is missing or could not be loaded. |
 | NPX008 | error | The host or a dependency provides an older version of an assembly than the extension, or a private library it ships, was built against. |
+| NPX010 | warning | A contribution names an id nothing registered; for an icon id, the editor draws the fallback glyph. |
 | NPX013 | warning | A contributed id (for now a node search provider's) does not start with the manifest id of the extension that contributed it; the contribution is dropped. |
 
 ## NPXE: experimental APIs
