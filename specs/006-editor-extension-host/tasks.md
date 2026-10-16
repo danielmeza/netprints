@@ -289,7 +289,7 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
   `default(T)`, with no generic-math constraint; untyped pins behave as before. Then the typed pins, `[NodeKind]`,
   `[NodeBase]`, `[Pin("key")]` (with `Role`), `[PinType(nameof(member))]` and `[NodePinLayout]` in
   `src/NetPrints.Core/Graph/`, with `PublicAPI.Unshipped.txt`.
-- [ ] T025 [US2] The pin convention generator (FR-010, research R8 S2a, ADR-0025; 2 units). Test first:
+- [x] T025 [US2] The pin convention generator (FR-010, research R8 S2a, ADR-0025; 2 units). Test first:
   `tests/NetPrints.Analyzers.Tests/Pins/PinConventionGeneratorTests.cs`: snapshots for a node kind with typed pins, a
   `[Pin("…")]` override, a `[NodeBase]` base with pin offsets and a BCL `[DefaultValue]`; a compile test; an
   incrementality test (US2 scenario 1). Then `src/NetPrints.Authoring/Pins/`: the generator implements `partial` pin

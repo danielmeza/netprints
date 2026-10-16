@@ -33,7 +33,7 @@ internal static class GeneratorHarness
 {
     private const string RepoAnalyzers = "NetPrints.RepoAnalyzers";
 
-    private static readonly ImmutableArray<MetadataReference> References = LoadReferences();
+    internal static readonly ImmutableArray<MetadataReference> References = LoadReferences();
 
     private static int assemblyNumber;
 
