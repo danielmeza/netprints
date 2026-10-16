@@ -628,8 +628,12 @@ NPS, NPA003/NPA005/NPA011 and the STJ extension-data shapes.
   gate for the info pass is not added; the batch rule's `dotnet format analyzers --severity info --include` run stays the check.
 - AB-4 minor `docs/adr/0003-analyzer-promotion-and-string-literal-discipline.md:405`: the S1135 and S1144 (:431) reasons do
   not hold.
+  Fixed in 9dc5c58e (B-F3): the two unused members are deleted (S1144 row removed; build 0 warnings), and the S1135 row now
+  says the TODOs are untracked pre-P1 markers that stay until their code is rewritten. No roadmap item was added.
 - AB-5 minor `.github/release-notes.md:3`: typed getters, sealed node classes and removed overrides missing; the shipped
   0.3.0 section stays in the release body (`release.yml:214`).
+  Fixed in b52c75a6 (B-F3): the typed getters, the sealed classes and the removed overrides are breaking entries under
+  "Unreleased"; the shipped "## 0.3.0" section is gone and "## Downloads" stays.
 - AB-6 minor `src/NetPrints.Serialization/Documents/UnknownMembers.cs:14`: the reference records (`Refs.cs:18-82`) drop
   unknown members.
   Fixed in 927f836e (B-F1): the six reference records carry `ExtensionData`, so `format`, `show` and `merge` keep what is
@@ -638,8 +642,14 @@ NPS, NPA003/NPA005/NPA011 and the STJ extension-data shapes.
   because they are compared as keys was wrong: `UnknownMembers` has value equality).
 - AB-7 minor `specs/006-editor-extension-host/spec.md:654`: recorded deviations not amended (13/2 counts, S0 golden, IL2057,
   `default(T)` resets, NPI003 wording, NodePins line format).
+  Fixed in b52c75a6 (B-F3): amended in place in spec (US2 scenario 3, FR-009, FR-011/012, FR-018), research (R8, R11),
+  data-model (§6 and §7), plan, tasks (T029, T031, T033), contracts (NPI003) and ADR-0034. The roadmap (governance file)
+  still says "13 pin property renames plus 2 overrides" at S3; the coordinator amends it.
 - AB-8 minor `docs/adr/0029-node-capabilities-and-pin-roles.md:44`: the overload button is unreachable through
   `IOverloadableNode` (`NodeViewModel.cs:230`, `:240-243`); the role interfaces have no stability class (R16).
+  Fixed in b52c75a6 (B-F3) in the ADR, not the code: ADR-0029 now says the overload button needs a listing member that
+  `IOverloadableNode` lacks, and that the three role interfaces are unsettled until the C1 publish-gate review classifies
+  them. No code change, so no test.
 - AB-9 minor `src/NetPrints.Editor/NodeSearch/NodeCreationService.cs:91`: two switches (also `:139`) against ADR-0028:39 and
   data-model §8.
   Fixed in 979ba06f (B-F2): each entry has `CreateAsync` over a `NodeCreationContext`; the prompted built-in kinds are one
@@ -650,11 +660,13 @@ NPS, NPA003/NPA005/NPA011 and the STJ extension-data shapes.
   Fixed in 46820b0d (B-F2) by moving it, not filling it: the editor's reflection provider reaches no `CatalogNodeHint`, so the
   work is in T051 (SUG4) and T020, research R10 and plan B say so.
 - AB-11 minor `docs/adr/0024-analyzer-and-generator-infrastructure.md:82`: the S2a build-time budget was not measured.
+  Measured in b52c75a6 (B-F3): see "Build-time budget" above (Release, quiet runs 9.8 to 10.4 s against A1's 9.0 to 9.9 s in Debug).
 - AB-12 nit `src/NetPrints.Authoring/Pins/PinKeyTrackingAnalyzer.cs:50`: tracking silently off without the NodePins files.
   Fixed in 5d8dfe62 (B-F2): new NPA012 (info) on a `[NodeKind]` class with declared pins when neither file exists; ADR-0025,
   the contract table and the guide say so (red: the old "nothing is tracked" test now expects NPA012).
 - AB-13 nit `src/NetPrints.Editor/NodeSearch/SuggestionRanker.cs:23`: the This Methods / This Variables direction is not in
   "Owner questions taken by default".
+  Fixed in b52c75a6 (B-F3): a row in that table (T022, default pending owner) and a line in ADR-0028.
 - AB-14 nit `src/NetPrints.Authoring.CodeFixes/Pins/AddNodeMarkerCodeFix.cs:51`: the NPA009 fix writes the class name as
   the kind id.
   Fixed in 828f2314 (B-F2): the fix writes `[NodeKind("TODO.kindId")]` and its title says the id is a placeholder (guide row
@@ -664,8 +676,12 @@ NPS, NPA003/NPA005/NPA011 and the STJ extension-data shapes.
   checks every help-linked code has its anchor (red on 22 missing anchors).
 - AB-16 nit `specs/006-editor-extension-host/implementation-notes.md:515`: red-first for the sbyte/decimal defect was a
   compile failure (also B2, :386).
+  Recorded in b52c75a6 (B-F3): with the `sbyte` row removed, `PrimitiveKindsTests` fails 4 of 7 on assertions, 7 of 7 restored;
+  the old code cannot be tested because the tests use the new type. Note added at T033.
 - AB-17 nit `docs/adr/README.md:51`: leftovers (reserved-number sentence, ADR-0003:393 date, trim baseline at :552, checkpoint
   A longest job).
+  Fixed in 9dc5c58e (ADR-0003 date) and b52c75a6 (README sentence, trim baseline 14 to 11 = down 3, Checkpoint A longest job:
+  Desktop E2E 13.5 min), B-F3.
 - AB-18 nit `src/NetPrints.Core/Graph/CallMethodNode.cs:261`: an out/ref parameter named `Exception` takes the exception
   pin's stored key.
   Fixed in c11763f8 (B-F2): the exception pin is found by its role, and an out/ref pin named `Exception` is keyed

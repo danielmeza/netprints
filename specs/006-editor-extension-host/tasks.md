@@ -383,7 +383,7 @@ interfaces; pins carry roles, `out` and `ref` parameters get output pins, and pu
 
 ### Batch B-F — model: sonnet — T039 (checkpoint A+B fixes)
 
-- [ ] T039 Fix every finding of T038 (test first for behaviour findings), reply on each review thread with the fixing
+- [x] T039 Fix every finding of T038 (test first for behaviour findings), reply on each review thread with the fixing
   commit or the reason for deferral, whole suite plus the E2E pass, push; if the review had no findings, tick this task
   with "no findings". Sub-phase C1 starts only after this batch is pushed and green on CI (the coordinator checks).
 
