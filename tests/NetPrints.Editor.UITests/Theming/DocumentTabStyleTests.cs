@@ -143,7 +143,7 @@ public class DocumentTabStyleTests
             Assert.Equal(ColorOf(window, "Canvas.Background", variant), surface);
             ItemsControl breadcrumbs = window.GetVisualDescendants().OfType<ItemsControl>()
                 .Single(control => control.IsEffectivelyVisible && AutomationProperties.GetAutomationId(control) == AutomationIds.Breadcrumbs);
-            Assert.Equal(surface, Assert.IsAssignableFrom<ISolidColorBrush>(breadcrumbs.Background).Color);
+            Assert.Null(breadcrumbs.Background);
 
             Color stripBorder = ColorOf(window, "Tab.StripBorder", variant);
             Assert.Equal(stripBorder, Assert.IsAssignableFrom<ISolidColorBrush>(body.BorderBrush).Color);
@@ -198,13 +198,11 @@ public class DocumentTabStyleTests
             int x = (int)InWindow(inactive, window).Left + 3;
             Assert.Equal(expectedLine, frame.Pixel(x, y));
             Assert.NotEqual(expectedLine, frame.Pixel(x, y - 1));
-            Assert.Equal(expectedSurface, frame.Pixel(x, y + 1));
         }
 
         int beyond = (int)InWindow(tabs[^1], window).Right + 60;
         Assert.Equal(expectedLine, frame.Pixel(beyond, y));
         Assert.NotEqual(expectedLine, frame.Pixel(beyond, y - 1));
-        Assert.Equal(expectedSurface, frame.Pixel(beyond, y + 1));
     }
 
     public static TheoryData<string, double> ToolPaneCases
@@ -263,7 +261,7 @@ public class DocumentTabStyleTests
             UiImage frame = FrameOf(window);
             int x = (int)Math.Round((tabBox.Left + 4) * scale);
             int top = (int)Math.Round((tabBox.Top + 4) * scale);
-            int bottom = (int)Math.Round((tabBox.Bottom + 4) * scale);
+            int bottom = (int)Math.Floor(tabBox.Bottom * scale) - 1;
             for (int y = top; y <= bottom; y++)
             {
                 Assert.Equal(Argb(surface), frame.Pixel(x, y));

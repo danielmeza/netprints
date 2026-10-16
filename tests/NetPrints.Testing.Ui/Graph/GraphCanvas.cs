@@ -143,7 +143,7 @@ public sealed class GraphCanvas(IUiDriver driver, AutomationQuery window)
     public async Task BoxSelectAllAsync(CancellationToken cancellationToken)
     {
         var e = await GetAsync(cancellationToken);
-        await Driver.DragAsync(await OffsetAsync(5, 5, cancellationToken), await OffsetAsync(e.Bounds.Width - 5, e.Bounds.Height - 5, cancellationToken),
+        await Driver.DragAsync(await OffsetAsync(e.Bounds.Width - 5, e.Bounds.Height - 5, cancellationToken), await OffsetAsync(5, 5, cancellationToken),
             UiButton.Left, cancellationToken);
     }
 

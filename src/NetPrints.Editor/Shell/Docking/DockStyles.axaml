@@ -102,7 +102,9 @@
     <Setter Property="Background" Value="{DynamicResource DockTabStripBorderBrush}" />
   </Style>
   <Style Selector="ItemsControl.breadcrumbBar">
-    <Setter Property="Background" Value="{DynamicResource DockSurfaceEditorBrush}" />
+    <Setter Property="Background" Value="{x:Null}" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
   </Style>
   <Style Selector="DocumentTabStripItem:pointerover:not(:selected) /template/ Border#PART_TabBody">
     <Setter Property="Background" Value="{DynamicResource State.Hover}" />

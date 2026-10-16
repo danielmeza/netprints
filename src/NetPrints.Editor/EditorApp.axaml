@@ -40,13 +40,14 @@
       </ContentControl>
     </DataTemplate>
     <DataTemplate DataType="shell:GraphDocumentViewModel" x:DataType="shell:GraphDocumentViewModel">
-      <Grid RowDefinitions="Auto,*">
+      <Grid>
         <Interaction.Behaviors>
           <edbehaviors:ScopedCommandKeysBehavior Scope="Graph" Invoker="{Binding Invoker}" />
           <edbehaviors:CommandKeyBindingsBehavior Invoker="{Binding Invoker}" />
           <edbehaviors:GraphViewportBehavior Document="{Binding}" />
         </Interaction.Behaviors>
-        <ItemsControl Grid.Row="0" Classes="breadcrumbBar" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Breadcrumbs}" AutomationProperties.Name="Breadcrumbs"
+        <edgraph:GraphEditorView DataContext="{Binding Graph}" />
+        <ItemsControl Classes="breadcrumbBar" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Breadcrumbs}" AutomationProperties.Name="Breadcrumbs"
                       ItemsSource="{Binding Breadcrumbs.Segments}">
           <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate>
@@ -63,7 +64,6 @@
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
-        <edgraph:GraphEditorView Grid.Row="1" DataContext="{Binding Graph}" />
       </Grid>
     </DataTemplate>
     <DataTemplate DataType="shell:ProjectSettingsDocumentViewModel" x:DataType="shell:ProjectSettingsDocumentViewModel">
