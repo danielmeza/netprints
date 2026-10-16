@@ -294,6 +294,56 @@ kept in `.agent-archive/2026-10-16-p3-m5-spike/` beside the repository.
 - Suite (Release, no E2E pass): 4310 total, 4276 passed, 33 skipped, 1 failed (`ShortcutGuideTests`, `Escape` against `Esc`), fixed
   with `Display`; Editor.Tests re-run 1917 of 1917. UITests (16 min) passed before that change and were not re-run.
 
+## Batch A5 (T011-T016)
+
+- Step 0: master (release prep PR #21, 91009737) merged into the branch as d7ddde50; the only conflict was the roadmap table, resolved to
+  keep this branch's P3, P3b and P3c rows and master's P3a cell (merged 2026-10-15, PR #12 and #19, released v0.3.0). PR #20 reads
+  MERGEABLE, so its pull_request workflows run again.
+- T011: a section's `ExtensionSettingsDescriptor<T>` carries an optional `Validator` (`Func<string?, T, ValidateOptionsResult>`), set from
+  an `[OptionsValidator]` partial class over DataAnnotations (`Microsoft.Extensions.Options` 10.0.12). `JsonFileSettingsStore.Read`
+  runs it after deserializing; a failure, a JSON error or a null section logs 2006 once with the section, file and reason, and the
+  section's default is used, so the start goes on. The composition has no generic host, so "the composition calls the validators"
+  is the store's first read of each section. `NetPrintsSettings` stays a sealed record (init members); `EditorSettings.Theme` has
+  `[EnumDataType]`; a custom internal `[NonBlankItems]` checks the two path lists. Log 2006 gained a `reason` argument.
+- T012: `[JsonExtensionData]` goes on a public field `UnknownMembers? ExtensionData` of every document record except the value-like refs
+  (`TypeRef`, `ParameterRef`, `MethodRef`, `ConstructorRef`, `VariableRef`, `TypedValue`; they are compared and used as keys) and
+  `UnknownNodeDocument`. Deviation from the research text (`IReadOnlyDictionary`, init-only): System.Text.Json cannot bind an
+  extension-data `init` member in source-generated code (it is treated as a constructor parameter), a non-public setter is not
+  visible to the contexts that extension assemblies generate for derived node documents, and CA2227 forbids a settable collection
+  property, so it is a field of `UnknownMembers`, a sealed `SortedDictionary<string, JsonElement>` (ordinal) with JSON-equal value
+  equality. The node reader drops the `$kind` the derived-type read leaves among the unknown members. `show` prints
+  `unknown <key> <compact value>` at the class, graph, member, node and pin levels; the merge driver merges the unknown members
+  key by key (one side's change wins, a different change of one key on both sides is a `Scalar` conflict at `...unknown.<key>`) and
+  compares node properties without them. Golden fixtures are unchanged (HelloWorld round trip is byte-identical). The editor's model
+  round trip (`DocumentMapper`) does not carry unknown members yet; they survive at the document layer (format, show, merge).
+- T013: NPX008 now compares every reference of the extension and of the private libraries in its folder (read from PE metadata) with
+  the host's copy or the dependency's copy; the message names the library that asked. New fixtures: `Fixture.HostLib.V1/V2` (the test
+  host loads V1, `Fx.HostConflict` is built against V2), `Fixture.MidLib` (built against SharedLib V2) and `Fx.TransitiveConflict`
+  (ships MidLib, depends on `fx.libv1`). NPW009 (`ProjectMessage.UnreadableReference`): `ReflectionHost` probes each existing reference
+  as a managed assembly, skips an unreadable one, logs it once per reload (event 1012) and adds it to `LastWarnings`.
+- T014: `ProjectSystemOptions(GenerateOnLoad: false)` in the editor (`EditorServices.CreateProjectSystemOptions`) and in
+  `ProjectCheck.CreateProjectSystemOptions`; the build step of `--check-project` still generates, as a build does. `catalog --check`
+  compares with CR before LF removed on both sides. `git-install --command` that names an existing file is written as
+  `'<path with / separators>'`; any other value is kept. `.gitattributes` already had `*.npcat.json text eol=lf`; the
+  `cli-windows.yml` path filter already covers the closure these tests read, so neither changed.
+- T015: 932 info-level hits in `src/` before (NPS003 532, S3267 59, CA1859 48, S1135 33, S3358 25, S2325 19, CA1822 19, S2365 15,
+  S1075 15, S4136 11, S1104 11, S6608 10, CA1825 8, then 57 smaller rules), 905 after: fixed S6608 10, CA1825 8, CA1865 2, CA2249 1,
+  CA1826 3, CA1834 2 and CA2263 1; every remaining rule is in the new ADR-0003 table with its reason (0
+  unrecorded). S1104 (11) is the `ExtensionData` field of T012. CA1865 and CA2249 stay where `netstandard2.0` lacks the overloads.
+- Red/green: T011 6 of 7 red (no validator, message without reason), then 7 green. T012 Core 3 of 5 red, Cli 4 of 8 red (the `format`
+  tests pass once the document layer keeps the members), then 5 of 5 and 8 of 8 green; Core.Tests 847 of 847 and Cli.Tests 277 of 277 at
+  that commit. T013 loader 2 of 33 red, Editor.Tests reflection 2 of 3 red, then green (Core.Tests 849 of 849). T014 two Editor.Tests,
+  the CRLF catalog test and the `git-install` path test red, then green; Windows runs of the last two wait for the `CLI (Windows)` leg of
+  PR #20 (the path test runs a shell script through `git diff`; if Git for Windows' `sh` cannot run that script, the test needs a
+  different probe). T015 has no test; the build and the suite are its check.
+- Checkpoint A, evidence so far (Release): suite 4342 total, 4309 passed, 33 skipped, 0 failed (UITests 13 min 31 s, Editor.Tests 1 min
+  38 s, Core.Tests 35 s, Cli.Tests 41 s, Catalog.Tests 46 s); `dotnet format NetPrints.slnx --verify-no-changes` clean; solution build 0
+  warnings. E2E (`NETPRINTS_E2E=1`, `--fail-skips on`, display start 140): 53 total, 52 passed, 1 skipped (`GuideScreenshotTests`, which
+  the run reports as not run for explicit filtering), 0 failed. Dock check: the pin stays 12.1.0.6; Dock#1191 merged 2026-10-16, after the
+  latest release (v12.1.0.9, 2026-10-13), so no release contains it yet and no bump is possible. FR-007: the round-trip tests above.
+  Still to read from PR #20 CI at this head: the Analyzers leg, `CLI (Windows)` run id with the CRLF and `git-install` tests, the
+  longest CI job; the R5-0 numbers and the M5 verdict are in their sections above. T016 stays unticked until that CI is green.
+
 ## Pack spike
 
 (T026)
