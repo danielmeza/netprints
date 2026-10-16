@@ -31,8 +31,11 @@ namespace NetPrints.Editor.Tests.Hosting;
 public sealed class FakeFilePicker : IFilePickerService
 {
     public Queue<string?> OpenFileAnswers { get; } = new();
+
     public Queue<string?> SaveFileAnswers { get; } = new();
+
     public Queue<string?> FolderAnswers { get; } = new();
+
     public List<string> Calls { get; } = [];
 
     public Task<string?> OpenFileAsync(string title, IReadOnlyList<FileFilter> filters)
@@ -58,15 +61,25 @@ public sealed class FakeFilePicker : IFilePickerService
 public sealed class FakeDialogs : IEditorDialogs
 {
     public List<(string Title, string Message)> Errors { get; } = [];
+
     public List<TypeSpecifier> SelectTypeCalls { get; } = [];
+
     public int SelectMethodCalls { get; private set; }
+
     public List<MethodSpecifier> LastMethods { get; private set; } = [];
+
     public IReadOnlySet<string> LastOverriddenNames { get; private set; } = new HashSet<string>();
+
     public List<ReferenceListViewModel> ReferenceDialogs { get; } = [];
+
     public TypeSpecifier? TypeAnswer { get; set; } = TypeSpecifier.FromType<int>();
+
     public Func<IReadOnlyList<MethodSpecifier>, MethodSpecifier?> MethodAnswer { get; set; } = m => m.FirstOrDefault();
+
     public List<(string ProjectPath, IReadOnlyList<string> Folders)> TrustCalls { get; } = [];
+
     public bool TrustAnswer { get; set; }
+
     public List<(string Title, IReadOnlyList<CodeDiagnostic> Issues)> IssueDialogs { get; } = [];
 
     /// <summary>Acts as the user in the New project dialog (set the fields, run Create or Cancel); the dialog is cancelled when null.</summary>
@@ -98,12 +111,15 @@ public sealed class FakeDialogs : IEditorDialogs
     }
 
     public List<(string Title, string Message)> ConfirmCalls { get; } = [];
+
     public bool ConfirmAnswer { get; set; } = true;
 
     public List<IReadOnlyList<UnsavedFile>> UnsavedCalls { get; } = [];
+
     public UnloadChoice UnsavedAnswer { get; set; } = UnloadChoice.Cancel;
 
     public List<IReadOnlyList<RecoveryFile>> RecoverCalls { get; } = [];
+
     public RecoveryChoice RecoverAnswer { get; set; } = RecoveryChoice.Later;
 
     /// <summary>The paths <see cref="ConfirmRecoverAsync"/> chooses to restore with <see cref="RecoveryChoice.Restore"/>; every offered file when null.</summary>
@@ -298,8 +314,11 @@ public sealed class FakeProjectSystem : IProjectSystem
     private readonly Dictionary<string, ProjectSnapshot> snapshots = new(StringComparer.Ordinal);
 
     public List<string> LoadCalls { get; } = [];
+
     public List<IReadOnlyList<ProjectEdit>> ApplyCalls { get; } = [];
+
     public Func<string, BuildResult>? BuildResultFactory { get; set; }
+
     public Func<string, ProcessStartRequest>? RunCommandFactory { get; set; }
 
     /// <summary>When set and it returns non-null for a given batch of edits, <see cref="ApplyAsync"/> throws that instead of applying (test seam for F-06).</summary>
@@ -519,13 +538,21 @@ public sealed class TestEditor : IAsyncDisposable
     public ProjectLocations Locations => new(null, documentsFolder);
 
     public FakeFilePicker FilePicker { get; } = new();
+
     public FakeDialogs Dialogs { get; } = new();
+
     public FakeClipboard Clipboard { get; } = new();
+
     public InlineDispatcher Dispatcher { get; } = new();
+
     public FakeWindowService Windows { get; } = new();
+
     public FakeProcessLauncher Processes { get; } = new();
+
     public IReflectionHost Reflection { get; }
+
     public FakeProjectSystem Projects { get; } = new();
+
     public ProjectPersistence Persistence { get; }
 
     /// <summary>The real extension host with only the built-in extension; project folders load through it.</summary>

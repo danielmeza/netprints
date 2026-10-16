@@ -22,6 +22,7 @@ namespace NetPrints.Tests.Characterization
     public class NotificationMapTests
     {
         public const string UpdateSnapshotsVariable = "NETPRINTS_UPDATE_SNAPSHOTS";
+
         private const string Throws = "<throws>";
 
         [Fact]

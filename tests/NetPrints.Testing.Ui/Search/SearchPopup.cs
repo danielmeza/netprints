@@ -9,7 +9,9 @@ public sealed class SearchPopup(IUiDriver driver, AutomationQuery window)
     : UiElement(driver, new AutomationQuery(AutomationIds.GraphSearchPopup) { Within = window, IncludeHidden = true })
 {
     public UiElement View => new(Driver, new AutomationQuery(AutomationIds.NodeSearch) { Within = Query });
+
     public UiElement SearchBox => new(Driver, new AutomationQuery(AutomationIds.SearchBox) { Within = Query });
+
     public UiElement Results => new(Driver, new AutomationQuery(AutomationIds.SearchResults) { Within = Query });
 
     public UiElement Row(string text) => Results.Find(AutomationIds.SearchRowText, text: text, index: 0);

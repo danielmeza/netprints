@@ -8,13 +8,21 @@ namespace NetPrints.Tests.Extensibility.MultiExtension;
 internal static class FixtureExtensions
 {
     public const string Alpha = "fx.alpha";
+
     public const string Beta = "fx.beta";
+
     public const string LibV1 = "fx.libv1";
+
     public const string LibV2 = "fx.libv2";
+
     public const string PrefixedPrivate = "fx.private-prefix";
+
     public const string TypesProvider = "fx.types-provider";
+
     public const string TypesConsumer = "fx.types-consumer";
+
     public const string Diamond = "fx.diamond";
+
     public const string Native = "fx.native";
 
     private static readonly Dictionary<string, string> ProjectFolders = new(System.StringComparer.Ordinal)

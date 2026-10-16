@@ -13,8 +13,11 @@ public sealed class ProjectTreePage(IUiDriver driver, AutomationQuery window)
     private static readonly TimeSpan OpenBudget = TimeSpan.FromSeconds(10);
 
     public const string MethodsGroup = "Methods";
+
     public const string ConstructorsGroup = "Constructors";
+
     public const string VariablesGroup = "Variables";
+
     public const string EventGraphsGroup = "Event graphs";
 
     /// <summary>A row by its kind (<see cref="AutomationIds.TreeKindMethod"/> and the like) and name.</summary>

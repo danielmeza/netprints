@@ -8,6 +8,7 @@ namespace NetPrints.Testing.Ui.Dialogs;
 public sealed class ErrorDialogPage(IUiDriver driver) : UiElement(driver, new AutomationQuery(AutomationIds.ErrorDialog))
 {
     public UiElement Message => Find(AutomationIds.ErrorMessage);
+
     public UiElement OkButton => Find(AutomationIds.ErrorOkButton);
 }
 
@@ -15,6 +16,7 @@ public sealed class ErrorDialogPage(IUiDriver driver) : UiElement(driver, new Au
 public sealed class SelectTypeDialogPage(IUiDriver driver) : UiElement(driver, new AutomationQuery(AutomationIds.SelectTypeDialog))
 {
     public UiElement TypeBox => Find(AutomationIds.SelectTypeBox);
+
     public UiElement SelectButton => Find(AutomationIds.SelectTypeButton);
 }
 
@@ -22,6 +24,7 @@ public sealed class SelectTypeDialogPage(IUiDriver driver) : UiElement(driver, n
 public class MethodPickerPage(IUiDriver driver, AutomationQuery query) : UiElement(driver, query)
 {
     public UiElement Filter => Find(AutomationIds.MethodPickerFilter);
+
     public UiElement Rows => Find(AutomationIds.MethodPickerRows);
 
     /// <summary>A row by its text, such as "string ToString()".</summary>
@@ -40,9 +43,13 @@ public sealed class OverloadFlyoutPage(IUiDriver driver) : MethodPickerPage(driv
 public sealed class SelectMethodDialogPage(IUiDriver driver) : UiElement(driver, new AutomationQuery(AutomationIds.SelectMethodDialog))
 {
     public MethodPickerPage Picker => new(Driver, Query);
+
     public UiElement Filter => Find(AutomationIds.MethodPickerFilter);
+
     public UiElement Rows => Find(AutomationIds.MethodPickerRows);
+
     public UiElement SelectButton => Find(AutomationIds.SelectMethodButton);
+
     public UiElement CancelButton => Find(AutomationIds.SelectMethodCancelButton);
 }
 
@@ -60,7 +67,9 @@ public sealed class IssuesDialogPage(IUiDriver driver) : UiElement(driver, new A
 public sealed class TrustDialogPage(IUiDriver driver) : UiElement(driver, new AutomationQuery(AutomationIds.TrustDialog))
 {
     public UiElement Prompt => Find(AutomationIds.TrustPrompt);
+
     public UiElement TrustButton => Find(AutomationIds.TrustButton);
+
     public UiElement DontLoadButton => Find(AutomationIds.TrustDontLoadButton);
 }
 
@@ -68,8 +77,11 @@ public sealed class TrustDialogPage(IUiDriver driver) : UiElement(driver, new Au
 public sealed class UnsavedChangesDialogPage(IUiDriver driver) : UiElement(driver, new AutomationQuery(AutomationIds.UnsavedDialog))
 {
     public UiElement Files => Find(AutomationIds.UnsavedFiles);
+
     public UiElement SaveAllButton => Find(AutomationIds.UnsavedSaveAllButton);
+
     public UiElement DontSaveButton => Find(AutomationIds.UnsavedDontSaveButton);
+
     public UiElement CancelButton => Find(AutomationIds.UnsavedCancelButton);
 }
 
@@ -77,8 +89,11 @@ public sealed class UnsavedChangesDialogPage(IUiDriver driver) : UiElement(drive
 public sealed class RecoverDialogPage(IUiDriver driver) : UiElement(driver, new AutomationQuery(AutomationIds.RecoverDialog))
 {
     public UiElement Files => Find(AutomationIds.RecoverFiles);
+
     public UiElement Row(string path) => Find(AutomationIds.RecoverRow, text: path);
+
     public UiElement RestoreButton => Find(AutomationIds.RecoverRestoreButton);
+
     public UiElement DiscardButton => Find(AutomationIds.RecoverDiscardButton);
 }
 
@@ -86,11 +101,17 @@ public sealed class RecoverDialogPage(IUiDriver driver) : UiElement(driver, new 
 public sealed class NewProjectDialogPage(IUiDriver driver) : UiElement(driver, new AutomationQuery(AutomationIds.NewProjectDialog))
 {
     public UiElement Templates => Find(AutomationIds.NewProjectTemplates);
+
     public UiElement NameBox => Find(AutomationIds.NewProjectName);
+
     public UiElement LocationBox => Find(AutomationIds.NewProjectLocation);
+
     public UiElement Preview => Find(AutomationIds.NewProjectPreview);
+
     public UiElement Message => Find(AutomationIds.NewProjectMessage);
+
     public UiElement CreateButton => Find(AutomationIds.NewProjectCreate);
+
     public UiElement CancelButton => Find(AutomationIds.NewProjectCancel);
 
     /// <summary>Types the name and replaces the location, then presses Create; the project goes in <c>location/name</c>.</summary>
@@ -110,8 +131,11 @@ public sealed class NewProjectDialogPage(IUiDriver driver) : UiElement(driver, n
 public sealed class SampleTargetDialogPage(IUiDriver driver) : UiElement(driver, new AutomationQuery(AutomationIds.SampleTargetDialog))
 {
     public UiElement Folder => Find(AutomationIds.SampleTargetFolder);
+
     public UiElement OpenButton => Find(AutomationIds.SampleTargetOpenButton);
+
     public UiElement ChangeButton => Find(AutomationIds.SampleTargetChangeButton);
+
     public UiElement CancelButton => Find(AutomationIds.SampleTargetCancelButton);
 }
 

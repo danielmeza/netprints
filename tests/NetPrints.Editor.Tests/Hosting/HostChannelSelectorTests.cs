@@ -82,8 +82,11 @@ public class HostChannelSelectorTests
     private sealed class RecordingFactory : IHostChannelFactory
     {
         public string Id => FactoryId;
+
         public bool Throw { get; init; }
+
         public HostLaunchContext? Context { get; private set; }
+
         public IHostChannel? Created { get; private set; }
 
         public IHostChannel Create(HostLaunchContext context)

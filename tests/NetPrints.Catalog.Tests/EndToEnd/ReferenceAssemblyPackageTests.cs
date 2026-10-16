@@ -45,6 +45,7 @@ public sealed class ReferenceAssemblyPackage : IAsyncLifetime
     private static readonly string Configuration =
 #if DEBUG
         "Debug";
+
 #else
         "Release";
 #endif

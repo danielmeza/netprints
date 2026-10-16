@@ -28,6 +28,7 @@ namespace NetPrints.Tests.Serialization
             new(new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []), NullLogger<DocumentMapper>.Instance);
 
         private static string NodeId(long value) => IdFormat.Format('n', value);
+
         private static string MemberId(long value) => IdFormat.Format('m', value);
 
         [Fact]

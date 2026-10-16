@@ -38,6 +38,7 @@ namespace NetPrints.Tests.Core
         };
 
         private static readonly HashSet<string> IconTags = new(StringComparer.Ordinal) { "MaterialIcon", "PathIcon", "Image", "Path", "Viewbox", "Svg", "IconPresenter" };
+
         private static readonly HashSet<string> ButtonTags = new(StringComparer.Ordinal)
         {
             "Button", "ToggleButton", "RepeatButton", "SplitButton", "DropDownButton", "HyperlinkButton",

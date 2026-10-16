@@ -33,6 +33,7 @@ namespace NetPrints.Tests.Serialization
         // zero-padding keeps ordinal string order equal to numeric order, so this is exact, not just
         // approximate.
         private static string NodeId(long value) => IdFormat.Format('n', value);
+
         private static string MemberId(long value) => IdFormat.Format('m', value);
 
         private static (Project Project, ClassGraph Class, MethodGraph Method) BuildBase()

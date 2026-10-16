@@ -36,6 +36,7 @@ public sealed class ProjectOpenPerformanceTests : IDisposable
     // including the blocking test legs on a shared runner, the bound is a sanity limit that only a real regression
     // (an order of magnitude) can cross: a runner whose cold open took 46 s took 15.6 s for the restored one.
     private const double StrictBoundMs = 9000;
+
     private const double SanityBoundMs = 45000;
     private const int RestoredRuns = 3;
 

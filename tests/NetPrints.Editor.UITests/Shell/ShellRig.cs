@@ -89,6 +89,7 @@ internal sealed class NoProjectActions : IProjectActions
 internal sealed class ShellRig : IDisposable
 {
     public const int Width = 1600;
+
     public const int Height = 1000;
 
     private sealed class NoServices : IServiceProvider

@@ -62,6 +62,7 @@ public sealed class AnnotatedSampleBuild : IAsyncLifetime
     private static readonly string Configuration =
 #if DEBUG
         "Debug";
+
 #else
         "Release";
 #endif

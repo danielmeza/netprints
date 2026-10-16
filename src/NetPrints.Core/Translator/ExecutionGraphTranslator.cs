@@ -86,6 +86,7 @@ namespace NetPrints.Translator
         // no single EntryNode, several EventEntryNodes may share one) can be translated through the
         // same context; TranslateSignature casts back to ExecutionGraph, the only case it applies to.
         private NodeGraph? graphField;
+
         private NodeGraph graph
         {
             get => graphField ?? throw new InvalidOperationException(
@@ -94,6 +95,7 @@ namespace NetPrints.Translator
         }
 
         private Random? randomField;
+
         private Random random
         {
             get => randomField ?? throw new InvalidOperationException(

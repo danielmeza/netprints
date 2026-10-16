@@ -27,7 +27,9 @@ internal sealed class RegistryBuilder(ILogger logger)
     private readonly List<IMemberEmitter> memberEmitters = [];
     private readonly List<ITypeCatalog> typeCatalogs = [];
     private readonly List<IProjectProfile> profiles = [DefaultProjectProfile.Instance];
+
     private readonly HashSet<string> profileIds = new(StringComparer.Ordinal) { DefaultProjectProfile.ProfileId };
+
     private readonly List<IJsonTypeInfoResolver> resolvers = [];
     private readonly Dictionary<Type, string> documentOwners = [];
     private readonly Dictionary<string, List<IJsonTypeInfoResolver>> resolversByOwner = new(StringComparer.Ordinal);

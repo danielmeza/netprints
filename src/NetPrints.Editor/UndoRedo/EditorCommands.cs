@@ -272,6 +272,7 @@ public static class EditorCommands
         private readonly MethodGraph method;
         private readonly IUndoableCommand command;
         private readonly IReadOnlyList<int>? sourceIndexes;
+
         private Action undoCallers = () => { };
 
         internal MethodSignatureEdit(IReadOnlyList<ClassGraph> classes, MethodGraph method, IUndoableCommand command, IReadOnlyList<int>? sourceIndexes)
@@ -919,6 +920,7 @@ public static class EditorCommands
     private sealed class LocalVariableNodeSwap
     {
         public required NodeConnectionSnapshot Original { get; init; }
+
         public required Node Replacement { get; init; }
     }
 
@@ -1025,13 +1027,21 @@ public static class EditorCommands
     private sealed class NodeConnectionSnapshot
     {
         public required NodeHandle Handle { get; init; }
+
         public Node Node => Handle.Node;
+
         public required int Index { get; init; }
+
         public required IReadOnlyList<IReadOnlyList<PinRef>> InputExecIncoming { get; init; }
+
         public required IReadOnlyList<PinRef?> OutputExecOutgoing { get; init; }
+
         public required IReadOnlyList<PinRef?> InputDataIncoming { get; init; }
+
         public required IReadOnlyList<IReadOnlyList<PinRef>> OutputDataOutgoing { get; init; }
+
         public required IReadOnlyList<PinRef?> InputTypeIncoming { get; init; }
+
         public required IReadOnlyList<IReadOnlyList<PinRef>> OutputTypeOutgoing { get; init; }
     }
 

@@ -20,6 +20,7 @@ public class SearchPerformanceTests
 {
     // Budget: open in < 2 s, filter in < 300 ms per keystroke. Asserted with a 3x margin.
     private const double StrictOpenBoundMs = 6000;
+
     private const double StrictKeystrokeBoundMs = 900;
     private const double SanityFactor = 5;
 

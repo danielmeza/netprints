@@ -14,6 +14,7 @@ public class AvaloniaLogSinkTests
     private sealed class RecordingLogger : ILogger
     {
         public List<(LogLevel Level, string Message)> Entries { get; } = [];
+
         public LogLevel MinimumLevel { get; set; } = LogLevel.Information;
 
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
@@ -27,6 +28,7 @@ public class AvaloniaLogSinkTests
     private sealed class RecordingLoggerFactory : ILoggerFactory
     {
         public Dictionary<string, RecordingLogger> Loggers { get; } = new(StringComparer.Ordinal);
+
         public LogLevel MinimumLevel { get; set; } = LogLevel.Information;
 
         public ILogger CreateLogger(string categoryName)

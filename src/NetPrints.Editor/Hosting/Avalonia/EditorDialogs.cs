@@ -33,6 +33,7 @@ public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
             notificationManager.Show(new Notification(title, message, NotificationType.Information));
         }
     }
+
     private async Task<T?> ShowAsync<T>(Window dialog)
     {
         if (owner() is { } parent)

@@ -25,6 +25,7 @@ internal sealed class GraphMerger(IDocumentFormat format)
     private const string VisibilitySuffix = ".visibility";
     private const string GraphSuffix = ".graph";
     private static readonly GraphDocument EmptyGraph = new([], null, null);
+
     private static readonly ClassDocument Shell = new(
         1, null, "Shell", MemberVisibility.Public, ClassModifiers.None, null, EmptyGraph, null, null, null, null, null);
 

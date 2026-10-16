@@ -17,9 +17,13 @@ public class ClassContextDirtyTrackingTests(TestEditor editor) : IAsyncLifetime
     private ClassContext? vmBField;
 
     private Project project => projectField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
+
     private ClassGraph clsA => clsAField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
+
     private ClassGraph clsB => clsBField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
+
     private ClassContext vmA => vmAField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
+
     private ClassContext vmB => vmBField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
 
     /// <summary>Loads a project with two classes, saves it once so both start clean, then opens both editors.</summary>

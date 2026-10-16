@@ -70,6 +70,7 @@ namespace NetPrints.Graph
         public partial double PositionY { get; set; }
 
         partial void OnPositionXChanged(double oldValue, double newValue) => OnPositionChanged?.Invoke(this, PositionX, PositionY);
+
         partial void OnPositionYChanged(double oldValue, double newValue) => OnPositionChanged?.Invoke(this, PositionX, PositionY);
 
         /// <summary>

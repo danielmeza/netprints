@@ -24,6 +24,7 @@ public sealed record DocumentId
     private const string GraphPrefix = "graph:";
     private const string StartText = "start";
     private const string ProjectSettingsText = "project-settings";
+
     /// <summary>The prefix of the graph key of a method; the method's id follows.</summary>
     public const string MethodKeyPrefix = "method:";
 

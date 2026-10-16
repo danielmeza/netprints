@@ -13,6 +13,7 @@ public sealed class ProjectLoaderTests : IDisposable
     // The loader reloads the reflection host fire-and-forget whenever a project is set; a private
     // host keeps those reloads from replacing the provider the shared host serves to other tests.
     private readonly TestEditor testEditor = TestEditor.Create(TestEditor.CreateReflectionHost);
+
     private readonly List<string> cleanup = [];
     private readonly List<ProjectRig> rigs = [];
 

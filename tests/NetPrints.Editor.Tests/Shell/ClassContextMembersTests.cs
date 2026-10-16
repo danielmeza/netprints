@@ -18,7 +18,9 @@ public class ClassContextMembersTests(TestEditor editor) : IAsyncLifetime
     private ClassContext? contextField;
 
     private Project project => projectField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
+
     private ClassGraph cls => clsField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
+
     private ClassContext context => contextField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
 
     public async ValueTask InitializeAsync()

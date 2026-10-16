@@ -909,6 +909,7 @@ internal static class BuiltInNodeTranslators
             context.AppendLine("};");
         }
     }
+
     /// <summary>
     /// Translates <paramref name="node"/> by assigning `default(&lt;type&gt;)` to the node's
     /// output pin.

@@ -37,6 +37,7 @@ public sealed class MsBuildProjectSystem : IProjectSystem
 
     /// <summary>MSBuild's well-known single-target-framework property name.</summary>
     private const string TargetFrameworkProperty = "TargetFramework";
+
     private const string SkipGenerateProperty = "_NetPrintsSkipGenerate";
 
     /// <summary>The item type for an assembly reference by <c>HintPath</c>.</summary>

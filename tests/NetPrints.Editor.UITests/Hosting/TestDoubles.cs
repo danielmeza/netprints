@@ -18,7 +18,9 @@ namespace NetPrints.Editor.UITests.Hosting;
 public sealed class RecordingDialogs : IEditorDialogs
 {
     public List<(string Title, string Message)> Errors { get; } = [];
+
     public List<TypeSpecifier> SelectTypeCalls { get; } = [];
+
     public TypeSpecifier? TypeAnswer { get; set; } = TypeSpecifier.FromType<int>();
 
     /// <summary>When set, the references dialog is shown for real (non-modal) instead of being skipped.</summary>

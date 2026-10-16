@@ -19,6 +19,7 @@ public static partial class XFixes
 
     // XFixesCursorImage offsets on 64-bit.
     private const int SerialOffset = 16;
+
     private const int NameOffset = 40;
 
     /// <summary>

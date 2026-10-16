@@ -13,6 +13,7 @@ namespace NetPrints.Desktop.E2ETests.Hosting;
 public sealed class XServer : IAsyncLifetime
 {
     public const int Width = 1600;
+
     public const int Height = 1000;
 
     private Process? xvfb;

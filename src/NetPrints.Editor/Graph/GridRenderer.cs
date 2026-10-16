@@ -46,11 +46,20 @@ internal static class GridRenderer
         return reader.ReadToEnd();
     }
 
-    [ThreadStatic] private static SKPath? minorPath;
-    [ThreadStatic] private static SKPath? majorPath;
-    [ThreadStatic] private static SKPaint? fillPaint;
-    [ThreadStatic] private static SKPaint? shaderPaint;
-    [ThreadStatic] private static SKRuntimeEffectUniforms? shaderUniforms;
+    [ThreadStatic]
+    private static SKPath? minorPath;
+
+    [ThreadStatic]
+    private static SKPath? majorPath;
+
+    [ThreadStatic]
+    private static SKPaint? fillPaint;
+
+    [ThreadStatic]
+    private static SKPaint? shaderPaint;
+
+    [ThreadStatic]
+    private static SKRuntimeEffectUniforms? shaderUniforms;
 
     /// <summary>Whether the SkSL effect compiled; compiled once, on first use.</summary>
     public static bool ShaderAvailable => Effect.Value.Effect is not null;

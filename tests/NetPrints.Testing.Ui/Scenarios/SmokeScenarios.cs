@@ -32,6 +32,7 @@ public abstract class SmokeScenarios
 
     /// <summary>The Main graph of the checked-in sample: its class file and its method id.</summary>
     private static readonly DocumentId MainDocument = DocumentId.Graph("HelloWorld.Program.netpc.json", DocumentId.MethodKeyPrefix + "m000000001gs20");
+
     private const string DebugWriteLine = "System.Diagnostics.Debug WriteLine (value: System.Object)";
 
     /// <summary>A fresh editor (no project open) and a private sample copy.</summary>

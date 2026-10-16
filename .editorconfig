@@ -716,3 +716,9 @@ dotnet_diagnostic.VSTHRD111.severity = none
 
 [src/NetPrints.Desktop/**.cs]
 dotnet_diagnostic.VSTHRD111.severity = none
+
+# NPS repository style rules (ADR-0024); the analyzers are referenced from src/ and tests/ only.
+[{src,tests}/**.cs]
+dotnet_diagnostic.NPS001.severity = error
+dotnet_diagnostic.NPS002.severity = error
+dotnet_diagnostic.NPS003.severity = suggestion

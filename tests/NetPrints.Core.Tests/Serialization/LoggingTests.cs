@@ -27,7 +27,9 @@ namespace NetPrints.Tests.Serialization
         private sealed class BumpSchemaVersionMigration : IDocumentMigration
         {
             public DocumentKind Kind => DocumentKind.Class;
+
             public int FromVersion => 1;
+
             public void Migrate(JsonObject document) => document["schemaVersion"] = 2;
         }
 

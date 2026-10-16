@@ -9,9 +9,13 @@ namespace NetPrints.Testing.Ui.Graph;
 public sealed class NodeObject(IUiDriver driver, AutomationQuery query) : UiElement(driver, query)
 {
     public UiElement Label => Find(AutomationIds.NodeLabel);
+
     public UiElement Overloads => Find(AutomationIds.NodeOverloads);
+
     public UiElement Pure => Find(AutomationIds.NodePure);
+
     public UiElement LeftPlus => Find(AutomationIds.NodeLeftPlus);
+
     public UiElement LeftMinus => Find(AutomationIds.NodeLeftMinus);
 
     /// <summary>An input pin by name.</summary>

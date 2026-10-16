@@ -34,6 +34,7 @@ namespace NetPrints.Tests.Serialization
         }
 
         private static FakeFormat JsonFormat() => new("json", ".netpc.json");
+
         private static FakeFormat OtherFormat() => new("other", ".netpc");
 
         [Fact]

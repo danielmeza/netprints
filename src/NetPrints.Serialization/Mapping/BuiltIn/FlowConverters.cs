@@ -29,7 +29,9 @@ internal static class FlowConverters
     private sealed class IfElseNodeConverter : INodeDocumentConverter
     {
         public string Kind => BuiltInNodeKinds.IfElse;
+
         public Type NodeType => typeof(IfElseNode);
+
         public Type DocumentType => typeof(IfElseNodeDocument);
 
         public NodeDocument ToDocument(Node node, NodeMappingContext context) => new IfElseNodeDocument(node.Id, null, null);
@@ -40,7 +42,9 @@ internal static class FlowConverters
     private sealed class ForLoopNodeConverter : INodeDocumentConverter
     {
         public string Kind => BuiltInNodeKinds.ForLoop;
+
         public Type NodeType => typeof(ForLoopNode);
+
         public Type DocumentType => typeof(ForLoopNodeDocument);
 
         public NodeDocument ToDocument(Node node, NodeMappingContext context) => new ForLoopNodeDocument(node.Id, null, null);
@@ -51,7 +55,9 @@ internal static class FlowConverters
     private sealed class TernaryNodeConverter : INodeDocumentConverter
     {
         public string Kind => BuiltInNodeKinds.Ternary;
+
         public Type NodeType => typeof(TernaryNode);
+
         public Type DocumentType => typeof(TernaryNodeDocument);
 
         public NodeDocument ToDocument(Node node, NodeMappingContext context) => new TernaryNodeDocument(node.Id, null, null, node.IsPure);
@@ -68,7 +74,9 @@ internal static class FlowConverters
     private sealed class AwaitNodeConverter : INodeDocumentConverter
     {
         public string Kind => BuiltInNodeKinds.Await;
+
         public Type NodeType => typeof(AwaitNode);
+
         public Type DocumentType => typeof(AwaitNodeDocument);
 
         public NodeDocument ToDocument(Node node, NodeMappingContext context) => new AwaitNodeDocument(node.Id, null, null, node.IsPure);
@@ -85,7 +93,9 @@ internal static class FlowConverters
     private sealed class ThrowNodeConverter : INodeDocumentConverter
     {
         public string Kind => BuiltInNodeKinds.Throw;
+
         public Type NodeType => typeof(ThrowNode);
+
         public Type DocumentType => typeof(ThrowNodeDocument);
 
         public NodeDocument ToDocument(Node node, NodeMappingContext context) => new ThrowNodeDocument(node.Id, null, null);
@@ -96,7 +106,9 @@ internal static class FlowConverters
     private sealed class RerouteNodeConverter : INodeDocumentConverter
     {
         public string Kind => BuiltInNodeKinds.Reroute;
+
         public Type NodeType => typeof(RerouteNode);
+
         public Type DocumentType => typeof(RerouteNodeDocument);
 
         public NodeDocument ToDocument(Node node, NodeMappingContext context)

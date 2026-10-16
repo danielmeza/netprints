@@ -18,6 +18,7 @@ public class CanvasPopupPositioningTests
     // Well clear of both the window's right/bottom edges (the search popup is 700x300) and of the
     // corner HoverAndDropTests's own drop-point test uses, so this exercises the unclamped case.
     private const double UnclampedDx = -450;
+
     private const double UnclampedDy = -50;
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
