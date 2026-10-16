@@ -78,11 +78,11 @@
       <!-- Document tabs: top corners only, so the selected tab joins the document under it. -->
       <CornerRadius x:Key="Radius.Tab">4,4,0,0</CornerRadius>
       <Thickness x:Key="Tab.SelectedBorderThickness">1,0,1,0</Thickness>
-      <Thickness x:Key="Tab.StripOverlap">0,0,0,-1</Thickness>
-      <Thickness x:Key="Tab.InactiveInset">0,2,0,1</Thickness>
-      <!-- Compact tab content: Dock's template keeps 2 px margins around the label and the close button, so these paddings come on top of them. The selected body keeps one more pixel under its content for the strip border it covers, so every label shares a baseline. -->
+      <Thickness x:Key="Tab.StripOverlap">0,0,0,-2</Thickness>
+      <Thickness x:Key="Tab.InactiveInset">0,2,0,2</Thickness>
+      <!-- Compact tab content: Dock's template keeps 2 px margins around the label and the close button, so these paddings come on top of them. The strip overlaps the document by Tab.StripOverlap, so the border line is covered by the selected tab at any scale (the line is rounded up to whole device pixels, 2 at scale 1.18). Inactive tabs keep the same inset under them to leave the line visible, and the selected body pads its bottom likewise, so every label shares a baseline. -->
       <Thickness x:Key="Tab.BodyPadding">7,0,2,0</Thickness>
-      <Thickness x:Key="Tab.SelectedBodyPadding">7,0,2,1</Thickness>
+      <Thickness x:Key="Tab.SelectedBodyPadding">7,0,2,2</Thickness>
       <x:Double x:Key="Tab.Height">28</x:Double>
       <x:Double x:Key="Tab.CloseButtonSize">20</x:Double>
       <Thickness x:Key="Tab.AccentThickness">0,2,0,0</Thickness>

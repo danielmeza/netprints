@@ -207,6 +207,78 @@ public class DocumentTabStyleTests
         Assert.Equal(expectedSurface, frame.Pixel(beyond, y + 1));
     }
 
+    public static TheoryData<string, double> ToolPaneCases
+    {
+        get
+        {
+            var data = new TheoryData<string, double>();
+            foreach (string variant in new[] { "Dark", "Light" })
+            {
+                foreach (double scale in new[] { 1.0, 1.18, 1.5, 2.0 })
+                {
+                    data.Add(variant, scale);
+                }
+            }
+
+            return data;
+        }
+    }
+
+    [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]
+    [MemberData(nameof(ToolPaneCases))]
+    public async Task NoLineRunsUnderTheSelectedTabWhileAToolPaneIsActiveAtAnyScale(string variantName, double scale)
+    {
+        var variant = variantName == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light;
+        var application = Application.Current ?? throw new InvalidOperationException("No application.");
+        ThemeVariant previous = application.RequestedThemeVariant ?? ThemeVariant.Dark;
+        application.RequestedThemeVariant = variant;
+        try
+        {
+            await using var session = await EditorSession.OpenSampleMainAsync(Token);
+            await session.PickMainFromTheTreeAsync(Token);
+            await session.OpenClassGraphAsync(Token);
+            await session.Page.OpenMethodAsync("Main", Token);
+            await session.WaitForRenderedAsync(Token);
+
+            Window window = session.Window;
+            DocumentControl document = Assert.Single(window.GetVisualDescendants().OfType<DocumentControl>(), control => control.IsEffectivelyVisible);
+            var documentDock = Assert.IsAssignableFrom<IDock>(document.DataContext);
+            IFactory factory = Assert.IsAssignableFrom<IFactory>(documentDock.Factory);
+            IDock toolDock = window.GetVisualDescendants().OfType<ToolDockControl>().Select(control => Assert.IsAssignableFrom<IDock>(control.DataContext)).First();
+            IDockable pane = Assert.IsAssignableFrom<IDockable>(toolDock.VisibleDockables?.First());
+            factory.SetFocusedDockable(toolDock, pane);
+            factory.SetActiveDockable(pane);
+            window.SetRenderScaling(scale);
+            HeadlessDriver.Pump();
+            HeadlessDriver.Pump();
+            Assert.DoesNotContain(":active", document.Classes);
+
+            DocumentTabStripItem selected = document.GetVisualDescendants().OfType<DocumentTabStripItem>().Single(tab => tab.IsSelected);
+            Border body = BodyOf(selected);
+            Rect tabBox = InWindow(selected, window);
+            Color surface = ColorOf(window, "Canvas.Background", variant);
+            Color stripBorder = ColorOf(window, "Tab.StripBorder", variant);
+            Assert.Equal(surface, Assert.IsAssignableFrom<ISolidColorBrush>(body.Background).Color);
+
+            UiImage frame = FrameOf(window);
+            int x = (int)Math.Round((tabBox.Left + 4) * scale);
+            int top = (int)Math.Round((tabBox.Top + 4) * scale);
+            int bottom = (int)Math.Round((tabBox.Bottom + 4) * scale);
+            for (int y = top; y <= bottom; y++)
+            {
+                Assert.Equal(Argb(surface), frame.Pixel(x, y));
+            }
+
+            DocumentTabStrip strip = document.GetVisualDescendants().OfType<DocumentTabStrip>().Single();
+            int beyond = (int)Math.Round((InWindow(strip, window).Right - 40) * scale);
+            Assert.Contains(Enumerable.Range(top, bottom - top + 1), y => frame.Pixel(beyond, y) == Argb(stripBorder));
+        }
+        finally
+        {
+            application.RequestedThemeVariant = previous;
+        }
+    }
+
     [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]
     [InlineData("Dark")]
     [InlineData("Light")]

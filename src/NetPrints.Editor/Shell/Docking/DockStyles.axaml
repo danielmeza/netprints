@@ -90,7 +90,7 @@
     <Setter Property="CornerRadius" Value="{DynamicResource Radius.Tab}" />
     <Setter Property="ClipToBounds" Value="True" />
   </Style>
-  <!-- The strip border runs under the whole strip; the selected tab, one pixel taller than the others, covers it, so the tab opens into the document. -->
+  <!-- The strip border runs under the whole strip; the selected tab, taller than the others by the overlap, covers it, so the tab opens into the document. -->
   <Style Selector="DocumentTabStrip">
     <Setter Property="ZIndex" Value="1" />
     <Setter Property="Margin" Value="{DynamicResource Tab.StripOverlap}" />
