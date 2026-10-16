@@ -459,7 +459,7 @@ SC-010; US3 scenarios 5–6. **Gate (plan)**: SC-005; SC-010 (the three writers)
   tests asserting each target and info message (the `16.0` edge case says the editor's maximum is used). Then capture
   `LangVersion`, `MaxSupportedLangVersion` and `TargetFramework(s)` in `src/NetPrints.Workspace/MsBuildProjectSystem.cs`;
   NPW006–NPW008 constants and guide rows.
-- [ ] T049 [US9] The generate request and the three writers (FR-072, SC-010; 1 unit). Test first:
+- [x] T049 [US9] The generate request and the three writers (FR-072, SC-010; 1 unit). Test first:
   `tests/NetPrints.Cli.Tests/Generation/CSharpTargetWriterIdentityTests.cs`: for each of the six fixtures, the editor's
   save path, `netprints regen` and the SDK's generate target write byte-identical files. Then the language version
   travels in the generate request (`src/NetPrints.Generator/`, the target in `src/NetPrints.Sdk/`, `netprints regen`, the

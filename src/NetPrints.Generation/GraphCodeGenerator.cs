@@ -159,7 +159,10 @@ public sealed class GraphCodeGenerator
             request.ProjectPath, projectName, request.RootNamespace ?? string.Empty, projectName, BinaryType.SharedLibrary,
             "net10.0", request.Profile, ReferencesNetPrintsSdk: true, GraphFiles: [], ExtensionFolders: [],
             References: [], DeclaredReferences: [], OtherSources: [], CompilationOptionsJson: "{}",
-            Properties: new Dictionary<string, string>(), Messages: []));
+            Properties: new Dictionary<string, string>(), Messages: [])
+        {
+            CSharpTarget = request.Target,
+        });
 
         var results = new List<GeneratedFileResult>(request.Graphs.Count);
         foreach (GraphJob job in request.Graphs)
