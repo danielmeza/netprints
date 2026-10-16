@@ -9,6 +9,7 @@ This page lists every code. The tests keep it in step with the sources: a code t
 | NPC | The catalog generator and reader |
 | NPD | The graph document reader |
 | NPE | The editor |
+| NPI | The repository's internal source generators (NetPrints' own source, not shipped) |
 | NPS | The repository style analyzers (NetPrints' own source, not shipped) |
 | NPT | The translator and the code generator |
 | NPW | The project system (project evaluation and restore) |
@@ -55,6 +56,18 @@ Document issues are reported when a graph file is read; all but NPD008 leave the
 | Code | Severity | Cause |
 |---|---|---|
 | NPE001 | error | The project folder has graph files, but the project system loaded none. |
+
+## NPI: internal generators
+
+These rules belong to the generators that compose the editor (`[Singleton<T>]`, `[SessionScoped<T>]`, `[ScopeFactory]`). They check NetPrints' own source and are not shipped in any package; they report as errors.
+
+| Code | Severity | Cause |
+|---|---|---|
+| NPI001 | error | A singleton takes a session-scoped service, directly or through its factory method. |
+| NPI002 | error | A service attribute on a type that cannot be registered: abstract, an open generic, not implementing the service, or a `Factory` that is missing, not unique or returns another type. Also a `[ScopeFactory]` method whose return type is neither registered nor constructible. |
+| NPI003 | error | A registered type has no accessible constructor, or several and none marked `[ActivatorUtilitiesConstructor]`. |
+| NPI004 | error | Two registrations of one service in the same lifetime where another registered type takes a single instance of it. |
+| NPI005 | error | A type registered for several services is disposable (the container would dispose the one instance once for each registration) or the registrations have different lifetimes. |
 
 ## NPS: repository style
 

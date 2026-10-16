@@ -78,6 +78,7 @@ and green on the repository (red/green). VSTHRD002 and VSTHRD103 go to `error` i
 | NPI002 | A service attribute on an abstract or open generic type, or on a type that does not implement the service type |
 | NPI003 | A registered type has more than one public constructor and none is marked `[ActivatorUtilitiesConstructor]` |
 | NPI004 | Two registrations of the same service in one scope where the consumer takes a single instance |
+| NPI005 | A type registered for several services is disposable (the container would dispose the one instance once per registration) or its registrations have different lifetimes; a non-disposable type with one lifetime is registered once and forwarded for the other services |
 | NPI010 | A `[SmartEnum]` type is not an `abstract partial class` |
 | NPI011 | A smart-enum member is not a `static readonly` field of the type, or a static lookup reads `All` before `All` is declared |
 

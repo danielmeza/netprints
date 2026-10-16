@@ -9,7 +9,7 @@ namespace NetPrints.Editor.Tests.Docs;
 /// </summary>
 public sealed partial class DiagnosticsGuideTests
 {
-    private static readonly string[] Prefixes = ["NPC", "NPD", "NPE", "NPS", "NPT", "NPW", "NPX", "NPXE"];
+    private static readonly string[] Prefixes = ["NPC", "NPD", "NPE", "NPI", "NPS", "NPT", "NPW", "NPX", "NPXE"];
 
     private static readonly string[] Severities = ["error", "warning", "info", "suggestion"];
 

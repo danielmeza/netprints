@@ -166,7 +166,7 @@ trip; Windows CLI tests green; SC-015; R5-0 numbers and the M5 outcome recorded.
 
 ### Batch A4 — model: sonnet — T008–T010 — 4 units
 
-- [ ] T008 [US1] DI attributes and the registration generator (FR-003, research R4 step 2, contracts/analyzer-
+- [x] T008 [US1] DI attributes and the registration generator (FR-003, research R4 step 2, contracts/analyzer-
   diagnostics.md §5; 2 units). Test first: `tests/NetPrints.Analyzers.Tests/Composition/RegistrationGeneratorTests.cs`
   (a snapshot of `AddEditorServices()` for a sample compilation, a compile test, an incrementality test) and
   `NpiCompositionRuleTests.cs` (NPI001–NPI004 failing and passing at exact spans). Then
