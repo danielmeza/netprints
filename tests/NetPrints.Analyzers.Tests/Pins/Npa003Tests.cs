@@ -104,6 +104,62 @@ public class Npa003Tests
     }
 
     [Fact]
+    public async Task ADataPinAddedBeforeDeclarePinsIsReportedAtTheCall()
+    {
+        await PinAnalyzerHarness.AssertDiagnosticsAsync(
+            PinSamples.Header + """
+            [NodeKind("sample.value")]
+            public sealed partial class ValueNode : Node
+            {
+                public ValueNode(NodeGraph graph) : base(graph)
+                {
+                    {|NPA003:AddInputDataPin("Early", new ObservableValue<BaseType>(TypeSpecifier.FromType<int>()))|};
+                    AddOutputDataPin("Other", new ObservableValue<BaseType>(TypeSpecifier.FromType<int>()));
+                    DeclarePins();
+                }
+
+                public partial NodeInputDataPin<int> ValuePin { get; }
+            }
+            """,
+            Id);
+    }
+
+    [Fact]
+    public async Task AKindWhoseOnlyPinsComeFromABaseIsCheckedToo()
+    {
+        await PinAnalyzerHarness.AssertDiagnosticsAsync(
+            PinSamples.Header + """
+            [NodeBase]
+            public abstract partial class ExecBase : Node
+            {
+                protected ExecBase(NodeGraph graph) : base(graph)
+                {
+                }
+
+                public partial NodeInputExecPin ExecutionPin { get; }
+            }
+
+            [NodeKind("sample.derived")]
+            public sealed partial class DerivedNode : ExecBase
+            {
+                public {|NPA003:DerivedNode|}(NodeGraph graph) : base(graph)
+                {
+                }
+            }
+
+            [NodeKind("sample.good")]
+            public sealed partial class GoodNode : ExecBase
+            {
+                public GoodNode(NodeGraph graph) : base(graph)
+                {
+                    DeclarePins();
+                }
+            }
+            """,
+            Id);
+    }
+
+    [Fact]
     public async Task AConstructorThatChainsToAnotherOneIsNotReported()
     {
         await PinAnalyzerHarness.AssertDiagnosticsAsync(

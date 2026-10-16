@@ -42,6 +42,8 @@ internal static class PinSymbols
     {
         ["AddInputExecPin"] = PinKind.InputExec,
         ["AddOutputExecPin"] = PinKind.OutputExec,
+        ["AddInputDataPin"] = PinKind.InputData,
+        ["AddOutputDataPin"] = PinKind.OutputData,
         ["AddInputTypePin"] = PinKind.InputType,
         ["AddOutputTypePin"] = PinKind.OutputType,
     };

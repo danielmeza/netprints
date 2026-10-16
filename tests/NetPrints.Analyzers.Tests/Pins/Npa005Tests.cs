@@ -60,6 +60,26 @@ public class Npa005Tests
     }
 
     [Fact]
+    public async Task ABaseThatAddsADataPinToACollectionItDeclaresInIsReported()
+    {
+        await PinAnalyzerHarness.AssertDiagnosticsAsync(
+            PinSamples.Header + """
+            [NodeBase]
+            public abstract partial class ValueBase : Node
+            {
+                protected ValueBase(NodeGraph graph) : base(graph)
+                {
+                    {|NPA005:AddOutputDataPin("Late", new ObservableValue<BaseType>(TypeSpecifier.FromType<int>()))|};
+                    AddInputDataPin("Other", new ObservableValue<BaseType>(TypeSpecifier.FromType<int>()));
+                }
+
+                public partial NodeOutputDataPin<int> ResultPin { get; }
+            }
+            """,
+            Id);
+    }
+
+    [Fact]
     public async Task AKindThatAddsAfterDeclarePinsIsNotReported()
     {
         await PinAnalyzerHarness.AssertDiagnosticsAsync(

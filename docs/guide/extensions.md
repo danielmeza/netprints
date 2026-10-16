@@ -135,7 +135,9 @@ public sealed partial class GreetNode : Node
 - **`[NodeBase]`.** Marks an abstract base class whose derived kinds continue the pin lists after the base's pins. A
   base class never adds pins by hand to a collection it also declares; NPA005 reports it.
 - **Kinds that stay imperative.** A node whose pins depend on constructor arguments can still call `AddInputExecPin(...)` and
-  friends. Declared pins come first: add imperative pins only after `DeclarePins()`.
+  friends. Declared pins come first: add imperative pins only after `DeclarePins()`. NPA003 and NPA005 find the calls
+  by name inside the constructor (`AddInputDataPin`, `AddOutputDataPin` and the exec and type variants, and `Add` on the
+  pin collections); a pin added by a helper method the constructor calls is not seen.
 
 ### The `NodePins` files
 

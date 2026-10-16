@@ -137,7 +137,7 @@ public sealed class PinRulesAnalyzer : DiagnosticAnalyzer
         ReportKeys(context, type, declared);
         ReportDefaults(context, declared);
         ReportMembers(context, type, declared);
-        if (isKind && declared.Count > 0)
+        if (isKind && (declared.Count > 0 || PinSymbols.Ancestors(type).SelectMany(PinSymbols.DeclaredKeys).Any()))
         {
             ReportConstructors(context, type, typeLocation, declared);
         }
