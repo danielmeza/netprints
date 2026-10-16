@@ -21,6 +21,8 @@ This page lists every code. The tests keep it in step with the sources: a code t
 
 These rules check the node classes whose pins the convention generator declares (`[NodeKind]` and `[NodeBase]` classes with `partial` pin properties). They ship with the `NetPrints.Core` package and report as errors.
 
+<span id="npa001"></span><span id="npa002"></span><span id="npa003"></span><span id="npa004"></span><span id="npa005"></span><span id="npa006"></span><span id="npa007"></span><span id="npa008"></span><span id="npa009"></span><span id="npa010"></span><span id="npa011"></span><span id="npa012"></span>
+
 | Code | Severity | Cause |
 |---|---|---|
 | NPA001 | error | A pin property or its class is not `partial`, the property is not get-only, or `[Pin]` or `[PinType]` sits on a property that cannot take it. The fix makes the class and the property partial. |
@@ -31,9 +33,10 @@ These rules check the node classes whose pins the convention generator declares 
 | NPA006 | error | A `[DefaultValue]` on a typed input data pin does not convert to the pin's type. |
 | NPA007 | error | An untyped data pin or an output type pin has no `[PinType]`, or its member is missing or is not an `ObservableValue<BaseType>`. |
 | NPA008 | error | A pin property name does not end in `Pin` and has no `[Pin]` attribute. The fix adds `[Pin("Name")]` with the current name as the key. |
-| NPA009 | error | A partial pin property in a class with neither `[NodeKind]` nor `[NodeBase]`. The fix adds `[NodeBase]` to an abstract class or `[NodeKind("ClassName")]` to a concrete one. |
+| NPA009 | error | A partial pin property in a class with neither `[NodeKind]` nor `[NodeBase]`. The fix adds `[NodeBase]` to an abstract class or `[NodeKind("TODO.kindId")]` to a concrete one; replace the placeholder with the real kind id. |
 | NPA010 | warning | A declared pin key is in neither `NodePins.Shipped.txt` nor `NodePins.Unshipped.txt`. The fix records it in the unshipped file. |
 | NPA011 | error | A shipped pin key is no longer declared; the message names the old key and, when a new key took its place, the new one. The fixes keep the shipped key with `[Pin("old")]`, or remove it on purpose with a `*REMOVED*` line in the unshipped file. |
+| NPA012 | info | A node kind declares pins, but the project has neither `NodePins.Shipped.txt` nor `NodePins.Unshipped.txt`, so no pin key is tracked. Add both files (empty is fine) to turn tracking on. |
 
 The pin key files are `AdditionalFiles` of the project (`NodePins.Shipped.txt` and `NodePins.Unshipped.txt`), one `<kind> <direction>.<exec|data|type>.<key>` line per pin; a project without them is not tracked.
 
@@ -82,6 +85,8 @@ Document issues are reported when a graph file is read; all but NPD008 leave the
 
 These rules belong to the generators that compose the editor (`[Singleton<T>]`, `[SessionScoped<T>]`, `[ScopeFactory]`) and to the smart enum generator (`[SmartEnum]`). They check NetPrints' own source and are not shipped in any package; they report as errors.
 
+<span id="npi001"></span><span id="npi002"></span><span id="npi003"></span><span id="npi004"></span><span id="npi005"></span><span id="npi010"></span><span id="npi011"></span>
+
 | Code | Severity | Cause |
 |---|---|---|
 | NPI001 | error | A singleton takes a session-scoped service, directly or through its factory method. |
@@ -95,6 +100,8 @@ These rules belong to the generators that compose the editor (`[Singleton<T>]`, 
 ## NPS: repository style
 
 These rules check NetPrints' own source. They are not shipped in any package and are off unless a repository turns them on in `.editorconfig`; the severities are the ones this repository sets.
+
+<span id="nps001"></span><span id="nps002"></span><span id="nps003"></span>
 
 | Code | Severity | Cause |
 |---|---|---|

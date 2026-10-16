@@ -91,6 +91,30 @@ public sealed partial class DiagnosticsGuideTests
     }
 
     [Fact]
+    public void EveryHelpLinkLandsOnAnAnchorOfTheGuide()
+    {
+        string guide = File.ReadAllText(GuidePath);
+        string[] linked = [.. SourceFiles("*.cs")
+            .SelectMany(path => HelpLinkedCode().Matches(File.ReadAllText(path)).Select(match => match.Groups["name"].Value))
+            .Distinct(StringComparer.Ordinal)];
+        string[] codes = [.. SourceFiles("*.cs").SelectMany(path => CodeConstantByName().Matches(File.ReadAllText(path)))
+            .Where(match => linked.Contains(match.Groups["name"].Value, StringComparer.Ordinal))
+            .Select(match => match.Groups["code"].Value)
+            .Distinct(StringComparer.Ordinal)];
+
+        string[] missing = [.. codes.Where(code => !guide.Contains($"id=\"{code.ToLowerInvariant()}\"", StringComparison.Ordinal))];
+
+        Assert.NotEmpty(codes);
+        Assert.True(missing.Length == 0, $"docs/guide/diagnostics.md has no anchor for the help links of: {string.Join(", ", missing)}");
+    }
+
+    [GeneratedRegex(@"DiagnosticHelpLinks\.For\((?:\w+\.)?(?<name>\w+)\)")]
+    private static partial Regex HelpLinkedCode();
+
+    [GeneratedRegex(@"const\s+string\s+(?<name>\w+)\s*=\s*""(?<code>NP[A-Z]{1,2}\d{3,4})""")]
+    private static partial Regex CodeConstantByName();
+
+    [Fact]
     public void EveryRowIsListedOnce()
     {
         string[] codes = [.. Rows().Select(row => row.Code)];

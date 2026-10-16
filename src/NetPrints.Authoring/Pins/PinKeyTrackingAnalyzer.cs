@@ -36,8 +36,17 @@ public sealed class PinKeyTrackingAnalyzer : DiagnosticAnalyzer
         isEnabledByDefault: true,
         helpLinkUri: DiagnosticHelpLinks.For(NpaDiagnosticCodes.ShippedKeyGone));
 
+    private static readonly DiagnosticDescriptor Untracked = new(
+        NpaDiagnosticCodes.TrackingMissing,
+        "A node kind with declared pins has NodePins files",
+        "The node kind '{0}' declares pins, but the project has neither NodePins.Shipped.txt nor NodePins.Unshipped.txt, so its pin keys are not tracked",
+        NpaDiagnosticCodes.Category,
+        DiagnosticSeverity.Info,
+        isEnabledByDefault: true,
+        helpLinkUri: DiagnosticHelpLinks.For(NpaDiagnosticCodes.TrackingMissing));
+
     /// <inheritdoc/>
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Unrecorded, ShippedGone];
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Unrecorded, ShippedGone, Untracked];
 
     /// <inheritdoc/>
     public override void Initialize(AnalysisContext context)
@@ -51,7 +60,22 @@ public sealed class PinKeyTrackingAnalyzer : DiagnosticAnalyzer
             {
                 start.RegisterSymbolAction(symbol => AnalyzeType(symbol, tracking), SymbolKind.NamedType);
             }
+            else
+            {
+                start.RegisterSymbolAction(ReportUntracked, SymbolKind.NamedType);
+            }
         });
+    }
+
+    private static void ReportUntracked(SymbolAnalysisContext context)
+    {
+        if (context.Symbol is INamedTypeSymbol { TypeKind: TypeKind.Class } type
+            && PinSymbols.UserLocation(type) is { } location
+            && PinSymbols.ExplicitKey(PinSymbols.Find(type, PinReader.NodeKindAttribute)) is { } kind
+            && Declared(type).Count > 0)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(Untracked, location, kind));
+        }
     }
 
     private static void AnalyzeType(SymbolAnalysisContext context, PinKeyTracking tracking)

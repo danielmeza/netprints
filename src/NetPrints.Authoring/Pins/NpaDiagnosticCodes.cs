@@ -36,6 +36,9 @@ internal static class NpaDiagnosticCodes
     /// <summary>A shipped pin key is no longer declared.</summary>
     public const string ShippedKeyGone = "NPA011";
 
+    /// <summary>A node kind declares pins, but the project has neither <c>NodePins.Shipped.txt</c> nor <c>NodePins.Unshipped.txt</c>, so no key is tracked.</summary>
+    public const string TrackingMissing = "NPA012";
+
     /// <summary>The category of every NPA diagnostic.</summary>
     public const string Category = "Authoring";
 }

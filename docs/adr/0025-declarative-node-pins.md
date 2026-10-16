@@ -33,7 +33,8 @@ Accepted (2026-10-16, P3 spec `specs/006-editor-extension-host/`, research R8; l
    a fix that adds it to the unshipped file. NPA011 (an error) says a shipped key is no longer declared and names both the
    old and the new key, with two fixes: keep the key (`[Pin("old")]` on the replacing property) or remove it on purpose
    (`*REMOVED*<line>` in the unshipped file). The release step moves the unshipped lines to the shipped file. A key that
-   changed would break stored graphs, so the build fails before it can.
+   changed would break stored graphs, so the build fails before it can. A project that declares pins but has neither file is
+   not tracked; NPA012 (an info) says so.
 5. **Not every kind converts.** Kinds whose pins depend on constructor arguments or are fully dynamic (`Await`,
    `ExplicitCast`, `Ternary`, `CallMethod`, `Constructor`, `Literal`, `MakeArray`, `MakeDelegate`, `Type`, `VariableGetter`,
    `VariableSetter`, `Reroute`) stay imperative. A test lists them, so a kind moves only by an explicit change.

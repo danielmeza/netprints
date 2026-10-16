@@ -45,6 +45,7 @@ a staleness test compares it with the `*DiagnosticCodes` classes and the analyze
 | NPA009 | error | Pin properties in a class without `[NodeKind]` or `[NodeBase]` | B; fix: add the marker |
 | NPA010 | warning | A declared pin key is not in `NodePins.Shipped.txt`/`Unshipped.txt` | B (S4); fix: add to Unshipped |
 | NPA011 | error | A shipped pin key is no longer declared (the old and new key are named) | B (S4); fixes: keep key (`[Pin("old")]`), remove on purpose |
+| NPA012 | info | A node kind declares pins, but the project has neither `NodePins.Shipped.txt` nor `NodePins.Unshipped.txt` (AB-12) | B (S4) |
 | NPA020 | error | An icon id literal does not match the icon id pattern (ADR-0021) or, for built-ins, is not registered | C2 (S6) |
 | NPA021 | error | A gesture literal does not parse, or breaks ADR-0020's scope rule for its descriptor's scope | C2 (S6) |
 | NPA022 | error | A constant contribution id does not match the id pattern or the owner prefix | C2 (S6) |

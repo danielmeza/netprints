@@ -58,9 +58,28 @@ public class PinKeyTrackingTests
     }
 
     [Fact]
-    public async Task WithoutTheFilesNothingIsTracked()
+    public async Task WithoutTheFilesNothingIsTrackedAndNPA012SaysSo()
     {
-        await PinAnalyzerHarness.AssertDiagnosticsAsync(Plain(Both), "NPA010", "NPA011");
+        string source = Loop(Both).Replace("NPA011", "NPA012", System.StringComparison.Ordinal);
+
+        await PinAnalyzerHarness.AssertDiagnosticsAsync(source, "NPA010", "NPA011", "NPA012");
+    }
+
+    [Fact]
+    public async Task NPA012IsInfoAndStaysQuietWithoutDeclaredPins()
+    {
+        Assert.Equal(DiagnosticSeverity.Info, PinAnalyzerHarness.Descriptor("NPA012").DefaultSeverity);
+        string source = PinSamples.Header + $$"""
+            [NodeKind("{{Kind}}")]
+            public sealed partial class LoopNode : Node
+            {
+                public LoopNode(NodeGraph graph) : base(graph)
+                {
+                }
+            }
+            """;
+
+        await PinAnalyzerHarness.AssertDiagnosticsAsync(source, "NPA010", "NPA011", "NPA012");
     }
 
     [Fact]
