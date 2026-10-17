@@ -112,7 +112,8 @@ Each step lands in the P3 order of the roadmap and has its gate.
    `?? new Default()` fallbacks go as the typed contexts (R5a) land. Gate: M1 (composition budget 150 ms, including
    the provider build and the first resolves).
 4. **Project session.** `ProjectSessionScope` extracted from `ProjectLoader`; `BackupScope`, `RecoveryService` and
-   the template services become session-scoped. Gate: a resolve-everything test.
+   the template services become session-scoped. Gate: a resolve-everything test. Amended (batch C-F5): the project
+   template service holds no session state and New project has no project, so the loader creates it directly.
 5. **Class and graph.** Generated `ClassContextFactory` and `GraphScopeFactory`; `GraphDocumentFactory` keeps only
    document ownership. Gate: M2 with counting fakes.
 6. **R7 and N1.** `IExtensionBuilder.Services`; `ExtensionRegistry` builds and owns the extension providers;

@@ -201,8 +201,8 @@ internal sealed class ProjectLoader : IDisposable
     /// <returns>A task that completes when the project is open, or the user cancelled.</returns>
     public async Task CreateProjectAsync()
     {
-        using ProjectSessionScope templates = BeginSession(null);
-        using var dialog = new NewProjectDialogViewModel(templates.Templates, context.FilePicker, locations, TimeProvider.System);
+        var templates = ProjectTemplateService.Create(shell.Registry, context.Extensions, context.Projects);
+        using var dialog = new NewProjectDialogViewModel(templates, context.FilePicker, locations, TimeProvider.System);
         string? path = await context.Dialogs.ShowNewProjectAsync(dialog).ConfigureAwait(true);
         if (path is null)
         {

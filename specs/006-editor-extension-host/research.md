@@ -99,8 +99,9 @@ ADR-0031, ADR-0033 to ADR-0040.
   3. **App and shell (C1)**: `EditorServices` builds a `ServiceCollection` from `AddEditorServices()` plus the host
      instances; `EditorContext` stays as a facade; `TestComposition` swaps doubles with `services.Replace`. Gate M1:
      composition at most 150 ms including the provider build and first resolves.
-  4. **Project session (C1)**: `ProjectSessionScope` extracted from `ProjectLoader`; backups, recovery and templates
-     become session-scoped. Gate: a test resolves every registration in both scopes.
+  4. **Project session (C1)**: `ProjectSessionScope` extracted from `ProjectLoader`; backups and recovery
+     become session-scoped (amended in batch C-F5: the project template service holds no session state and is created by
+     the loader, since New project runs with no project). Gate: a test resolves every registration in both scopes.
   5. **Class and graph (C1)**: the generated `ClassContextFactory` and `GraphScopeFactory`. Gate M2 with counting
      fakes: zero per-pin resolutions, allocations per node at most the baseline plus 10%.
   6. **Extensions (C2)**: R15 below.

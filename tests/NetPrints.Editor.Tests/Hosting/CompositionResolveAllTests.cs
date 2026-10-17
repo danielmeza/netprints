@@ -51,7 +51,7 @@ public sealed class CompositionResolveAllTests : IAsyncDisposable
         Assert.Contains(scoped, descriptor => descriptor.ServiceType == typeof(BackupService));
         Assert.Contains(scoped, descriptor => descriptor.ServiceType == typeof(BackupStore));
         Assert.Contains(scoped, descriptor => descriptor.ServiceType == typeof(RecoveryService));
-        Assert.Contains(scoped, descriptor => descriptor.ServiceType == typeof(ProjectTemplateService));
+        Assert.DoesNotContain(scoped, descriptor => descriptor.ServiceType == typeof(ProjectTemplateService));
 
         using ProjectSessionScope scope = ProjectSessionScope.Create(context, registry, new SessionData("/project/Project.csproj", _ => { }));
 
@@ -62,7 +62,7 @@ public sealed class CompositionResolveAllTests : IAsyncDisposable
     }
 
     [Fact]
-    public void ASessionScopeWithoutBackupOptionsRecoversNothingAndStillOffersTemplates()
+    public void ASessionScopeWithoutBackupOptionsRecoversNothing()
     {
         ServiceCollection root = [];
         root.AddEditorHost(Host());
@@ -71,7 +71,6 @@ public sealed class CompositionResolveAllTests : IAsyncDisposable
         using ProjectSessionScope scope = ProjectSessionScope.Create(provider.GetRequiredService<EditorContext>(), provider.GetRequiredService<IContributionRegistry>(), new SessionData(null, _ => { }));
 
         Assert.Null(scope.Services.GetService<BackupOptions>());
-        Assert.NotNull(scope.Templates);
         Assert.Throws<InvalidOperationException>(() => scope.Services.GetRequiredService<BackupStore>());
     }
 

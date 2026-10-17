@@ -8,7 +8,6 @@ using NetPrints.Projects;
 namespace NetPrints.Editor.StartPage;
 
 /// <summary>Creates a project from a registered project template.</summary>
-[SessionScoped<ProjectTemplateService>(Factory = "Create")]
 internal sealed class ProjectTemplateService(
     Func<IReadOnlyList<ProjectTemplateDescriptor>> templates,
     Func<string, IProjectProfile?> findProfile,

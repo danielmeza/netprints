@@ -10,7 +10,7 @@ using NetPrints.Projects;
 namespace NetPrints.Editor.Hosting;
 
 /// <summary>
-/// The container of one project session: the session-scoped services (backups, recovery, project templates) live in it and
+/// The container of one project session: the session-scoped services (backups, recovery) live in it and
 /// go with the session. It is built from the host services of an <see cref="EditorContext"/>.
 /// </summary>
 internal sealed class ProjectSessionScope : IDisposable
@@ -34,9 +34,6 @@ internal sealed class ProjectSessionScope : IDisposable
 
     /// <summary>Gets the factory of the session's class contexts.</summary>
     public ClassContextFactory ClassContexts => Services.GetRequiredService<ClassContextFactory>();
-
-    /// <summary>Gets the project template service of the session.</summary>
-    public ProjectTemplateService Templates => Services.GetRequiredService<ProjectTemplateService>();
 
     /// <summary>Builds the container of a session.</summary>
     /// <param name="context">Host services shared across the editor; the backup options come from it.</param>
