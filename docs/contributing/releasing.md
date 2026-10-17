@@ -63,16 +63,20 @@ every key it ships recorded (NPA010) and none missing (NPA011).
 
 Every packable library sets `EnablePackageValidation`, so `dotnet pack` compares its public surface with the last
 published version and fails on an unrecorded break. Libraries already on nuget.org (`NetPrints.Core`,
-`NetPrints.Reflection`, `NetPrints.Catalog`) set `PackageValidationBaselineVersion` to that version, and a
-`CompatibilitySuppressions.xml` next to the project holds exactly the intended breaks since it (generate it with
-`-p:ApiCompatGenerateSuppressionFile=true`; `PackageValidationTests` checks each entry against the `*REMOVED*` lines of
-`PublicAPI.Unshipped.txt` and the sealed types).
+`NetPrints.Reflection`, `NetPrints.Catalog`) set `PackageValidationBaselineVersion` to `$(NetPrintsPackageBaselineVersion)`,
+which `Directory.Build.props` defines once, and a `CompatibilitySuppressions.xml` next to the project holds exactly
+the intended breaks since it (generate it with `-p:ApiCompatGenerateSuppressionFile=true`). `PackageValidationTests`
+checks that only `CP0002` and `CP0009` are suppressed, each against the `*REMOVED*` lines of
+`PublicAPI.Unshipped.txt` or the sealed types; a suppression with another id fails until a cross-check for it exists.
 
 A package that has never been published (`NetPrints.Serialization`, `NetPrints.Extensibility.Abstractions` and
 `NetPrints.Extensibility` before 0.4.0) has no baseline. In the release that first publishes it, add
-`<PackageValidationBaselineVersion>` with that version to the **next** change after the tag, and list the package in
-`PackageValidationTests.Published`. After each release, move the baseline of every package to the version just
-published and delete its `CompatibilitySuppressions.xml`: the recorded breaks belong to the release that made them.
+`<PackageValidationBaselineVersion>$(NetPrintsPackageBaselineVersion)</PackageValidationBaselineVersion>` to its
+project in the **next** change after the tag, and list the package in `PackageValidationTests.Published`. After each
+release, set `NetPrintsPackageBaselineVersion` to the version just published (the only edit that moves the baseline)
+and delete the `CompatibilitySuppressions.xml` files: the recorded breaks belong to the release that made them. The
+tests stay green with the files gone. The baseline must be the last version that is on nuget.org: do not move it to
+0.3.0 until that version is published.
 
 ## Owner one-time steps
 

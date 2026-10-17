@@ -12,7 +12,10 @@ namespace NetPrints.Tests.Extensibility;
 /// <summary>FR-020, research R12: every packable library validates its public surface against the last published version, and the recorded 0.4.0 breaks match the API files.</summary>
 public class PackageValidationTests
 {
-    private const string BaselineVersion = "0.2.0";
+    private const string BaselineProperty = "NetPrintsPackageBaselineVersion";
+
+    /// <summary>The suppression ids a test below checks against the API files or the assembly; any other id has no cross-check.</summary>
+    private static readonly string[] CrossCheckedIds = ["CP0002", "CP0009"];
 
     /// <summary>Packable projects that are not class libraries: a tool, an MSBuild SDK and an analyzer package.</summary>
     private static readonly string[] NotLibraries = ["NetPrints.Annotations", "NetPrints.Cli", "NetPrints.Sdk"];
@@ -60,11 +63,29 @@ public class PackageValidationTests
     }
 
     [Fact]
-    public void OnlyThePublishedLibrariesHaveABaselineAndItIsTheLastPublishedVersion()
+    public void TheBaselineVersionIsSetOnceAndOnlyThePublishedLibrariesUseIt()
     {
+        string version = Properties(Path.Combine(Root, "Directory.Build.props")).GetValueOrDefault(BaselineProperty) ?? string.Empty;
+        Assert.True(Version.TryParse(version, out _), $"{BaselineProperty} in Directory.Build.props is '{version}'");
+
         Assert.All(Libraries(), library => Assert.Equal(
-            Published.Contains(library.Name) ? BaselineVersion : null,
+            Published.Contains(library.Name) ? $"$({BaselineProperty})" : null,
             library.Properties.GetValueOrDefault("PackageValidationBaselineVersion")));
+    }
+
+    [Fact]
+    public void EveryRecordedSuppressionHasACrossCheck()
+    {
+        foreach ((string name, string directory, _) in Libraries())
+        {
+            string suppressions = Path.Combine(directory, "CompatibilitySuppressions.xml");
+            if (!File.Exists(suppressions))
+            {
+                continue;
+            }
+
+            Assert.All(Targets(suppressions), entry => Assert.True(CrossCheckedIds.Contains(entry.Id), $"{name}: {entry.Id} {entry.Target} is a suppression no test checks"));
+        }
     }
 
     [Fact]
@@ -104,7 +125,6 @@ public class PackageValidationTests
     public void EveryRecordedSealingIsASealedTypeInTheAssembly()
     {
         string suppressions = Path.Combine(Root, "src", "NetPrints.Core", "CompatibilitySuppressions.xml");
-        Assert.True(File.Exists(suppressions));
 
         foreach ((_, string target) in Targets(suppressions).Where(entry => entry.Id == "CP0009"))
         {
@@ -117,14 +137,18 @@ public class PackageValidationTests
     public void EveryRecordedBreakIsFromTheBaselineVersionOnly()
     {
         string suppressions = Path.Combine(Root, "src", "NetPrints.Core", "CompatibilitySuppressions.xml");
-        Assert.True(File.Exists(suppressions));
+        if (!File.Exists(suppressions))
+        {
+            return;
+        }
 
         Assert.All(
             XDocument.Load(suppressions).Descendants("Suppression"),
             suppression => Assert.Equal("true", suppression.Element("IsBaselineSuppression")?.Value));
     }
 
+    /// <summary>The suppressions of a file; a library right after a release has none (docs/contributing/releasing.md).</summary>
     private static IEnumerable<(string Id, string Target)> Targets(string suppressions) =>
-        XDocument.Load(suppressions).Descendants("Suppression")
+        !File.Exists(suppressions) ? [] : XDocument.Load(suppressions).Descendants("Suppression")
             .Select(suppression => (Id: suppression.Element("DiagnosticId")?.Value ?? string.Empty, Target: suppression.Element("Target")?.Value ?? string.Empty));
 }

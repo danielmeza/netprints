@@ -5,7 +5,7 @@
     <AssemblyName>NetPrints.Core</AssemblyName>
     <IsPackable>true</IsPackable>
     <EnablePackageValidation>true</EnablePackageValidation>
-    <PackageValidationBaselineVersion>0.2.0</PackageValidationBaselineVersion>
+    <PackageValidationBaselineVersion>$(NetPrintsPackageBaselineVersion)</PackageValidationBaselineVersion>
     <Description>The NetPrints graph model and C# translator: classes, methods and node graphs that NetPrints turns into readable C#. NetPrints continues the original NetPrints by Robin Kahlow (https://github.com/RobinKa/netprints).</Description>
   </PropertyGroup>
   <ItemGroup>
