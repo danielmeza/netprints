@@ -22,8 +22,8 @@ Follow-up batch landed the same day: the researched rule set (see "Follow-up, no
 promoted, and every violation it flagged fixed for real (see "Follow-up batch: the researched rule set
 lands", below). `S1309` and `CA2007` — both in the original research draft's table — are skipped, not
 landed: `S1309` (flags every `#pragma`/`[SuppressMessage]`, file-grained) is superseded by
-`SourceHygieneTests.NoUnlistedSuppressions` (rule- and site-grained, the tighter gate this ADR already
-requires); `CA2007` would duplicate `VSTHRD111`, which already enforces `ConfigureAwait` with this same
+NPH004 (rule- and site-grained, the tighter gate this ADR already
+requires; it was `SourceHygieneTests.NoUnlistedSuppressions` until the amendment below); `CA2007` would duplicate `VSTHRD111`, which already enforces `ConfigureAwait` with this same
 ADR's UI/non-UI layering table.
 
 ## Context
@@ -62,9 +62,10 @@ configured; `.editorconfig` documented that existing severities were "mostly sil
   `BuiltInNodeTranslators.cs`'s `"return;"` literal is `EarlyOutStatement`, named for why the translator
   writes it (an early-out from control-flow nodes that skip the rest of their body) rather than what it is.
 
-### Enforcement: `SourceHygieneTests.NoRawDiagnosticCodeLiteralsOutsideTheirConstants`
+### Enforcement: NPH003 (was `SourceHygieneTests.NoRawDiagnosticCodeLiteralsOutsideTheirConstants`)
 
-Follows the existing `NoSourceFileMentionsProgramFilesX86` pattern (plain file scan over `git
+The test below became the NPH003 analyzer (amendment "hygiene rules as analyzers"); the text describes the rule it
+enforces. The test followed the existing `NoSourceFileMentionsProgramFilesX86` pattern (plain file scan over `git
 ls-files`-style enumeration, xUnit v3). For every `src/**/*.cs` file (excluding `///` doc-comment prose,
 which documents the code format, not a duplicated value): a line declaring a diagnostic code as a
 `const string` is allowed only in the six designated files (`TranslationDiagnosticCodes.cs`,
@@ -298,8 +299,8 @@ severities and scoping a dedicated research pass (`csharp-agent-rules-draft.md` 
 from that table are skipped rather than landed:
 
 - **S1309** (flags every `#pragma warning disable`/`[SuppressMessage]`, per file): superseded by
-  `SourceHygieneTests.NoUnlistedSuppressions` (landed alongside `NoNullForgivingOperator` in the batch
-  right before this one), which is strictly tighter — per rule ID and per site, not per file — and is
+  NPH004 (first `SourceHygieneTests.NoUnlistedSuppressions`, landed alongside `NoNullForgivingOperator`, now NPH001)
+  in the batch right before this one), which is strictly tighter — per rule ID and per site, not per file — and is
   this ADR's actual enforced ledger gate already.
 - **CA2007** (ConfigureAwait, scoped to libraries): `VSTHRD111` above already enforces `ConfigureAwait`
   with this exact ADR's UI/non-UI layering table; turning CA2007 on too would double-report every site
@@ -362,7 +363,7 @@ unchanged (`git status samples/ tests/NetPrints.Core.Tests/Fixtures` clean) and 
 - The suppression ledger above is the complete, reviewable record of every `[SuppressMessage]` in `src/`:
   `git grep -n "SuppressMessage" -- 'src/*.cs'` lists exactly those six sites, each with an `"ADR-0003: …"`
   justification, and `git grep -n "pragma warning" -- 'src/*.cs'` stays empty (there is no other suppression
-  mechanism in `.cs` source, and none in `.editorconfig`, by policy); `SourceHygieneTests` is the enforced
+  mechanism in `.cs` source, and none in `.editorconfig`, by policy); NPH003 (once `SourceHygieneTests`) is the enforced
   gate for the diagnostic/kind-code duplication this ADR was written for.
 - **Pre-merge analyzer check**: the curated rules are `error`-severity, so `dotnet build -c Release` failing
   is already the enforced gate for them — no separate step needed. The `suggestion`-severity remainder
@@ -383,9 +384,9 @@ unchanged (`git status samples/ tests/NetPrints.Core.Tests/Fixtures` clean) and 
     Logging (CA1848/2254/2017/1727) all landed at the severities/scoping above, every violation fixed for
     real, no escape hatch triggered. `S1309` and `CA2007` from that research draft are skipped by design
     (see above), not deferred. The remaining two items in that draft — the
-    `Microsoft.CodeAnalysis.BannedApiAnalyzers` package and the two `SourceHygieneTests` facts
-    (`NoNullForgivingOperator`, `NoUnlistedSuppressions`) — landed in the batch before this one (`RS0030`,
-    and the hygiene tests respectively). Nothing remains from the original research draft's table.
+    `Microsoft.CodeAnalysis.BannedApiAnalyzers` package and the two hygiene checks
+    (`NoNullForgivingOperator`, `NoUnlistedSuppressions`, now the analyzers NPH001 and NPH004) — landed in the batch
+    before this one (`RS0030`, and the hygiene tests respectively). Nothing remains from the original research draft's table.
 
 ### Info-level backlog in `src/` (FU-5, P3 batch A5)
 
