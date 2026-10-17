@@ -270,7 +270,7 @@ internal sealed class ProjectLoader : IDisposable
         SampleDescriptor? sample = samples.Samples.FirstOrDefault(candidate => string.Equals(candidate.Name, sampleName, StringComparison.Ordinal));
         if (sample is null)
         {
-            await context.Dialogs.ShowErrorAsync(errorTitle, $"There is no bundled sample named '{sampleName}'.").ConfigureAwait(true);
+            await context.Dialogs.ShowErrorAsync(errorTitle, TextFormat.Of(Strings.Message_SampleNotFound, sampleName)).ConfigureAwait(true);
             return;
         }
 
@@ -376,11 +376,11 @@ internal sealed class ProjectLoader : IDisposable
         if (!path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
         {
             await context.Dialogs.ShowErrorAsync("Unsupported project file",
-                $"'{path}' is not a NetPrints project: only '.csproj' projects are supported. Nothing was opened.").ConfigureAwait(true);
+                TextFormat.Of(Strings.Message_UnsupportedProjectFile, path)).ConfigureAwait(true);
             return;
         }
 
-        shell.StatusBar.Show($"Loading project {path}");
+        shell.StatusBar.Show(TextFormat.Of(Strings.Status_LoadingProject, path));
         IReadOnlyList<string> previousExtensionFolders = activeExtensionFolders;
 
         try
@@ -433,7 +433,7 @@ internal sealed class ProjectLoader : IDisposable
                 issues = [.. new[] { notTrusted, unknownProfile }.OfType<DocumentIssue>(), .. SnapshotIssues(snapshot), .. loaded.Issues, .. recovery.Issues];
             }
 
-            shell.StatusBar.Show($"Loaded project {project.Name}", TimeSpan.FromSeconds(5));
+            shell.StatusBar.Show(TextFormat.Of(Strings.Status_LoadedProject, project.Name), TimeSpan.FromSeconds(5));
 
             await ReportExtensionFailuresAsync().ConfigureAwait(true);
 
@@ -464,10 +464,10 @@ internal sealed class ProjectLoader : IDisposable
                 }
             }
 
-            shell.StatusBar.Show($"Failed to load project {path}", TimeSpan.FromSeconds(5));
+            shell.StatusBar.Show(TextFormat.Of(Strings.Status_FailedToLoadProject, path), TimeSpan.FromSeconds(5));
             await context.Clipboard.SetTextAsync(ex.ToString()).ConfigureAwait(true);
             await context.Dialogs.ShowErrorAsync("Failed to load project",
-                $"Failed to load project at path {path}. The exception has been copied to your clipboard.\n\n{ex}").ConfigureAwait(true);
+                TextFormat.Of(Strings.Message_FailedToLoadProject, path, ex)).ConfigureAwait(true);
         }
     }
 

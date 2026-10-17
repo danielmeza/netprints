@@ -216,6 +216,45 @@
   <data name="Command.netprints.command.openGraph.Label" xml:space="preserve">
     <value>Open</value>
   </data>
+  <data name="Message.SampleNotFound" xml:space="preserve">
+    <value>There is no bundled sample named '{0}'.</value>
+  </data>
+  <data name="Message.UnsupportedProjectFile" xml:space="preserve">
+    <value>'{0}' is not a NetPrints project: only '.csproj' projects are supported. Nothing was opened.</value>
+  </data>
+  <data name="Message.FailedToLoadProject" xml:space="preserve">
+    <value>Failed to load project at path {0}. The exception has been copied to your clipboard.&#10;&#10;{1}</value>
+  </data>
+  <data name="Message.FailedToLoadClass" xml:space="preserve">
+    <value>Failed to load existing class at path {0}:&#10;&#10;{1}</value>
+  </data>
+  <data name="Message.NoBaseMethodToOverride" xml:space="preserve">
+    <value>{0} has no base method to override.</value>
+  </data>
+  <data name="Message.ConfirmRemoveClass" xml:space="preserve">
+    <value>Remove class '{0}' and close its graphs? This cannot be undone.</value>
+  </data>
+  <data name="Message.FailedToAddAssembly" xml:space="preserve">
+    <value>Failed to add assembly at {0}:&#10;&#10;{1}</value>
+  </data>
+  <data name="Message.FailedToAddSources" xml:space="preserve">
+    <value>Failed to add sources at {0}:&#10;&#10;{1}</value>
+  </data>
+  <data name="Message.ProjectSaved" xml:space="preserve">
+    <value>Project saved ({0} files)</value>
+  </data>
+  <data name="Status.LoadingProject" xml:space="preserve">
+    <value>Loading project {0}</value>
+  </data>
+  <data name="Status.LoadedProject" xml:space="preserve">
+    <value>Loaded project {0}</value>
+  </data>
+  <data name="Status.FailedToLoadProject" xml:space="preserve">
+    <value>Failed to load project {0}</value>
+  </data>
+  <data name="Status.SavedFiles" xml:space="preserve">
+    <value>Saved {0} file(s)</value>
+  </data>
   <data name="Tile.netprints.tile.recent.Title" xml:space="preserve">
     <value>Recent projects</value>
   </data>

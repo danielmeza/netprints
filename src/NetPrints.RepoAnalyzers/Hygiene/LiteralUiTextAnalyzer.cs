@@ -13,12 +13,14 @@ namespace NetPrints.RepoAnalyzers.Hygiene;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class LiteralUiTextAnalyzer : DiagnosticAnalyzer
 {
+    private const string Message = "message";
+
     private static readonly ImmutableDictionary<string, ImmutableHashSet<string>> Sinks = new Dictionary<string, string[]>
     {
-        ["DialogDescriptor"] = ["Title"],
-        ["IDialogService"] = ["title", "message"],
-        ["IEditorDialogs"] = ["title", "message", "confirmLabel"],
-        ["ShellViewModel"] = ["message"],
+        ["IDialogService"] = ["title", Message],
+        ["IEditorDialogs"] = ["title", Message, "confirmLabel"],
+        ["ShellViewModel"] = [Message],
+        ["StatusBarViewModel"] = [Message],
     }.ToImmutableDictionary(entry => entry.Key, entry => entry.Value.ToImmutableHashSet(StringComparer.Ordinal), StringComparer.Ordinal);
 
     private static readonly DiagnosticDescriptor Rule = new(
@@ -60,10 +62,29 @@ public sealed class LiteralUiTextAnalyzer : DiagnosticAnalyzer
             value = conversion.Operand;
         }
 
-        if (value is ILiteralOperation { ConstantValue: { HasValue: true, Value: string text } }
+        if (TextOf(value) is { } text
             && !ledger.Contains(NphDiagnosticCodes.LiteralUiText, argument.Syntax.SyntaxTree.FilePath, text))
         {
             context.ReportDiagnostic(Diagnostic.Create(Rule, value.Syntax.GetLocation(), text, parameter.ContainingType.Name + "." + parameter.Name));
         }
+    }
+
+    private static string? TextOf(IOperation value)
+    {
+        if (value is ILiteralOperation { ConstantValue: { HasValue: true, Value: string literal } })
+        {
+            return literal;
+        }
+
+        if (value is not IInterpolatedStringOperation interpolated)
+        {
+            return null;
+        }
+
+        bool hasText = interpolated.Parts.OfType<IInterpolatedStringTextOperation>()
+            .Any(part => part.Text.ConstantValue is { HasValue: true, Value: string text } && !string.IsNullOrWhiteSpace(text));
+        return hasText
+            ? string.Concat(interpolated.Parts.Select(part => part is IInterpolatedStringTextOperation { Text.ConstantValue.Value: string text } ? text : "{}"))
+            : null;
     }
 }

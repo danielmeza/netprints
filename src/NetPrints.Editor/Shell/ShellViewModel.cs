@@ -322,7 +322,7 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         }
     }
 
-    private void OnSessionSaved(object? sender, int files) => ShowStatus($"Saved {files} file(s)", SessionStatus.TransientLifetime);
+    private void OnSessionSaved(object? sender, int files) => ShowStatus(TextFormat.Of(Strings.Status_SavedFiles, files), SessionStatus.TransientLifetime);
 
     private void OnSessionStatus(object? sender, SessionStatus status) => ShowStatus(status.Text, status.Expiry);
 

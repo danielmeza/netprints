@@ -130,7 +130,7 @@ These rules check NetPrints' own source in `src/` and `tests/`. They are not shi
 | NPH003 | error | A diagnostic or kind code literal (`NPT`, `NPD`, `NPX`, `NPW`, `NPC`, `NPS`, `NPA`, `NPH`, `NPI`, `NPK`, `NPR`, `NPXE`) outside its constants class, or a code constant declared outside a designated file or twice in one project. |
 | NPH004 | error | A `#pragma warning` directive, a `#nullable disable` or `restore`, or a `[SuppressMessage]` the ledger does not list for its file, member and rule (ADR-0003); a listed one must carry an `ADR-0003` justification. |
 | NPH005 | error | `ConfigureAwait(false)` in a file where `.editorconfig` sets `VSTHRD111` to `none` (UI-bound code resumes on the UI thread). |
-| NPH006 | error | A string literal passed to a user-visible text sink (a command label, a dialog title or message, status-bar text). Use a resource key. |
+| NPH006 | error | A string literal, or an interpolated string with literal text, passed to a user-visible text sink (a dialog title or message, status-bar text). Put the text in the resx and fill its placeholders with `TextFormat.Of`. A command label, panel, dialog, tile or template text is a `LocalizedText` with a convention key and is not reported. |
 
 ## NPT: translation and code generation
 

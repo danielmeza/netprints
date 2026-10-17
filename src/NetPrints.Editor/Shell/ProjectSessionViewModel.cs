@@ -521,7 +521,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         if (saved)
         {
             Saved?.Invoke(this, files);
-            context.Dialogs.ShowNotification("Saved", $"Project saved ({files} files)");
+            context.Dialogs.ShowNotification("Saved", TextFormat.Of(Strings.Message_ProjectSaved, files));
         }
 
         RaiseCommandStatesChanged();

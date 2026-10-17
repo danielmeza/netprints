@@ -20,7 +20,7 @@ public class Nph006Tests
 
             public sealed record CommandDescriptor(string Id, LocalizedText Label);
 
-            public sealed record DialogDescriptor(string Id, string Title);
+            public sealed record DialogDescriptor(string Id, LocalizedText Title);
 
             public interface IDialogService
             {
@@ -36,11 +36,16 @@ public class Nph006Tests
             {
                 public void ShowStatus(string message) { }
             }
+
+            public sealed class StatusBarViewModel
+            {
+                public void Show(string message, System.TimeSpan? expiry = null) { }
+            }
         }
         """;
 
     private static string Use(string body) =>
-        Sinks + "\nnamespace Use\n{\n    using Sample;\n\n    class C\n    {\n        void M(IDialogService dialogs, IEditorDialogs editor, ShellViewModel shell, string text, LocalizedText key)\n        {\n" + body + "\n        }\n    }\n}\n";
+        Sinks + "\nnamespace Use\n{\n    using Sample;\n\n    class C\n    {\n        void M(IDialogService dialogs, IEditorDialogs editor, ShellViewModel shell, StatusBarViewModel status, string text, LocalizedText key)\n        {\n" + body + "\n        }\n    }\n}\n";
 
     [Fact]
     public async Task ALiteralCommandLabelIsTheNeutralDefaultOfItsConventionKey()
@@ -54,11 +59,16 @@ public class Nph006Tests
         await HygieneHarness.AssertAsync(
             Use(
                 """
-                            _ = new DialogDescriptor("a.b", {|NPH006:"About"|});
                             dialogs.ShowNotification({|NPH006:"Saved"|}, {|NPH006:"All files were saved."|});
                             editor.Confirm({|NPH006:"Remove"|}, text, {|NPH006:"Remove"|});
                 """),
             Id);
+    }
+
+    [Fact]
+    public async Task ALiteralDialogDescriptorTitleIsTheNeutralDefaultOfItsConventionKey()
+    {
+        await HygieneHarness.AssertAsync(Use("            _ = new DialogDescriptor(\"a.b\", \"About\");"), Id);
     }
 
     [Fact]
@@ -68,15 +78,36 @@ public class Nph006Tests
     }
 
     [Fact]
-    public async Task AKeyedTextAnInterpolationAndAVariableAreAccepted()
+    public async Task ALiteralPassedToTheStatusBarIsReported()
+    {
+        await HygieneHarness.AssertAsync(Use("            status.Show({|NPH006:\"Saved\"|});\n            status.Show({|NPH006:\"Saved\"|}, System.TimeSpan.Zero);"), Id);
+    }
+
+    [Fact]
+    public async Task AnInterpolatedStringWithTextIsReportedAtEverySink()
+    {
+        await HygieneHarness.AssertAsync(
+            Use(
+                """
+                            status.Show({|NPH006:$"Opened {text}"|});
+                            dialogs.ShowNotification(text, {|NPH006:$"Saved {text}"|});
+                            shell.ShowStatus({|NPH006:$"Ready: {text}"|});
+                """),
+            Id);
+    }
+
+    [Fact]
+    public async Task AKeyedTextAnInterpolationOfOnlyValuesAndAVariableAreAccepted()
     {
         await HygieneHarness.AssertAsync(
             Use(
                 """
                             _ = new CommandDescriptor("a.b", key);
                             _ = new CommandDescriptor("a.b", new LocalizedText("Command.a.b.Label", "Save"));
-                            dialogs.ShowNotification(text, $"Saved {text}");
+                            dialogs.ShowNotification(text, $"{text}");
                             shell.ShowStatus(text);
+                            status.Show(text);
+                            status.Show($"{text}{text}");
                 """),
             Id);
     }
