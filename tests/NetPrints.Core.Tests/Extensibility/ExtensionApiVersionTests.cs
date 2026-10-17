@@ -28,7 +28,7 @@ public class ExtensionApiVersionTests
     /// </summary>
     private static readonly (string Version, string Hash, bool Shipped)[] Recorded =
     [
-        ("0.4", "29ab2764ea52f29a43624d24562de02816a90fc3c3715fe98d4382bddcd53ef9", false),
+        ("0.4", "0628130e914e1fc7ec03834c30ae6af085b9e1784e46872b25c749345db56e37", false),
     ];
 
     private static string CurrentHash()
