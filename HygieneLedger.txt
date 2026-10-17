@@ -6,6 +6,33 @@ NPH004 | src/NetPrints.Editor/Graph/GraphDragDrop.cs | Moved:VSTHRD100
 NPH004 | src/NetPrints.Editor/Graph/GridBackground.cs | Render:IDISP004
 NPH004 | src/NetPrints.Editor/Hosting/Automation/AutomationAgent.cs | ServeAsync:IDISP007
 #
+# NPH006: detail is the literal; these dialog titles and messages move to resources with the L2 batch.
+NPH006 | src/NetPrints.Editor/Hosting/Avalonia/UnhandledExceptionHandler.cs | Unexpected error
+NPH006 | src/NetPrints.Editor/Hosting/EditorComposition.cs | Host channel unavailable
+NPH006 | src/NetPrints.Editor/Hosting/ProjectLoader.cs | Failed to open the folder
+NPH006 | src/NetPrints.Editor/Hosting/ProjectLoader.cs | Unsupported project file
+NPH006 | src/NetPrints.Editor/Hosting/ProjectLoader.cs | Project loaded with issues
+NPH006 | src/NetPrints.Editor/Hosting/ProjectLoader.cs | Failed to load project
+NPH006 | src/NetPrints.Editor/Hosting/ProjectLoader.cs | Extensions failed to load
+NPH006 | src/NetPrints.Editor/Hosting/ProjectLoader.cs | Failed to load references
+NPH006 | src/NetPrints.Editor/Hosting/ShellHost.cs | The command failed
+NPH006 | src/NetPrints.Editor/Hosting/ShellProjectActions.cs | Failed to create class
+NPH006 | src/NetPrints.Editor/Hosting/ShellProjectActions.cs | Class added with issues
+NPH006 | src/NetPrints.Editor/Hosting/ShellProjectActions.cs | Failed to load existing class
+NPH006 | src/NetPrints.Editor/Hosting/ShellProjectActions.cs | Override method
+NPH006 | src/NetPrints.Editor/Hosting/ShellProjectActions.cs | The project's types are still loading.
+NPH006 | src/NetPrints.Editor/NodeSearch/NodeSearchViewModel.cs | Failed to build suggestions
+NPH006 | src/NetPrints.Editor/NodeSearch/NodeSearchViewModel.cs | Failed to create node
+NPH006 | src/NetPrints.Editor/References/ReferenceListViewModel.cs | Failed to change the source directory
+NPH006 | src/NetPrints.Editor/References/ReferenceListViewModel.cs | Failed to remove the reference
+NPH006 | src/NetPrints.Editor/References/ReferenceListViewModel.cs | Failed to add assembly
+NPH006 | src/NetPrints.Editor/References/ReferenceListViewModel.cs | Failed to add sources
+NPH006 | src/NetPrints.Editor/Shell/ProjectSessionViewModel.cs | Failed to build project
+NPH006 | src/NetPrints.Editor/Shell/ProjectSessionViewModel.cs | Failed to run project
+NPH006 | src/NetPrints.Editor/Shell/ProjectSessionViewModel.cs | Saved
+NPH006 | src/NetPrints.Editor/Shell/ProjectSessionViewModel.cs | Failed to save project
+NPH006 | src/NetPrints.Editor/Shell/ProjectSettingsDocumentViewModel.cs | Failed to change the binary type
+#
 # NPH001: detail is the trimmed text of the line that holds the null-forgiving operator.
 NPH001 | tests/NetPrints.Desktop.E2ETests/Hosting/Tool.cs | using var process = Process.Start(info)!;
 NPH001 | tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs | var process = Process.Start(info)!;

@@ -20,3 +20,4 @@ NPH002 | Hygiene | Disabled | A type name that abbreviates ViewModel as VM; erro
 NPH003 | Hygiene | Disabled | A diagnostic code literal outside its constants class; error once the repository enables it
 NPH004 | Hygiene | Disabled | A pragma, a nullable escape or a SuppressMessage the hygiene ledger does not list; error once the repository enables it
 NPH005 | Hygiene | Disabled | ConfigureAwait(false) in UI-bound code; error once the repository enables it
+NPH006 | Hygiene | Disabled | A string literal passed to a user-visible text sink; error once the repository enables it
