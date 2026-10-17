@@ -346,6 +346,16 @@ public static class AutomationIds
     public const string PaletteRow = "Palette.Row";
 
     /// <summary>
+    /// Automation id for the name of the extension that owns a command of the command palette.
+    /// </summary>
+    public const string PaletteOwner = "Palette.Owner";
+
+    /// <summary>
+    /// Automation id for the name of the extension that owns a row of the keyboard shortcuts sheet.
+    /// </summary>
+    public const string ShortcutsOwner = "Dialogs.Shortcuts.Owner";
+
+    /// <summary>
     /// Automation id for the message the command palette shows when no command matches.
     /// </summary>
     public const string PaletteEmpty = "Palette.Empty";

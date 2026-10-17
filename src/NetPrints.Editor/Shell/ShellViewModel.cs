@@ -21,6 +21,7 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
 
     private readonly IContributionRegistry registry;
     private readonly List<PanelViewModel> panels;
+    private readonly Action<ContributionSnapshot> attachStatusItems;
     private Project? followedProject;
     private ProjectSessionViewModel? followedSession;
     private DocumentViewModel? followedDocument;
@@ -45,7 +46,9 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
             .Select(panel => new PanelViewModel(panel, panel.CreateViewModel(panelContext)))];
         StatusBar = new StatusBarViewModel(timeProvider, dispatcher);
         StatusBar.PropertyChanged += OnStatusBarChanged;
-        StatusBar.Attach(registry.StatusBarItems, item => new ShellStatusBarContext(this, panelContext.Shell, host, registry.OwnerOf(item.Id)));
+        attachStatusItems = snapshot => StatusBar.Attach(snapshot.StatusBarItems, item => new ShellStatusBarContext(this, panelContext.Shell, host, snapshot.OwnerOf(item.Id)));
+        attachStatusItems(registry.Snapshot);
+        registry.Changed += OnRegistryChanged;
         Documents.CollectionChanged += (_, _) => OnPropertyChanged(nameof(Title));
     }
 
@@ -228,6 +231,7 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
     /// <summary>Stops following the session and the active document, and disposes the open documents.</summary>
     public void Dispose()
     {
+        registry.Changed -= OnRegistryChanged;
         Unfollow();
         foreach (IShellPanelContent content in panels.Select(panel => panel.Content).OfType<IShellPanelContent>())
         {
@@ -250,6 +254,8 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
 
         Documents.Clear();
     }
+
+    private void OnRegistryChanged(object? sender, ContributionSnapshot snapshot) => attachStatusItems(snapshot);
 
     partial void OnSessionChanged(ProjectSessionViewModel? oldValue, ProjectSessionViewModel? newValue)
     {

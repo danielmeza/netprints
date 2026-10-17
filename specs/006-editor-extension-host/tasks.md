@@ -696,13 +696,13 @@ tests. **Gate (plan)**: SC-004, SC-006, SC-007, SC-009.
 
 ### Batch D1a — model: sonnet — T079–T080 — 4 units
 
-- [ ] T079 [US4] Contribution groups (FR-032, research R14, data-model §2; 2 units). Test first:
+- [x] T079 [US4] Contribution groups (FR-032, research R14, data-model §2; 2 units). Test first:
   `tests/NetPrints.Editor.Tests/Contributions/ContributionRegistryTests.cs`: an app group (built-ins first, then
   per-user extensions in load order) and one session group per open project; a session group is removed as a whole
   when its project unloads; every change raises `Changed` with a new immutable snapshot; within a kind the first
   registration wins and built-ins register first. Then groups and snapshots in `src/NetPrints.Editor/Contributions/`;
   the registry is no longer frozen.
-- [ ] T080 [US4] Surfaces rebuild from snapshots; owners shown (FR-033, US4 scenarios 1–2; 2 units; load
+- [x] T080 [US4] Surfaces rebuild from snapshots; owners shown (FR-033, US4 scenarios 1–2; 2 units; load
   `avalonia-xaml` and `avalonia-styling`). Test first: headless tests in `tests/NetPrints.Editor.UITests/Shell/`: adding
   and removing a session group updates the menus, the command bar, key bindings, the palette, the shortcuts sheet,
   context menus, the start page, templates and the status bar; the palette and the shortcuts sheet name each item's

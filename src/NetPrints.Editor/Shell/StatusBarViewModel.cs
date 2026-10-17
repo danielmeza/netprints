@@ -66,7 +66,8 @@ public sealed partial class StatusBarViewModel(TimeProvider timeProvider, IUiDis
     public ObservableCollection<StatusBarItemViewModel> RightItems { get; } = [];
 
     /// <summary>
-    /// Creates the view model of each item with its context and shows the items that apply. Replaces the items of an earlier call.
+    /// Creates the view model of each item with its context and shows the items that apply. Replaces the items of an earlier call;
+    /// an item whose descriptor an earlier call attached keeps its view model.
     /// </summary>
     /// <param name="items">The registered items.</param>
     /// <param name="context">Creates the context an item is created and asked with.</param>
@@ -74,9 +75,17 @@ public sealed partial class StatusBarViewModel(TimeProvider timeProvider, IUiDis
     {
         ArgumentNullException.ThrowIfNull(items);
         ArgumentNullException.ThrowIfNull(context);
+        List<(StatusBarItemViewModel Item, IStatusBarContext Context)> previous = [.. attached];
         attached.Clear();
         foreach (StatusBarItemDescriptor descriptor in items)
         {
+            (StatusBarItemViewModel Item, IStatusBarContext Context) kept = previous.Find(entry => ReferenceEquals(entry.Item.Descriptor, descriptor));
+            if (kept.Item is not null)
+            {
+                attached.Add(kept);
+                continue;
+            }
+
             IStatusBarContext itemContext = context(descriptor);
             attached.Add((new StatusBarItemViewModel(descriptor, descriptor.CreateViewModel(itemContext)), itemContext));
         }

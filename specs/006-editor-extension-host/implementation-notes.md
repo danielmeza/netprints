@@ -1414,3 +1414,34 @@ T076, Checkpoint C2, gate items measured on this head (Release).
   No source file differs from eada8ad1 (`git diff eada8ad1 -- src` shows only the three `PackageValidationBaselineVersion` lines).
 - Full suite (Release, `dotnet test --solution NetPrints.slnx --ignore-exit-code 8`): 4886 total, 4853 passed, 33 skipped, 0 failed (22 min, Editor.UITests 22 min 35 s);
   build 0 warnings; `dotnet format NetPrints.slnx --verify-no-changes` clean; `eng/trim-warnings.sh` 9. The `NETPRINTS_E2E=1` Desktop run was not repeated: nothing it covers changed.
+
+## Batch D1a (T079-T080)
+
+- **T079 red (assertions)**: `AddSessionGroup`, `RemoveSessionGroup`, `Changed`, `Snapshot` and `OwnerNameOf` were first stubs that did nothing; the 13 new
+  `ContributionRegistryTests` ran 14 failed of 73 (`Assert.True() Failure` on remove, `Assert.Throws() Failure: No exception was thrown` on a reused key and on a
+  throwing fill, `Assert.Equal() Failure: Collections differ` on the app + session order, `Values differ` on the Changed count). Green after the registry rewrite
+  (the 5 left were test faults: `Fill` added a panel, so the Show-panel command appeared; fixed in the test) and the whole `Editor.Tests` project: 2059 passed.
+- **T079 design**: `ContributionRegistry` keeps `ContributionGroup`s (the app group, then one per session key). `ContributionSnapshot` (immutable, `IContributionSnapshot`) is
+  built lazily from the groups and published by every change; the registry's own lists read the current snapshot, so no consumer changed. `AddSessionGroup(key, populate)`
+  fills a group through `IContributionGroupBuilder` (`For(owner, ownerName)` and `AddProjectTemplate`), publishes it once, and drops it when the fill throws.
+  Ids and gestures are checked across the groups, so the first registration wins and the built-ins (app group) are always first. Session panels get their Show-panel
+  command as the group is published.
+- **Decision**: `Freeze()` stays as "ends the initial registration" (adds the Show-panel commands of the app group and publishes the first snapshot) and `IsFrozen` is gone:
+  an `Add*` after it is accepted and raises `Changed`. About 30 call sites keep their `registry.Freeze()`, and the "frozen" tests became `FreezeDoesNotStopLaterAdds`.
+  A late app panel also gets its Show-panel command.
+- **Decision**: the extension's `name` reaches the registry as `For(owner, ownerName)`; `OwnerNameOf(id)` returns it, the id when no name was given, and null for the
+  built-in owners (`netprints`, `netprints.editor`), so built-in rows show no owner. The loader that calls `For` with the manifest name comes with T082.
+- **Decision**: `Changed` is raised on the thread that adds or removes the group (the UI thread when a project session opens or closes); the surfaces do not marshal.
+- **T080 red (assertions)**: with the surface classes (menu bar, command bar, status bar, shell, start page, invoker and the key-binding behavior) restored to their
+  pre-T080 form by `git stash`, the 4 `SessionGroupSurfaceTests` ran 4 failed of 4 (`Assert.True() Failure` for the menu item, `Assert.Contains() Failure: Filter not matched in
+  collection` for the context menu, `Assert.Equal() Failure: Values differ` for the start page tiles, `Collections differ` for the owner texts); green after the stash pop.
+- **T080 design**: `MenuBarViewModel.Menus` and `CommandBarViewModel.Slots` are `ObservableCollection`s rebuilt from the snapshot on `Changed`; `CommandInvoker.CommandsChanged`
+  forwards the registry event (subscribed only while someone listens) and `CommandKeyBindingsBehavior` rebuilds its key bindings on it; `ShellViewModel` re-attaches the status bar
+  items (`StatusBarViewModel.Attach` keeps the view model of a descriptor it already has); `StartPageViewModel.Tiles` is rebuilt keeping the tile view models that stay;
+  the context menus and the templates read the registry on every use. `PaletteItem.Owner` and `ShortcutRow.Owner` are shown beside the label (`AutomationIds.PaletteOwner`,
+  `ShortcutsOwner`) and appended to the palette row's accessible description.
+- **Deferred**: the palette and the shortcuts sheet read the snapshot when they open; a modal dialog is not rebuilt while it is open. Panels are not in the T080 list, so the
+  shell's panel list and the dock layout do not follow a session group yet (a session panel is registered and has its Show-panel command, but only panels present when the
+  shell starts are created). Settings pages are a D1 task of their own (T090 onward).
+- Full suite (Release, `dotnet test --solution NetPrints.slnx --ignore-exit-code 8`): 4902 total, 4869 passed, 33 skipped, 0 failed (22 min 31 s); build 0 warnings;
+  `dotnet format` clean; `eng/trim-warnings.sh` 9.

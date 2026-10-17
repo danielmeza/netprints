@@ -14,6 +14,8 @@ internal sealed partial class StartPageViewModel : DocumentViewModel
     private const int VersionParts = 3;
 
     private readonly ShellViewModel shell;
+    private readonly StartPageContext context;
+    private List<(DashboardTileDescriptor Descriptor, object Tile)> built = [];
     private readonly IEditorStateStore? store;
 
     /// <summary>Creates the page from the registered tiles.</summary>
@@ -25,8 +27,10 @@ internal sealed partial class StartPageViewModel : DocumentViewModel
         ArgumentNullException.ThrowIfNull(shell);
         ArgumentNullException.ThrowIfNull(context);
         this.shell = shell;
-        Tiles = [.. shell.Registry.DashboardTiles.OrderBy(tile => tile.Order).Select(tile => tile.CreateViewModel(context))];
+        this.context = context;
+        Tiles = BuildTiles(shell.Registry.Snapshot);
         shell.PropertyChanged += OnShellChanged;
+        shell.Registry.Changed += OnRegistryChanged;
         if (context.StateStore is { } stateStore)
         {
             ReopenLastProject = stateStore.LoadStart()?.StartupBehavior == StartupBehavior.ReopenLastProject;
@@ -44,8 +48,8 @@ internal sealed partial class StartPageViewModel : DocumentViewModel
         }
     }
 
-    /// <summary>Gets the tile view models in tile order.</summary>
-    public IReadOnlyList<object> Tiles { get; }
+    /// <summary>Gets the tile view models in tile order; the page rebuilds them when the registry changes, keeping the view models of the tiles that stay.</summary>
+    public IReadOnlyList<object> Tiles { get; private set; }
 
     /// <summary>Gets the product version shown beside the title.</summary>
     public static string ProductVersion { get; } = ReadProductVersion();
@@ -98,7 +102,30 @@ internal sealed partial class StartPageViewModel : DocumentViewModel
         if (disposing)
         {
             shell.PropertyChanged -= OnShellChanged;
+            shell.Registry.Changed -= OnRegistryChanged;
         }
+    }
+
+    private void OnRegistryChanged(object? sender, ContributionSnapshot snapshot)
+    {
+        Tiles = BuildTiles(snapshot);
+        foreach (string name in (string[])[nameof(Tiles), nameof(Recent), nameof(GetStarted), nameof(Samples), nameof(Learn), nameof(WhatsNew), nameof(WhatsNewTiles), nameof(Others)])
+        {
+            OnPropertyChanged(name);
+        }
+    }
+
+    private List<object> BuildTiles(IContributionSnapshot snapshot)
+    {
+        List<(DashboardTileDescriptor Descriptor, object Tile)> next = [];
+        foreach (DashboardTileDescriptor descriptor in snapshot.DashboardTiles.OrderBy(tile => tile.Order))
+        {
+            int index = built.FindIndex(entry => ReferenceEquals(entry.Descriptor, descriptor));
+            next.Add(index >= 0 ? built[index] : (descriptor, descriptor.CreateViewModel(context)));
+        }
+
+        built = next;
+        return [.. next.Select(entry => entry.Tile)];
     }
 
     private void OnShellChanged(object? sender, PropertyChangedEventArgs e)
