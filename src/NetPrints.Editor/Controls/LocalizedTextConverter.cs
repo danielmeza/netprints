@@ -3,7 +3,7 @@ using Avalonia;
 using Avalonia.Data.Converters;
 using NetPrints.Core;
 
-namespace NetPrints.Editor.Contributions;
+namespace NetPrints.Editor.Controls;
 
 /// <summary>Maps a <see cref="LocalizedText"/> to the text the editor shows for the UI culture (FR-027).</summary>
 public sealed class LocalizedTextConverter : IValueConverter

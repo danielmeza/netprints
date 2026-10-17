@@ -1260,3 +1260,21 @@ T076, Checkpoint C2, gate items measured on this head (Release).
   `NPXE0013` (`INodeDataMigration`, `NodeKindDescriptor.DataVersion`); they pass at once because the marks already existed, so they pin the existing behaviour (no red).
 - API files: the Abstractions, Serialization and Extensibility `PublicAPI.Unshipped.txt` follow the changes; the recorded 0.4 hash was refreshed to the new files (`d78d636b...a576`).
 - Full suite (Debug, `dotnet test --solution NetPrints.slnx`): 4842 total, 4809 passed, 33 skipped, 0 failed; `dotnet format NetPrints.slnx --verify-no-changes` clean.
+
+## Batch C-F4 (T078, part 4: CD-6, CD-13, CD-14, CD-15)
+
+- CD-6: `ContributionTextTests`. Red (assertion, 15 failed): the five label properties (`DialogDescriptor.Title`, `DashboardTileDescriptor.Title`, `ProjectTemplateDescriptor.DisplayName` and
+  `Description`, `NodeSuggestion.DisplayName`) are not `LocalizedText`, and the ten built-in tile and template keys are not in the neutral resx. Green after the change. `DialogDescriptor`,
+  `DashboardTileDescriptor` and `ProjectTemplateDescriptor` take convention keys like panels (`Dialog.<id>.Title`, `Tile.<id>.Title`, `Template.<id>.Name`, `Template.<id>.Description`);
+  `NodeSuggestion.DisplayName` keeps a plain string as its own key and takes an explicit `LocalizedText(key, text)` to separate them (`NodeDisplayTextTests`, written after the code).
+  `NodeSuggestion.Category` stays a string: it groups rows and its header already resolves through `Category.<name>`. The New project dialog resolves the template texts through
+  `LocalizedTextConverter`. None of these types is in a published baseline (`NetPrints.Extensibility` and `.Abstractions` have none; `PublicAPI.Shipped.txt` is empty), so package validation
+  needs no suppression; the break is in the release notes and the 0.4 hash row is refreshed (`aa653180...723d`, still not shipped).
+- CD-13: `Nph006Tests`. Red (assertion): `ALiteralPassedToTheStatusBarIsReported` and `AnInterpolatedStringWithTextIsReportedAtEverySink` found no diagnostic. `StatusBarViewModel.message` is a sink and an
+  interpolated string with literal text is reported. `DialogDescriptor.Title` is no longer a sink (a `LocalizedText` with a convention key, like a command label). The thirteen new hits in
+  `src/NetPrints.Editor` moved to the resx (`Message.*`, `Status.*`) with `TextFormat.Of`; no suppression and no ledger row.
+- CD-14: `StatusSegmentTextTests`. Red (assertion): the six `Status.*` keys are not in the resx. The repository has no plural mechanism, so counts use a one key and an other key chosen by count
+  (`Status.ErrorsOne`/`ErrorsOther`, `WarningsOne`/`WarningsOther`); selection and zoom have one key each. The text is pinned by `ACountUsesTheSingularFormForOneAndThePluralFormOtherwise` (written after the code). Release note: "Added".
+- CD-15: `Npa040Tests`. Red (assertion): `AMissingTitleKeyIsQuietWhenTheTitleIsBuiltFromTheNode`. NPA040 requires `Node.<kind>.Title` only when the class (or a base) overrides `TitleIsFixed`, because the editor
+  shows the key only then (ADR-0027). The guide, the diagnostics table, the analyzer release file and the ADR agree. No `Fx` node test was added.
+- Full suite (Release): 4872 total; the only failures were the two `ContributionsAreUiFreeTests` (the converter was in the UI-free `Contributions` namespace), fixed by moving it to `Controls`; Editor.Tests 2043 and Core.Tests 1040 pass after; `dotnet format` clean.

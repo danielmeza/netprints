@@ -1,6 +1,7 @@
 using System.Globalization;
 using NetPrints.Core;
 using NetPrints.Editor.Contributions;
+using NetPrints.Editor.Controls;
 using NetPrints.Extensibility.Nodes;
 
 namespace NetPrints.Editor.Tests.Localization;
@@ -52,6 +53,16 @@ public class ContributionTextTests
         Assert.Equal(new LocalizedText("Template.fx.template.x.Name", "Name"), template.DisplayName);
         Assert.Equal(new LocalizedText("Template.fx.template.x.Description", "About"), template.Description);
         Assert.Equal("Hello", dialog.DisplayTitle);
+    }
+
+    [Fact]
+    public void TheConverterResolvesTheTextThroughTheEditorResources()
+    {
+        var learn = new LocalizedText("Tile.netprints.tile.learn.Title", "x");
+
+        Assert.Equal("Learn", LocalizedTextConverter.Instance.Convert(learn, typeof(string), null, Neutral));
+        Assert.Equal("fallback", LocalizedTextConverter.Instance.Convert(new LocalizedText("No.Such.Key", "fallback"), typeof(string), null, Neutral));
+        Assert.Same(Avalonia.AvaloniaProperty.UnsetValue, LocalizedTextConverter.Instance.Convert("text", typeof(string), null, Neutral));
     }
 
     [Fact]
