@@ -29,6 +29,19 @@ public static class FixtureExtensions
         "extensions",
         "fx.editor");
 
+    /// <summary>The extension folder of <c>fx.views</c>: it declares compiled view resources of its own assembly by URI.</summary>
+    /// <returns>The folder holding <c>netprints-extension.json</c>, in the configuration of the running tests.</returns>
+    public static string ViewsFolder() => Path.Combine(
+        LocalSdkLayout.FindRepositoryRoot(),
+        "tests",
+        "Fixtures",
+        "Extensions",
+        "Fx.Views",
+        "bin",
+        LocalSdkLayout.DetectConfiguration(),
+        "extensions",
+        "fx.views");
+
     /// <summary>The built <c>CatalogFixtureLib.dll</c> the fixture catalog describes; the test projects build it first and never reference it.</summary>
     /// <returns>The assembly path, in the configuration of the running tests.</returns>
     public static string CatalogLibraryAssembly() => Path.Combine(

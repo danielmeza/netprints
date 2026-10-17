@@ -23,6 +23,7 @@ internal sealed class ShellHost : IDisposable
     private readonly WindowCloseGuard closeGuard;
     private readonly ShellStatePersistence? persistence;
     private readonly StartPageController startPage;
+    private EventHandler<ContributionSnapshot>? followResources;
 
     private sealed class ComposedShell
     {
@@ -69,9 +70,12 @@ internal sealed class ShellHost : IDisposable
     {
         ILogger logger = context.LoggerFactory.CreateLogger<ShellHost>();
         ILogger<IconRegistry> iconLogger = context.LoggerFactory.CreateLogger<IconRegistry>();
+        EventHandler<ContributionSnapshot>? followResources = null;
         if (global::Avalonia.Application.Current is { } application)
         {
-            ViewResourceLoader.Apply(application, registry.ViewResources);
+            SyncViewResources(application, registry, logger);
+            followResources = (_, snapshot) => SyncViewResources(application, snapshot, logger);
+            registry.Changed += followResources;
             IconRegistry.Shared = IconRegistry.ForApplication(application, iconLogger);
         }
         else
@@ -102,7 +106,7 @@ internal sealed class ShellHost : IDisposable
 
         var window = new ShellWindow();
         ShellStatePersistence? persistence = context.StateStore is { } store ? new ShellStatePersistence(shell, adapter, window, store, TimeProvider.System, context.Dispatcher) : null;
-        var host = new ShellHost(actions, registry, shell, adapter, invoker, window, logger, persistence);
+        var host = new ShellHost(actions, registry, shell, adapter, invoker, window, logger, persistence) { followResources = followResources };
         shell.PropertyChanged += host.OnShellChanged;
         shell.AttachPanels(adapter, invoker, context);
         host.SyncProjectState();
@@ -113,11 +117,24 @@ internal sealed class ShellHost : IDisposable
     public void Dispose()
     {
         Shell.PropertyChanged -= OnShellChanged;
+        if (followResources is not null)
+        {
+            Registry.Changed -= followResources;
+        }
+
         closeGuard.Dispose();
         persistence?.Dispose();
         Shell.Dispose();
         Adapter.Dispose();
         Actions.Dispose();
+    }
+
+    private static void SyncViewResources(global::Avalonia.Application application, IContributionSnapshot snapshot, ILogger logger)
+    {
+        foreach (ViewResourceFailure failure in ViewResourceLoader.Sync(application, snapshot.ViewResources))
+        {
+            Log.ViewResourceIgnored(logger, failure.Declaration.Owner, failure.Declaration.Uri, failure.Reason);
+        }
     }
 
     private static DocumentViewModel? OpenDocument(DocumentId id, ShellViewModel shell, EditorContext context, StartPageContext startPageContext)

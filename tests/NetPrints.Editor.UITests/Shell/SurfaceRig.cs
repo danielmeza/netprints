@@ -59,7 +59,7 @@ internal sealed class SurfaceRig : IDisposable
         BuiltInContributions.Register(registry);
         extra?.Invoke(registry);
         registry.Freeze();
-        ViewResourceLoader.Apply(Avalonia.Application.Current ?? throw new InvalidOperationException("The headless application is not running."), registry.ViewResources);
+        ViewResourceLoader.Sync(Avalonia.Application.Current ?? throw new InvalidOperationException("The headless application is not running."), registry.ViewResources);
         var shell = new ShellViewModel(registry, PanelFactoryContext.Detached, TimeProvider.System, new ImmediateDispatcher());
         var adapter = new DockShellAdapter(shell, new NoProjectActions(), id => new TestDocumentViewModel(id, id.GraphKey ?? id.ToString()), NullLogger.Instance);
         shell.Layout = adapter;

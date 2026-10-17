@@ -1,0 +1,8 @@
+{
+  "id": "fx.views",
+  "name": "NetPrints view resources fixture extension",
+  "version": "1.0.0",
+  "assembly": "Fx.Views.dll",
+  "netprintsApi": "0.4",
+  "dependsOn": []
+}

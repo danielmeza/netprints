@@ -128,7 +128,7 @@ internal sealed class ShellRig : IDisposable
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         BuiltInContributions.Register(registry);
         registry.Freeze();
-        NetPrints.Editor.Hosting.ViewResourceLoader.Apply(
+        NetPrints.Editor.Hosting.ViewResourceLoader.Sync(
             Avalonia.Application.Current ?? throw new InvalidOperationException("The headless application is not running."), registry.ViewResources);
         var shell = new ShellViewModel(registry, PanelFactoryContext.Detached, TimeProvider.System, new ImmediateDispatcher());
         var adapter = new DockShellAdapter(shell, new NoProjectActions(), documents ?? (id => new TestDocumentViewModel(id, id.GraphKey ?? id.ToString())), logger ?? NullLogger.Instance);
