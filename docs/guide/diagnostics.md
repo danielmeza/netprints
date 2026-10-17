@@ -21,7 +21,7 @@ This page lists every code. The tests keep it in step with the sources: a code t
 
 These rules check the node classes whose pins the convention generator declares (`[NodeKind]` and `[NodeBase]` classes with `partial` pin properties). They ship with the `NetPrints.Core` package and report as errors, except the rules marked otherwise below.
 
-<span id="npa001"></span><span id="npa002"></span><span id="npa003"></span><span id="npa004"></span><span id="npa005"></span><span id="npa006"></span><span id="npa007"></span><span id="npa008"></span><span id="npa009"></span><span id="npa010"></span><span id="npa011"></span><span id="npa012"></span><span id="npa040"></span><span id="npa041"></span><span id="npa042"></span>
+<span id="npa001"></span><span id="npa002"></span><span id="npa003"></span><span id="npa004"></span><span id="npa005"></span><span id="npa006"></span><span id="npa007"></span><span id="npa008"></span><span id="npa009"></span><span id="npa010"></span><span id="npa011"></span><span id="npa012"></span><span id="npa020"></span><span id="npa021"></span><span id="npa022"></span><span id="npa023"></span><span id="npa024"></span><span id="npa040"></span><span id="npa041"></span><span id="npa042"></span>
 
 | Code | Severity | Cause |
 |---|---|---|
@@ -37,6 +37,11 @@ These rules check the node classes whose pins the convention generator declares 
 | NPA010 | warning | A declared pin key is in neither `NodePins.Shipped.txt` nor `NodePins.Unshipped.txt`. The fix records it in the unshipped file. |
 | NPA011 | error | A shipped pin key is no longer declared; the message names the old key and, when a new key took its place, the new one. The fixes keep the shipped key with `[Pin("old")]`, or remove it on purpose with a `*REMOVED*` line in the unshipped file. |
 | NPA012 | info | A node kind declares pins, but the project has neither `NodePins.Shipped.txt` nor `NodePins.Unshipped.txt`, so no pin key is tracked. Add both files (empty is fine) to turn tracking on. |
+| NPA020 | error | An icon id given to a command, panel or template descriptor is a constant that does not match `^[a-z0-9]+(\.[a-zA-Z0-9]+)+$`, or is a `netprints.icon.` id the icon registry (`IconIds`) does not know. |
+| NPA021 | error | A gesture passed to `CommandGesture.Parse` or `TryParse` does not parse, or a single-key or Shift-only gesture (function keys excepted) is a default of a command in the Global scope. |
+| NPA022 | error | A constant contribution `Id` does not match the id pattern `^[a-z0-9]+(\.[a-zA-Z0-9]+)+$`, or, when the project sets the compiler-visible property `NetPrintsExtensionId`, does not start with that id and a dot. |
+| NPA023 | error | Two commands in one project are built with the same constant id. |
+| NPA024 | warning | Two commands in one project are built with the same menu id, group and order. |
 | NPA040 | warning | A resource key a `[NodeKind]` class implies (`Node.<kind>.Title`, `Node.<kind>.Pin.<direction>.<collection>.<key>`, as in `NodePins.Shipped.txt`) is missing from the neutral resx. The repository sets it to an error. A project without a resx among its `AdditionalFiles` is not checked. |
 | NPA041 | error | A satellite resx has a key the neutral file lacks, or a `{n}` placeholder count that differs from the neutral text. |
 | NPA042 | info | A `Node.<kind>.*` resx key of a `[NodeKind]` class in the project that no declaration uses. |

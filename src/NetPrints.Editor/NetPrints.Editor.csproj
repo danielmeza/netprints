@@ -58,6 +58,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\NetPrints.Authoring\NetPrints.Authoring.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\NetPrints.Catalog\NetPrints.Catalog.csproj" />
     <ProjectReference Include="..\NetPrints.Core\NetPrints.Core.csproj" />
     <ProjectReference Include="..\NetPrints.Extensibility\NetPrints.Extensibility.csproj" />

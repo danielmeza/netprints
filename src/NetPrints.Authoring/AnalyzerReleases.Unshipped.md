@@ -17,6 +17,11 @@ NPA009 | Authoring | Error | Pin properties in a class without NodeKind or NodeB
 NPA010 | Authoring | Warning | A declared pin key is in neither NodePins.Shipped.txt nor NodePins.Unshipped.txt
 NPA011 | Authoring | Error | A shipped pin key is no longer declared; the old and the new key are named
 NPA012 | Authoring | Info | A node kind declares pins, but the project has neither NodePins.Shipped.txt nor NodePins.Unshipped.txt
+NPA020 | Authoring | Error | An icon id literal does not match the icon id pattern, or is a built-in id the icon registry does not know
+NPA021 | Authoring | Error | A gesture literal does not parse, or a single-key gesture is used in the Global scope
+NPA022 | Authoring | Error | A constant contribution id does not match the id pattern or the owner prefix
+NPA023 | Authoring | Error | Two constant command ids are equal in one compilation
+NPA024 | Authoring | Warning | Two commands share a menu id, group and order in one compilation
 NPA040 | Authoring | Warning | A convention resource key of a node kind is missing from the neutral resx
 NPA041 | Authoring | Error | A satellite resx has a key the neutral one lacks, or a placeholder count differs
 NPA042 | Authoring | Info | A Node resx key of a node kind in the project that no declaration uses

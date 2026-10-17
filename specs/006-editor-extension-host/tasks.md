@@ -658,7 +658,7 @@ SC-005 rechecked (research R4).
   both runs recorded. NPH006 is new (literals passed to known UI sinks). VSTHRD002 and VSTHRD103 go to `error` in
   `tests/`. XAML rule E7 stays a test. Amend ADR-0003 (hygiene rules as analyzers; the suppression ledger as an
   AdditionalFile) and ADR-0007 (E7 stays a test); update the AGENTS.md lines that name the removed tests.
-- [ ] T075 [US3] NPA020–NPA024 (FR-031, research S6; 1 unit). Test first: one class per rule in
+- [x] T075 [US3] NPA020–NPA024 (FR-031, research S6; 1 unit). Test first: one class per rule in
   `tests/NetPrints.Analyzers.Tests/Contributions/`. Then the analyzers in `src/NetPrints.Authoring/Contributions/`;
   guide rows; 0 hits in the repository.
 - [ ] T076 **Checkpoint C2 (publish gate)**. Whole suite plus the E2E pass; CI green, including the `packages` job.

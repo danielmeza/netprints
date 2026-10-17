@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,7 +45,7 @@ internal static class HygieneHarness
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, specificDiagnosticOptions: [new KeyValuePair<string, ReportDiagnostic>(id, ReportDiagnostic.Error)]));
 
         ImmutableArray<AdditionalText> files = inputs.Ledger is null ? [] : [new MemoryText("HygieneLedger.txt", inputs.Ledger)];
-        AnalyzerOptions options = new(files, new OptionsProvider(inputs.Options ?? new Dictionary<string, string>()));
+        AnalyzerOptions options = new(files, new MapOptionsProvider(inputs.Options ?? new Dictionary<string, string>()));
         ImmutableArray<Diagnostic> all = await compilation.WithAnalyzers([AnalyzerHarness.Analyzer(id)], options).GetAnalyzerDiagnosticsAsync(TestContext.Current.CancellationToken);
         return [.. all.Where(diagnostic => diagnostic.Id == id).OrderBy(diagnostic => diagnostic.Location.SourceSpan.Start)];
     }
@@ -58,17 +57,4 @@ internal static class HygieneHarness
         public override SourceText GetText(CancellationToken cancellationToken = default) => SourceText.From(text);
     }
 
-    private sealed class OptionsProvider(IReadOnlyDictionary<string, string> values) : AnalyzerConfigOptionsProvider
-    {
-        public override AnalyzerConfigOptions GlobalOptions => new Options(values);
-
-        public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => new Options(values);
-
-        public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => new Options(values);
-    }
-
-    private sealed class Options(IReadOnlyDictionary<string, string> values) : AnalyzerConfigOptions
-    {
-        public override bool TryGetValue(string key, [NotNullWhen(true)] out string? value) => values.TryGetValue(key, out value);
-    }
 }

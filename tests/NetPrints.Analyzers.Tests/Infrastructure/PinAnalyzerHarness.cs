@@ -41,6 +41,23 @@ internal static class PinAnalyzerHarness
         return actual;
     }
 
+    /// <summary>Like <see cref="AssertDiagnosticsAsync"/>, with editorconfig options such as <c>build_property.NetPrintsExtensionId</c>.</summary>
+    /// <param name="markup">The source with <c>{|ID:text|}</c> markers.</param>
+    /// <param name="options">The option values.</param>
+    /// <param name="ids">The ids to check; the markers must use these.</param>
+    /// <returns>The diagnostics, for further assertions.</returns>
+    public static async Task<ImmutableArray<Diagnostic>> AssertDiagnosticsWithOptionsAsync(string markup, IReadOnlyDictionary<string, string> options, params string[] ids)
+    {
+        (string source, IReadOnlyList<AnalyzerHarness.Expected> expected) = AnalyzerHarness.Parse(markup);
+        ImmutableArray<Diagnostic> actual = await AnalyzeAsync(AuthoringHarness.Compile(source), ids, new AnalyzerOptions([], new MapOptionsProvider(options)));
+
+        AnalyzerHarness.Expected[] reported = [.. actual.Select(diagnostic => new AnalyzerHarness.Expected(diagnostic.Id, diagnostic.Location.SourceSpan.Start, diagnostic.Location.SourceSpan.Length))
+            .OrderBy(item => item.Start).ThenBy(item => item.Id, StringComparer.Ordinal)];
+
+        Assert.Equal(expected, reported);
+        return actual;
+    }
+
     /// <summary>Applies the code fix for a diagnostic id again and again until the analyzer reports nothing fixable.</summary>
     /// <param name="source">The clean source text.</param>
     /// <param name="id">The diagnostic id to fix.</param>

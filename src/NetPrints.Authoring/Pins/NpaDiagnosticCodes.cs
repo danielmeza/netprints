@@ -39,6 +39,21 @@ internal static class NpaDiagnosticCodes
     /// <summary>A node kind declares pins, but the project has neither <c>NodePins.Shipped.txt</c> nor <c>NodePins.Unshipped.txt</c>, so no key is tracked.</summary>
     public const string TrackingMissing = "NPA012";
 
+    /// <summary>An icon id literal does not match the icon id pattern, or is a built-in id the icon registry does not know.</summary>
+    public const string IconId = "NPA020";
+
+    /// <summary>A gesture literal does not parse, or breaks the scope rule of its command.</summary>
+    public const string Gesture = "NPA021";
+
+    /// <summary>A constant contribution id does not match the id pattern or the owner prefix.</summary>
+    public const string ContributionId = "NPA022";
+
+    /// <summary>Two constant command ids are equal in one compilation.</summary>
+    public const string DuplicateCommandId = "NPA023";
+
+    /// <summary>Two commands share a menu id, group and order in one compilation.</summary>
+    public const string DuplicateMenuSlot = "NPA024";
+
     /// <summary>A convention resource key is missing from the neutral resx.</summary>
     public const string MissingResourceKey = "NPA040";
 
