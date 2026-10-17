@@ -55,13 +55,16 @@ namespace NetPrints.Tests.Translator
         }
 
         [Fact]
-        public void TheLiteralOverloadWithoutATargetIsUnconstrained()
+        public void TheLiteralOverloadWithoutATargetKeepsTheOutputOfRelease020()
         {
-            TypeSpecifier stringType = TypeSpecifier.FromType<string>();
+            Assert.Equal("\"a\\u001bb\"", TranslatorUtil.ObjectToLiteral("a\u001bb", TypeSpecifier.FromType<string>()));
+            Assert.Equal("'\\u001b'", TranslatorUtil.ObjectToLiteral('\u001b', TypeSpecifier.FromType<char>()));
+        }
 
-            Assert.Equal(
-                TranslatorUtil.ObjectToLiteral("a\u001bb", stringType, CSharpTarget.Unconstrained),
-                TranslatorUtil.ObjectToLiteral("a\u001bb", stringType));
+        [Fact]
+        public void TheUnconstrainedTargetWritesTheShortEscape()
+        {
+            Assert.Equal("\"a\\eb\"", TranslatorUtil.ObjectToLiteral("a\u001bb", TypeSpecifier.FromType<string>(), CSharpTarget.Unconstrained));
         }
 
         [Fact]

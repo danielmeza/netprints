@@ -92,9 +92,9 @@ namespace NetPrints.Translator
         /// </summary>
         /// <param name="obj">Object value to translate. Null translates to the "null" literal.</param>
         /// <param name="type">Specifier for the type of the literal.</param>
-        /// <returns></returns>
+        /// <returns>The C# literal; the escape character is written <c>\u001b</c>, valid in every C# version, as in 0.2.0.</returns>
         public static string ObjectToLiteral(object? obj, TypeSpecifier type) =>
-            ObjectToLiteral(obj, type, CSharpTarget.Unconstrained);
+            FormatLiteral(obj, type, shortEscape: false);
 
         /// <summary>
         /// Translates an object into a literal value for a C# target (eg. a float 32.32 -> "32.32f"). The escape character
@@ -107,6 +107,11 @@ namespace NetPrints.Translator
         public static string ObjectToLiteral(object? obj, TypeSpecifier type, CSharpTarget target)
         {
             ArgumentNullException.ThrowIfNull(target);
+            return FormatLiteral(obj, type, target.Check(EscapeCharacterVersion));
+        }
+
+        private static string FormatLiteral(object? obj, TypeSpecifier type, bool shortEscape)
+        {
 
             // Interpret object string as enum field
             if (type.IsEnum)
@@ -129,11 +134,11 @@ namespace NetPrints.Translator
             if (type == TypeSpecifier.FromType<string>())
             {
                 // type == string means obj is the literal's own boxed string value.
-                return UseShortEscape(Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral((string)obj, quote: true), target);
+                return UseShortEscape(Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral((string)obj, quote: true), shortEscape);
             }
             else if (type == TypeSpecifier.FromType<char>() && obj is char c)
             {
-                return UseShortEscape(Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(c, quote: true), target);
+                return UseShortEscape(Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(c, quote: true), shortEscape);
             }
             else if (type == TypeSpecifier.FromType<bool>() && obj is bool b)
             {
@@ -160,9 +165,9 @@ namespace NetPrints.Translator
         /// Rewrites the <c>\u001b</c> escape of a formatted literal to <c>\e</c> for a target with C# 13, reading the literal
         /// one escape at a time so that an escaped backslash followed by <c>u001b</c> is left as it is.
         /// </summary>
-        private static string UseShortEscape(string literal, CSharpTarget target)
+        private static string UseShortEscape(string literal, bool shortEscape)
         {
-            if (!target.Check(EscapeCharacterVersion))
+            if (!shortEscape)
             {
                 return literal;
             }
