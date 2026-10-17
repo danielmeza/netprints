@@ -24,6 +24,7 @@ public sealed class GraphScopePerformanceTests(TestEditor editor)
     private const int Runs = 5;
     private const double BaselineBytesPerNode = 35_080;
     private const double AllocationTolerance = 1.10;
+
     private static readonly double BaselineRatio = PerformanceGate.Baseline(
         local: 0.954,
         ciByCpu: new Dictionary<string, double> { ["XEON(R) PLATINUM 8573C"] = 1.08, ["EPYC 7763"] = 1.90 });
