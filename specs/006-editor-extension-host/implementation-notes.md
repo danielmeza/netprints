@@ -578,7 +578,18 @@ consumers restore from `local-packages/` plus a scratch feed and build with `-p:
 
 ## Publish gate
 
-(T073)
+T073, local evidence at the C2e head (Release). From here a public shape changes only under an NPXE id or with a recorded `*REMOVED*` entry.
+
+- XML docs: CS1591 is `error` in `.editorconfig` and the Release build has 0 warnings, so every public member of the six libraries has a doc comment.
+  Documented members in the packed XML files: Core 1510, Reflection 170, Catalog 429, Serialization 560, Extensibility.Abstractions 633, Extensibility 175 (3477).
+- API files: `RS0016`/`RS0017` run as errors through `TreatWarningsAsErrors` on every project with `NetPrintsTrackPublicApi`, so the `PublicAPI.*.txt` files hold
+  every public member: Core 1607 lines, Reflection 199, Catalog 639, Serialization 952, Abstractions 938, Extensibility 171.
+  `ExtensionApiVersionTests` hash unchanged (no API file changed in C2e).
+- Settling surfaces: `ExperimentalApiTests` passes (every symbol carries the id of each experimental type it mentions). Ids in use: NPXE0001 to NPXE0009, NPXE0011 to NPXE0013;
+  NPXE0010 was never allocated.
+- Package validation: `dotnet pack NetPrints.slnx -c Release` passes for all six libraries; Core, Reflection and Catalog compare with 0.2.0.
+- `NetPrints.TestExtension` builds from the packed packages alone: `scripts/verify-packages.sh` step 5 (local run at `0.4.0-local.20261017010000`, all checks passed).
+  CI run id of the `packages` job: to be filled in when the C2e push is green.
 
 ## NuGet spike
 
@@ -924,6 +935,29 @@ consumers restore from `local-packages/` plus a scratch feed and build with `-p:
   non-array, unknown field list) failed on `Assert.Equal`/`Assert.Throws` against properties that were never filled, then green. T070: with the recorded row at version 0.4 and a placeholder hash, and the code
   still at 1.0, `TheVersionIsTheLastRecordedOne` and `TheApiFilesMatchTheHashRecordedForTheVersion` failed on `Assert.Equal`, then green.
 - Suite (Release): Core.Tests 1035/1035, Editor.Tests 2013/2013; solution run 4737 total with the one failure above fixed. `eng/trim-warnings.sh`: 9, unchanged.
+
+## Batch C2e (T071-T073)
+
+- T071: `NetPrints.Serialization`, `NetPrints.Extensibility.Abstractions` and `NetPrints.Extensibility` are packable with `EnablePackageValidation` and a README each
+  (`verify-packages.sh` requires `# <id>` as the first line). Core, Reflection and Catalog set `PackageValidationBaselineVersion` 0.2.0, their last published version; Reflection
+  and Catalog have no break. `src/NetPrints.Core/CompatibilitySuppressions.xml` was generated (`-p:ApiCompatGenerateSuppressionFile=true`): 13 CP0002 (typed pin getters removed) and 11 CP0009
+  (node classes sealed). `PackageValidationTests` cross-checks it: every CP0002 target has a `*REMOVED*` line in `PublicAPI.Unshipped.txt`, every CP0009 target is a sealed type, every entry is a baseline suppression;
+  it also pins which projects are packable, the validation flag, the baseline (only the published three) and the README. The other `*REMOVED*` lines (emitter and `TranslationEnvironment` members, overrides) are
+  not reported by package validation against 0.2.0, so they need no suppression.
+- `scripts/verify-packages.sh` now expects 16 files (9 packages), checks the three new packages' contents and that the Abstractions dependency on Core excludes nothing, then step 5: a scratch consumer
+  that references only Abstractions builds with `-v:d` and the compiler line holds `NetPrints.Authoring.dll` exactly once; `tests/NetPrints.TestExtension` builds against the packed packages (its project
+  switches to one `PackageReference` when `NetPrintsPackagedExtensionVersion` is set, with `RestoreSources` set to the feed). Deviation: that build runs in the repository tree, so `obj/` of
+  TestExtension holds the package-mode assets afterwards; the next normal build restores again (verified).
+- `scripts/pack-local.sh` needed no change (it packs the solution, which now holds the new packages); the `packages` job in ci.yml already runs pack (validation runs inside it) and the verify script; only the step name changed.
+  `docs/contributing/releasing.md` has the baseline step and the new counts; `docs/api/docfx.json` lists the three new projects.
+- T072: the CLI test is `ProjectExtensionBuildTests` (real `netprints build` on a copy of HelloWorld): a project that declares `NetPrintsExtension` to `NetPrints.TestExtension` generates `System.Console.WriteLine(...)` for its
+  `netprints.test/Log` node, and a project whose extension folder holds an invalid manifest fails with NPX001. No trust setting exists in the test host. It pins existing behaviour, so it was green on arrival
+  (it only went red while the graph JSON was wrong: NPD008 for a string on an `object` pin, then NPT008 when the connection key was missing). The guide, ADR-0030 (Facet), ADR-0020 (Amendment 1) and ADR-0021 (Amendment 3) are written; the guide's package
+  instructions replace the project-reference ones, with the contribution table, typed contexts, icons and the NPXE rows 0009, 0012 and 0013.
+- T073: see "Publish gate".
+- Red/green. T071: `PackageValidationTests` against the unchanged projects failed on assertions (5 of 7: the expected library list, validation flag, baseline null versus 0.2.0, README missing), then green after the project
+  edits and the generated suppressions; `verify-packages.sh` against the old feed failed at step 1 (missing Extensibility package), then passed on a fresh pack.
+- Suite (Release): 4746 total, 0 failed, 33 skipped; build 0 warnings; `dotnet format --verify-no-changes` clean; `eng/trim-warnings.sh` 9 (baseline 9). No `PublicAPI.*.txt` changed, so the `ExtensionApiVersionTests` hash is the same.
 
 ## Build-time budget (ADR-0024, S2a; B-F3)
 

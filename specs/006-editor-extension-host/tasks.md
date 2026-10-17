@@ -627,7 +627,7 @@ SC-005 rechecked (research R4).
 
 ### Batch C2e — model: sonnet — T071–T073 — 4 units
 
-- [ ] T071 [US3] Packaging and validation (FR-020, SC-003, FR-116, research R12; 2 units). Test first: extend
+- [x] T071 [US3] Packaging and validation (FR-020, SC-003, FR-116, research R12; 2 units). Test first: extend
   `scripts/verify-packages.sh` (run by the `packages` job): every packable library is in `local-packages/` at the local
   version; a scratch consumer that references only `NetPrints.Extensibility.Abstractions` gets the Authoring analyzers
   exactly once; `tests/NetPrints.TestExtension` builds against the packed packages only. Then `EnablePackageValidation`
@@ -636,14 +636,14 @@ SC-005 rechecked (research R4).
   lines; READMEs for the new packages (`eng/PackageReadme.targets`); `scripts/pack-local.sh`; the `packages` job in
   `.github/workflows/ci.yml` validates and packs; `docs/contributing/releasing.md` gains the baseline step for a first
   publish; `docs/api/docfx.json` lists the new packages.
-- [ ] T072 [US3] The extensions guide on the packages and the ADR amendments (FR-030, FR-038, FR-116; 1 unit). Test
+- [x] T072 [US3] The extensions guide on the packages and the ADR amendments (FR-030, FR-038, FR-116; 1 unit). Test
   first: a CLI test pins that a project-declared extension loads in `netprints build` with no trust check (FR-038).
   Rewrite `docs/guide/extensions.md` on the packages: package references instead of project references, the facet, the
   typed contexts, every contribution kind, the NPXE table, and the trust note (project-declared extensions load in the
   CLI and the build without a trust check, as analyzers and build tasks do). Fill ADR-0030's "Facet" section with the
   same trust note; amend ADR-0020 (typed contexts, groups, `AppliesTo`, the new kinds, label keys, menu ids, factories
   through DI) and ADR-0021 (extension icon ids).
-- [ ] T073 [US3] **The publish gate** (FR-020, FR-030; 1 unit). Check the frozen shape: the published packages have XML
+- [x] T073 [US3] **The publish gate** (FR-020, FR-030; 1 unit). Check the frozen shape: the published packages have XML
   docs on every public member (CS1591 at error proves it; record the member count), the API files hold every member,
   every settling surface carries an NPXE id, package validation passes, and `NetPrints.TestExtension` builds from
   `local-packages/` (CI run id). From here on, a public shape changes only under an NPXE id or with a recorded
