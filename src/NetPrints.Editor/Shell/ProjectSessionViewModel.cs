@@ -270,7 +270,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     public Task WaitForBuildAsync() => flow is { IsCompleted: false } current ? current : Task.CompletedTask;
 
     /// <summary>Gets the session-scoped services of one extension: the scoped registrations of its provider, living until the session is disposed.</summary>
-    /// <param name="extensionId">The extension id, as <see cref="IContributionRegistry.OwnerOf"/> gives it for a contribution.</param>
+    /// <param name="extensionId">The extension id, as <see cref="IContributionSnapshot.OwnerOf"/> gives it for a contribution.</param>
     /// <returns>The services; an empty provider for an id that registered none.</returns>
     public IServiceProvider ExtensionServices(string extensionId)
     {

@@ -335,24 +335,228 @@ public class ContributionRegistryTests
         Assert.Same(g1, Assert.Single(registry.GoToProviders));
     }
 
+    private const string AppExtension = "app.ext";
+    private const string SessionExtension = "session.ext";
+    private const string SessionKey = "project-1";
+
+    private static void Fill(IContributionGroupBuilder group, string owner = SessionExtension, string? name = "Session Extension", string prefix = "session.ext")
+    {
+        IEditorContributions editor = group.For(owner, name);
+        editor.AddCommand(Command(prefix + ".hello", "Hello"));
+        editor.AddDashboardTile(Tile(prefix + ".tile"));
+        editor.AddContextMenuItem(MenuItem(prefix + ".menu"));
+        editor.AddTooltipProvider(new Tooltips());
+        editor.AddGoToProvider(new GoTo());
+        group.AddProjectTemplate(Template(prefix + ".template"));
+    }
+
     [Fact]
-    public void FreezeMakesEveryAddThrow()
+    public void ASessionGroupFollowsTheAppGroupInEveryKind()
+    {
+        var registry = NewRegistry();
+        registry.AddCommand(Command("app.ext.first"));
+        registry.AddPanel(Panel("app.ext.panel"));
+
+        registry.AddSessionGroup(SessionKey, group =>
+        {
+            Fill(group);
+            group.For(SessionExtension).AddPanel(Panel("session.ext.panel"));
+        });
+
+        Assert.Equal(["app.ext.first", "session.ext.hello"], registry.Commands.Select(c => c.Id).Where(id => !id.Contains("showPanel", StringComparison.Ordinal)));
+        Assert.Equal(["app.ext.panel", "session.ext.panel"], registry.Panels.Select(p => p.Id));
+        Assert.Equal("session.ext.tile", Assert.Single(registry.DashboardTiles).Id);
+        Assert.Equal("session.ext.menu", Assert.Single(registry.ContextMenuItems).Id);
+        Assert.Equal("session.ext.template", Assert.Single(registry.ProjectTemplates).Id);
+        Assert.Single(registry.TooltipProviders);
+        Assert.Single(registry.GoToProviders);
+        Assert.Equal(SessionExtension, registry.OwnerOf("session.ext.hello"));
+    }
+
+    [Fact]
+    public void ASessionGroupIsRemovedAsAWhole()
+    {
+        var registry = NewRegistry();
+        registry.AddCommand(Command("app.ext.first"));
+        registry.AddSessionGroup(SessionKey, group => Fill(group));
+
+        Assert.True(registry.RemoveSessionGroup(SessionKey));
+
+        Assert.Equal("app.ext.first", Assert.Single(registry.Commands).Id);
+        Assert.Empty(registry.Panels);
+        Assert.Empty(registry.DashboardTiles);
+        Assert.Empty(registry.ContextMenuItems);
+        Assert.Empty(registry.ProjectTemplates);
+        Assert.Empty(registry.TooltipProviders);
+        Assert.Empty(registry.GoToProviders);
+        Assert.Null(registry.OwnerOf("session.ext.hello"));
+        Assert.False(registry.RemoveSessionGroup(SessionKey));
+    }
+
+    [Fact]
+    public void EveryChangeRaisesChangedWithANewImmutableSnapshot()
+    {
+        var registry = NewRegistry();
+        registry.AddCommand(Command("app.ext.first"));
+        registry.Freeze();
+        var seen = new List<ContributionSnapshot>();
+        registry.Changed += (_, snapshot) => seen.Add(snapshot);
+
+        registry.AddSessionGroup(SessionKey, group => Fill(group));
+        registry.RemoveSessionGroup(SessionKey);
+
+        Assert.Equal(2, seen.Count);
+        Assert.NotSame(seen[0], seen[1]);
+        Assert.Equal(["app.ext.first", "session.ext.hello"], seen[0].Commands.Select(c => c.Id));
+        Assert.Equal(["app.ext.first"], seen[1].Commands.Select(c => c.Id));
+        Assert.Same(seen[1], registry.Snapshot);
+    }
+
+    [Fact]
+    public void ASessionGroupIsPublishedOnceAsAWhole()
+    {
+        var registry = NewRegistry();
+        int raised = 0;
+        registry.Changed += (_, _) => raised++;
+
+        registry.AddSessionGroup(SessionKey, group => Fill(group));
+
+        Assert.Equal(1, raised);
+    }
+
+    [Fact]
+    public void AnAppAddAfterFreezeRaisesChanged()
+    {
+        var registry = NewRegistry();
+        registry.Freeze();
+        ContributionSnapshot? seen = null;
+        registry.Changed += (_, snapshot) => seen = snapshot;
+
+        registry.AddCommand(Command("app.ext.late"));
+
+        Assert.Equal("app.ext.late", Assert.Single(Assert.IsType<ContributionSnapshot>(seen).Commands).Id);
+    }
+
+    [Fact]
+    public void AnOldSnapshotDoesNotChange()
+    {
+        var registry = NewRegistry();
+        registry.AddCommand(Command("app.ext.first"));
+        ContributionSnapshot before = registry.Snapshot;
+
+        registry.AddSessionGroup(SessionKey, group => Fill(group));
+
+        Assert.Equal("app.ext.first", Assert.Single(before.Commands).Id);
+        Assert.Equal(2, registry.Snapshot.Commands.Count);
+    }
+
+    [Fact]
+    public void WithinAKindTheFirstRegistrationWinsAcrossGroups()
+    {
+        var registry = NewRegistry();
+        registry.AddCommand(Command("netprints.command.save", "Built-in"));
+
+        registry.AddSessionGroup(SessionKey, group => group.For(SessionExtension).AddCommand(Command("netprints.command.save", "Extension")));
+
+        Assert.Equal("Built-in", Assert.Single(registry.Commands).Label.Text);
+        Assert.Contains(registry.Issues, issue => issue.Kind == ContributionIssueKind.DuplicateId && issue.Owner == SessionExtension);
+    }
+
+    [Fact]
+    public void AGestureConflictAcrossGroupsKeepsTheFirstBinding()
+    {
+        var registry = NewRegistry();
+        registry.AddCommand(Command("app.ext.first", "First", CommandScope.Global, "Ctrl+K"));
+
+        registry.AddSessionGroup(SessionKey, group => group.For(SessionExtension).AddCommand(Command("session.ext.second", "Second", CommandScope.Global, "Ctrl+K")));
+
+        Assert.Empty(Texts(registry.Commands.Single(c => c.Id == "session.ext.second")));
+        Assert.Contains(registry.Issues, issue => issue.Kind == ContributionIssueKind.GestureConflict);
+    }
+
+    [Fact]
+    public void ASecondSessionGroupDoesNotReplaceTheFirstGroupsIds()
+    {
+        var registry = NewRegistry();
+        registry.AddSessionGroup("one", group => Fill(group));
+
+        registry.AddSessionGroup("two", group => Fill(group, "other.ext", "Other", "session.ext"));
+        registry.RemoveSessionGroup("two");
+
+        Assert.Equal(SessionExtension, registry.OwnerOf("session.ext.hello"));
+        Assert.Equal("session.ext.hello", Assert.Single(registry.Commands).Id);
+    }
+
+    [Fact]
+    public void AGroupThatThrowsWhileFillingPublishesNothing()
+    {
+        var registry = NewRegistry();
+        int raised = 0;
+        registry.Changed += (_, _) => raised++;
+
+        Assert.Throws<InvalidOperationException>(() => registry.AddSessionGroup(SessionKey, group =>
+        {
+            group.For(SessionExtension).AddCommand(Command("session.ext.hello"));
+            throw new InvalidOperationException("boom");
+        }));
+
+        Assert.Empty(registry.Commands);
+        Assert.Equal(0, raised);
+        registry.AddSessionGroup(SessionKey, group => Fill(group));
+        Assert.Single(registry.Commands);
+    }
+
+    [Fact]
+    public void AnInUseSessionKeyThrows()
+    {
+        var registry = NewRegistry();
+        registry.AddSessionGroup(SessionKey, group => Fill(group));
+
+        Assert.Throws<InvalidOperationException>(() => registry.AddSessionGroup(SessionKey, group => Fill(group, prefix: "other.ext")));
+    }
+
+    [Fact]
+    public void TheOwnerNameIsTheExtensionNameTheIdOrNothingForBuiltIns()
+    {
+        var registry = NewRegistry();
+        registry.AddCommand(Command("netprints.command.save"));
+        registry.For(AppExtension).AddCommand(Command("app.ext.nameless"));
+        registry.AddSessionGroup(SessionKey, group => Fill(group));
+
+        Assert.Null(registry.OwnerNameOf("netprints.command.save"));
+        Assert.Equal(AppExtension, registry.OwnerNameOf("app.ext.nameless"));
+        Assert.Equal("Session Extension", registry.OwnerNameOf("session.ext.hello"));
+        Assert.Null(registry.OwnerNameOf("no.such.id"));
+    }
+
+    [Fact]
+    public void FreezeAddsAShowPanelCommandForASessionPanelToo()
     {
         var registry = NewRegistry();
         registry.Freeze();
 
-        Assert.True(registry.IsFrozen);
-        Assert.Throws<InvalidOperationException>(() => registry.AddCommand(Command("netprints.command.save")));
-        Assert.Throws<InvalidOperationException>(() => registry.AddPanel(Panel("netprints.panel.errors")));
-        Assert.Throws<InvalidOperationException>(() => registry.AddDashboardTile(Tile("netprints.tile.recent")));
-        Assert.Throws<InvalidOperationException>(() => registry.AddProjectTemplate(Template("netprints.template.console")));
-        Assert.Throws<InvalidOperationException>(() => registry.AddContextMenuItem(MenuItem("netprints.menu.save")));
-        Assert.Throws<InvalidOperationException>(() => registry.AddTooltipProvider(new Tooltips()));
-        Assert.Throws<InvalidOperationException>(() => registry.AddGoToProvider(new GoTo()));
+        registry.AddSessionGroup(SessionKey, group => group.For(SessionExtension).AddPanel(Panel("session.ext.panel")));
+
+        Assert.Contains(registry.Commands, command => command.Id == ContributionIds.CommandPrefix + "showPanel.session.ext.panel");
+        registry.RemoveSessionGroup(SessionKey);
+        Assert.Empty(registry.Commands);
     }
 
     [Fact]
-    public void ANewRegistryIsNotFrozen() => Assert.False(NewRegistry().IsFrozen);
+    public void FreezeDoesNotStopLaterAdds()
+    {
+        var registry = NewRegistry();
+        registry.Freeze();
+
+        registry.AddCommand(Command("app.ext.late"));
+        registry.AddPanel(Panel("app.ext.panel"));
+        registry.AddProjectTemplate(Template("app.ext.template"));
+
+        Assert.Contains(registry.Commands, command => command.Id == "app.ext.late");
+        Assert.Contains(registry.Commands, command => command.Id == ContributionIds.CommandPrefix + "showPanel.app.ext.panel");
+        Assert.Single(registry.Panels);
+        Assert.Single(registry.ProjectTemplates);
+    }
 
     [Fact]
     public void EachIssueIsLoggedOnceAtWarningLevel()

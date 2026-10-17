@@ -11,10 +11,10 @@ namespace NetPrints.Editor.Contributions;
 [Singleton<IContributionRegistry>(Factory = "Create")]
 public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) : IContributionRegistry
 {
-    /// <summary>Creates the frozen registry of the built-in contributions and the go-to providers.</summary>
+    /// <summary>Creates the registry of the built-in contributions and the go-to providers.</summary>
     /// <param name="logger">Receives one warning per issue.</param>
     /// <param name="services">Resolves the shell lazily, for the session the go-to providers read.</param>
-    /// <returns>The frozen registry.</returns>
+    /// <returns>The registry, its initial registration ended.</returns>
     internal static ContributionRegistry Create(ILogger<ContributionRegistry> logger, IServiceProvider services)
     {
         var registry = new ContributionRegistry(logger);
@@ -26,46 +26,293 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
 
     private const int UnlistedPanelOrder = 100;
 
-    private readonly List<CommandDescriptor> commands = [];
-    private readonly List<PanelDescriptor> panels = [];
-    private readonly List<DashboardTileDescriptor> tiles = [];
-    private readonly List<StatusBarItemDescriptor> statusBarItems = [];
-    private readonly List<DialogDescriptor> dialogs = [];
-    private readonly List<SettingsPageDescriptor> settingsPages = [];
-    private readonly List<ProjectTemplateDescriptor> templates = [];
-    private readonly List<ContextMenuItemDescriptor> menuItems = [];
-    private readonly List<ITooltipProvider> tooltipProviders = [];
-    private readonly List<IGoToProvider> goToProviders = [];
-    private readonly List<ContributionIssue> issues = [];
-    private readonly List<ViewResourceDeclaration> viewResources = [];
-    private readonly Dictionary<string, string> owners = new(StringComparer.Ordinal);
+    private readonly ContributionGroup appGroup = new(null);
+    private readonly List<ContributionGroup> sessions = [];
+    private ContributionGroup? target;
+    private ContributionSnapshot? snapshot;
+    private bool published;
+    private int batching;
     private string currentOwner = ContributionIds.Owner;
 
     /// <inheritdoc/>
-    public IReadOnlyList<ViewResourceDeclaration> ViewResources => viewResources;
+    public event EventHandler<ContributionSnapshot>? Changed;
 
-    /// <summary>Gets the editor facet of one extension: what it adds is recorded as owned by <paramref name="owner"/>.</summary>
+    /// <inheritdoc/>
+    public ContributionSnapshot Snapshot => snapshot ??= new ContributionSnapshot(AllGroups());
+
+    /// <inheritdoc/>
+    public IReadOnlyList<ViewResourceDeclaration> ViewResources => Snapshot.ViewResources;
+
+    /// <inheritdoc/>
+    public IReadOnlyList<CommandDescriptor> Commands => Snapshot.Commands;
+
+    /// <inheritdoc/>
+    public IReadOnlyList<PanelDescriptor> Panels => Snapshot.Panels;
+
+    /// <inheritdoc/>
+    public IReadOnlyList<DashboardTileDescriptor> DashboardTiles => Snapshot.DashboardTiles;
+
+    /// <inheritdoc/>
+    public IReadOnlyList<StatusBarItemDescriptor> StatusBarItems => Snapshot.StatusBarItems;
+
+    /// <inheritdoc/>
+    public IReadOnlyList<DialogDescriptor> Dialogs => Snapshot.Dialogs;
+
+    /// <inheritdoc/>
+    public IReadOnlyList<SettingsPageDescriptor> SettingsPages => Snapshot.SettingsPages;
+
+    /// <inheritdoc/>
+    public IReadOnlyList<ProjectTemplateDescriptor> ProjectTemplates => Snapshot.ProjectTemplates;
+
+    /// <inheritdoc/>
+    public IReadOnlyList<ContextMenuItemDescriptor> ContextMenuItems => Snapshot.ContextMenuItems;
+
+    /// <inheritdoc/>
+    public IReadOnlyList<ITooltipProvider> TooltipProviders => Snapshot.TooltipProviders;
+
+    /// <inheritdoc/>
+    public IReadOnlyList<IGoToProvider> GoToProviders => Snapshot.GoToProviders;
+
+    /// <inheritdoc/>
+    public IReadOnlyList<ContributionIssue> Issues => Snapshot.Issues;
+
+    private ContributionGroup Target => target ?? appGroup;
+
+    /// <summary>Gets the editor facet of one extension in the app group: what it adds is recorded as owned by <paramref name="owner"/>.</summary>
     /// <param name="owner">The extension id.</param>
+    /// <param name="ownerName">The extension's <c>name</c>, shown beside its items; <see langword="null"/> to show the id.</param>
     /// <returns>The facet.</returns>
-    public IEditorContributions For(string owner)
+    public IEditorContributions For(string owner, string? ownerName = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(owner);
-        return new OwnerFacet(this, owner);
+        return new OwnerFacet(this, appGroup, owner, ownerName);
     }
 
     /// <inheritdoc/>
-    public string? OwnerOf(string id) => owners.GetValueOrDefault(id);
+    public string? OwnerOf(string id) => Snapshot.OwnerOf(id);
+
+    /// <inheritdoc/>
+    public string? OwnerNameOf(string id) => Snapshot.OwnerNameOf(id);
+
+    /// <inheritdoc/>
+    public void AddSessionGroup(string key, Action<IContributionGroupBuilder> populate)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        ArgumentNullException.ThrowIfNull(populate);
+        if (sessions.Exists(group => group.Key == key))
+        {
+            throw new InvalidOperationException($"A session group with the key '{key}' exists.");
+        }
+
+        var group = new ContributionGroup(key);
+        sessions.Add(group);
+        snapshot = null;
+        bool filled = false;
+        batching++;
+        try
+        {
+            populate(new SessionBuilder(this, group));
+            As(group, currentOwner, () => AddShowPanelCommands(group));
+            filled = true;
+        }
+        finally
+        {
+            batching--;
+            if (!filled)
+            {
+                sessions.Remove(group);
+                snapshot = null;
+            }
+        }
+
+        Publish(always: true);
+    }
+
+    /// <inheritdoc/>
+    public bool RemoveSessionGroup(string key)
+    {
+        int index = sessions.FindIndex(group => group.Key == key);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        sessions.RemoveAt(index);
+        Publish(always: true);
+        return true;
+    }
+
+    /// <inheritdoc/>
+    public void AddCommand(CommandDescriptor command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        AcceptCommand(command);
+        Publish();
+    }
+
+    /// <inheritdoc/>
+    public void AddPanel(PanelDescriptor panel)
+    {
+        ArgumentNullException.ThrowIfNull(panel);
+        if (TryAccept(panel.Id, !IsBlank(panel.Title.Text) && panel.CreateViewModel is not null, "a title and a view model factory", Ids(group => group.Panels.Select(p => p.Id))))
+        {
+            Target.Panels.Add(panel);
+            if (published && Target == appGroup)
+            {
+                AddShowPanelCommands(appGroup);
+            }
+        }
+
+        Publish();
+    }
+
+    /// <inheritdoc/>
+    public void AddDashboardTile(DashboardTileDescriptor tile)
+    {
+        ArgumentNullException.ThrowIfNull(tile);
+        if (TryAccept(tile.Id, !IsBlank(tile.Title.Text) && tile.CreateViewModel is not null, "a title and a view model factory", Ids(group => group.Tiles.Select(t => t.Id))))
+        {
+            Target.Tiles.Add(tile);
+        }
+
+        Publish();
+    }
+
+    /// <summary>Adds a status bar item; an invalid or duplicate one is ignored.</summary>
+    /// <param name="item">The item.</param>
+    public void AddStatusBarItem(StatusBarItemDescriptor item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        if (TryAccept(item.Id, item.CreateViewModel is not null, "a view model factory", Ids(group => group.StatusBarItems.Select(s => s.Id))))
+        {
+            Target.StatusBarItems.Add(item);
+        }
+
+        Publish();
+    }
+
+    /// <summary>Adds a dialog; an invalid or duplicate one is ignored.</summary>
+    /// <param name="dialog">The dialog.</param>
+    public void AddDialog(DialogDescriptor dialog)
+    {
+        ArgumentNullException.ThrowIfNull(dialog);
+        if (TryAccept(dialog.Id, !IsBlank(dialog.Title.Text) && dialog.CreateViewModel is not null, "a title and a view model factory", Ids(group => group.Dialogs.Select(d => d.Id))))
+        {
+            Target.Dialogs.Add(dialog);
+        }
+
+        Publish();
+    }
+
+    /// <summary>Adds a settings page; an invalid or duplicate one is ignored.</summary>
+    /// <param name="page">The page.</param>
+    public void AddSettingsPage(SettingsPageDescriptor page)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+        if (TryAccept(page.Id, !IsBlank(page.Title.Text), "a title", Ids(group => group.SettingsPages.Select(p => p.Id))))
+        {
+            Target.SettingsPages.Add(page);
+        }
+
+        Publish();
+    }
+
+    /// <inheritdoc/>
+    public void AddProjectTemplate(ProjectTemplateDescriptor template)
+    {
+        ArgumentNullException.ThrowIfNull(template);
+        if (TryAccept(template.Id, !IsBlank(template.DisplayName.Text) && !IsBlank(template.ProfileId), "a display name and a profile id", Ids(group => group.Templates.Select(t => t.Id))))
+        {
+            Target.Templates.Add(template);
+        }
+
+        Publish();
+    }
+
+    /// <inheritdoc/>
+    public void AddContextMenuItem(ContextMenuItemDescriptor item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        if (!ContextMenuTargets.HasSurface(item.Target))
+        {
+            Report(ContributionIssueKind.InvalidDescriptor, item.Id, $"No view opens a {item.Target} context menu yet, so the item would never be shown.");
+        }
+        else if (TryAccept(item.Id, ContributionIds.IsValid(item.CommandId) && item.Group is not null, "a valid command id and a group", Ids(group => group.MenuItems.Select(m => m.Id))))
+        {
+            Target.MenuItems.Add(item);
+        }
+
+        Publish();
+    }
+
+    /// <inheritdoc/>
+    public void AddTooltipProvider(ITooltipProvider provider)
+    {
+        ArgumentNullException.ThrowIfNull(provider);
+        Target.TooltipProviders.Add(provider);
+        Publish();
+    }
+
+    /// <inheritdoc/>
+    public void AddGoToProvider(IGoToProvider provider)
+    {
+        ArgumentNullException.ThrowIfNull(provider);
+        Target.GoToProviders.Add(provider);
+        Publish();
+    }
+
+    /// <inheritdoc/>
+    public void Freeze()
+    {
+        if (published)
+        {
+            return;
+        }
+
+        batching++;
+        try
+        {
+            As(appGroup, currentOwner, () => AddShowPanelCommands(appGroup));
+        }
+        finally
+        {
+            batching--;
+        }
+
+        published = true;
+        Publish();
+    }
+
+    private static bool IsBlank(string? text) => string.IsNullOrWhiteSpace(text);
+
+    private static bool ScopesOverlap(CommandScope a, CommandScope b) =>
+        a == CommandScope.Global || b == CommandScope.Global || (a & b) != 0;
+
+    private List<ContributionGroup> AllGroups() => [appGroup, .. sessions];
+
+    private IEnumerable<string> Ids(Func<ContributionGroup, IEnumerable<string>> select) => AllGroups().SelectMany(select);
+
+    private void Publish(bool always = false)
+    {
+        snapshot = null;
+        if (batching == 0 && (always || published))
+        {
+            Changed?.Invoke(this, Snapshot);
+        }
+    }
 
     private void AddViewResources(string owner, string resourceUri)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(resourceUri);
-        ThrowIfFrozen();
-        viewResources.Add(new ViewResourceDeclaration(owner, resourceUri));
+        Target.ViewResources.Add(new ViewResourceDeclaration(owner, resourceUri));
+        Publish();
     }
 
-    private void As(string owner, Action add)
+    private void As(ContributionGroup group, string owner, Action add)
     {
-        string previous = currentOwner;
+        ContributionGroup? previousTarget = target;
+        string previousOwner = currentOwner;
+        target = group;
         currentOwner = owner;
         try
         {
@@ -73,81 +320,14 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
         }
         finally
         {
-            currentOwner = previous;
+            target = previousTarget;
+            currentOwner = previousOwner;
         }
     }
 
-    private sealed class OwnerFacet(ContributionRegistry registry, string owner) : IEditorContributions
+    private void AcceptCommand(CommandDescriptor command)
     {
-        public IEditorContributions AddCommand(CommandDescriptor command) => Forward(() => registry.AddCommand(command));
-
-        public IEditorContributions AddPanel(PanelDescriptor panel) => Forward(() => registry.AddPanel(panel));
-
-        public IEditorContributions AddDashboardTile(DashboardTileDescriptor tile) => Forward(() => registry.AddDashboardTile(tile));
-
-        public IEditorContributions AddContextMenuItem(ContextMenuItemDescriptor item) => Forward(() => registry.AddContextMenuItem(item));
-
-        public IEditorContributions AddTooltipProvider(ITooltipProvider provider) => Forward(() => registry.AddTooltipProvider(provider));
-
-        public IEditorContributions AddGoToProvider(IGoToProvider provider) => Forward(() => registry.AddGoToProvider(provider));
-
-        public IEditorContributions AddStatusBarItem(StatusBarItemDescriptor item) => Forward(() => registry.AddStatusBarItem(item));
-
-        public IEditorContributions AddDialog(DialogDescriptor dialog) => Forward(() => registry.AddDialog(dialog));
-
-        public IEditorContributions AddSettingsPage(SettingsPageDescriptor page) => Forward(() => registry.AddSettingsPage(page));
-
-        public IEditorContributions AddViewResources(string resourceUri) => Forward(() => registry.AddViewResources(owner, resourceUri));
-
-        private OwnerFacet Forward(Action add)
-        {
-            registry.As(owner, add);
-            return this;
-        }
-    }
-
-    /// <inheritdoc/>
-    public IReadOnlyList<CommandDescriptor> Commands => commands;
-
-    /// <inheritdoc/>
-    public IReadOnlyList<PanelDescriptor> Panels => panels;
-
-    /// <inheritdoc/>
-    public IReadOnlyList<DashboardTileDescriptor> DashboardTiles => tiles;
-
-    /// <inheritdoc/>
-    public IReadOnlyList<StatusBarItemDescriptor> StatusBarItems => statusBarItems;
-
-    /// <inheritdoc/>
-    public IReadOnlyList<DialogDescriptor> Dialogs => dialogs;
-
-    /// <inheritdoc/>
-    public IReadOnlyList<SettingsPageDescriptor> SettingsPages => settingsPages;
-
-    /// <inheritdoc/>
-    public IReadOnlyList<ProjectTemplateDescriptor> ProjectTemplates => templates;
-
-    /// <inheritdoc/>
-    public IReadOnlyList<ContextMenuItemDescriptor> ContextMenuItems => menuItems;
-
-    /// <inheritdoc/>
-    public IReadOnlyList<ITooltipProvider> TooltipProviders => tooltipProviders;
-
-    /// <inheritdoc/>
-    public IReadOnlyList<IGoToProvider> GoToProviders => goToProviders;
-
-    /// <inheritdoc/>
-    public IReadOnlyList<ContributionIssue> Issues => issues;
-
-    /// <inheritdoc/>
-    public bool IsFrozen { get; private set; }
-
-    /// <inheritdoc/>
-    public void AddCommand(CommandDescriptor command)
-    {
-        ArgumentNullException.ThrowIfNull(command);
-        ThrowIfFrozen();
-        if (!TryAccept(command.Id, !IsBlank(command.Label.Text) && command.Handler is not null, "a label and a handler", commands.Select(c => c.Id)))
+        if (!TryAccept(command.Id, !IsBlank(command.Label.Text) && command.Handler is not null, "a label and a handler", Ids(group => group.Commands.Select(c => c.Id))))
         {
             return;
         }
@@ -174,9 +354,10 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
         }
 
         var kept = new List<CommandGesture>(gestures.Count);
+        CommandDescriptor[] existing = [.. AllGroups().SelectMany(group => group.Commands)];
         foreach (CommandGesture gesture in gestures)
         {
-            var owner = commands.FirstOrDefault(c => ScopesOverlap(c.Scope, command.Scope) && (c.DefaultGestures ?? []).Contains(gesture));
+            var owner = existing.FirstOrDefault(c => ScopesOverlap(c.Scope, command.Scope) && (c.DefaultGestures ?? []).Contains(gesture));
             if (owner is null)
             {
                 kept.Add(gesture);
@@ -187,147 +368,24 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
             }
         }
 
-        commands.Add(command.DefaultGestures is null || kept.Count == command.DefaultGestures.Count ? command : command with { DefaultGestures = kept });
+        Target.Commands.Add(command.DefaultGestures is null || kept.Count == command.DefaultGestures.Count ? command : command with { DefaultGestures = kept });
     }
 
-    /// <inheritdoc/>
-    public void AddPanel(PanelDescriptor panel)
+    private void AddShowPanelCommands(ContributionGroup group)
     {
-        ArgumentNullException.ThrowIfNull(panel);
-        ThrowIfFrozen();
-        if (TryAccept(panel.Id, !IsBlank(panel.Title.Text) && panel.CreateViewModel is not null, "a title and a view model factory", panels.Select(p => p.Id)))
+        CommandDescriptor[] commands = [.. AllGroups().SelectMany(g => g.Commands)];
+        int index = commands.Count(command => command.Handler is ShowPanelCommandHandler);
+        foreach (PanelDescriptor panel in group.Panels.ToArray())
         {
-            panels.Add(panel);
-        }
-    }
-
-    /// <inheritdoc/>
-    public void AddDashboardTile(DashboardTileDescriptor tile)
-    {
-        ArgumentNullException.ThrowIfNull(tile);
-        ThrowIfFrozen();
-        if (TryAccept(tile.Id, !IsBlank(tile.Title.Text) && tile.CreateViewModel is not null, "a title and a view model factory", tiles.Select(t => t.Id)))
-        {
-            tiles.Add(tile);
-        }
-    }
-
-    /// <summary>Adds a status bar item; an invalid or duplicate one is ignored.</summary>
-    /// <param name="item">The item.</param>
-    /// <exception cref="InvalidOperationException">The registry is frozen.</exception>
-    public void AddStatusBarItem(StatusBarItemDescriptor item)
-    {
-        ArgumentNullException.ThrowIfNull(item);
-        ThrowIfFrozen();
-        if (TryAccept(item.Id, item.CreateViewModel is not null, "a view model factory", statusBarItems.Select(s => s.Id)))
-        {
-            statusBarItems.Add(item);
-        }
-    }
-
-    /// <summary>Adds a dialog; an invalid or duplicate one is ignored.</summary>
-    /// <param name="dialog">The dialog.</param>
-    /// <exception cref="InvalidOperationException">The registry is frozen.</exception>
-    public void AddDialog(DialogDescriptor dialog)
-    {
-        ArgumentNullException.ThrowIfNull(dialog);
-        ThrowIfFrozen();
-        if (TryAccept(dialog.Id, !IsBlank(dialog.Title.Text) && dialog.CreateViewModel is not null, "a title and a view model factory", dialogs.Select(d => d.Id)))
-        {
-            dialogs.Add(dialog);
-        }
-    }
-
-    /// <summary>Adds a settings page; an invalid or duplicate one is ignored.</summary>
-    /// <param name="page">The page.</param>
-    /// <exception cref="InvalidOperationException">The registry is frozen.</exception>
-    public void AddSettingsPage(SettingsPageDescriptor page)
-    {
-        ArgumentNullException.ThrowIfNull(page);
-        ThrowIfFrozen();
-        if (TryAccept(page.Id, !IsBlank(page.Title.Text), "a title", settingsPages.Select(p => p.Id)))
-        {
-            settingsPages.Add(page);
-        }
-    }
-
-    /// <inheritdoc/>
-    public void AddProjectTemplate(ProjectTemplateDescriptor template)
-    {
-        ArgumentNullException.ThrowIfNull(template);
-        ThrowIfFrozen();
-        if (TryAccept(template.Id, !IsBlank(template.DisplayName.Text) && !IsBlank(template.ProfileId), "a display name and a profile id", templates.Select(t => t.Id)))
-        {
-            templates.Add(template);
-        }
-    }
-
-    /// <inheritdoc/>
-    public void AddContextMenuItem(ContextMenuItemDescriptor item)
-    {
-        ArgumentNullException.ThrowIfNull(item);
-        ThrowIfFrozen();
-        if (!ContextMenuTargets.HasSurface(item.Target))
-        {
-            Report(ContributionIssueKind.InvalidDescriptor, item.Id, $"No view opens a {item.Target} context menu yet, so the item would never be shown.");
-        }
-        else if (TryAccept(item.Id, ContributionIds.IsValid(item.CommandId) && item.Group is not null, "a valid command id and a group", menuItems.Select(m => m.Id)))
-        {
-            menuItems.Add(item);
-        }
-    }
-
-    /// <inheritdoc/>
-    public void AddTooltipProvider(ITooltipProvider provider)
-    {
-        ArgumentNullException.ThrowIfNull(provider);
-        ThrowIfFrozen();
-        tooltipProviders.Add(provider);
-    }
-
-    /// <inheritdoc/>
-    public void AddGoToProvider(IGoToProvider provider)
-    {
-        ArgumentNullException.ThrowIfNull(provider);
-        ThrowIfFrozen();
-        goToProviders.Add(provider);
-    }
-
-    /// <inheritdoc/>
-    public void Freeze()
-    {
-        if (IsFrozen)
-        {
-            return;
-        }
-
-        int index = 0;
-        foreach (PanelDescriptor panel in panels.ToArray())
-        {
-            if (!commands.Exists(command => command.Handler is ShowPanelCommandHandler { PanelId: var shown } && shown == panel.Id))
+            if (!commands.Any(command => command.Handler is ShowPanelCommandHandler { PanelId: var shown } && shown == panel.Id))
             {
-                As(owners.GetValueOrDefault(panel.Id, currentOwner), () => AddCommand(new CommandDescriptor(
+                As(group, group.Owners.GetValueOrDefault(panel.Id, currentOwner), () => AcceptCommand(new CommandDescriptor(
                     ContributionIds.CommandPrefix + "showPanel." + panel.Id,
                     panel.Title,
                     new ShowPanelCommandHandler(panel.Id),
                     IconId: panel.IconId,
                     Menu: new MenuPlacement(ViewContributions.MenuName, ViewContributions.PanelsGroup, UnlistedPanelOrder + index++))));
             }
-        }
-
-        IsFrozen = true;
-    }
-
-    private static bool IsBlank(string? text) => string.IsNullOrWhiteSpace(text);
-
-    private static bool ScopesOverlap(CommandScope a, CommandScope b) =>
-        a == CommandScope.Global || b == CommandScope.Global || (a & b) != 0;
-
-    private void ThrowIfFrozen()
-    {
-        if (IsFrozen)
-        {
-            throw new InvalidOperationException("The contribution registry is frozen.");
         }
     }
 
@@ -351,13 +409,70 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
             return false;
         }
 
-        owners[id] = currentOwner;
+        Target.Owners[id] = currentOwner;
         return true;
     }
 
     private void Report(ContributionIssueKind kind, string id, string message)
     {
-        issues.Add(new ContributionIssue(kind, id, currentOwner, message));
+        Target.Issues.Add(new ContributionIssue(kind, id, currentOwner, message));
         Log.ContributionIssue(logger, kind, id, currentOwner, message);
+    }
+
+    private sealed class SessionBuilder(ContributionRegistry registry, ContributionGroup group) : IContributionGroupBuilder
+    {
+        public IEditorContributions For(string owner, string? ownerName = null)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(owner);
+            return new OwnerFacet(registry, group, owner, ownerName);
+        }
+
+        public void AddProjectTemplate(ProjectTemplateDescriptor template, string? owner = null) =>
+            registry.As(group, owner ?? ContributionIds.Owner, () => registry.AddProjectTemplate(template));
+    }
+
+    private sealed class OwnerFacet : IEditorContributions
+    {
+        private readonly ContributionRegistry registry;
+        private readonly ContributionGroup group;
+        private readonly string owner;
+
+        public OwnerFacet(ContributionRegistry registry, ContributionGroup group, string owner, string? ownerName)
+        {
+            this.registry = registry;
+            this.group = group;
+            this.owner = owner;
+            if (ownerName is not null)
+            {
+                group.OwnerNames[owner] = ownerName;
+                registry.snapshot = null;
+            }
+        }
+
+        public IEditorContributions AddCommand(CommandDescriptor command) => Forward(() => registry.AddCommand(command));
+
+        public IEditorContributions AddPanel(PanelDescriptor panel) => Forward(() => registry.AddPanel(panel));
+
+        public IEditorContributions AddDashboardTile(DashboardTileDescriptor tile) => Forward(() => registry.AddDashboardTile(tile));
+
+        public IEditorContributions AddContextMenuItem(ContextMenuItemDescriptor item) => Forward(() => registry.AddContextMenuItem(item));
+
+        public IEditorContributions AddTooltipProvider(ITooltipProvider provider) => Forward(() => registry.AddTooltipProvider(provider));
+
+        public IEditorContributions AddGoToProvider(IGoToProvider provider) => Forward(() => registry.AddGoToProvider(provider));
+
+        public IEditorContributions AddStatusBarItem(StatusBarItemDescriptor item) => Forward(() => registry.AddStatusBarItem(item));
+
+        public IEditorContributions AddDialog(DialogDescriptor dialog) => Forward(() => registry.AddDialog(dialog));
+
+        public IEditorContributions AddSettingsPage(SettingsPageDescriptor page) => Forward(() => registry.AddSettingsPage(page));
+
+        public IEditorContributions AddViewResources(string resourceUri) => Forward(() => registry.AddViewResources(owner, resourceUri));
+
+        private OwnerFacet Forward(Action add)
+        {
+            registry.As(group, owner, add);
+            return this;
+        }
     }
 }
