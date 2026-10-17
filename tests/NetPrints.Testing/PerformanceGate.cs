@@ -31,6 +31,22 @@ namespace NetPrints.Testing
         /// <summary>Whether the gate is judged in this run.</summary>
         public static bool Strict => Environment.GetEnvironmentVariable(StrictVariable) == "1";
 
+        /// <summary>Whether this run is on a GitHub Actions runner.</summary>
+        public static bool OnCi => Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true";
+
+        /// <summary>Picks the baseline ratio of this machine kind: the one measured on the CI runner on CI, the local one elsewhere.</summary>
+        /// <param name="local">The ratio measured on the development machine.</param>
+        /// <param name="ci">The ratio measured on the CI runner.</param>
+        /// <returns>The ratio to compare with.</returns>
+        public static double Baseline(double local, double ci) => Baseline(local, ci, OnCi);
+
+        /// <summary>Picks <paramref name="ci"/> when <paramref name="onCi"/> is set, <paramref name="local"/> otherwise.</summary>
+        /// <param name="local">The ratio measured on the development machine.</param>
+        /// <param name="ci">The ratio measured on the CI runner.</param>
+        /// <param name="onCi">Whether the run is on the CI runner.</param>
+        /// <returns>The ratio to compare with.</returns>
+        public static double Baseline(double local, double ci, bool onCi) => onCi ? ci : local;
+
         /// <summary>The CPU model of this machine (the first <c>model name</c> of <c>/proc/cpuinfo</c> on Linux), or the architecture and core count.</summary>
         public static string CpuModel { get; } = ReadCpuModel();
 

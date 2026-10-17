@@ -23,7 +23,7 @@ public class ShellStartupPerformanceTests
 {
     private const int Runs = 6;
 
-    private const double BaselineRatio = 4.75;
+    private static readonly double BaselineRatio = PerformanceGate.Baseline(local: 4.75, ci: 4.75);
 
     private const int CompositionBudgetMilliseconds = 150;
 

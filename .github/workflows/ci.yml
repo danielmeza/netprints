@@ -283,11 +283,13 @@ jobs:
         env:
           NETPRINTS_PERF_STRICT: 1
         run: |
+          status=0
           for project in NetPrints.Core.Tests NetPrints.Catalog.Tests NetPrints.Editor.Tests NetPrints.Editor.UITests; do
             dotnet test --project tests/$project -c Release --no-build \
               --report-xunit-trx --results-directory TestResults \
-              -- --filter-trait "Category=Performance" --ignore-exit-code 8
+              -- --filter-trait "Category=Performance" --ignore-exit-code 8 || status=1
           done
+          exit $status
 
       - name: Upload test results
         if: always()

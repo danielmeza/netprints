@@ -35,6 +35,13 @@ public sealed class PerformanceGateTests
     }
 
     [Fact]
+    public void TheBaselineComesFromTheMachineKindTheRunIsOn()
+    {
+        Assert.Equal(1.0, PerformanceGate.Baseline(1.0, 1.1, onCi: false));
+        Assert.Equal(1.1, PerformanceGate.Baseline(1.0, 1.1, onCi: true));
+    }
+
+    [Fact]
     public void TheMedianIsTheMiddleValue()
     {
         Assert.Equal(3, PerformanceGate.Median([5, 1, 3, 100, 2]));

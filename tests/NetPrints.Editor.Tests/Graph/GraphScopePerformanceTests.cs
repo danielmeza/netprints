@@ -24,7 +24,7 @@ public sealed class GraphScopePerformanceTests(TestEditor editor)
     private const int Runs = 5;
     private const double BaselineBytesPerNode = 35_080;
     private const double AllocationTolerance = 1.10;
-    private const double BaselineRatio = 0.954;
+    private static readonly double BaselineRatio = PerformanceGate.Baseline(local: 0.954, ci: 1.09);
 
     [Fact(Timeout = 300_000)]
     [Trait("Category", "Performance")]
