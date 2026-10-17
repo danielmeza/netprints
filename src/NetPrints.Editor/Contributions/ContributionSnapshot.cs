@@ -20,7 +20,8 @@ public sealed class ContributionSnapshot : IContributionSnapshot
         ContextMenuItems = [.. groups.SelectMany(group => group.MenuItems)];
         TooltipProviders = [.. groups.SelectMany(group => group.TooltipProviders)];
         GoToProviders = [.. groups.SelectMany(group => group.GoToProviders)];
-        Issues = [.. groups.SelectMany(group => group.Issues)];
+        UnknownReferences = FindUnknownReferences(groups);
+        Issues = [.. groups.SelectMany(group => group.Issues), .. UnknownReferences];
         ViewResources = [.. groups.SelectMany(group => group.ViewResources)];
         SessionKeys = [.. groups.Select(group => group.Key).OfType<string>()];
         owners = Merge(groups.Select(group => group.Owners));
@@ -60,6 +61,9 @@ public sealed class ContributionSnapshot : IContributionSnapshot
     /// <inheritdoc/>
     public IReadOnlyList<ContributionIssue> Issues { get; }
 
+    /// <summary>Gets the issues of contributions that name an id nothing registered; they are part of <see cref="Issues"/>.</summary>
+    internal IReadOnlyList<ContributionIssue> UnknownReferences { get; }
+
     /// <inheritdoc/>
     public IReadOnlyList<ViewResourceDeclaration> ViewResources { get; }
 
@@ -79,6 +83,29 @@ public sealed class ContributionSnapshot : IContributionSnapshot
         }
 
         return ownerNames.GetValueOrDefault(owner, owner);
+    }
+
+    private ImmutableArray<ContributionIssue> FindUnknownReferences(IReadOnlyList<ContributionGroup> groups)
+    {
+        HashSet<string> commandIds = [.. Commands.Select(command => command.Id)];
+        HashSet<string> pageIds = [.. SettingsPages.Select(page => page.Id)];
+        ImmutableArray<ContributionIssue>.Builder found = ImmutableArray.CreateBuilder<ContributionIssue>();
+        foreach (ContributionGroup group in groups)
+        {
+            foreach (ContextMenuItemDescriptor item in group.MenuItems.Where(item => !commandIds.Contains(item.CommandId)))
+            {
+                found.Add(new ContributionIssue(ContributionIssueKind.UnknownReference, item.Id, group.Owners.GetValueOrDefault(item.Id, ContributionIds.Owner),
+                    $"The context menu item names the command '{item.CommandId}', which nothing registered."));
+            }
+
+            foreach (SettingsPageDescriptor page in group.SettingsPages.Where(page => page.ParentPageId is { } parent && !pageIds.Contains(parent)))
+            {
+                found.Add(new ContributionIssue(ContributionIssueKind.UnknownReference, page.Id, group.Owners.GetValueOrDefault(page.Id, ContributionIds.Owner),
+                    $"The settings page names the parent page '{page.ParentPageId}', which nothing registered."));
+            }
+        }
+
+        return found.ToImmutable();
     }
 
     private static ImmutableDictionary<string, string> Merge(IEnumerable<Dictionary<string, string>> parts)

@@ -510,6 +510,23 @@ internal sealed class ProjectLoader : IDisposable
             }
         }
 
+        foreach (Contributions.ContributionIssue issue in shell.Registry.Issues.Where(issue => issue.Owner != Contributions.ContributionIds.Owner && issue.Owner != Contributions.BuiltIn.BuiltInContributions.OwnerId))
+        {
+            string code = issue.Kind switch
+            {
+                Contributions.ContributionIssueKind.DuplicateId => ExtensionDiagnosticCodes.DuplicateId,
+                Contributions.ContributionIssueKind.GestureConflict => ExtensionDiagnosticCodes.GestureConflict,
+                Contributions.ContributionIssueKind.UnknownReference => ExtensionDiagnosticCodes.UnknownReference,
+                _ => ExtensionDiagnosticCodes.ContributionRejected,
+            };
+            if (reportedExtensionFailures.Add((issue.Owner, issue.Id, code)))
+            {
+                string name = registry.Loaded.FirstOrDefault(manifest => manifest.Id == issue.Owner)?.Name ?? issue.Owner;
+                diagnostics.Add(new CodeDiagnostic(CodeDiagnosticSeverity.Warning, code,
+                    $"Extension '{name}': {issue.Message} ({issue.Id})", null, null, null, null, null));
+            }
+        }
+
         return diagnostics.Count == 0
             ? Task.CompletedTask
             : context.Dialogs.ShowIssuesAsync("Extensions failed to load", diagnostics);

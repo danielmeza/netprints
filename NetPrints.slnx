@@ -39,11 +39,13 @@
     <Project Path="tests/Fixtures/Extensions/Fx.Catalog/Fx.Catalog.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.Diamond/Fx.Diamond.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.Editor/Fx.Editor.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Fx.Faulty/Fx.Faulty.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.HostConflict/Fx.HostConflict.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.LibV1/Fx.LibV1.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.LibV2/Fx.LibV2.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.Native/Fx.Native.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.PrefixedPrivate/Fx.PrefixedPrivate.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Fx.RegisterFault/Fx.RegisterFault.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.TransitiveConflict/Fx.TransitiveConflict.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.TypesConsumer/Fx.TypesConsumer.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.TypesProvider/Fx.TypesProvider.csproj" />

@@ -3,6 +3,7 @@
                x:Class="NetPrints.Editor.BuiltInViews"
                xmlns:ed="clr-namespace:NetPrints.Editor"
                xmlns:docking="clr-namespace:NetPrints.Editor.Shell.Docking"
+               xmlns:edcontributions="clr-namespace:NetPrints.Editor.Contributions"
                xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
                xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
                xmlns:ednav="clr-namespace:NetPrints.Editor.Navigation"
@@ -32,6 +33,9 @@
         </Style>
       </ContentControl.Styles>
     </ContentControl>
+  </DataTemplate>
+  <DataTemplate DataType="edcontributions:ContributionErrorViewModel" x:DataType="edcontributions:ContributionErrorViewModel">
+    <edcontributions:ContributionErrorView />
   </DataTemplate>
   <DataTemplate DataType="shell:GraphDocumentViewModel" x:DataType="shell:GraphDocumentViewModel">
     <Grid>

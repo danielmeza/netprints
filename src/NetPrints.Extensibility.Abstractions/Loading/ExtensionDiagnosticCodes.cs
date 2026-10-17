@@ -29,6 +29,12 @@ public static class ExtensionDiagnosticCodes
     /// <summary>A dependency provides an older version of an assembly than the extension was built against.</summary>
     public const string DependencyVersion = "NPX008";
 
+    /// <summary>Two commands asked for the same gesture in overlapping scopes; the first registration keeps it.</summary>
+    public const string GestureConflict = "NPX009";
+
+    /// <summary>A contributed handler, provider or view model factory threw while the editor ran it; its result is skipped, and the failure is logged once per provider and session.</summary>
+    public const string ProviderFailed = "NPX011";
+
     /// <summary>A contribution names an id that nothing registered, such as an icon id without a geometry in any view resources; a fallback is used.</summary>
     public const string UnknownReference = "NPX010";
 

@@ -41,6 +41,7 @@
     <ProjectReference Include="..\NetPrints.Testing.Ui\NetPrints.Testing.Ui.csproj" />
     <!-- Built first, never referenced: tests load the fx.views extension from its own output folder. -->
     <ProjectReference Include="..\Fixtures\Extensions\Fx.Views\Fx.Views.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.Faulty\Fx.Faulty.csproj" ReferenceOutputAssembly="false" />
     <!-- Built first, never referenced: the compile-and-run scenarios build a temp project against the generator's own output folder. -->
     <ProjectReference Include="..\..\src\NetPrints.Generator\NetPrints.Generator.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>

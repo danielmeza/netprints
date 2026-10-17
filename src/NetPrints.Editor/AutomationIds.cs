@@ -1122,4 +1122,14 @@ public static class AutomationIds
     /// Automation id for the Cancel button of the New project dialog.
     /// </summary>
     public const string NewProjectCancel = "NewProject.Cancel";
+
+    /// <summary>
+    /// Automation id for the placeholder that stands in for a contribution whose extension threw while building it.
+    /// </summary>
+    public const string ContributionError = "Contribution.Error";
+
+    /// <summary>
+    /// Automation id for the message of the extension's exception, under the placeholder's sentence.
+    /// </summary>
+    public const string ContributionErrorDetail = "Contribution.Error.Detail";
 }

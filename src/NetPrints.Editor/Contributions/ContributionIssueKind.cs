@@ -11,4 +11,7 @@ public enum ContributionIssueKind
 
     /// <summary>The descriptor failed validation and was ignored.</summary>
     InvalidDescriptor,
+
+    /// <summary>A contribution names an id nothing registered, such as a context-menu item whose command does not exist; the contribution has no effect.</summary>
+    UnknownReference,
 }

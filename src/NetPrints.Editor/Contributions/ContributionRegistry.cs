@@ -30,6 +30,8 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
     private readonly ContributionGroup appGroup = new(null);
     private readonly List<ContributionGroup> sessions = [];
     private ContributionGroup? target;
+    private readonly ContributionGuard guard = new(logger);
+    private readonly HashSet<string> loggedReferences = new(StringComparer.Ordinal);
     private ContributionSnapshot? snapshot;
     private bool published;
     private int batching;
@@ -39,7 +41,19 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
     public event EventHandler<ContributionSnapshot>? Changed;
 
     /// <inheritdoc/>
-    public ContributionSnapshot Snapshot => snapshot ??= new ContributionSnapshot(AllGroups());
+    public ContributionSnapshot Snapshot
+    {
+        get
+        {
+            if (snapshot is null)
+            {
+                snapshot = new ContributionSnapshot(AllGroups());
+                LogUnknownReferences(snapshot);
+            }
+
+            return snapshot;
+        }
+    }
 
     /// <inheritdoc/>
     public IReadOnlyList<ViewResourceDeclaration> ViewResources => Snapshot.ViewResources;
@@ -157,7 +171,7 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
         ArgumentNullException.ThrowIfNull(panel);
         if (TryAccept(panel.Id, !IsBlank(panel.Title.Text) && panel.CreateViewModel is not null, "a title and a view model factory", Ids(group => group.Panels.Select(p => p.Id))))
         {
-            Target.Panels.Add(panel);
+            Target.Panels.Add(FromExtension && panel.CreateViewModel is { } create ? panel with { CreateViewModel = guard.Factory(create, "the panel " + panel.Id, OwnerName()) } : panel);
             if (published && Target == appGroup)
             {
                 AddShowPanelCommands(appGroup);
@@ -173,7 +187,7 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
         ArgumentNullException.ThrowIfNull(tile);
         if (TryAccept(tile.Id, !IsBlank(tile.Title.Text) && tile.CreateViewModel is not null, "a title and a view model factory", Ids(group => group.Tiles.Select(t => t.Id))))
         {
-            Target.Tiles.Add(tile);
+            Target.Tiles.Add(FromExtension && tile.CreateViewModel is { } create ? tile with { CreateViewModel = guard.Factory(create, "the tile " + tile.Id, OwnerName()) } : tile);
         }
 
         Publish();
@@ -186,7 +200,13 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
         ArgumentNullException.ThrowIfNull(item);
         if (TryAccept(item.Id, item.CreateViewModel is not null, "a view model factory", Ids(group => group.StatusBarItems.Select(s => s.Id))))
         {
-            Target.StatusBarItems.Add(item);
+            Target.StatusBarItems.Add(FromExtension && item.CreateViewModel is { } create
+                ? item with
+                {
+                    CreateViewModel = guard.Factory(create, "the status bar item " + item.Id, OwnerName()),
+                    AppliesTo = guard.Predicate(item.AppliesTo, "the status bar item " + item.Id, OwnerName()),
+                }
+                : item);
         }
 
         Publish();
@@ -199,7 +219,7 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
         ArgumentNullException.ThrowIfNull(dialog);
         if (TryAccept(dialog.Id, !IsBlank(dialog.Title.Text) && dialog.CreateViewModel is not null, "a title and a view model factory", Ids(group => group.Dialogs.Select(d => d.Id))))
         {
-            Target.Dialogs.Add(dialog);
+            Target.Dialogs.Add(FromExtension && dialog.CreateViewModel is { } create ? dialog with { CreateViewModel = guard.Factory(create, "the dialog " + dialog.Id, OwnerName()) } : dialog);
         }
 
         Publish();
@@ -212,7 +232,9 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
         ArgumentNullException.ThrowIfNull(page);
         if (TryAccept(page.Id, !IsBlank(page.Title.Text), "a title", Ids(group => group.SettingsPages.Select(p => p.Id))))
         {
-            Target.SettingsPages.Add(page);
+            Target.SettingsPages.Add(FromExtension && page.CreateViewModel is { } create
+                ? page with { CreateViewModel = guard.Factory(create, "the settings page " + page.Id, OwnerName()) }
+                : page);
         }
 
         Publish();
@@ -240,7 +262,7 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
         }
         else if (TryAccept(item.Id, ContributionIds.IsValid(item.CommandId) && item.Group is not null, "a valid command id and a group", Ids(group => group.MenuItems.Select(m => m.Id))))
         {
-            Target.MenuItems.Add(item);
+            Target.MenuItems.Add(FromExtension ? item with { AppliesTo = guard.Predicate(item.AppliesTo, "the context menu item " + item.Id, OwnerName()) } : item);
         }
 
         Publish();
@@ -250,7 +272,7 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
     public void AddTooltipProvider(ITooltipProvider provider)
     {
         ArgumentNullException.ThrowIfNull(provider);
-        Target.TooltipProviders.Add(provider);
+        Target.TooltipProviders.Add(FromExtension ? guard.Tooltips(provider, OwnerName()) : provider);
         Publish();
     }
 
@@ -258,7 +280,7 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
     public void AddGoToProvider(IGoToProvider provider)
     {
         ArgumentNullException.ThrowIfNull(provider);
-        Target.GoToProviders.Add(provider);
+        Target.GoToProviders.Add(FromExtension ? guard.GoTo(provider, OwnerName()) : provider);
         Publish();
     }
 
@@ -369,7 +391,38 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
             }
         }
 
-        Target.Commands.Add(command.DefaultGestures is null || kept.Count == command.DefaultGestures.Count ? command : command with { DefaultGestures = kept });
+        CommandDescriptor accepted = command.DefaultGestures is null || kept.Count == command.DefaultGestures.Count ? command : command with { DefaultGestures = kept };
+        if (FromExtension && accepted.Handler is not IEditorCommandHandler)
+        {
+            accepted = accepted with { Handler = guard.Command(accepted.Handler, accepted.Id, OwnerName()) };
+        }
+
+        Target.Commands.Add(accepted);
+    }
+
+    private bool FromExtension => currentOwner != ContributionIds.Owner && currentOwner != BuiltInContributions.OwnerId;
+
+    private Func<string> OwnerName()
+    {
+        ContributionGroup group = Target;
+        string owner = currentOwner;
+        return () => group.OwnerNames.GetValueOrDefault(owner, owner);
+    }
+
+    private void LogUnknownReferences(ContributionSnapshot built)
+    {
+        if (!published)
+        {
+            return;
+        }
+
+        foreach (ContributionIssue issue in built.UnknownReferences)
+        {
+            if (issue.Owner != ContributionIds.Owner && issue.Owner != BuiltInContributions.OwnerId && loggedReferences.Add(issue.Owner + "|" + issue.Id))
+            {
+                Log.ContributionIssue(logger, issue.Kind, issue.Id, issue.Owner, issue.Message);
+            }
+        }
     }
 
     private void AddShowPanelCommands(ContributionGroup group)

@@ -175,7 +175,9 @@ Extension codes are also described in [Extensions](extensions.md).
 | NPX006 | warning | A contribution was rejected because of a conflict or inconsistency; the extension stays loaded. |
 | NPX007 | error | The extension assembly is missing or could not be loaded. |
 | NPX008 | error | The host or a dependency provides an older version of an assembly than the extension, or a private library it ships, was built against. |
+| NPX009 | warning | Two commands asked for the same gesture in overlapping scopes; the first registration keeps it. |
 | NPX010 | warning | A contribution names an id nothing registered; for an icon id, the editor draws the fallback glyph. |
+| NPX011 | warning | A contributed handler, provider or view model factory threw while the editor ran it; its result is skipped and the failure is logged once per provider and session. |
 | NPX012 | info | A project's extension has the same id as one in the user extension directories; the project's copy serves the session and the message names both versions. |
 | NPX013 | warning | A contributed id (for now a node search provider's) does not start with the manifest id of the extension that contributed it; the contribution is dropped. |
 

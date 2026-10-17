@@ -1,0 +1,15 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
+             xmlns:edcontributions="clr-namespace:NetPrints.Editor.Contributions"
+             x:Class="NetPrints.Editor.Contributions.ContributionErrorView"
+             x:DataType="edcontributions:ContributionErrorViewModel">
+  <!-- Stands in for a contribution whose extension threw while building it; the rest of the surface renders as usual. -->
+  <StackPanel AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ContributionError}" AutomationProperties.Name="{Binding Title}">
+    <ctl:EmptyState IconId="{x:Static icons:IconIds.DialogWarning}" Message="{Binding Title}" />
+    <TextBlock Classes="secondary" Text="{Binding Message}" TextWrapping="Wrap"
+               AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ContributionErrorDetail}" />
+  </StackPanel>
+</UserControl>

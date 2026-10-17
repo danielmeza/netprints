@@ -303,4 +303,10 @@
   <data name="Template.netprints.template.library.Description" xml:space="preserve">
     <value>A library with no entry point and no classes yet.</value>
   </data>
+  <data name="ContributionError.Title" xml:space="preserve">
+    <value>The extension {0} could not show {1}.</value>
+  </data>
+  <data name="ContributionError.HandlerFailed" xml:space="preserve">
+    <value>The extension {0} failed while running {1}: {2}</value>
+  </data>
 </root>
