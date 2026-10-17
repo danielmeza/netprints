@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
@@ -27,18 +28,21 @@ public sealed record EditorSettings
 
     /// <summary>Gets the theme the editor starts in and View › Theme switches.</summary>
     [EnumDataType(typeof(EditorTheme))]
+    [Description("The theme variant the editor starts in")]
     public EditorTheme Theme { get; init; } = EditorTheme.Dark;
 
     /// <summary>Gets the id of the preset the Dark variant uses.</summary>
     [MinLength(1)]
     [RegularExpression(PresetIdPattern)]
     [SettingChoices(DarkPresetChoices)]
+    [Description("The id of the preset the Dark variant uses")]
     public string DarkPreset { get; init; } = DefaultDarkPreset;
 
     /// <summary>Gets the id of the preset the Light variant uses.</summary>
     [MinLength(1)]
     [RegularExpression(PresetIdPattern)]
     [SettingChoices(LightPresetChoices)]
+    [Description("The id of the preset the Light variant uses")]
     public string LightPreset { get; init; } = DefaultLightPreset;
 
     /// <summary>Gets the descriptor that reads and writes the section through the settings store.</summary>

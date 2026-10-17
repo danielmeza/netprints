@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "netprints": {
+    "enableAnimations": false,
+    "extensionPaths": [
+      "/opt/netprints/extensions"
+    ],
+    "language": "es-MX",
+    "trustedProjects": [
+      "/work/app/App.csproj"
+    ]
+  },
+  "run": {
+    "linuxTerminal": "kitty -e",
+    "stopTimeoutSeconds": 600
+  },
+  "extensions": {
+    "com.example.unknown": {
+      "anything": true
+    },
+    "netprints.editor": {
+      "darkPreset": "netprints.dark",
+      "lightPreset": "netprints.light",
+      "theme": "light"
+    }
+  }
+}

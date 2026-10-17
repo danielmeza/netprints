@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using NetPrints.Extensibility.Settings;
@@ -44,8 +45,36 @@ public partial class SettingsSchemaTests
         Assert.Equal("fx.levels", (string?)Property("level")["x-netprints-choices"]);
     }
 
+    [Fact]
+    public void RangeWritesMinimumAndMaximum()
+    {
+        JsonObject timeout = Property("timeout");
+
+        Assert.Equal(1, (int?)timeout["minimum"]);
+        Assert.Equal(600, (int?)timeout["maximum"]);
+        Assert.Null(Property("level")["minimum"]);
+    }
+
+    [Fact]
+    public void LengthAndPatternAttributesWriteTheirKeywords()
+    {
+        JsonObject label = Property("label");
+
+        Assert.Equal(2, (int?)label["minLength"]);
+        Assert.Equal(40, (int?)label["maxLength"]);
+        Assert.Equal("^[a-z]+$", (string?)label["pattern"]);
+    }
+
     internal sealed record FxSettings
     {
+        [Range(1, 600)]
+        public int Timeout { get; init; } = 5;
+
+        [MinLength(2)]
+        [StringLength(40)]
+        [RegularExpression("^[a-z]+$")]
+        public string Label { get; init; } = "ab";
+
         [RequiresRestart]
         [SettingPath(PathKind.Folder)]
         [Description("Where the cache lives.")]

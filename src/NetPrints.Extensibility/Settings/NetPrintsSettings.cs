@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using NetPrints.Core;
@@ -18,23 +19,31 @@ public sealed record NetPrintsSettings
     /// Directories searched for extensions; each immediate subfolder holding a manifest is loaded.
     /// </summary>
     [NonBlankItems]
+    [RequiresRestart]
+    [SettingPath(PathKind.Folder)]
+    [Description("Folders searched for extensions. Each subfolder that holds a manifest is loaded at the next start")]
     public IReadOnlyList<string> ExtensionPaths { get; init; } = [];
 
     /// <summary>
     /// Full <c>.csproj</c> paths whose <c>NetPrintsExtension</c> items the user allowed.
     /// </summary>
     [NonBlankItems]
+    [SettingPath(PathKind.File)]
+    [Description("Project files whose extensions you allowed to load")]
     public IReadOnlyList<string> TrustedProjects { get; init; } = [];
 
     /// <summary>
     /// Whether to enable UI animations (disable for accessibility/Reduced Motion).
     /// </summary>
+    [Description("Turns the interface animations on. Turn them off to reduce motion")]
     public bool EnableAnimations { get; init; } = true;
 
     /// <summary>
     /// The UI language as a culture name such as <c>es-MX</c>; empty means the operating system's culture. A change applies after a restart.
     /// </summary>
     [CultureName]
+    [RequiresRestart]
+    [Description("The interface language as a culture name such as es-MX. Empty uses the system language")]
     public string Language { get; init; } = "";
 
     /// <summary>

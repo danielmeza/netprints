@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
@@ -25,11 +26,13 @@ public sealed record RunSettings
     /// Seconds a stopped program gets to exit before its process tree is killed.
     /// </summary>
     [Range(MinStopTimeoutSeconds, MaxStopTimeoutSeconds)]
+    [Description("Seconds a stopped program has to exit before its process tree is killed")]
     public int StopTimeoutSeconds { get; init; } = 5;
 
     /// <summary>
     /// The terminal command that hosts "Run in external terminal" on Linux; empty detects one.
     /// </summary>
+    [Description("Linux only: the terminal command that hosts a run in an external terminal. Empty detects one")]
     [StringLength(MaxLinuxTerminalLength)]
     [RegularExpression(NoControlCharacters)]
     public string LinuxTerminal { get; init; } = "";

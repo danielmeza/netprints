@@ -1,4 +1,6 @@
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Reflection;
 using System.Text.Json.Nodes;
 using System.Text.Json.Schema;
@@ -30,8 +32,38 @@ public static class SettingsSchema
     public static JsonNode Export(JsonTypeInfo typeInfo)
     {
         ArgumentNullException.ThrowIfNull(typeInfo);
-        var options = new JsonSchemaExporterOptions { TransformSchemaNode = Transform };
+        var options = new JsonSchemaExporterOptions { TreatNullObliviousAsNonNullable = true, TransformSchemaNode = Transform };
         return JsonSchemaExporter.GetJsonSchemaAsNode(typeInfo, options);
+    }
+
+    private static void WriteConstraints(ICustomAttributeProvider provider, JsonObject obj)
+    {
+        if (provider.GetCustomAttributes(typeof(RangeAttribute), true).OfType<RangeAttribute>().FirstOrDefault() is { } range
+            && range.Minimum is IConvertible minimum && range.Maximum is IConvertible maximum)
+        {
+            bool whole = range.OperandType == typeof(int);
+            obj["minimum"] = whole ? JsonValue.Create(minimum.ToInt32(CultureInfo.InvariantCulture)) : JsonValue.Create(minimum.ToDouble(CultureInfo.InvariantCulture));
+            obj["maximum"] = whole ? JsonValue.Create(maximum.ToInt32(CultureInfo.InvariantCulture)) : JsonValue.Create(maximum.ToDouble(CultureInfo.InvariantCulture));
+        }
+
+        if (provider.GetCustomAttributes(typeof(MinLengthAttribute), true).OfType<MinLengthAttribute>().FirstOrDefault() is { } minLength)
+        {
+            obj["minLength"] = minLength.Length;
+        }
+
+        if (provider.GetCustomAttributes(typeof(StringLengthAttribute), true).OfType<StringLengthAttribute>().FirstOrDefault() is { } stringLength)
+        {
+            obj["maxLength"] = stringLength.MaximumLength;
+            if (stringLength.MinimumLength > 0)
+            {
+                obj["minLength"] = stringLength.MinimumLength;
+            }
+        }
+
+        if (provider.GetCustomAttributes(typeof(RegularExpressionAttribute), true).OfType<RegularExpressionAttribute>().FirstOrDefault() is { } pattern)
+        {
+            obj["pattern"] = pattern.Pattern;
+        }
     }
 
     private static JsonNode Transform(JsonSchemaExporterContext context, JsonNode schema)
@@ -46,6 +78,8 @@ public static class SettingsSchema
         {
             obj[DescriptionKeyword] = description.Description;
         }
+
+        WriteConstraints(provider, obj);
 
         if (provider.IsDefined(typeof(RequiresRestartAttribute), true))
         {
