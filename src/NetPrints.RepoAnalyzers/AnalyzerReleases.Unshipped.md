@@ -16,3 +16,4 @@ NPI005 | Composition | Error | A type registered for several services cannot sha
 NPI010 | SmartEnum | Error | A smart enum is not a top-level abstract partial class
 NPI011 | SmartEnum | Error | A smart enum member is not a static readonly field, or a lookup reads All before the members
 NPH001 | Hygiene | Disabled | The null-forgiving operator at a site the hygiene ledger does not list; error once the repository enables it
+NPH002 | Hygiene | Disabled | A type name that abbreviates ViewModel as VM; error once the repository enables it

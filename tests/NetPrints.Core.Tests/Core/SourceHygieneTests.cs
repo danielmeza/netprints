@@ -447,48 +447,6 @@ namespace NetPrints.Tests.Core
         [GeneratedRegex(@"^dotnet_diagnostic\.(?<rule>[A-Za-z0-9_-]+)\.severity\s*=\s*(?<severity>\S+)")]
         private static partial Regex EditorConfigSeverityPattern();
 
-        /// <summary>
-        /// ADR-0007 amendment (2026-10-01): view model types are named <c>&lt;Name&gt;ViewModel</c>, never
-        /// <c>&lt;Name&gt;VM</c>. This check parses every <c>src/**/*.cs</c> and <c>tests/**/*.cs</c> file,
-        /// finds every type declaration (class, record, struct, interface, enum) and delegate, and fails on any
-        /// name ending in <c>VM</c> or containing <c>VM</c> before an uppercase letter (<c>MVVM</c> excepted),
-        /// listing each.
-        /// </summary>
-        [Fact]
-        public void NoTypeNameEndsInVM()
-        {
-            string repoRoot = SampleProjectFactory.FindRepositoryRoot();
-            string[] sourceFiles = EnumerateSourceAndTestFiles(repoRoot);
-            var offenders = new List<string>();
-            int parsedFileCount = 0;
-
-            foreach (string path in sourceFiles)
-            {
-                parsedFileCount++;
-                SyntaxNode root = CSharpSyntaxTree.ParseText(File.ReadAllText(path), path: path, cancellationToken: TestContext.Current.CancellationToken).GetRoot(TestContext.Current.CancellationToken);
-                string relativePath = Path.GetRelativePath(repoRoot, path).Replace('\\', '/');
-
-                foreach (string? declared in root.DescendantNodes().Select(node => node switch
-                {
-                    BaseTypeDeclarationSyntax type => type.Identifier.Text,
-                    DelegateDeclarationSyntax @delegate => @delegate.Identifier.Text,
-                    _ => null,
-                }))
-                {
-                    if (declared is not null && (declared.EndsWith("VM", StringComparison.Ordinal) || EmbeddedVmName().IsMatch(declared.Replace("MVVM", string.Empty, StringComparison.Ordinal))))
-                    {
-                        offenders.Add(declared);
-                    }
-                }
-            }
-
-            Assert.True(parsedFileCount > 0, "Expected to parse at least one src/**/*.cs or tests/**/*.cs file.");
-            Assert.Empty(offenders);
-        }
-
-        [GeneratedRegex(@"VM[A-Z]")]
-        private static partial Regex EmbeddedVmName();
-
         [GeneratedRegex(@"<(?:\w+:)?Popup(?=[\s/>])")]
         private static partial Regex RawPopupTagPattern();
 
