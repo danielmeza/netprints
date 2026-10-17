@@ -309,4 +309,13 @@
   <data name="ContributionError.HandlerFailed" xml:space="preserve">
     <value>The extension {0} failed while running {1}: {2}</value>
   </data>
+  <data name="Startup.UnknownProfile" xml:space="preserve">
+    <value>The profile '{0}' is not known, so New project shows every template. Known profiles: {1}.</value>
+  </data>
+  <data name="Startup.ProfileIgnored" xml:space="preserve">
+    <value>The profile '{0}' was ignored because a project was given.</value>
+  </data>
+  <data name="NewProject.ProfileNote" xml:space="preserve">
+    <value>Templates for the profile {0}.</value>
+  </data>
 </root>

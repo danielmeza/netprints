@@ -199,7 +199,7 @@ public partial class EditorApp : Application
                 DisableTransitions();
                 var tree = new AutomationTree();
                 tree.Track(window);
-                string? startupProject = desktop.Args is [var single] ? single : null;
+                string? startupProject = Hosting.StartupArguments.Parse(desktop.Args).ProjectPath;
                 AutomationAgent agent;
                 try
                 {

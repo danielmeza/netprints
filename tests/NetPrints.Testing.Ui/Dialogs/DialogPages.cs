@@ -102,6 +102,10 @@ public sealed class NewProjectDialogPage(IUiDriver driver) : UiElement(driver, n
 {
     public UiElement Templates => Find(AutomationIds.NewProjectTemplates);
 
+    public UiElement ShowAll => Find(AutomationIds.NewProjectShowAll);
+
+    public UiElement ProfileNote => Find(AutomationIds.NewProjectProfileNote);
+
     public UiElement NameBox => Find(AutomationIds.NewProjectName);
 
     public UiElement LocationBox => Find(AutomationIds.NewProjectLocation);

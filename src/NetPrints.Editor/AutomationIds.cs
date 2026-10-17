@@ -1089,6 +1089,16 @@ public static class AutomationIds
     public const string NewProjectTemplates = "NewProject.Templates";
 
     /// <summary>
+    /// Automation id for the note that names the profile the New project templates are narrowed to.
+    /// </summary>
+    public const string NewProjectProfileNote = "NewProject.ProfileNote";
+
+    /// <summary>
+    /// Automation id for the switch that shows every template in the New project dialog.
+    /// </summary>
+    public const string NewProjectShowAll = "NewProject.ShowAll";
+
+    /// <summary>
     /// Automation id for the name box of the New project dialog.
     /// </summary>
     public const string NewProjectName = "NewProject.Name";

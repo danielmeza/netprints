@@ -100,15 +100,42 @@ internal sealed class ProjectLoader : IDisposable
     /// </summary>
     /// <param name="args">The command-line arguments.</param>
     /// <returns>A task that completes when the project is open, or at once when there is nothing to open.</returns>
-    public Task OpenStartupProjectAsync(IReadOnlyList<string>? args)
+    public async Task OpenStartupProjectAsync(IReadOnlyList<string>? args)
     {
-        if (args is { Count: 1 } && !string.IsNullOrWhiteSpace(args[0]))
+        var startup = StartupArguments.Parse(args);
+        StartupProfileId = null;
+        if (startup.ProjectPath is { } projectPath)
         {
-            return OpenStartupPathAsync(args[0]);
+            await OpenStartupPathAsync(projectPath).ConfigureAwait(true);
+            if (startup.ProfileGiven)
+            {
+                shell.ShowStatus(TextFormat.Of(Strings.Startup_ProfileIgnored, startup.ProfileId));
+            }
+
+            return;
         }
 
-        return context.StateStore?.LoadStart()?.StartupBehavior == StartupBehavior.ReopenLastProject ? ReopenLastProjectAsync() : Task.CompletedTask;
+        if (startup.ProfileGiven)
+        {
+            IReadOnlyList<string> known = [.. context.Extensions.Current.Profiles.Select(profile => profile.Id)];
+            if (known.Contains(startup.ProfileId, StringComparer.Ordinal))
+            {
+                StartupProfileId = startup.ProfileId;
+            }
+            else
+            {
+                shell.StartPageError = TextFormat.Of(Strings.Startup_UnknownProfile, startup.ProfileId, string.Join(", ", known));
+            }
+        }
+
+        if (context.StateStore?.LoadStart()?.StartupBehavior == StartupBehavior.ReopenLastProject)
+        {
+            await ReopenLastProjectAsync().ConfigureAwait(true);
+        }
     }
+
+    /// <summary>Gets the known profile <c>--profile</c> named for this session, or null; New project filters its templates to it. It is not remembered.</summary>
+    internal string? StartupProfileId { get; private set; }
 
     private async Task ReopenLastProjectAsync()
     {
@@ -203,7 +230,7 @@ internal sealed class ProjectLoader : IDisposable
     public async Task CreateProjectAsync()
     {
         var templates = ProjectTemplateService.Create(shell.Registry, context.Extensions, context.Projects);
-        using var dialog = new NewProjectDialogViewModel(templates, context.FilePicker, locations, TimeProvider.System);
+        using var dialog = new NewProjectDialogViewModel(templates, context.FilePicker, locations, TimeProvider.System, StartupProfileId);
         string? path = await context.Dialogs.ShowNewProjectAsync(dialog).ConfigureAwait(true);
         if (path is null)
         {
