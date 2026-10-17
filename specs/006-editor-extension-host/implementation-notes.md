@@ -677,7 +677,7 @@ T073, local evidence at the C2e head (Release). From here a public shape changes
   none (`14.0` on net10.0), so NPW006 fires only for a keyword the project wrote. A missing `MaxSupportedLangVersion` reads as `MaxKnown`.
 - Decision: "common capabilities" of a multi-targeted project is the minimum version only for now; `CSharpFeature` and the capability intersection
   land with SUG4 (F).
-- Red/green T047: `CSharpTargetTests` red as a compile failure (types absent), 37 of 37 green.
+- Red/green T047: `CSharpTargetTests` red as a compile failure (types absent), 37 of 37 green. A compile failure is not an assertion-level red (CD-26; Batch C-F7).
 - T048: `MsBuildProjectSystem.ReadFrameworkInputs` evaluates every target framework of a multi-targeted project (the first from the existing evaluation, the
   others in throwaway collections) and sets `ProjectSnapshot.CSharpTarget`; fixtures in `tests/Fixtures/CSharpTarget/` (`NoLangVersion`, `Latest`,
   `Preview`, `Pinned10`, `Unknown16`, `MultiTarget` = net10.0;net8.0), linked into the Core and Cli test outputs and copied to a temp folder per test
@@ -731,7 +731,7 @@ T073, local evidence at the C2e head (Release). From here a public shape changes
 - Deviation: the status bar, settings page and dialog contexts exist as interfaces and one host class (`EditorContexts`); their descriptors come with C2.
 - Not owned by T051 or T052: the display of node titles, pin labels, category names and extension resources through the resx. Added as T171 to batch C1f (FR-027).
 - Red/green. T051: `SuggestionProviderTests` (4), `CSharpFeatureTests` (4) and `ExtensionProviderTests` (4) red as compile failures (types absent), green;
-  `NodeHintTests` (4) written with the code (its types did not exist either), green. T052: `TypedContextTests` (4) red as a compile failure, green after
+  `NodeHintTests` (4) written with the code (its types did not exist either), green. These reds were compile failures, not assertion reds (CD-26; Batch C-F7). T052: `TypedContextTests` (4) red as a compile failure, green after
   one failure on an unloaded reflection provider (the test now waits for `ReloadAsync`, as a project open does). `DiagnosticsGuideTests` failed once on the
   missing NPX013 row; the row was added.
 - Suite (Release, solution-wide, `--ignore-exit-code 8`): 4636 total, 4602 passed, 33 skipped, 1 failed (the guide row above, fixed and re-run green).
@@ -763,7 +763,7 @@ T073, local evidence at the C2e head (Release). From here a public shape changes
   133 to 235 ms), 16.55 MB (A3: 16.06 MB, +3%). Run to run noise is about 30%, so the +10% gate waits for the perf job.
 - Red/green: `ARecordIsRegisteredLikeAClass` red then green. `AnInvalidSettingsSectionIsReportedWhenTheEditorComposes` red (assertion, with the composition
   read removed) then green. `TheDoublesReplaceTheGeneratedRegistrations` and `CompositionResolveAllTests` were written before the code and did not compile
-  until it existed; they were not run red.
+  until it existed; they were not run red here. Batch C-F7 ran both red on assertions by breaking the code temporarily (CD-26, below).
 - Suite (Release, solution-wide, `--ignore-exit-code 8`): 4643 total, 4610 passed, 33 skipped, 0 failed. No E2E run.
 
 ## Batch C1f (T171, T055, T056, Checkpoint C1)
@@ -851,7 +851,7 @@ T073, local evidence at the C2e head (Release). From here a public shape changes
 - Red/green. T060: `EditorFacetTests` (Cli.Tests, 2) and the Core.Tests `EditorFacetTests` (4) were written with the types in place and did not compile
   without `IExtensionBuilder.Editor`; no assertion-level red run. T061: the P3a snapshot (`Contributions/Goldens/builtin-registry.txt`) was generated
   from the registry before the refactor (it is unchanged after it); `OwnerOf`, `For` and `ViewResources` tests were red as compile failures.
-  T062: `ExtensionIconTests` (3) red as compile failures, green.
+  T062: `ExtensionIconTests` (3) red as compile failures, green. C2a had no assertion-level red for T060 to T062 (CD-26; Batch C-F7). From C2b on the runs are assertion-red.
 - Suite (Release, solution-wide, `--ignore-exit-code 8`): 4685 total, 33 skipped, 13 failed at the first run: `CommandKeyTests.NothingSwitchesOverTheKeys` (the source path
   moved) and 12 UITests (`ShellAdapterTests`, `DockLayoutRoundTripTests`: `ShellRig` composes no `ShellHost`, so the built-in templates were not
   added; it now applies the registry's view resources). Both classes re-run green (101 and 34 tests); the whole suite was not run again. No E2E run.
@@ -1141,6 +1141,9 @@ to `src/` or `tests/` code in C1a to C2f.
 - CD-27 nit `tests/NetPrints.Editor.Tests/Hosting/CompositionResolveAllTests.cs:75`: the session-scoped template service runs
   in a scope with no project, where the backup services throw (fails fast).
 
+All 27 findings are resolved: fix batches C-F1 to C-F7, plus C-F2b and C-F2c. The last green CI is at eada8ad1 (CI 39032644596,
+CLI Windows 39032644523, Release 39032644552, Docs 39032644486); Batch C-F7 is on top of it.
+
 ## Batch C2f (T074-T076)
 
 Red/green. Every rule's tests were written against an analyzer stub that declares its descriptor and reports nothing, and failed on the
@@ -1380,3 +1383,34 @@ T076, Checkpoint C2, gate items measured on this head (Release).
   `docs/contributing/testing.md` and the spec 005 CI contract row.
 - Full suite (Release, `dotnet test --solution NetPrints.slnx`): 4883 total, 4850 passed, 33 skipped, 0 failed; build 0 warnings; `dotnet format NetPrints.slnx --verify-no-changes` clean;
   `eng/trim-warnings.sh` 9.
+
+## Batch C-F7 (T078, part 7: CD-15 test, CD-16, CD-17, CD-19, CD-23, CD-24, CD-26)
+
+- CD-17 (f671e979): `PackageValidationTests` gained `EveryRecordedSuppressionHasACrossCheck` (every suppression id of every library is in
+  `CP0002`, `CP0009`, the two ids a test checks). Red (assertion, with a `CP0001` suppression added to Core's file for the run, then removed):
+  `NetPrints.Core: CP0001 T:NetPrints.Graph.TypeOfNode is a suppression no test checks`. The baseline is `NetPrintsPackageBaselineVersion` in
+  `Directory.Build.props`, one edit; the three published libraries use `$(NetPrintsPackageBaselineVersion)` and the test reads the property from that file
+  (red before: `NetPrintsPackageBaselineVersion in Directory.Build.props is ''`). The seal and break tests, and the `*REMOVED*` cross-check, return when a
+  suppression file is absent, so the release step of `releasing.md` (bump the property, delete the files) leaves them green. 0.3.0 is not on nuget.org, so the
+  baseline stays 0.2.0; `releasing.md` says not to move it until the version is published.
+- CD-15 (de9bbf25): `AMissingTitleKeyIsReportedWhenAFixedTitleIsInheritedFromABaseClass` and `AFixedTitleKeyThatIsPresentIsQuiet` join the direct-override
+  and quiet cases C-F4 already had. Red (assertion, with `OverridesTitleIsFixed` reading the type only, then restored): `Assert.Single() Failure: The collection was empty`.
+- CD-16 (14ce7335): "## Unreleased" gains Breaking entries for NPX002 on `netprintsApi` 1.0 and the `\e` escape output, and Added entries for the
+  three packages with the API tracking and NPA020 to NPA024 and NPA040 to NPA042, `kindVersion`, and `netprints.language`; the status bar line was there.
+- CD-19 (13fd4e43): four tasks, none implemented. T172 common capabilities of a multi-target project (F2, FR-071); T173 view resources by URI (D1b, FR-032, FR-033);
+  T174 VSTHRD002 and VSTHRD103 at error in tests (G4, FR-031); T175 the extension's own services in panel and start-page contexts (D1c, FR-021, FR-034).
+  The batch headers, the task counts (164 active of 175 IDs, 194 units plus 5 in PR-P) and the FR coverage rows are updated.
+- CD-23 (b3474812): ADR-0003 (the two summary paragraphs, the NPH003 heading, the review-order note, the `SourceHygieneTests` mentions that were left) and ADR-0007
+  (the VM note) name NPH001 to NPH004. `NoUnlistedBuildWarningSuppressions` is still a test and stays named.
+- CD-24 (f605766e): `extension-api.md` §1 (`InMemoryHostChannel` in Abstractions), §4 (`AppliesTo` positional on the context-menu and status-bar descriptors) and §6
+  (`NoWarn`, the item is this repository's); research R13 (`PublicClass` for the editor resx only) and R17 (the console tree holds one file, the library tree is empty,
+  the project file comes from the project system); `data-model.md` §2 (built-in owner `netprints.editor`).
+- CD-26: the red-first notes of C1c (T047), C1d (T051, T052) and C2a (T060 to T062) say the reds were compile failures. The two C1e tests, run red on assertions now by breaking the
+  code with Edit and restoring it:
+  - `CompositionResolveAllTests.EverySessionScopedRegistrationResolvesInAProjectSessionScope`, with `AddSessionHost` registering `ProjectTemplateService` scoped:
+    `Assert.DoesNotContain() Failure: Filter matched in collection` (1 of 3 failed); green again after.
+  - `CompositionTests.TheDoublesReplaceTheGeneratedRegistrations`, with `EditorServices` calling `configure` before `AddEditorHost` (so the generated registrations win):
+    `Assert.Same() Failure: Values are not the same instance, Expected: RecordingDialogs, Actual: EditorDialogs` (1 of 2 failed); green again after.
+  No source file differs from eada8ad1 (`git diff eada8ad1 -- src` shows only the three `PackageValidationBaselineVersion` lines).
+- Full suite (Release, `dotnet test --solution NetPrints.slnx --ignore-exit-code 8`): 4886 total, 4853 passed, 33 skipped, 0 failed (22 min, Editor.UITests 22 min 35 s);
+  build 0 warnings; `dotnet format NetPrints.slnx --verify-no-changes` clean; `eng/trim-warnings.sh` 9. The `NETPRINTS_E2E=1` Desktop run was not repeated: nothing it covers changed.

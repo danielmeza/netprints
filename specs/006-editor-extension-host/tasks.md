@@ -680,7 +680,7 @@ SC-005 rechecked (research R4).
 
 ### Batch C2-F — model: sonnet — T078 (checkpoint C1+C2 fixes)
 
-- [ ] T078 Fix every finding of T077 (test first for behaviour findings), reply on each thread, whole suite plus the
+- [x] T078 Fix every finding of T077 (test first for behaviour findings), reply on each thread, whole suite plus the
   E2E pass, push; "no findings" if there were none. Sub-phase D1 starts only after this batch is pushed and green on CI
   (the coordinator checks).
 
