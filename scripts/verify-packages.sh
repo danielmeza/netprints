@@ -143,6 +143,8 @@ CORE_DEPENDENCY="$(grep -o '<dependency id="NetPrints.Core"[^>]*>' "$EXTRACT/Net
 grep -q 'exclude=' <<<"$CORE_DEPENDENCY" && fail "step 2 (NetPrints.Extensibility.Abstractions): the NetPrints.Core dependency excludes assets ($CORE_DEPENDENCY)"
 extract_nupkg NetPrints.Core
 [[ -f "$EXTRACT/analyzers/dotnet/cs/NetPrints.Authoring.dll" ]] || fail "step 2 (NetPrints.Core): missing analyzers/dotnet/cs/NetPrints.Authoring.dll"
+[[ -f "$EXTRACT/buildTransitive/NetPrints.Core.props" ]] || fail "step 2 (NetPrints.Core): missing buildTransitive/NetPrints.Core.props"
+grep -q 'CompilerVisibleProperty Include="NetPrintsExtensionId"' "$EXTRACT/buildTransitive/NetPrints.Core.props" || fail "step 2 (NetPrints.Core): buildTransitive/NetPrints.Core.props does not declare the compiler-visible property NetPrintsExtensionId"
 
 extract_nupkg NetPrints.Annotations
 check_common_metadata NetPrints.Annotations

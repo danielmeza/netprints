@@ -39,7 +39,7 @@ These rules check the node classes whose pins the convention generator declares 
 | NPA012 | info | A node kind declares pins, but the project has neither `NodePins.Shipped.txt` nor `NodePins.Unshipped.txt`, so no pin key is tracked. Add both files (empty is fine) to turn tracking on. |
 | NPA020 | error | An icon id given to a command, panel or template descriptor is a constant that does not match `^[a-z0-9]+(\.[a-zA-Z0-9]+)+$`, or is a `netprints.icon.` id the icon registry (`IconIds`) does not know. |
 | NPA021 | error | A gesture passed to `CommandGesture.Parse` or `TryParse` does not parse, or a single-key or Shift-only gesture (function keys excepted) is a default of a command in the Global scope. |
-| NPA022 | error | A constant contribution `Id` does not match the id pattern `^[a-z0-9]+(\.[a-zA-Z0-9]+)+$`, or, when the project sets the compiler-visible property `NetPrintsExtensionId`, does not start with that id and a dot. |
+| NPA022 | error | A constant contribution `Id` does not match the id pattern `^[a-z0-9]+(\.[a-zA-Z0-9]+)+$`, or, when the project sets the MSBuild property `NetPrintsExtensionId` (the NetPrints.Core package makes it compiler-visible), does not start with that id and a dot. |
 | NPA023 | error | Two commands in one project are built with the same constant id. |
 | NPA024 | warning | Two commands in one project are built with the same menu id, group and order. |
 | NPA040 | warning | A resource key a `[NodeKind]` class implies (`Node.<kind>.Title` when the class overrides `TitleIsFixed`, `Node.<kind>.Pin.<direction>.<collection>.<key>`, as in `NodePins.Shipped.txt`) is missing from the neutral resx. The repository sets it to an error. A project without a resx among its `AdditionalFiles` is not checked. |
