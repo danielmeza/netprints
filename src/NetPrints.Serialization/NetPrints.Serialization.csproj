@@ -3,6 +3,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <NetPrintsTrackPublicApi>true</NetPrintsTrackPublicApi>
     <AssemblyName>NetPrints.Serialization</AssemblyName>
+    <IsPackable>true</IsPackable>
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <Description>Graph documents, formats and the project store for NetPrints. NetPrints continues the original NetPrints by Robin Kahlow (https://github.com/RobinKa/netprints).</Description>
     <!-- Ahead of using it (T022+): keep the logging-usage rules an error once logging is added here. -->
     <WarningsAsErrors>$(WarningsAsErrors);CA1848;CA2254</WarningsAsErrors>
   </PropertyGroup>

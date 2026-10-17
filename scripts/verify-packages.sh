@@ -37,9 +37,15 @@ EXPECTED_FILES=(
     "NetPrints.Cli.$VERSION.snupkg"
     "NetPrints.Core.$VERSION.nupkg"
     "NetPrints.Core.$VERSION.snupkg"
+    "NetPrints.Extensibility.$VERSION.nupkg"
+    "NetPrints.Extensibility.$VERSION.snupkg"
+    "NetPrints.Extensibility.Abstractions.$VERSION.nupkg"
+    "NetPrints.Extensibility.Abstractions.$VERSION.snupkg"
     "NetPrints.Reflection.$VERSION.nupkg"
     "NetPrints.Reflection.$VERSION.snupkg"
     "NetPrints.Sdk.$VERSION.nupkg"
+    "NetPrints.Serialization.$VERSION.nupkg"
+    "NetPrints.Serialization.$VERSION.snupkg"
 )
 
 for name in "${EXPECTED_FILES[@]}"; do
@@ -83,7 +89,7 @@ check_common_metadata() {
     local heading
     heading="$(head -n 1 "$EXTRACT/README.md")"
     case "$id" in
-        NetPrints.Annotations | NetPrints.Catalog)
+        NetPrints.Annotations | NetPrints.Catalog | NetPrints.Serialization | NetPrints.Extensibility | NetPrints.Extensibility.Abstractions)
             [[ "$heading" == "# $id" ]] || fail "step 2 ($id): packed README.md starts with '$heading', expected '# $id' (src/$id/README.md)"
             ;;
         *)
@@ -122,6 +128,21 @@ extract_nupkg NetPrints.Catalog
 check_common_metadata NetPrints.Catalog
 [[ -f "$EXTRACT/lib/net10.0/NetPrints.Catalog.dll" ]] || fail "step 2 (NetPrints.Catalog): missing lib/net10.0/NetPrints.Catalog.dll"
 [[ -f "$EXTRACT/lib/net10.0/NetPrints.Catalog.xml" ]] || fail "step 2 (NetPrints.Catalog): missing lib/net10.0/NetPrints.Catalog.xml"
+
+for id in NetPrints.Serialization NetPrints.Extensibility.Abstractions NetPrints.Extensibility; do
+    extract_nupkg "$id"
+    check_common_metadata "$id"
+    [[ -f "$EXTRACT/lib/net10.0/$id.dll" ]] || fail "step 2 ($id): missing lib/net10.0/$id.dll"
+    [[ -f "$EXTRACT/lib/net10.0/$id.xml" ]] || fail "step 2 ($id): missing lib/net10.0/$id.xml (XML docs on every public member)"
+done
+
+# research R12: the analyzers of Core reach an author who references only Abstractions, so the dependency excludes nothing.
+extract_nupkg NetPrints.Extensibility.Abstractions
+CORE_DEPENDENCY="$(grep -o '<dependency id="NetPrints.Core"[^>]*>' "$EXTRACT/NetPrints.Extensibility.Abstractions.nuspec" | head -n 1)"
+[[ -n "$CORE_DEPENDENCY" ]] || fail "step 2 (NetPrints.Extensibility.Abstractions): nuspec has no NetPrints.Core dependency"
+grep -q 'exclude=' <<<"$CORE_DEPENDENCY" && fail "step 2 (NetPrints.Extensibility.Abstractions): the NetPrints.Core dependency excludes assets ($CORE_DEPENDENCY)"
+extract_nupkg NetPrints.Core
+[[ -f "$EXTRACT/analyzers/dotnet/cs/NetPrints.Authoring.dll" ]] || fail "step 2 (NetPrints.Core): missing analyzers/dotnet/cs/NetPrints.Authoring.dll"
 
 extract_nupkg NetPrints.Annotations
 check_common_metadata NetPrints.Annotations
@@ -188,5 +209,66 @@ TOOL_RUN_RC=0
 TOOL_RUN_OUTPUT="$("$TOOL_PATH/netprints" run "$APP/HelloWorld.csproj" 2>&1)" || TOOL_RUN_RC=$?
 [[ $TOOL_RUN_RC -eq 0 ]] || fail "step 4 (netprints run): exit code $TOOL_RUN_RC, expected 0: $TOOL_RUN_OUTPUT"
 echo "$TOOL_RUN_OUTPUT" | grep -qF "Hello, World!" || fail "step 4 (netprints run): output does not contain 'Hello, World!': $TOOL_RUN_OUTPUT"
+
+# --- Step 5: an extension author's view (research R12, FR-020, SC-003) -----------------------------
+
+write_nuget_config() {
+    cat > "$1/nuget.config" <<EOF
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="local-packages" value="$FEED" />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+  </packageSources>
+</configuration>
+EOF
+}
+
+CONSUMER="$WORK/consumer"
+mkdir -p "$CONSUMER"
+write_nuget_config "$CONSUMER"
+cat > "$CONSUMER/Consumer.csproj" <<EOF
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="NetPrints.Extensibility.Abstractions" Version="$VERSION" />
+  </ItemGroup>
+</Project>
+EOF
+cat > "$CONSUMER/Extension.cs" <<'EOF'
+using NetPrints.Extensibility;
+
+namespace Consumer;
+
+public sealed class Extension : INetPrintsExtension
+{
+    public void Register(IExtensionBuilder builder)
+    {
+    }
+}
+EOF
+
+CONSUMER_LOG="$WORK/consumer.log"
+dotnet build "$CONSUMER" -c Release -v:d -p:ReportAnalyzer=true > "$CONSUMER_LOG" 2>&1 || { tail -n 40 "$CONSUMER_LOG" >&2; fail "step 5 (scratch consumer): dotnet build failed"; }
+COMPILER_LINE="$(grep -m 1 -e '/analyzer:[^ ]*NetPrints\.Authoring\.dll' "$CONSUMER_LOG" || true)"
+[[ -n "$COMPILER_LINE" ]] || fail "step 5 (analyzers): the compiler command line has no NetPrints.Authoring.dll"
+AUTHORING_COUNT="$(grep -o -e '/analyzer:[^ ]*NetPrints\.Authoring\.dll' <<<"$COMPILER_LINE" | wc -l)"
+[[ "$AUTHORING_COUNT" -eq 1 ]] || fail "step 5 (analyzers): a consumer of NetPrints.Extensibility.Abstractions alone gets NetPrints.Authoring.dll $AUTHORING_COUNT times, expected exactly 1"
+
+# tests/NetPrints.TestExtension builds from the packed packages only (the project switches its references on this property).
+TEST_EXTENSION_OUT="$WORK/test-extension"
+dotnet build "$REPO_ROOT/tests/NetPrints.TestExtension/NetPrints.TestExtension.csproj" -c Release \
+    -p:NetPrintsPackagedExtensionVersion="$VERSION" \
+    -p:RestoreSources="$FEED;https://api.nuget.org/v3/index.json" \
+    -p:RestorePackagesPath="$NUGET_PACKAGES" \
+    -p:OutputPath="$TEST_EXTENSION_OUT/" >&2 \
+    || fail "step 5 (NetPrints.TestExtension): build from the local packages failed"
+[[ -f "$TEST_EXTENSION_OUT/NetPrints.TestExtension.dll" ]] || fail "step 5 (NetPrints.TestExtension): NetPrints.TestExtension.dll was not built"
+[[ -f "$TEST_EXTENSION_OUT/netprints-extension.json" ]] || fail "step 5 (NetPrints.TestExtension): netprints-extension.json was not copied"
 
 echo "verify-packages.sh: all checks passed for $VERSION"

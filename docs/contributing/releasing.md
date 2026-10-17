@@ -28,7 +28,7 @@ dotnet tool install -g NetPrints.Cli --version 0.1.0-local.20260101000000 --add-
 
 A release is a pushed tag matching `v*` (for example `v0.1.0`). `.github/workflows/release.yml`:
 
-1. **`pack`** — restores, computes the version with MinVer, `dotnet pack`s 4 packages (7 files),
+1. **`pack`** — restores, computes the version with MinVer, `dotnet pack`s 9 packages (16 files, package validation on),
    and runs `scripts/verify-packages.sh` against them.
 2. **`desktop`** — publishes the self-contained editor for `linux-x64`, `win-x64` and `osx-arm64`.
    Smoke-tests `linux-x64` and `osx-arm64` with `scripts/smoke-desktop.sh`; `win-x64` has
@@ -58,6 +58,21 @@ move the lines of `NodePins.Unshipped.txt` into `NodePins.Shipped.txt`, in the s
 `<kind> <direction>.<exec|data|type>.<key>` is added, and a `*REMOVED*<line>` line deletes the matching shipped line.
 Leave only the header comment in the unshipped file. Commit it with the version bump, so the next release starts with
 every key it ships recorded (NPA010) and none missing (NPA011).
+
+### Release step: package validation baselines
+
+Every packable library sets `EnablePackageValidation`, so `dotnet pack` compares its public surface with the last
+published version and fails on an unrecorded break. Libraries already on nuget.org (`NetPrints.Core`,
+`NetPrints.Reflection`, `NetPrints.Catalog`) set `PackageValidationBaselineVersion` to that version, and a
+`CompatibilitySuppressions.xml` next to the project holds exactly the intended breaks since it (generate it with
+`-p:ApiCompatGenerateSuppressionFile=true`; `PackageValidationTests` checks each entry against the `*REMOVED*` lines of
+`PublicAPI.Unshipped.txt` and the sealed types).
+
+A package that has never been published (`NetPrints.Serialization`, `NetPrints.Extensibility.Abstractions` and
+`NetPrints.Extensibility` before 0.4.0) has no baseline. In the release that first publishes it, add
+`<PackageValidationBaselineVersion>` with that version to the **next** change after the tag, and list the package in
+`PackageValidationTests.Published`. After each release, move the baseline of every package to the version just
+published and delete its `CompatibilitySuppressions.xml`: the recorded breaks belong to the release that made them.
 
 ## Owner one-time steps
 

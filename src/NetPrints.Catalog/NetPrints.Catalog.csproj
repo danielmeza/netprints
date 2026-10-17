@@ -4,6 +4,7 @@
     <NetPrintsTrackPublicApi>true</NetPrintsTrackPublicApi>
     <IsPackable>true</IsPackable>
     <EnablePackageValidation>true</EnablePackageValidation>
+    <PackageValidationBaselineVersion>0.2.0</PackageValidationBaselineVersion>
     <PackageId>NetPrints.Catalog</PackageId>
     <Description>Catalog engine for NetPrints: builds catalogs of types and APIs from libraries. NetPrints continues the original NetPrints by Robin Kahlow (https://github.com/RobinKa/netprints).</Description>
   </PropertyGroup>

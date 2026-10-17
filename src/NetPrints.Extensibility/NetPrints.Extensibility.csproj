@@ -4,6 +4,9 @@
     <NetPrintsTrackPublicApi>true</NetPrintsTrackPublicApi>
     <AssemblyName>NetPrints.Extensibility</AssemblyName>
     <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <Description>The NetPrints extension host: discovery, manifests, loading and the contribution registry. NetPrints continues the original NetPrints by Robin Kahlow (https://github.com/RobinKa/netprints).</Description>
     <WarningsAsErrors>$(WarningsAsErrors);CA1848;CA2254</WarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>

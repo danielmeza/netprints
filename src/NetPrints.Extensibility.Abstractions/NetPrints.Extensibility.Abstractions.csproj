@@ -5,6 +5,9 @@
     <AssemblyName>NetPrints.Extensibility.Abstractions</AssemblyName>
     <RootNamespace>NetPrints.Extensibility</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <Description>The contracts for NetPrints extensions: the extension entry point, the builder, node kinds, the editor facet and the settings metadata. NetPrints continues the original NetPrints by Robin Kahlow (https://github.com/RobinKa/netprints).</Description>
   </PropertyGroup>
   <ItemGroup>
     <NetPrintsExperimentalOptIn Include="NPXE0001" />
