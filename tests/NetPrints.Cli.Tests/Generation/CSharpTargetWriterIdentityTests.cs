@@ -31,14 +31,18 @@ public sealed class CSharpTargetWriterIdentityTests
 
     private const string GeneratedName = SampleCopy.GeneratedName;
 
+    private const string ShortEscape = "\"Hello,\\eWorld!\"";
+
+    private const string LongEscape = "\"Hello,\\u001bWorld!\"";
+
     [Theory]
-    [InlineData("NoLangVersion")]
-    [InlineData("Latest")]
-    [InlineData("Preview")]
-    [InlineData("Pinned10")]
-    [InlineData("Unknown16")]
-    [InlineData("MultiTarget")]
-    public async Task TheEditorRegenAndTheSdkWriteTheSameBytes(string fixture)
+    [InlineData("NoLangVersion", ShortEscape)]
+    [InlineData("Latest", ShortEscape)]
+    [InlineData("Preview", ShortEscape)]
+    [InlineData("Pinned10", LongEscape)]
+    [InlineData("Unknown16", ShortEscape)]
+    [InlineData("MultiTarget", LongEscape)]
+    public async Task TheEditorRegenAndTheSdkWriteTheSameBytes(string fixture, string expectedLiteral)
     {
         MsBuildRegistration.EnsureRegistered(NullLogger.Instance);
         string directory = PrepareFixture(fixture);
@@ -60,6 +64,7 @@ public sealed class CSharpTargetWriterIdentityTests
 
             Assert.Equal(editor, regen);
             Assert.Equal(regen, sdk);
+            Assert.Contains(expectedLiteral, editor, StringComparison.Ordinal);
 
             string[] requests = Directory.GetFiles(Path.Combine(directory, "obj"), "netprints.generate.rsp", SearchOption.AllDirectories);
             Assert.NotEmpty(requests);
@@ -121,7 +126,7 @@ public sealed class CSharpTargetWriterIdentityTests
             File.Copy(file, Path.Combine(directory, Path.GetFileName(file)));
         }
 
-        File.Copy(Path.Combine(LocalSdkLayout.FindRepositoryRoot(), "samples", "HelloWorld", GraphName), Path.Combine(directory, GraphName));
+        File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "CSharpTarget", GraphName), Path.Combine(directory, GraphName));
         LocalSdkLayout.Write(directory);
         return directory;
     }
