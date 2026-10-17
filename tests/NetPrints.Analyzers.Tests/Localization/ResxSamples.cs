@@ -24,6 +24,32 @@ internal static class ResxSamples
     /// <summary>Gets the sample node class with a title that is the same for every instance, so its text comes from the resx.</summary>
     public static string FixedTitleLoop() => LoopClass("    public override bool TitleIsFixed => true;\n");
 
+    /// <summary>Gets the sample node class whose fixed title comes from a base class, so the kind itself declares no override.</summary>
+    public static string InheritedFixedTitleLoop() =>
+        PinSamples.Header + $$"""
+            public abstract class FixedTitleNode : Node
+            {
+                protected FixedTitleNode(NodeGraph graph) : base(graph)
+                {
+                }
+
+                public override bool TitleIsFixed => true;
+            }
+
+            [NodeKind("{{Kind}}")]
+            public sealed partial class LoopNode : FixedTitleNode
+            {
+                public LoopNode(NodeGraph graph) : base(graph)
+                {
+                    DeclarePins();
+                }
+
+                public partial NodeInputExecPin ExecutionPin { get; }
+
+                public partial NodeOutputExecPin LoopPin { get; }
+            }
+            """;
+
     private static string LoopClass(string extra) =>
         PinSamples.Header + $$"""
             [NodeKind("{{Kind}}")]

@@ -41,6 +41,25 @@ public class Npa040Tests
     }
 
     [Fact]
+    public async Task AFixedTitleKeyThatIsPresentIsQuiet()
+    {
+        ImmutableArray<Diagnostic> found = await PinAnalyzerHarness.AnalyzeWithResxAsync(ResxSamples.FixedTitleLoop(), [(ResxSamples.NeutralPath, ResxSamples.Complete())], Id);
+
+        Assert.Empty(found);
+    }
+
+    [Fact]
+    public async Task AMissingTitleKeyIsReportedWhenAFixedTitleIsInheritedFromABaseClass()
+    {
+        string resx = ResxSamples.Resx((ResxSamples.ExecutionKey, "Execution"), (ResxSamples.LoopKey, "Loop body"));
+
+        ImmutableArray<Diagnostic> found = await PinAnalyzerHarness.AnalyzeWithResxAsync(ResxSamples.InheritedFixedTitleLoop(), [(ResxSamples.NeutralPath, resx)], Id);
+
+        Diagnostic diagnostic = Assert.Single(found);
+        Assert.Contains(ResxSamples.TitleKey, diagnostic.GetMessage(), System.StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task AMissingPinKeyIsReportedOnThePinProperty()
     {
         string resx = ResxSamples.Resx((ResxSamples.TitleKey, "Loop"), (ResxSamples.ExecutionKey, "Execution"));
