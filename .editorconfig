@@ -721,6 +721,7 @@ dotnet_diagnostic.VSTHRD111.severity = none
 [src/**.cs]
 dotnet_diagnostic.NPA040.severity = error
 dotnet_diagnostic.NPH003.severity = error
+dotnet_diagnostic.NPH005.severity = error
 
 [{src,tests}/**.cs]
 dotnet_diagnostic.NPS001.severity = error

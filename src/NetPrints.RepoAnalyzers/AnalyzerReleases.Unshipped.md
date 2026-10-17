@@ -19,3 +19,4 @@ NPH001 | Hygiene | Disabled | The null-forgiving operator at a site the hygiene 
 NPH002 | Hygiene | Disabled | A type name that abbreviates ViewModel as VM; error once the repository enables it
 NPH003 | Hygiene | Disabled | A diagnostic code literal outside its constants class; error once the repository enables it
 NPH004 | Hygiene | Disabled | A pragma, a nullable escape or a SuppressMessage the hygiene ledger does not list; error once the repository enables it
+NPH005 | Hygiene | Disabled | ConfigureAwait(false) in UI-bound code; error once the repository enables it
