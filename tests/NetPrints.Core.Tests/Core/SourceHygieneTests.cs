@@ -89,77 +89,6 @@ namespace NetPrints.Tests.Core
         private static partial Regex DiagnosticCodeDeclarationPattern();
 
         /// <summary>
-        /// ADR-0003 "Real fixes vs. suppression": every suppression mechanism in <c>src/</c> or
-        /// <c>tests/</c> (R1-22/R2-18/R3-15: the gate used to scan only <c>src/</c>) — a
-        /// <c>#pragma warning disable</c>, <c>[SuppressMessage]</c> (short or <c>Attribute</c>-suffixed,
-        /// qualified or not) or a nullable-context escape (<c>#nullable disable</c>/<c>restore</c>) in a
-        /// <c>.cs</c> file — must match a row in ADR-0003's suppression ledger. A <c>[SuppressMessage]</c>
-        /// is keyed by its file, containing member and rule id (not file and rule alone), so a second
-        /// suppression of the same rule on a different member of the same file is still unlisted.
-        /// Tighter than <c>S1309</c>: per rule and per site, not per file. <c>&lt;NoWarn&gt;</c> and the
-        /// rest of a project's warning configuration are covered by
-        /// <see cref="NoUnlistedBuildWarningSuppressions"/> instead, since those live in
-        /// <c>.csproj</c>/<c>.props</c>/<c>.targets</c> files, not <c>.cs</c> ones. Allowlist entries only
-        /// shrink; a fresh site is fixed, not added.
-        /// </summary>
-        private static readonly HashSet<(string File, string Member, string Rule)> SuppressionAllowlist = new()
-        {
-            ("src/NetPrints.Editor/Graph/GraphDragDrop.cs", "Moved", "VSTHRD100"),
-            ("src/NetPrints.Editor/Graph/GridBackground.cs", "Render", "IDISP004"),
-            ("src/NetPrints.Editor/Hosting/Automation/AutomationAgent.cs", "ServeAsync", "IDISP007"),
-        };
-
-        [Fact]
-        public void NoUnlistedSuppressions()
-        {
-            string repoRoot = SampleProjectFactory.FindRepositoryRoot();
-            var offenders = new List<string>();
-            int parsedFileCount = 0;
-
-            foreach (string path in EnumerateSourceAndTestFiles(repoRoot))
-            {
-                parsedFileCount++;
-                string relativePath = Path.GetRelativePath(repoRoot, path).Replace('\\', '/');
-                SyntaxNode root = CSharpSyntaxTree.ParseText(File.ReadAllText(path), path: path, cancellationToken: TestContext.Current.CancellationToken).GetRoot(TestContext.Current.CancellationToken);
-
-                foreach (var trivia in root.DescendantTrivia().Where(t => t.IsKind(SyntaxKind.PragmaWarningDirectiveTrivia)))
-                {
-                    offenders.Add($"{relativePath}: unlisted #pragma warning ({trivia})");
-                }
-
-                foreach (var trivia in root.DescendantTrivia().Where(t => t.IsKind(SyntaxKind.NullableDirectiveTrivia)))
-                {
-                    if (trivia.GetStructure() is NullableDirectiveTriviaSyntax { SettingToken: var setting }
-                        && (setting.IsKind(SyntaxKind.DisableKeyword) || setting.IsKind(SyntaxKind.RestoreKeyword)))
-                    {
-                        offenders.Add($"{relativePath}: unlisted #nullable {setting.Text}");
-                    }
-                }
-
-                foreach (AttributeSyntax attribute in root.DescendantNodes().OfType<AttributeSyntax>()
-                    .Where(a => IsSuppressMessageAttribute(a)))
-                {
-                    var arguments = attribute.ArgumentList?.Arguments ?? default;
-                    string? ruleId = arguments.Count > 1 ? arguments[1].Expression.ToString().Trim('"') : null;
-                    string? member = ContainingMemberName(attribute);
-                    string justification = attribute.ToString();
-
-                    if (ruleId is null || member is null || !SuppressionAllowlist.Contains((relativePath, member, ruleId)))
-                    {
-                        offenders.Add($"{relativePath}: unlisted [SuppressMessage] for {ruleId ?? "?"} on {member ?? "?"}");
-                    }
-                    else if (!justification.Contains("ADR-0003", StringComparison.Ordinal))
-                    {
-                        offenders.Add($"{relativePath}: [SuppressMessage] for {ruleId} has no ADR-0003 justification");
-                    }
-                }
-            }
-
-            Assert.True(parsedFileCount > 0, "Expected to scan at least one src/ or tests/ file.");
-            Assert.Empty(offenders);
-        }
-
-        /// <summary>
         /// ADR-0003 "no sync-over-async": no analyzer flags blocking on a <see cref="Task"/> result, so
         /// this parses every <c>src/**/*.cs</c> and <c>tests/**/*.cs</c> file with Roslyn and fails on a
         /// <c>.Wait()</c> call, a <c>.GetAwaiter().GetResult()</c> chain, or a <c>.Result</c> access whose
@@ -238,42 +167,6 @@ namespace NetPrints.Tests.Core
         }
 
         /// <summary>
-        /// Matches <c>[SuppressMessage(...)]</c> and <c>[SuppressMessageAttribute(...)]</c>, with or
-        /// without a namespace qualifier: <see cref="AttributeSyntax.Name"/> renders the qualifier too
-        /// (e.g. <c>System.Diagnostics.CodeAnalysis.SuppressMessageAttribute</c>), so only the suffix
-        /// after stripping a trailing "Attribute" is compared.
-        /// </summary>
-        private static bool IsSuppressMessageAttribute(AttributeSyntax attribute)
-        {
-            string name = attribute.Name.ToString();
-            if (name.EndsWith("Attribute", StringComparison.Ordinal))
-            {
-                name = name[..^"Attribute".Length];
-            }
-
-            return name.EndsWith("SuppressMessage", StringComparison.Ordinal);
-        }
-
-        /// <summary>The name of the method, property or constructor <paramref name="attribute"/> is declared on, or null.</summary>
-        private static string? ContainingMemberName(AttributeSyntax attribute)
-        {
-            for (SyntaxNode? node = attribute.Parent; node is not null; node = node.Parent)
-            {
-                switch (node)
-                {
-                    case MethodDeclarationSyntax method:
-                        return method.Identifier.Text;
-                    case PropertyDeclarationSyntax property:
-                        return property.Identifier.Text;
-                    case ConstructorDeclarationSyntax constructor:
-                        return constructor.Identifier.Text;
-                }
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// No <c>.props</c>, <c>.targets</c> or <c>.csproj</c> file anywhere in the repository (except
         /// <c>legacy/</c>, kept for reference and not built) lowers the warning bar the root
         /// <c>Directory.Build.props</c> sets (<c>TreatWarningsAsErrors</c>) or the curated analyzer
@@ -281,7 +174,7 @@ namespace NetPrints.Tests.Core
         /// entry, <c>&lt;TreatWarningsAsErrors&gt;false&lt;/TreatWarningsAsErrors&gt;</c>, an explicit
         /// <c>&lt;WarningLevel&gt;</c> override, or an unlisted <c>&lt;MSBuildWarningsNotAsErrors&gt;</c>/
         /// <c>&lt;MSBuildWarningsAsMessages&gt;</c> engine-level suppression (<see cref="BuildPropertyAllowlist"/>)
-        /// would each silently do that project-wide, bypassing <see cref="NoUnlistedSuppressions"/>'s
+        /// would each silently do that project-wide, bypassing NPH004's
         /// per-site ledger entirely.
         /// </summary>
         [Fact]

@@ -1,6 +1,11 @@
 # Reviewed exceptions to the NPH hygiene analyzers (ADR-0003). One row per site: CODE | path | detail.
 # The path matches the end of the file's path. The ledger only shrinks; a fresh site is fixed, not added.
 #
+# NPH004: detail is member:rule of a [SuppressMessage]; its justification names ADR-0003.
+NPH004 | src/NetPrints.Editor/Graph/GraphDragDrop.cs | Moved:VSTHRD100
+NPH004 | src/NetPrints.Editor/Graph/GridBackground.cs | Render:IDISP004
+NPH004 | src/NetPrints.Editor/Hosting/Automation/AutomationAgent.cs | ServeAsync:IDISP007
+#
 # NPH001: detail is the trimmed text of the line that holds the null-forgiving operator.
 NPH001 | tests/NetPrints.Desktop.E2ETests/Hosting/Tool.cs | using var process = Process.Start(info)!;
 NPH001 | tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs | var process = Process.Start(info)!;

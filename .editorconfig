@@ -728,3 +728,4 @@ dotnet_diagnostic.NPS002.severity = error
 dotnet_diagnostic.NPS003.severity = suggestion
 dotnet_diagnostic.NPH001.severity = error
 dotnet_diagnostic.NPH002.severity = error
+dotnet_diagnostic.NPH004.severity = error
