@@ -10,7 +10,7 @@ using NetPrints.Testing;
 
 namespace NetPrints.Editor.UITests.Contributions;
 
-/// <summary>FR-034, edge case 1: a view model factory of an extension that throws shows <see cref="ContributionErrorView"/> naming the extension while the rest of the surface renders.</summary>
+/// <summary>FR-034, edge case 1: a view model factory of an extension that throws shows <see cref="NetPrints.Editor.Controls.ContributionErrorView"/> naming the extension while the rest of the surface renders.</summary>
 public class ContributionErrorViewTests
 {
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

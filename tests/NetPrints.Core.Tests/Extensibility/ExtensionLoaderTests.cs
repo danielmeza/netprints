@@ -438,8 +438,8 @@ public class ExtensionLoaderTests : IDisposable
 
         Assert.Equal(["netprints.test"], registry.Loaded.Select(m => m.Id));
         Assert.Empty(registry.Issues);
-        NodeKindDescriptor kind = Assert.Single(registry.NodeKinds);
-        Assert.Equal("netprints.test/Log", kind.Kind);
+        NodeKindDescriptor kind = Assert.Single(registry.NodeKinds, candidate => candidate.Kind == "netprints.test/Log");
+        Assert.Equal("netprints.test/Legacy", Assert.Single(registry.NodeKinds, candidate => candidate.Kind != kind.Kind).Kind);
 
         var assembly = kind.NodeType.Assembly;
         var context = AssemblyLoadContext.GetLoadContext(assembly);
@@ -467,7 +467,7 @@ public class ExtensionLoaderTests : IDisposable
         await using ExtensionRegistry registry = Load(Options(folders: [TestExtensionLocation.Folder]));
 
         Assert.Equal(["netprints.test"], registry.Loaded.Select(m => m.Id));
-        NodeKindDescriptor kind = Assert.Single(registry.NodeKinds);
+        NodeKindDescriptor kind = Assert.Single(registry.NodeKinds, candidate => candidate.Kind == "netprints.test/Log");
         Assert.Same(kind.Translator, registry.Translation.Nodes.Find(kind.NodeType));
         Assert.Same(kind.Converter, registry.NodeConverters.FindByDocumentType(kind.Converter.DocumentType));
     }
@@ -485,7 +485,7 @@ public class ExtensionLoaderTests : IDisposable
         Assert.Equal(["netprints.test"], registry.Loaded.Select(m => m.Id));
         Assert.Equal("NPX002", SingleFailure(registry, "test.future").Code);
         Assert.Equal("NPX007", SingleFailure(registry, "test.gone").Code);
-        Assert.Single(registry.NodeKinds);
+        Assert.Equal(["netprints.test/Log", "netprints.test/Legacy"], registry.NodeKinds.Select(kind => kind.Kind));
     }
 
     [Fact]

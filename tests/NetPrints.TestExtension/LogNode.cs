@@ -71,6 +71,54 @@ public sealed class LogNodeTranslator : INodeTranslator
     }
 }
 
+/// <summary>A node with no pins whose stored data is upgraded by <see cref="TestNodeMigration"/>.</summary>
+public sealed class LegacyNode : Node
+{
+    /// <summary>Creates the node and adds it to <paramref name="graph"/>.</summary>
+    /// <param name="graph">The graph.</param>
+    public LegacyNode(NodeGraph graph)
+        : base(graph)
+    {
+    }
+}
+
+/// <summary>The document form of <see cref="LegacyNode"/>.</summary>
+/// <param name="Id">The node id.</param>
+/// <param name="Name">The node name.</param>
+/// <param name="Pins">The stored pin states.</param>
+public sealed record LegacyNodeDocument(string Id, string? Name, IReadOnlyList<PinStateDocument>? Pins) : NodeDocument(Id, Name, Pins);
+
+/// <summary>Converts <see cref="LegacyNode"/>.</summary>
+public sealed class LegacyNodeConverter : INodeDocumentConverter
+{
+    /// <summary>The kind id.</summary>
+    public const string KindId = "netprints.test/Legacy";
+
+    /// <inheritdoc />
+    public string Kind => KindId;
+
+    /// <inheritdoc />
+    public Type NodeType => typeof(LegacyNode);
+
+    /// <inheritdoc />
+    public Type DocumentType => typeof(LegacyNodeDocument);
+
+    /// <inheritdoc />
+    public NodeDocument ToDocument(Node node, NodeMappingContext context) => new LegacyNodeDocument(node.Id, null, null);
+
+    /// <inheritdoc />
+    public Node CreateNode(NodeDocument document, NodeGraph graph, NodeMappingContext context) => new LegacyNode(graph);
+}
+
+/// <summary>Translates <see cref="LegacyNode"/> to nothing.</summary>
+public sealed class LegacyNodeTranslator : INodeTranslator
+{
+    /// <inheritdoc />
+    public void Translate(IExecutionTranslationContext context, Node node, int inputExecPinIndex)
+    {
+    }
+}
+
 /// <summary>The node kinds of the test extension.</summary>
 public sealed class TestNodeLibrary : INodeLibrary
 {
@@ -86,7 +134,14 @@ public sealed class TestNodeLibrary : INodeLibrary
             new LogNodeConverter(),
             new LogNodeTranslator(),
             GraphKinds.Method | GraphKinds.Constructor,
-            [new NodeSuggestion("Test", "Log", null, graph => new LogNode(graph))])
+            [new NodeSuggestion("Test", "Log", null, graph => new LogNode(graph))]),
+        new NodeKindDescriptor(
+            LegacyNodeConverter.KindId,
+            typeof(LegacyNode),
+            new LegacyNodeConverter(),
+            new LegacyNodeTranslator(),
+            GraphKinds.Method,
+            [])
         {
             DataVersion = 1,
         },
@@ -96,5 +151,6 @@ public sealed class TestNodeLibrary : INodeLibrary
 /// <summary>The extension's own JSON metadata: its node document and its settings.</summary>
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault)]
 [JsonSerializable(typeof(LogNodeDocument))]
+[JsonSerializable(typeof(LegacyNodeDocument))]
 [JsonSerializable(typeof(TestSettings))]
 public sealed partial class TestJsonContext : JsonSerializerContext;

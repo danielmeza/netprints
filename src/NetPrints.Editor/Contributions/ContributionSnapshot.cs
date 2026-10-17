@@ -92,13 +92,15 @@ public sealed class ContributionSnapshot : IContributionSnapshot
         ImmutableArray<ContributionIssue>.Builder found = ImmutableArray.CreateBuilder<ContributionIssue>();
         foreach (ContributionGroup group in groups)
         {
-            foreach (ContextMenuItemDescriptor item in group.MenuItems.Where(item => !commandIds.Contains(item.CommandId)))
+            bool FromExtension(string id) => group.Owners.GetValueOrDefault(id, ContributionIds.Owner) is var owner && owner != ContributionIds.Owner && owner != BuiltIn.BuiltInContributions.OwnerId;
+
+            foreach (ContextMenuItemDescriptor item in group.MenuItems.Where(item => FromExtension(item.Id) && !commandIds.Contains(item.CommandId)))
             {
                 found.Add(new ContributionIssue(ContributionIssueKind.UnknownReference, item.Id, group.Owners.GetValueOrDefault(item.Id, ContributionIds.Owner),
                     $"The context menu item names the command '{item.CommandId}', which nothing registered."));
             }
 
-            foreach (SettingsPageDescriptor page in group.SettingsPages.Where(page => page.ParentPageId is { } parent && !pageIds.Contains(parent)))
+            foreach (SettingsPageDescriptor page in group.SettingsPages.Where(page => FromExtension(page.Id) && page.ParentPageId is { } parent && !pageIds.Contains(parent)))
             {
                 found.Add(new ContributionIssue(ContributionIssueKind.UnknownReference, page.Id, group.Owners.GetValueOrDefault(page.Id, ContributionIds.Owner),
                     $"The settings page names the parent page '{page.ParentPageId}', which nothing registered."));

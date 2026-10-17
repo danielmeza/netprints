@@ -38,7 +38,7 @@ public sealed class ExtensionKindsTests : IAsyncDisposable
 
         public const string TooltipSubject = "netprints.test.pin";
 
-        public const string LogKind = "netprints.test/Log";
+        public const string LogKind = "netprints.test/Legacy";
 
         public const string MigratedMember = "migratedByTest";
     }

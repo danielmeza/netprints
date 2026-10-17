@@ -1472,17 +1472,19 @@ T076, Checkpoint C2, gate items measured on this head (Release).
   dialog was empty); `ContributionErrorViewTests` failed with `Assert.NotEmpty() Failure: Collection was empty` with the placeholder template removed.
 - **T081 design**: `ContributionGuard` (Contributions) wraps, when an extension (not a built-in owner) registers: command handlers (`ExecuteAsync` rethrows `ExtensionFailureException` naming the
   extension and the command, which the invoker's fault callback shows in the error dialog; `CanExecute`, `DynamicLabel`, `IsChecked` log and answer false/null), tooltip and go-to providers
-  (empty result), view model factories of panels, tiles, status bar items, dialogs and settings pages (a `ContributionErrorViewModel`, drawn by `ContributionErrorView` through a
-  `BuiltInViews` template) and the `AppliesTo` predicates (false). Provider, factory and predicate failures log NPX011 once per contribution and registry (event 1071); handler failures
+  (empty result), view model factories of panels, tiles, status bar items, dialogs and settings pages (a `ContributionErrorViewModel`, drawn by `ContributionErrorView` in `Controls/` through a
+  `BuiltInViews` template; the Contributions namespace stays UI-free) and the `AppliesTo` predicates (false). Provider, factory and predicate failures log NPX011 once per contribution and registry (event 1071); handler failures
   log 1072 each time. Built-in command handlers (`IEditorCommandHandler`) are never wrapped, so `ShowPanelCommandHandler` detection keeps working.
 - **Decision**: a view template that throws while it builds (the compiled view of an extension, not its view model factory) is not wrapped: Avalonia builds templates inside its own layout
   pass. Only the factories the registry calls are guarded.
 - **Decision**: registry issues reach the Errors dialog (`ReportExtensionFailuresAsync`, once each) as warnings: `DuplicateId` is NPX004, `GestureConflict` NPX009 (new constant),
-  new `ContributionIssueKind.UnknownReference` NPX010 (a context-menu item naming a command nothing registered, a settings page with an unknown parent; computed per snapshot and logged once),
+  new `ContributionIssueKind.UnknownReference` NPX010 (a context-menu item naming a command nothing registered, a settings page with an unknown parent; computed per snapshot for extension-owned
+  items only, and logged once),
   anything else NPX006. NPX005 was already shown there. NPX011 is added to `ExtensionDiagnosticCodes` and the diagnostics guide; the 0.4 hash row in `ExtensionApiVersionTests` is updated (not shipped).
 - **T083**: `NetPrints.TestExtension` contributes a command (with an icon and a File menu entry), panel, tile, project template, context-menu item, tooltip provider, go-to provider, status bar item,
   settings page, dialog, icon dictionary (`TestIcons.axaml`, compiled with the `Avalonia` package reference, omitted from the packaged-verification build), node search provider and a document migration
-  (`netprints.test/Log` now has data version 1). Red (assertions): `ExtensionKindsTests` failed with `Expected: ["command", "panel", ...] Actual: []` with the registrations removed; green with them.
+  (of a new node kind `netprints.test/Legacy`, data version 1, so the document goldens of `netprints.test/Log` stay as they were; the node search provider answers only in constructor graphs for
+  the same reason; three Core.Tests assertions that counted the extension's node kinds now name them). Red (assertions): `ExtensionKindsTests` failed with `Expected: ["command", "panel", ...] Actual: []` with the registrations removed; green with them.
   The icon is checked headless in `ExtensionIconSurfaceTests`. `SessionPanelTests` (2) failed 2 of 2 before the panel gap was closed: `ShellViewModel` now adds and removes `PanelViewModel`s on registry
   changes (`PanelsChanged`), and `DockShellAdapter` docks an added panel at its default place and removes a removed one from the layout and the hidden list. A saved layout that names a panel of an
   extension that is not loaded drops it (existing mapper behaviour) and the panel docks at its default place when it loads (T082 edge case 2).

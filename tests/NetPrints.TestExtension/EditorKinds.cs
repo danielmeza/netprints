@@ -104,22 +104,26 @@ public sealed class TestSuggestionProvider : INodeSuggestionProvider
     public string Id => TestEditorIds.SuggestionProvider;
 
     /// <inheritdoc />
-    public IEnumerable<NodeSearchEntry> Suggest(NodeSearchContext context) => [new TestSearchEntry()];
+    public IEnumerable<NodeSearchEntry> Suggest(NodeSearchContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return context.GraphKind == GraphKinds.Constructor ? [new TestSearchEntry()] : [];
+    }
 
-    private sealed record TestSearchEntry() : NodeSearchEntry("Test rows", "Test row", "Method")
+    private sealed record TestSearchEntry() : NodeSearchEntry("Test", "Test row", "Method")
     {
         public override Task<Node?> CreateAsync(INodeCreationContext context, GraphPoint position, NodePin? pin) => Task.FromResult<Node?>(null);
     }
 }
 
-/// <summary>Upgrades <c>netprints.test/Log</c> nodes from version 0 by marking them with <see cref="MigratedMember"/>.</summary>
+/// <summary>Upgrades <c>netprints.test/Legacy</c> nodes from version 0 by marking them with <see cref="MigratedMember"/>.</summary>
 public sealed class TestNodeMigration : INodeDataMigration
 {
     /// <summary>The member the migration adds to a node.</summary>
     public const string MigratedMember = "migratedByTest";
 
     /// <inheritdoc />
-    public string NodeKind => LogNodeConverter.KindId;
+    public string NodeKind => LegacyNodeConverter.KindId;
 
     /// <inheritdoc />
     public int FromVersion => 0;
