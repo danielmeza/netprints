@@ -210,6 +210,8 @@ and is marked "default pending owner" in tasks.md.
   M1 cold 1341.2 ms, warm median 418.7 ms, 16,501,712 bytes; M2 median 51.9 ms, 36,037 bytes per node. The gate itself is the calibrated
   steady-state ratio in the Batch C-F2 entry: those absolute figures are a first-use sample (the median of five lands on a run still in the
   JIT's lower tier), CI shows 41 to 76 ms for M2 across heads that did not touch its path, so they cannot carry a 10% gate.
+- Gate ratios (Batch C-F2b): local (Ryzen 9 7950X3D) M2 0.954, M1 4.75; CI Xeon Platinum 8573C M2 1.08, M1 5.55; CI EPYC 7763 M2 1.90, M1 3.22. The CI figures were measured at
+  heads shown locally equal to R5-0 on the M2 path (within 1%, 8 interleaved runs); see the Batch C-F2b entry.
 
 ## M5 spike
 
@@ -1293,3 +1295,37 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - CD-27: `CompositionResolveAllTests.EverySessionScopedRegistrationResolvesInAProjectSessionScope` now asserts `ProjectTemplateService` is not session-scoped. Red (assertion): `Assert.DoesNotContain() Failure: Filter matched in collection`.
   The service holds no session state and New project has no project, so `ProjectLoader` creates it with `ProjectTemplateService.Create` and `ProjectSessionScope.Templates` is gone. ADR-0031 decision 4 and R4 step 4 are amended.
 - API files: no public API changed (the new exception and the changed types are internal).
+
+## Batch C-F2b (T078, part 2b: CD-1, CI baselines)
+
+- Trim ratchet (run 39010829786, 9 to 10): C-F5's `Assembly.GetTypes()` (IL2026) in `ExtensionServiceProviders` is gone. The own types an extension can get an
+  `ILogger<T>` for are now the service and implementation types it registered that belong to it (`OwnTypes(accepted, ownAssembly)`); `AnExtensionGetsLoggersOnlyForItsOwnTypes`
+  stays green and `eng/trim-warnings.sh` reports 9. Narrower than before: a type the extension never registers gets no logger.
+- No regression (M2, same harness and session, 8 interleaved rounds of R5-0 d7ddde50 with the gate files ported, 01eb1e51, and f50b93b2; ratio of the steady-state median to the calibration):
+
+  | Commit | Mean | Median | Range |
+  |---|---|---|---|
+  | d7ddde50 (R5-0) | 0.977 | 0.970 | 0.941 to 1.021 |
+  | 01eb1e51 | 0.984 | 0.975 | 0.958 to 1.031 |
+  | f50b93b2 | 0.976 | 0.972 | 0.944 to 1.023 |
+
+  The three agree within 1%, well inside the 3% bar, so C-F3, C-F4 and C-F5 did not touch the M2 path and the baseline absorbs nothing. M1 locally is bimodal run to run
+  (ratios 2.8 to 3.5 in one mode, 4.6 to 5.9 in the other, in all three trees): means 4.23 (R5-0), 4.07 (01eb1e51), 4.71 (f50b93b2), medians 4.85, 4.03, 4.91. The mode, not the
+  commit, explains the spread; inside a mode the commits agree. M1 therefore cannot show equality to 2% locally.
+- Why 0.954 did not carry over: the runner's CPU is not one model. Run 39012644189 (head 047a252b, the same code) was on an AMD EPYC 7763: M2 calibration 29.7 ms, ratio 1.904, M1 3.218. Its rerun
+  and the earlier runs (563ec6c1: 1.102; 2d79e88f: 1.080; 047a252b first attempt: 1.098) were on an Intel Xeon Platinum 8573C (CPU printed from 047a252b on; the earlier two have the Xeon's
+  17.7 to 19.8 ms calibration): M2 1.041 to 1.102, M1 5.545. The verdict now names the CPU on pass and fail (test output, the TRX in `test-results-perf`; the strict job's log shows it on fail).
+- Baselines, set from CI runs at heads equal to R5-0 on the M2 path (the table above), keyed by CPU model with the highest as fallback for an unknown model, and the local ones kept:
+
+  | Metric | Local (Ryzen 9 7950X3D) | CI Xeon Platinum 8573C | CI EPYC 7763 |
+  |---|---|---|---|
+  | M2 | 0.954 | 1.08 (mean of 1.102, 1.080, 1.098, 1.041) | 1.90 (one run, 1.904) |
+  | M1 | 4.75 | 5.55 (one run) | 3.22 (one run) |
+
+  `PerformanceGate.Baseline` picks the CI entry on `GITHUB_ACTIONS=true`. The gate stays +10%. The EPYC figures and both M1 figures are single samples, and M1 is bimodal locally,
+  so M1 can fail the strict job without a regression; if it does, collect more runs per model before touching the tolerance. The perf job runs every project and fails at the end
+  (before, a failing M2 stopped the loop and hid M1).
+- Red: 14 ms busy wait in the `NodeGraphViewModel` constructor (not committed), strict run locally (baseline 0.954): `M2 steady-state median: 27.8 ms against a calibration of 14.5 ms is a ratio of
+  1.923; ... gate 1.049 ... +101.6% over the baseline`, failed; with `GITHUB_ACTIONS=true` (the CI path; at that commit the CI baseline was the single value 1.09): `ratio of 1.930 ... baseline is 1.090 ...
+  +77.1%`, failed. The per-CPU selection is pinned by `TheBaselineComesFromTheMachineKindTheRunIsOn`. (A first attempt measured the unmodified binary because the busy wait did not compile under S108/S109; it read 1.053, +10.4%, which shows the local noise at the gate.)
+- Deferred: the allocation half of M2 is unchanged; more samples per CPU model come from later perf runs.

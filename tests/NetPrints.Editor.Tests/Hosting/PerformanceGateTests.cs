@@ -37,8 +37,12 @@ public sealed class PerformanceGateTests
     [Fact]
     public void TheBaselineComesFromTheMachineKindTheRunIsOn()
     {
-        Assert.Equal(1.0, PerformanceGate.Baseline(1.0, 1.1, onCi: false));
-        Assert.Equal(1.1, PerformanceGate.Baseline(1.0, 1.1, onCi: true));
+        var ci = new Dictionary<string, double> { ["XEON"] = 1.1, ["EPYC"] = 1.9 };
+
+        Assert.Equal(1.0, PerformanceGate.Baseline(1.0, ci, onCi: false, "Intel(R) Xeon(R)"));
+        Assert.Equal(1.1, PerformanceGate.Baseline(1.0, ci, onCi: true, "Intel(R) Xeon(R)"));
+        Assert.Equal(1.9, PerformanceGate.Baseline(1.0, ci, onCi: true, "AMD EPYC 7763"));
+        Assert.Equal(1.9, PerformanceGate.Baseline(1.0, ci, onCi: true, "Unknown CPU"));
     }
 
     [Fact]

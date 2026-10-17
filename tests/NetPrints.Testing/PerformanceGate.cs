@@ -34,18 +34,38 @@ namespace NetPrints.Testing
         /// <summary>Whether this run is on a GitHub Actions runner.</summary>
         public static bool OnCi => Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true";
 
-        /// <summary>Picks the baseline ratio of this machine kind: the one measured on the CI runner on CI, the local one elsewhere.</summary>
+        /// <summary>Picks the baseline ratio of this machine: on CI the one recorded for this runner's CPU model, elsewhere the local one.</summary>
         /// <param name="local">The ratio measured on the development machine.</param>
-        /// <param name="ci">The ratio measured on the CI runner.</param>
+        /// <param name="ciByCpu">The ratios measured on the CI runner, keyed by a part of the CPU model.</param>
         /// <returns>The ratio to compare with.</returns>
-        public static double Baseline(double local, double ci) => Baseline(local, ci, OnCi);
+        public static double Baseline(double local, IReadOnlyDictionary<string, double> ciByCpu) => Baseline(local, ciByCpu, OnCi, CpuModel);
 
-        /// <summary>Picks <paramref name="ci"/> when <paramref name="onCi"/> is set, <paramref name="local"/> otherwise.</summary>
+        /// <summary>
+        /// Picks the entry of <paramref name="ciByCpu"/> whose key is part of <paramref name="cpuModel"/> when <paramref name="onCi"/> is set,
+        /// or the highest entry (the widest recorded) for a CPU model that has none; <paramref name="local"/> when it is not set.
+        /// </summary>
         /// <param name="local">The ratio measured on the development machine.</param>
-        /// <param name="ci">The ratio measured on the CI runner.</param>
+        /// <param name="ciByCpu">The ratios measured on the CI runner, keyed by a part of the CPU model.</param>
         /// <param name="onCi">Whether the run is on the CI runner.</param>
+        /// <param name="cpuModel">The CPU model of the machine.</param>
         /// <returns>The ratio to compare with.</returns>
-        public static double Baseline(double local, double ci, bool onCi) => onCi ? ci : local;
+        public static double Baseline(double local, IReadOnlyDictionary<string, double> ciByCpu, bool onCi, string cpuModel)
+        {
+            if (!onCi)
+            {
+                return local;
+            }
+
+            foreach ((string key, double ratio) in ciByCpu)
+            {
+                if (cpuModel.Contains(key, StringComparison.OrdinalIgnoreCase))
+                {
+                    return ratio;
+                }
+            }
+
+            return ciByCpu.Values.Max();
+        }
 
         /// <summary>The CPU model of this machine (the first <c>model name</c> of <c>/proc/cpuinfo</c> on Linux), or the architecture and core count.</summary>
         public static string CpuModel { get; } = ReadCpuModel();

@@ -23,7 +23,9 @@ public class ShellStartupPerformanceTests
 {
     private const int Runs = 6;
 
-    private static readonly double BaselineRatio = PerformanceGate.Baseline(local: 4.75, ci: 4.75);
+    private static readonly double BaselineRatio = PerformanceGate.Baseline(
+        local: 4.75,
+        ciByCpu: new Dictionary<string, double> { ["XEON(R) PLATINUM 8573C"] = 5.55, ["EPYC 7763"] = 3.22 });
 
     private const int CompositionBudgetMilliseconds = 150;
 
