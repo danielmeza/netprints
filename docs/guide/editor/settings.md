@@ -23,7 +23,7 @@ The table is generated from the schema; do not edit it by hand.
 | `run.stopTimeoutSeconds` | integer | `5` | 1 to 600 |  | Seconds a stopped program has to exit before its process tree is killed |
 | `run.linuxTerminal` | string | empty | up to 512 characters; matches `^[^\x00-\x1F\x7F]*$` |  | Linux only: the terminal command that hosts a run in an external terminal. Empty detects one |
 | `netprints.editor.theme` | string | `dark` | `dark`, `light`, `system` |  | The theme variant the editor starts in |
-| `netprints.editor.darkPreset` | string | `netprints.dark` | matches `^[a-z0-9]+([._-][a-z0-9]+)*$`; choices from `netprints.presets.dark` |  | The id of the preset the Dark variant uses |
-| `netprints.editor.lightPreset` | string | `netprints.light` | matches `^[a-z0-9]+([._-][a-z0-9]+)*$`; choices from `netprints.presets.light` |  | The id of the preset the Light variant uses |
+| `netprints.editor.darkPreset` | string | `netprints.dark` | up to 128 characters; matches `^[a-z0-9]+([._-][a-z0-9]+)*$`; choices from `netprints.presets.dark` |  | The id of the preset the Dark variant uses |
+| `netprints.editor.lightPreset` | string | `netprints.light` | up to 128 characters; matches `^[a-z0-9]+([._-][a-z0-9]+)*$`; choices from `netprints.presets.light` |  | The id of the preset the Light variant uses |
 
 <!-- settings:end -->

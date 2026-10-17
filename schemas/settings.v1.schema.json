@@ -74,6 +74,7 @@
             "darkPreset": {
               "type": "string",
               "description": "The id of the preset the Dark variant uses",
+              "maxLength": 128,
               "minLength": 1,
               "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$",
               "x-netprints-choices": "netprints.presets.dark"
@@ -81,6 +82,7 @@
             "lightPreset": {
               "type": "string",
               "description": "The id of the preset the Light variant uses",
+              "maxLength": 128,
               "minLength": 1,
               "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$",
               "x-netprints-choices": "netprints.presets.light"

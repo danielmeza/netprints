@@ -18,6 +18,7 @@ public sealed record EditorSettings
     /// <summary>The id of the choices provider that lists the presets of the Light variant.</summary>
     public const string LightPresetChoices = "netprints.presets.light";
 
+    private const int MaxPresetIdLength = 128;
     private const string PresetIdPattern = "^[a-z0-9]+([._-][a-z0-9]+)*$";
 
     /// <summary>The id of the Dark variant's default preset.</summary>
@@ -32,14 +33,14 @@ public sealed record EditorSettings
     public EditorTheme Theme { get; init; } = EditorTheme.Dark;
 
     /// <summary>Gets the id of the preset the Dark variant uses.</summary>
-    [MinLength(1)]
+    [StringLength(MaxPresetIdLength, MinimumLength = 1)]
     [RegularExpression(PresetIdPattern)]
     [SettingChoices(DarkPresetChoices)]
     [Description("The id of the preset the Dark variant uses")]
     public string DarkPreset { get; init; } = DefaultDarkPreset;
 
     /// <summary>Gets the id of the preset the Light variant uses.</summary>
-    [MinLength(1)]
+    [StringLength(MaxPresetIdLength, MinimumLength = 1)]
     [RegularExpression(PresetIdPattern)]
     [SettingChoices(LightPresetChoices)]
     [Description("The id of the preset the Light variant uses")]
