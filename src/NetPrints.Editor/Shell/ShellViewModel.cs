@@ -21,7 +21,9 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
 
     private readonly IContributionRegistry registry;
     private readonly List<PanelViewModel> panels;
+    private readonly IPanelContext factoryContext;
     private readonly Action<ContributionSnapshot> attachStatusItems;
+    private PanelContext? attachedContext;
     private Project? followedProject;
     private ProjectSessionViewModel? followedSession;
     private DocumentViewModel? followedDocument;
@@ -39,6 +41,7 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         ArgumentNullException.ThrowIfNull(timeProvider);
         ArgumentNullException.ThrowIfNull(dispatcher);
         this.registry = registry;
+        factoryContext = panelContext;
         panels =
         [.. registry.Panels
             .OrderBy(panel => panel.DefaultDock)
@@ -54,6 +57,9 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
 
     /// <inheritdoc/>
     public event EventHandler? CommandStatesChanged;
+
+    /// <summary>Raised after panels were added to <see cref="Panels"/> or removed from it because the registry changed, such as a session group of an extension.</summary>
+    public event EventHandler<PanelsChangedEventArgs>? PanelsChanged;
 
     /// <summary>Raised by <see cref="NotifyModelRenamed"/>: a class or member was renamed through a view model, and the model does not notify.</summary>
     public event EventHandler? ModelRenamed;
@@ -155,6 +161,7 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         ArgumentNullException.ThrowIfNull(invoker);
         ArgumentNullException.ThrowIfNull(context);
         var panelContext = new PanelContext(this, api, invoker, context);
+        attachedContext = panelContext;
         foreach (IShellPanelContent content in panels.Select(panel => panel.Content).OfType<IShellPanelContent>())
         {
             content.Attach(panelContext);
@@ -255,7 +262,44 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         Documents.Clear();
     }
 
-    private void OnRegistryChanged(object? sender, ContributionSnapshot snapshot) => attachStatusItems(snapshot);
+    private void OnRegistryChanged(object? sender, ContributionSnapshot snapshot)
+    {
+        attachStatusItems(snapshot);
+        SyncPanels(snapshot);
+    }
+
+    private void SyncPanels(ContributionSnapshot snapshot)
+    {
+        HashSet<string> wanted = [.. snapshot.Panels.Select(panel => panel.Id)];
+        PanelViewModel[] removed = [.. panels.Where(panel => !wanted.Contains(panel.Id))];
+        List<PanelViewModel> added = [];
+        foreach (PanelDescriptor descriptor in snapshot.Panels.Where(descriptor => FindPanel(descriptor.Id) is null))
+        {
+            var panel = new PanelViewModel(descriptor, descriptor.CreateViewModel(factoryContext));
+            int index = panels.FindIndex(existing => (existing.DefaultDock, existing.Order).CompareTo((panel.DefaultDock, panel.Order)) > 0);
+            panels.Insert(index < 0 ? panels.Count : index, panel);
+            if (attachedContext is { } attached && panel.Content is IShellPanelContent content)
+            {
+                content.Attach(attached);
+            }
+
+            added.Add(panel);
+        }
+
+        foreach (PanelViewModel panel in removed)
+        {
+            panels.Remove(panel);
+            if (panel.Content is IShellPanelContent content)
+            {
+                content.Detach();
+            }
+        }
+
+        if (added.Count > 0 || removed.Length > 0)
+        {
+            PanelsChanged?.Invoke(this, new PanelsChangedEventArgs(added, removed));
+        }
+    }
 
     partial void OnSessionChanged(ProjectSessionViewModel? oldValue, ProjectSessionViewModel? newValue)
     {
