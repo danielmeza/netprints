@@ -14,7 +14,8 @@ task here. Batch P3-S2d moved User Stories 16 and 17 to P3b; batch P3-S2e (2026-
 spec's Clarifications) brought them back with User Story 12. The tail is sub-phase G (T136–T146 and its gate T170;
 T153 and T154 are the E+F+G checkpoint's review and fixes) and the NuGet packages are sub-phase H (T158–T169). No ID
 was renumbered. Counts after S2e: 15 active stories, 105 active FRs, 15 active SCs; 160 active tasks of 170 IDs (10
-merged); 50 implementation batches with 190 units, plus 5 units in PR-P (195); 62 batches in all. P3's release is
+merged); 50 implementation batches with 190 units, plus 5 units in PR-P (195); 62 batches in all. Review C1+C2 added
+T172–T175 (164 active of 175 IDs, 194 units plus 5 in PR-P = 199). P3's release is
 0.4.0 (P3a ships as v0.3.0; spec "Version").
 
 **Tests**: REQUIRED (constitution V). A behaviour task names its test class first. "Test first" means: write the test,
@@ -707,7 +708,7 @@ tests. **Gate (plan)**: SC-004, SC-006, SC-007, SC-009.
   context menus, the start page, templates and the status bar; the palette and the shortcuts sheet name each item's
   owner (the extension's `name`). Then each surface subscribes to `Changed` and rebuilds from the snapshot.
 
-### Batch D1b — model: sonnet — T081–T083 — 4 units
+### Batch D1b — model: sonnet — T081–T083, T173 — 5 units
 
 - [ ] T081 [US4] Failure isolation (FR-034, FR-035, research R27; 2 units; load `avalonia-xaml` and `avalonia-styling`).
   Test first: failure fixtures in `tests/Fixtures/Extensions/` (a throwing `Register`, handler, provider and view
@@ -727,8 +728,16 @@ tests. **Gate (plan)**: SC-004, SC-006, SC-007, SC-009.
   provider, go-to provider, status-bar item, settings page, dialog, icon, node search provider, document migration). A
   headless test opens the fixture project that declares it, finds each item on its surface, unloads the project and
   finds none (US4 independent test, SC-004).
+- [ ] T173 [US4] View resources of an extension, by URI (FR-032, FR-033; 1 unit; load `avalonia-xaml` and
+  `avalonia-styling`). Added by Review C1+C2 (CD-19): `ViewResourceLoader` throws `NotSupportedException` for a URI that
+  is not a compiled built-in resource, "until D1", and no task owned the replacement. Test first:
+  `tests/NetPrints.Editor.Tests/Hosting/ViewResourceLoaderTests.cs`: a fixture extension declares a view resource
+  (`DataTemplates`, `ResourceDictionary` or `Styles`) by the URI of its own assembly; it loads when the extension's
+  group is added and is removed with the group, and a URI that resolves to nothing, or to another kind of document, is
+  reported and ignored instead of throwing. Then the loader resolves the URI against the extension's assembly through the
+  group lifecycle of T079.
 
-### Batch D1c — model: sonnet — T084–T085 — 3 units
+### Batch D1c — model: sonnet — T084–T085, T175 — 4 units
 
 - [ ] T084 [US4] `--profile` (FR-036, contracts/cli.md §4; 2 units). Test first: headless start-page tests (a known id
   preselects the profile in New project and filters the template list, with "Show all"; an unknown id leaves it
@@ -742,6 +751,13 @@ tests. **Gate (plan)**: SC-004, SC-006, SC-007, SC-009.
   shipped, bump Dock from 12.1.0.6 in `Directory.Packages.props` and remove the workaround that fills empty capability
   objects, with the warnings test still green; otherwise record "not shipped" with the date. Do not file the upstream
   `IsPinned` issue (it waits for the owner's OK). Record the `ShellMainFlow` status.
+- [ ] T175 [US4] The extension's own services in panel and start-page contexts (FR-021, FR-034, ADR-0020; 1 unit).
+  Added by Review C1+C2 (CD-19): `ShellHost` gives every panel and start-page factory `EmptyServiceProvider.Instance`,
+  while ADR-0020 has a factory resolve its view model from the extension's own provider. Test first:
+  `tests/NetPrints.Editor.Tests/Hosting/FactoryServiceProviderTests.cs`: a fixture extension registers a service with
+  `IExtensionBuilder.Services`; its panel factory and its start-page factory resolve it from their context, and a
+  factory of another extension does not see it. Then the panel and start-page contexts carry the contributing
+  extension's provider (the built-ins get the editor's).
 
 ### Batch D1d — model: sonnet — T086–T088 — 4 units
 
@@ -1061,7 +1077,7 @@ independent test; US9 scenarios 3–4. **Gate (plan)**: the US15 tests and SC-01
   `.template.config/template.json` with `sourceName` `NetPrintsProject` and the `RootNamespace` and `ProfileId`
   symbols.
 
-### Batch F2 — model: sonnet — T131–T133 — 3 units
+### Batch F2 — model: sonnet — T131–T133, T172 — 4 units
 
 - [ ] T131 [US9] Availability in node search (FR-073; 1 unit; load `avalonia-xaml` and `avalonia-styling`). Test
   first: in the `10.0` fixture, a node that needs C# 11 is hidden, the list says how many results the project's C#
@@ -1072,6 +1088,12 @@ independent test; US9 scenarios 3–4. **Gate (plan)**: the US15 tests and SC-01
   at most to the framework's maximum (US9 scenario 4), edits the project body even when an imported props file sets
   it, and says so; a PolySharp hint appears when only types are missing; a missing type is a warning, not an error.
   Then the fixes.
+- [ ] T172 [US9] Common capabilities of a multi-targeted project (FR-071; 1 unit). Added by Review C1+C2 (CD-19):
+  `CSharpTarget` takes the minimum version of the targets, and implementation-notes C1c defers the capability half to
+  here. Test first: `tests/NetPrints.Core.Tests/Projects/CSharpTargetTests.cs` gains a project that targets `net10.0`
+  and `net8.0`: the version is the minimum of the two, and a type or feature that only one target supplies is
+  unavailable (`Check` reports it) while one both supply stays available (US9 scenario 2), with the node search of T131
+  hiding what the common set lacks. Then the intersection of the targets' capabilities in `CSharpTarget`.
 - [ ] T133 **Checkpoint F** (plan "Gate outcomes"; 1 unit). Whole suite plus the E2E pass; CI green. Report the plan's
   gate F: the US15 tests (`NewCommandTests`, `TemplateParityTests`) and SC-010 for the editor path
   (`CSharpTargetWriterIdentityTests`). There is no scope rule: the owner kept the tail and the NuGet packages in P3 on
@@ -1140,7 +1162,7 @@ SC-002 rechecked; SC-001 for NPA030–NPA033; NPK014's failing fixture.
 - [ ] T143 [P] [US16] ADR-0026 (FR-112, FR-116; 1 unit). Write `docs/adr/0026-node-kinds-by-convention.md`, including
   the amendment content the plan names (`PrepareFromSearchAsync`, offers from typed pins). ADR index.
 
-### Batch G4 — model: sonnet — T144–T146, T170 — 4 units
+### Batch G4 — model: sonnet — T144–T146, T174, T170 — 5 units
 
 - [ ] T144 [US17] User theme files (FR-113, FR-114, research R24 B1; 2 units; load `avalonia-xaml` and
   `avalonia-styling`). Test first:
@@ -1156,6 +1178,11 @@ SC-002 rechecked; SC-001 for NPA030–NPA033; NPK014's failing fixture.
   validation (US17 scenario 3); a theme never runs code or loads XAML. Then the wiring.
 - [ ] T146 [P] [US17] The theming guide for user and extension themes (FR-114, FR-116; 1 unit). Extend
   `docs/guide/editor/themes.md`: the file format, the commands, the warnings, and a link to Semi's own documentation.
+- [ ] T174 VSTHRD002 and VSTHRD103 at error in `tests/` (FR-031, ADR-0003; 1 unit). Added by Review C1+C2 (CD-19): T074
+  planned it and ADR-0003 says "a follow-up batch fixes first". Red/green: set both rules to `error` for `tests/` in
+  `.editorconfig` (the build fails on every blocking wait and every sync call that has an async twin), then fix each
+  site for real (async tests, `await` instead of `.Result`/`.Wait()`); no suppression and no ledger entry. Record the
+  count in the ADR-0003 amendment and in the AGENTS.md async rules.
 - [ ] T170 **Checkpoint G** (plan "Gate outcomes"). Whole suite plus the E2E pass; CI green. Report the plan's gate G:
   the US16 tests (the inspector section, value editor and graph rule tests of T136–T138) and the US17 tests (T144,
   T145); SC-002 rechecked after T142 (goldens, S0 golden and search goldens unchanged); SC-001 for NPA030–NPA033;
@@ -1408,14 +1435,14 @@ batch runs after sub-phase H (Checkpoint H, T169).
 | B — node model and search | 21 (T019–T039) | B1 3, B2 4, B3 4, B4 3, B5 4, B6 3, B7 5 = 26 | B-R (T038), B-F (T039) |
 | C1 — public contracts | 18 (T040–T057); T058, T059 merged | C1a 4, C1b 4, C1c 4, C1d 5, C1e 4, C1f 5 = 26 | into C2-R, C2-F (C1+C2) |
 | C2 — facets and the publish gate | 19 (T060–T078) | C2a 4, C2b 4, C2c 4, C2d 3, C2e 4, C2f 3 = 22 | C2-R (T077), C2-F (T078) |
-| D1 — extension host in the editor | 20 (T079–T098); T099, T100 merged | D1a 4, D1b 4, D1c 3, D1d 4, D1e 4, D1f 3, D1g 4 = 26 | into D2-R, D2-F (D1+D2) |
+| D1 — extension host in the editor | 22 (T079–T098, T173, T175); T099, T100 merged | D1a 4, D1b 5, D1c 4, D1d 4, D1e 4, D1f 3, D1g 4 = 28 | into D2-R, D2-F (D1+D2) |
 | D2 — author kit and the Godot sample | 12 (T101–T112) | D2a 4, D2b 4, D2c 4, D2d 3 = 15 | D2-R (T111), D2-F (T112) |
 | E — run and build | 14 (T113–T126); T127, T128 merged | E1 4, E2 3, E3 4, E4 3, E5 3 = 17 | into G-R, G-F (E+F+G) |
-| F — command line and the C# target in the editor | 5 (T129–T133); T134, T135 merged | F1 3, F2 3 = 6 | into G-R, G-F (E+F+G) |
-| G — tail | 14 (T136–T146, T170, T153, T154) | G1 4, G2 4, G3 5, G4 4 = 17 | G-R (T153), G-F (T154) |
+| F — command line and the C# target in the editor | 6 (T129–T133, T172); T134, T135 merged | F1 3, F2 4 = 7 | into G-R, G-F (E+F+G) |
+| G — tail | 15 (T136–T146, T170, T174, T153, T154) | G1 4, G2 4, G3 5, G4 5 = 18 | G-R (T153), G-F (T154) |
 | H — NuGet packages | 12 (T158–T169) | H1 4, H2 5, H3 5, H4 4 = 18 | into PR-R, PR-F (the final checkpoint) |
 | Release preparation, final review and merge | 9 (T147–T152, T155–T157) | PR-P carries 5 units of release preparation | PR-P, PR-R, PR-F, PR-M |
-| **Total** | **160 active of 170 IDs** (10 merged) | **50 batches, 190 units** (+5 units in PR-P = 195) | **12 batches** (4 review, 4 fix, PR-P, PR-R, PR-F, PR-M) |
+| **Total** | **164 active of 175 IDs** (10 merged; T172–T175 added by Review C1+C2) | **50 batches, 194 units** (+5 units in PR-P = 199) | **12 batches** (4 review, 4 fix, PR-P, PR-R, PR-F, PR-M) |
 
 62 batches in all (54 after S2d and A2, 68 before S2d). The units refine plan.md's first estimate per sub-phase, and its
 table carries them: A 19 (was 16: the M5 spike and the carry-overs are sized separately), B 26 (25), D1 26 (25), D2 15
@@ -1449,7 +1476,7 @@ P3c and have no task (T152 marks them as moved).
 | FR-018 | T033 |
 | FR-019 | T040, T042 |
 | FR-020 | T070, T071, T073 |
-| FR-021 | T051, T060, T061, T062, T064, T065, T068, T136, T137, T138 |
+| FR-021 | T051, T060, T061, T062, T064, T065, T068, T136, T137, T138, T175 |
 | FR-022 | T052 |
 | FR-023 | T060 |
 | FR-024 | T063 |
@@ -1459,10 +1486,10 @@ P3c and have no task (T152 marks them as moved).
 | FR-028 | T047, T051 |
 | FR-029 | T069, T145 |
 | FR-030 | T051, T056, T072, T073 |
-| FR-031 | T074, T075 |
-| FR-032 | T079, T082 |
-| FR-033 | T080 |
-| FR-034, FR-035 | T081 |
+| FR-031 | T074, T075, T174 |
+| FR-032 | T079, T082, T173 |
+| FR-033 | T080, T173 |
+| FR-034, FR-035 | T081, T175 |
 | FR-036 | T084 |
 | FR-037 | T109, T125 |
 | FR-038 | T072 |
@@ -1491,7 +1518,7 @@ P3c and have no task (T152 marks them as moved).
 | FR-065 | T125 |
 | FR-066 | T095, T097 |
 | FR-067–FR-069 | T096 |
-| FR-070, FR-071 | T047, T048 |
+| FR-070, FR-071 | T047, T048, T172 |
 | FR-072 | T049 |
 | FR-073 | T131 |
 | FR-074 | T132 |
