@@ -8,6 +8,7 @@ using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Editor.UndoRedo;
 using NetPrints.Graph;
+using NetPrints.Testing;
 
 namespace NetPrints.Editor.Tests.Graph;
 
@@ -23,10 +24,11 @@ public sealed class GraphScopePerformanceTests(TestEditor editor)
     private const int Runs = 5;
     private const double BaselineBytesPerNode = 35_080;
     private const double AllocationTolerance = 1.10;
+    private const double BaselineRatio = 0.954;
 
     [Fact(Timeout = 300_000)]
     [Trait("Category", "Performance")]
-    public void BuildingALargeGraphIsMeasured()
+    public async Task BuildingALargeGraphIsMeasured()
     {
         var output = TestContext.Current.TestOutputHelper
             ?? throw new InvalidOperationException($"{nameof(TestContext)} has no {nameof(TestContext.Current.TestOutputHelper)}.");
@@ -69,6 +71,28 @@ public sealed class GraphScopePerformanceTests(TestEditor editor)
         Assert.Equal(0, counting.ProjectClassesCalls);
         Assert.True(medianBytes / nodes <= BaselineBytesPerNode * AllocationTolerance,
             $"A node allocates {medianBytes / nodes:F0} bytes; the gate is {BaselineBytesPerNode * AllocationTolerance:F0} (R5-0 baseline {BaselineBytesPerNode} plus 10%).");
+
+        double calibration = await PerformanceGate.CalibrateAsync();
+        double steady = await PerformanceGate.SteadyMedianAsync(() => ValueTask.FromResult(TimeOneBuild()), BaselineRatio * PerformanceGate.Tolerance * calibration);
+        calibration = Math.Min(calibration, await PerformanceGate.CalibrateAsync());
+        GateVerdict verdict = PerformanceGate.Judge("M2 steady-state median", steady, calibration, BaselineRatio);
+        output.WriteLine(verdict.Message);
+        if (PerformanceGate.Strict)
+        {
+            Assert.True(verdict.Passed, verdict.Message);
+        }
+    }
+
+    private double TimeOneBuild()
+    {
+        MethodGraph method = BuildGraph();
+        var counting = new CountingServices(editor.Context);
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        var stopwatch = Stopwatch.StartNew();
+        _ = new NodeGraphViewModel(method, counting.Services);
+        stopwatch.Stop();
+        return stopwatch.Elapsed.TotalMilliseconds;
     }
 
     private static MethodGraph BuildGraph()

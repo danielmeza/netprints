@@ -8,6 +8,7 @@ using NetPrints.Extensibility;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
+using NetPrints.Testing;
 
 namespace NetPrints.Editor.UITests.Hosting;
 
@@ -21,6 +22,8 @@ namespace NetPrints.Editor.UITests.Hosting;
 public class ShellStartupPerformanceTests
 {
     private const int Runs = 6;
+
+    private const double BaselineRatio = 4.75;
 
     private const int CompositionBudgetMilliseconds = 150;
 
@@ -55,6 +58,26 @@ public class ShellStartupPerformanceTests
 
         output.WriteLine(string.Create(CultureInfo.InvariantCulture,
             $"M1 median of the warm runs: {Median(times):F1} ms, {Median(bytes):F0} bytes"));
+
+        double calibration = await PerformanceGate.CalibrateAsync();
+        double steady = await PerformanceGate.SteadyMedianAsync(TimeOneStartAsync, BaselineRatio * PerformanceGate.Tolerance * calibration);
+        calibration = Math.Min(calibration, await PerformanceGate.CalibrateAsync());
+        GateVerdict verdict = PerformanceGate.Judge("M1 steady-state median", steady, calibration, BaselineRatio);
+        output.WriteLine(verdict.Message);
+        if (PerformanceGate.Strict)
+        {
+            Assert.True(verdict.Passed, verdict.Message);
+        }
+    }
+
+    private static async ValueTask<double> TimeOneStartAsync()
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        var stopwatch = Stopwatch.StartNew();
+        await using ShellApp app = ShellApp.Start();
+        stopwatch.Stop();
+        return stopwatch.Elapsed.TotalMilliseconds;
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
