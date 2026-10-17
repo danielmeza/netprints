@@ -3,7 +3,7 @@
 ## Status
 
 Accepted (2026-10-16, P3 spec `specs/006-editor-extension-host/`, research R12 and R14; the split lands in sub-phase C1,
-batch C1a). The Facet section is filled by T072 in sub-phase C2.
+batch C1a). The Facet section was filled by T072 in sub-phase C2.
 
 ## Context
 
@@ -48,7 +48,26 @@ batch C1a). The Facet section is filled by T072 in sub-phase C2.
 
 ## Facet
 
-Filled by T072 (sub-phase C2).
+`IExtensionBuilder.Editor` is the editor facet: an `IEditorContributions` that takes the contributions only an editor can show
+(commands, panels, start page tiles, context-menu items, tooltip and go-to providers, status bar items, dialogs, settings
+pages and view resources). The contracts live in Abstractions, so an extension compiles against one package whichever host
+loads it, and the facet type and its descriptors are `[Experimental]` under NPXE0005.
+
+1. **Buffered, then replayed.** The loader hands every extension a buffered facet. `Register` runs in whatever host loaded the
+   extension; the calls on the facet are recorded and replayed to the real editor registry once, when the editor opens the
+   extension's contributions. The CLI, the generator and the tests have no editor, so there the recorded calls are dropped:
+   an extension that is correct in the editor is loadable everywhere, and a contribution kind is never a reason for a load to
+   fail.
+2. **Owner and prefix rules apply on replay.** The editor registry reports an invalid or duplicate descriptor and ignores it,
+   and an id without the manifest prefix is NPX013, the same as for the builder's own contributions.
+3. **The facet is not a host API.** The editor implements `IEditorContributions`; nothing else in the host reads it, and a
+   change to the editor's registry is not an API change for authors.
+4. **Trust.** Project-declared extensions (the `NetPrintsExtension` items of a project) keep loading in the CLI and the
+   build with no trust check, as analyzers and build tasks do (FR-038): building a project already runs the project's code.
+   The trust prompt and the trusted-projects setting belong to the editor alone and decide only whether the editor shows
+   such an extension's contributions and loads it into the editor process. `netprints build` pins this
+   (`ProjectExtensionBuildTests`: a project's extension translates its nodes, and a broken one fails the build with its NPX
+   code, both with no trust record). The per-publisher install trust and its revoke list are P3c's (FR-097).
 
 ## Consequences
 
