@@ -129,6 +129,12 @@ internal sealed class StartPageContext : IStartPageContext
     /// <summary>Gets the clock.</summary>
     public TimeProvider Time { get; }
 
+    /// <summary>Gets the same context with another service provider, the contributing extension's own.</summary>
+    /// <param name="services">The provider the extension's factory resolves from.</param>
+    /// <returns>The context.</returns>
+    public StartPageContext WithServices(IServiceProvider services) =>
+        new(ProjectActions, new ServicesContext(host, services), Recent, StateStore, Clipboard, FolderLauncher, UrlLauncher, Samples, Time);
+
     /// <summary>Gets the editor's own context behind the typed one.</summary>
     /// <param name="context">The context a tile factory was given.</param>
     /// <returns>The context the editor built.</returns>
@@ -138,6 +144,21 @@ internal sealed class StartPageContext : IStartPageContext
         ArgumentNullException.ThrowIfNull(context);
         return context as StartPageContext ?? throw new InvalidOperationException("The editor's own tiles run only in the editor's start page.");
     }
+}
+
+/// <summary>A panel context with the services of the extension a factory belongs to; the shell, dialogs and output are the editor's.</summary>
+/// <param name="Inner">The editor's context.</param>
+/// <param name="Services">The extension's own services.</param>
+internal sealed record ServicesContext(IPanelContext Inner, IServiceProvider Services) : IPanelContext
+{
+    /// <inheritdoc/>
+    public IEditorShell Shell => Inner.Shell;
+
+    /// <inheritdoc/>
+    public IDialogService Dialogs => Inner.Dialogs;
+
+    /// <inheritdoc/>
+    public IEditorOutput Output => Inner.Output;
 }
 
 /// <summary>The status bar, settings page and dialog contexts of the editor host, over a command context.</summary>

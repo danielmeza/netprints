@@ -1492,3 +1492,24 @@ T076, Checkpoint C2, gate items measured on this head (Release).
   loads while one is open, which the unsaved-changes flow does not allow. Left as is.
 - **Fix for the trim ratchet**: `AvaloniaXamlLoader.Load` is the one new IL2026 in the Editor; two `JsonArray.Add<T>` warnings in `NetPrintsJsonSchema` were removed with a non-generic overload
   and the baseline in `eng/trim-warnings.txt` is now 8.
+
+## Batch D1c (T084, T085, T175)
+
+- **T084 red (assertions)**: `StartupProfileTests` ran 5 failed of 6 before the code (`Assert.True() Failure` on `IsFiltered`, `Collections differ` on the template ids, no start page message, the project not opened
+  because the three arguments were not a single path). Green after `StartupArguments` (parses `--profile <id>` and `--profile=<id>`; the one positional argument left is the project), `ProjectLoader.StartupProfileId`
+  and the filter in `NewProjectDialogViewModel` (`IsFiltered`, `ShowAll`, `ProfileNote`; the dialog shows a note and a "Show all templates" check box). The E2E scenario `StartWithProfileTests` was written with the
+  code (no red run) and passes on the editor under Xvfb.
+- **Decision**: an unknown id (or `--profile` with no id) sets `StartPageError` (the start page's message line) naming the id and the known ids; the dialog stays unfiltered. With a project path the project opens and the
+  status bar says the profile was ignored, shown after the load so the "Loaded" status does not replace it. The profile is held only by the loader of the session; nothing is written to the state files.
+  A known profile without templates leaves the list empty until Show all.
+- **T085 Dock**: Dock#1191 is in 12.1.0.10 (merged 2026-10-16 04:29 UTC, release 2026-10-16 19:28 UTC; 12.1.0.12 is the latest). Dock 12.1.0.10 needs Avalonia 12.1.4, so Avalonia, Desktop, Themes.Fluent, Fonts.Inter,
+  Skia and Headless went from 12.1.3 to 12.1.4 in `Directory.Packages.props`; Headless.XUnit stays 12.1.3. The workaround is gone: `ShellDocument`/`ShellTool` constructors and the empty `DockCapabilityPolicy` /
+  `DockCapabilityOverrides` of every dock in `ShellDockFactory`. `AnEmptyCapabilityObjectStillInheritsSoDragDropAndCloseStayAllowed` keeps the drag, drop and close assertions with null capability objects.
+  The binding-warning tests (`ShellAdapterTests`, an empty list of warnings) stay green without the workaround. With 12.1.4 a floated host window is no longer the active window after the main window hides in
+  the headless platform, so `DialogsAreOwnedByTheActiveDockHostWindow` activates the host window explicitly. `.specify/memory/roadmap.md` (line about the bump) is governance; not edited.
+- **T085 tests (no red)**: `StartupWarningsTests` (E2E: no `IsPinned`, no "Value is null", no binding warning in the editor output after start and showing a panel) and
+  `HoveringTheExactMiddleOfACableAtTheFitZoomHitsItAndGivesItsTooltip` (headless, after `fitAll`) both passed on the first run, before any fix, with Dock 12.1.0.6; they pin the behaviour. The `IsPinned`
+  warning did not show in this flow with either Dock version. The upstream `IsPinned` issue was not filed. `ShellMainFlow` E2E: 1 of 1 passed (83 s) at this head.
+- **T175 red (assertions)**: `FactoryServiceProviderTests` failed 2 of 3 (`Assert.NotNull() Failure: Value is null` for the panel and the tile service) before the change. `ShellViewModel.ExtensionServicesOf(id, snapshot)` gives the
+  provider of the extension that owns a contribution (null for built-ins and without a host); panel factories get a `ServicesContext` over the editor's context with it, tile factories a `StartPageContext.WithServices` copy.
+  Another extension's factory resolves nothing of the first's services; built-ins keep the editor's context (`EmptyServiceProvider`).

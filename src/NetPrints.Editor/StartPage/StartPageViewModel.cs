@@ -121,12 +121,15 @@ internal sealed partial class StartPageViewModel : DocumentViewModel
         foreach (DashboardTileDescriptor descriptor in snapshot.DashboardTiles.OrderBy(tile => tile.Order))
         {
             int index = built.FindIndex(entry => ReferenceEquals(entry.Descriptor, descriptor));
-            next.Add(index >= 0 ? built[index] : (descriptor, descriptor.CreateViewModel(context)));
+            next.Add(index >= 0 ? built[index] : (descriptor, descriptor.CreateViewModel(TileContext(descriptor.Id, snapshot))));
         }
 
         built = next;
         return [.. next.Select(entry => entry.Tile)];
     }
+
+    private StartPageContext TileContext(string id, IContributionSnapshot snapshot) =>
+        shell.ExtensionServicesOf(id, snapshot) is { } services ? context.WithServices(services) : context;
 
     private void OnShellChanged(object? sender, PropertyChangedEventArgs e)
     {

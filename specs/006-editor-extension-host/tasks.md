@@ -739,19 +739,19 @@ tests. **Gate (plan)**: SC-004, SC-006, SC-007, SC-009.
 
 ### Batch D1c — model: sonnet — T084–T085, T175 — 4 units
 
-- [ ] T084 [US4] `--profile` (FR-036, contracts/cli.md §4; 2 units). Test first: headless start-page tests (a known id
+- [x] T084 [US4] `--profile` (FR-036, contracts/cli.md §4; 2 units). Test first: headless start-page tests (a known id
   preselects the profile in New project and filters the template list, with "Show all"; an unknown id leaves it
   unfiltered with a message naming the id and the known ids; with a project path the project opens and an info message
   says the profile was ignored) and the E2E `tests/NetPrints.Desktop.E2ETests/Scenarios/StartWithProfileTests.cs`. Then
   the argument in `src/NetPrints.Desktop/Program.cs`, the start page filter and the messages from resources. The profile
   is not remembered.
-- [ ] T085 [US11] The P3a open items (FR-088; 1 unit). Test first: the startup warnings test asserts no Dock `IsPinned`
+- [x] T085 [US11] The P3a open items (FR-088; 1 unit). Test first: the startup warnings test asserts no Dock `IsPinned`
   binding warning and no capability "Value is null" warning; a headless test hovers the exact middle of a cable at the
   fit zoom and gets its tooltip. Then the fixes. Check the Dock releases for wieslawsoltes/Dock#1191: if one has
   shipped, bump Dock from 12.1.0.6 in `Directory.Packages.props` and remove the workaround that fills empty capability
   objects, with the warnings test still green; otherwise record "not shipped" with the date. Do not file the upstream
   `IsPinned` issue (it waits for the owner's OK). Record the `ShellMainFlow` status.
-- [ ] T175 [US4] The extension's own services in panel and start-page contexts (FR-021, FR-034, ADR-0020; 1 unit).
+- [x] T175 [US4] The extension's own services in panel and start-page contexts (FR-021, FR-034, ADR-0020; 1 unit).
   Added by Review C1+C2 (CD-19): `ShellHost` gives every panel and start-page factory `EmptyServiceProvider.Instance`,
   while ADR-0020 has a factory resolve its view model from the extension's own provider. Test first:
   `tests/NetPrints.Editor.Tests/Hosting/FactoryServiceProviderTests.cs`: a fixture extension registers a service with

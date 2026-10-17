@@ -22,6 +22,7 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
     private readonly IContributionRegistry registry;
     private readonly List<PanelViewModel> panels;
     private readonly IPanelContext factoryContext;
+    private readonly EditorContext? host;
     private readonly Action<ContributionSnapshot> attachStatusItems;
     private PanelContext? attachedContext;
     private Project? followedProject;
@@ -42,11 +43,12 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         ArgumentNullException.ThrowIfNull(dispatcher);
         this.registry = registry;
         factoryContext = panelContext;
+        this.host = host;
         panels =
         [.. registry.Panels
             .OrderBy(panel => panel.DefaultDock)
             .ThenBy(panel => panel.Order)
-            .Select(panel => new PanelViewModel(panel, panel.CreateViewModel(panelContext)))];
+            .Select(panel => new PanelViewModel(panel, panel.CreateViewModel(ContextOf(panel.Id, panelContext, registry.Snapshot))))];
         StatusBar = new StatusBarViewModel(timeProvider, dispatcher);
         StatusBar.PropertyChanged += OnStatusBarChanged;
         attachStatusItems = snapshot => StatusBar.Attach(snapshot.StatusBarItems, item => new ShellStatusBarContext(this, panelContext.Shell, host, snapshot.OwnerOf(item.Id)));
@@ -268,6 +270,23 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         SyncPanels(snapshot);
     }
 
+    /// <summary>Gets the context a factory of the contribution <paramref name="id"/> is given: the editor's, or with the services of the extension that contributed it.</summary>
+    /// <param name="id">The contribution id.</param>
+    /// <param name="editorContext">The editor's context.</param>
+    /// <param name="snapshot">The snapshot that names the contribution's owner.</param>
+    /// <returns>The context.</returns>
+    internal IPanelContext ContextOf(string id, IPanelContext editorContext, IContributionSnapshot snapshot) =>
+        ExtensionServicesOf(id, snapshot) is { } services ? new ServicesContext(editorContext, services) : editorContext;
+
+    /// <summary>Gets the services of the extension that contributed <paramref name="id"/>.</summary>
+    /// <param name="id">The contribution id.</param>
+    /// <param name="snapshot">The snapshot that names the contribution's owner.</param>
+    /// <returns>The extension's provider, or <see langword="null"/> for a built-in contribution or when the shell has no host.</returns>
+    internal IServiceProvider? ExtensionServicesOf(string id, IContributionSnapshot snapshot) =>
+        host is not null && snapshot.OwnerNameOf(id) is not null && snapshot.OwnerOf(id) is { } owner
+            ? host.Extensions.Current.ServicesOf(owner)
+            : null;
+
     private void SyncPanels(ContributionSnapshot snapshot)
     {
         HashSet<string> wanted = [.. snapshot.Panels.Select(panel => panel.Id)];
@@ -275,7 +294,7 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         List<PanelViewModel> added = [];
         foreach (PanelDescriptor descriptor in snapshot.Panels.Where(descriptor => FindPanel(descriptor.Id) is null))
         {
-            var panel = new PanelViewModel(descriptor, descriptor.CreateViewModel(factoryContext));
+            var panel = new PanelViewModel(descriptor, descriptor.CreateViewModel(ContextOf(descriptor.Id, factoryContext, snapshot)));
             int index = panels.FindIndex(existing => (existing.DefaultDock, existing.Order).CompareTo((panel.DefaultDock, panel.Order)) > 0);
             panels.Insert(index < 0 ? panels.Count : index, panel);
             if (attachedContext is { } attached && panel.Content is IShellPanelContent content)
