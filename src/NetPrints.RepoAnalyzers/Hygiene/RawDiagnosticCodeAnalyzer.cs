@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -41,7 +42,8 @@ public sealed class RawDiagnosticCodeAnalyzer : DiagnosticAnalyzer
         NphDiagnosticCodes.Category,
         DiagnosticSeverity.Error,
         isEnabledByDefault: false,
-        helpLinkUri: DiagnosticHelpLinks.For(NphDiagnosticCodes.RawDiagnosticCode));
+        helpLinkUri: DiagnosticHelpLinks.For(NphDiagnosticCodes.RawDiagnosticCode),
+        customTags: WellKnownDiagnosticTags.CompilationEnd);
 
     /// <inheritdoc/>
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
@@ -53,12 +55,27 @@ public sealed class RawDiagnosticCodeAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(start =>
         {
-            ConcurrentDictionary<string, bool> declared = new(StringComparer.Ordinal);
+            ConcurrentBag<(string Code, Location Location)> declared = [];
             start.RegisterSyntaxNodeAction(site => Analyze(site, declared), SyntaxKind.StringLiteralExpression);
+            start.RegisterCompilationEndAction(end => ReportDuplicates(end, declared));
         });
     }
 
-    private static void Analyze(SyntaxNodeAnalysisContext context, ConcurrentDictionary<string, bool> declared)
+    private static void ReportDuplicates(CompilationAnalysisContext context, ConcurrentBag<(string Code, Location Location)> declared)
+    {
+        foreach (IGrouping<string, (string Code, Location Location)> group in declared.GroupBy(item => item.Code, StringComparer.Ordinal))
+        {
+            foreach ((string code, Location location) in group
+                .OrderBy(item => item.Location.GetLineSpan().Path, StringComparer.Ordinal)
+                .ThenBy(item => item.Location.SourceSpan.Start)
+                .Skip(1))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(Rule, location, $"The code '{code}' is declared twice in this project"));
+            }
+        }
+    }
+
+    private static void Analyze(SyntaxNodeAnalysisContext context, ConcurrentBag<(string Code, Location Location)> declared)
     {
         var literal = (LiteralExpressionSyntax)context.Node;
         string code = literal.Token.ValueText;
@@ -75,9 +92,9 @@ public sealed class RawDiagnosticCodeAnalyzer : DiagnosticAnalyzer
         {
             Report(context, literal, $"The code '{code}' is declared outside the files that declare diagnostic codes");
         }
-        else if (!declared.TryAdd(code, true))
+        else
         {
-            Report(context, literal, $"The code '{code}' is declared twice in this project");
+            declared.Add((code, literal.GetLocation()));
         }
     }
 

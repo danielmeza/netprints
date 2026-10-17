@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using NetPrints.Analyzers.Tests.Infrastructure;
 using Xunit;
@@ -66,6 +67,20 @@ public class Nph003Tests
             "class Codes\n{\n    public const string A = \"NPT001\";\n\n    public const string B = {|NPH003:\"NPT001\"|};\n}\n",
             Id,
             new HygieneInputs(Codes));
+    }
+
+    [Fact]
+    public async Task TheDuplicateAcrossFilesIsTheOneInTheLaterPathWhateverTheCompilationOrder()
+    {
+        const string Early = "/repo/src/A/ADiagnosticCodes.cs";
+        const string Late = "/repo/src/B/BDiagnosticCodes.cs";
+        const string Source = "class Codes\n{\n    public const string A = \"NPT001\";\n}\n";
+
+        for (int run = 0; run < 25; run++)
+        {
+            IReadOnlyList<(string Path, int Start)> reported = await HygieneHarness.AnalyzeFilesAsync(Id, (Late, Source), (Early, Source));
+            Assert.Equal([(Late, 42)], reported);
+        }
     }
 
     [Fact]

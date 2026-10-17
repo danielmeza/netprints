@@ -38,14 +38,28 @@ internal static class HygieneHarness
         return actual;
     }
 
-    private static async Task<ImmutableArray<Diagnostic>> AnalyzeAsync(string source, string id, HygieneInputs inputs)
+    /// <summary>Runs the analyzer over several files of one compilation and returns the reported locations as path and span start, in the order the analyzer reports them.</summary>
+    /// <param name="id">The diagnostic id to check.</param>
+    /// <param name="files">The files in compilation order, as path and source text.</param>
+    /// <returns>The path and start of each reported span, ordered by path and start.</returns>
+    public static async Task<IReadOnlyList<(string Path, int Start)>> AnalyzeFilesAsync(string id, params (string Path, string Source)[] files)
     {
-        SyntaxTree tree = CSharpSyntaxTree.ParseText(source, path: inputs.Path, cancellationToken: TestContext.Current.CancellationToken);
-        CSharpCompilation compilation = CSharpCompilation.Create("Sample", [tree], [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)])
+        ImmutableArray<Diagnostic> actual = await AnalyzeAsync(files, id, new HygieneInputs());
+        return [.. actual.Select(diagnostic => (diagnostic.Location.SourceTree?.FilePath ?? string.Empty, diagnostic.Location.SourceSpan.Start))
+            .OrderBy(item => item.Item1, StringComparer.Ordinal).ThenBy(item => item.Item2)];
+    }
+
+    private static Task<ImmutableArray<Diagnostic>> AnalyzeAsync(string source, string id, HygieneInputs inputs) =>
+        AnalyzeAsync([(inputs.Path, source)], id, inputs);
+
+    private static async Task<ImmutableArray<Diagnostic>> AnalyzeAsync(IReadOnlyList<(string Path, string Source)> files, string id, HygieneInputs inputs)
+    {
+        SyntaxTree[] trees = [.. files.Select(file => CSharpSyntaxTree.ParseText(file.Source, path: file.Path, cancellationToken: TestContext.Current.CancellationToken))];
+        CSharpCompilation compilation = CSharpCompilation.Create("Sample", trees, [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)])
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, specificDiagnosticOptions: [new KeyValuePair<string, ReportDiagnostic>(id, ReportDiagnostic.Error)]));
 
-        ImmutableArray<AdditionalText> files = inputs.Ledger is null ? [] : [new MemoryText("HygieneLedger.txt", inputs.Ledger)];
-        AnalyzerOptions options = new(files, new MapOptionsProvider(inputs.Options ?? new Dictionary<string, string>()));
+        ImmutableArray<AdditionalText> additional = inputs.Ledger is null ? [] : [new MemoryText("HygieneLedger.txt", inputs.Ledger)];
+        AnalyzerOptions options = new(additional,new MapOptionsProvider(inputs.Options ?? new Dictionary<string, string>()));
         ImmutableArray<Diagnostic> all = await compilation.WithAnalyzers([AnalyzerHarness.Analyzer(id)], options).GetAnalyzerDiagnosticsAsync(TestContext.Current.CancellationToken);
         return [.. all.Where(diagnostic => diagnostic.Id == id).OrderBy(diagnostic => diagnostic.Location.SourceSpan.Start)];
     }
