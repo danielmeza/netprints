@@ -1178,3 +1178,23 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - Docs: ADR-0003 and ADR-0007 amended here; the extensions guide, ADR-0030, ADR-0020, ADR-0021, `releasing.md`, `graph-format.md` and
   `docs/api/docfx.json` were done in C2a to C2e.
 - Checkpoint C2, CI at 9d82b72a green: CI run 38996910612, CLI (Windows) run 38996910613, Release run 38996910683, Docs run 38996910605. T076 ticked.
+
+## Batch C-F1 (T078, part 1: CD-2, CD-7, CD-8, CD-20)
+
+- CD-2: fixed in acc2f524. The analyzer collects the declarations per compilation and reports every one but the first, ordered by
+  path and then position, in a compilation-end action (`CompilationEnd` tag on the descriptor, RS1037).
+  Red: the new `TheDuplicateAcrossFilesIsTheOneInTheLaterPathWhateverTheCompilationOrder` (two files passed latest-path first, 25
+  rounds) failed in 6 of 6 runs on the old analyzer (`Expected ... BDiagnosticCodes.cs, 42; Actual ... ADiagnosticCodes.cs, 42`), and
+  `ASecondDeclarationOfOneCodeInAProjectIsReported` failed intermittently across the same runs (Expected start 81, actual 42).
+  Green: the Analyzers project, 275 tests, 12 of 12 runs (Release).
+- CD-7: fixed in 060305ca. v0.2.0 wrote `SymbolDisplay.FormatLiteral` output unchanged, so the escape character is `\u001b`; the
+  two-argument overload keeps that and only the `CSharpTarget` overload rewrites to `\e` (C# 13 and later).
+  Red: `TheLiteralOverloadWithoutATargetKeepsTheOutputOfRelease020` (Expected `"a\\u001bb"`, Actual `"a\\eb"`). Green: TranslatorTargetTests
+  8 of 8, with the below-13 and from-13 cases already pinned and a new `Unconstrained` case.
+- CD-8: fixed in 580bc618. The identity test copies `tests/Fixtures/CSharpTarget/HelloWorld.Program.netpc.json`, a graph whose
+  string holds an escape character, and asserts the expected form per fixture (`\u001b` for Pinned10 and MultiTarget, `\e` for the
+  others). Red: `GraphCodeGenerator` temporarily given `CSharpTarget.Unconstrained` instead of the request's target failed Pinned10 and
+  MultiTarget (Expected `Hello,\\u001bWorld!`, Actual `Hello,\\eWorld!`); restored, 8 of 8 green.
+- CD-20: fixed in c410c739. ADR-0038 decision 2 and FR-071 name `MaxKnown`; decision 9 records the escape rule (CD-7); R16 and the
+  guide's "API stability" list `CSharpTarget.Resolve`, `CSharpFrameworkInput`, `CSharpTargetResolution`, `INodeHintSource` and
+  `NodeHint` as stable, so no PublicAPI change.
