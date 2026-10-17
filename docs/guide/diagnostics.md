@@ -42,7 +42,7 @@ These rules check the node classes whose pins the convention generator declares 
 | NPA022 | error | A constant contribution `Id` does not match the id pattern `^[a-z0-9]+(\.[a-zA-Z0-9]+)+$`, or, when the project sets the compiler-visible property `NetPrintsExtensionId`, does not start with that id and a dot. |
 | NPA023 | error | Two commands in one project are built with the same constant id. |
 | NPA024 | warning | Two commands in one project are built with the same menu id, group and order. |
-| NPA040 | warning | A resource key a `[NodeKind]` class implies (`Node.<kind>.Title`, `Node.<kind>.Pin.<direction>.<collection>.<key>`, as in `NodePins.Shipped.txt`) is missing from the neutral resx. The repository sets it to an error. A project without a resx among its `AdditionalFiles` is not checked. |
+| NPA040 | warning | A resource key a `[NodeKind]` class implies (`Node.<kind>.Title` when the class overrides `TitleIsFixed`, `Node.<kind>.Pin.<direction>.<collection>.<key>`, as in `NodePins.Shipped.txt`) is missing from the neutral resx. The repository sets it to an error. A project without a resx among its `AdditionalFiles` is not checked. |
 | NPA041 | error | A satellite resx has a key the neutral file lacks, or a `{n}` placeholder count that differs from the neutral text. |
 | NPA042 | info | A `Node.<kind>.*` resx key of a `[NodeKind]` class in the project that no declaration uses. |
 

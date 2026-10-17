@@ -18,12 +18,18 @@ internal static class ResxSamples
 
     public const string LoopKey = "Node.sample.loop.Pin.out.exec.Loop";
 
-    /// <summary>Gets the sample node class.</summary>
-    public static string Loop() =>
+    /// <summary>Gets the sample node class, whose title is built from its content.</summary>
+    public static string Loop() => LoopClass(string.Empty);
+
+    /// <summary>Gets the sample node class with a title that is the same for every instance, so its text comes from the resx.</summary>
+    public static string FixedTitleLoop() => LoopClass("    public override bool TitleIsFixed => true;\n");
+
+    private static string LoopClass(string extra) =>
         PinSamples.Header + $$"""
             [NodeKind("{{Kind}}")]
             public sealed partial class LoopNode : Node
             {
+            {{extra}}
                 public LoopNode(NodeGraph graph) : base(graph)
                 {
                     DeclarePins();

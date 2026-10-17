@@ -22,6 +22,6 @@ NPA021 | Authoring | Error | A gesture literal does not parse, or a single-key g
 NPA022 | Authoring | Error | A constant contribution id does not match the id pattern or the owner prefix
 NPA023 | Authoring | Error | Two constant command ids are equal in one compilation
 NPA024 | Authoring | Warning | Two commands share a menu id, group and order in one compilation
-NPA040 | Authoring | Warning | A convention resource key of a node kind is missing from the neutral resx
+NPA040 | Authoring | Warning | A convention resource key of a node kind (its title key only when it overrides TitleIsFixed) is missing from the neutral resx
 NPA041 | Authoring | Error | A satellite resx has a key the neutral one lacks, or a placeholder count differs
 NPA042 | Authoring | Info | A Node resx key of a node kind in the project that no declaration uses

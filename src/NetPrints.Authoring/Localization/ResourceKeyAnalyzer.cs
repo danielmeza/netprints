@@ -18,6 +18,8 @@ public sealed class ResourceKeyAnalyzer : DiagnosticAnalyzer
 
     private const string PinInfix = ".Pin.";
 
+    private const string TitleIsFixedName = "TitleIsFixed";
+
     private static readonly string[] TextSuffixes = ["Title", "Description", "Keywords"];
 
     private static readonly DiagnosticDescriptor Missing = new(
@@ -95,7 +97,7 @@ public sealed class ResourceKeyAnalyzer : DiagnosticAnalyzer
 
         string titleKey = NodePrefix + kind + ".Title";
         HashSet<string> implied = new(StringComparer.Ordinal) { titleKey };
-        if (!neutralKeys.Contains(titleKey))
+        if (OverridesTitleIsFixed(type) && !neutralKeys.Contains(titleKey))
         {
             context.ReportDiagnostic(Diagnostic.Create(Missing, typeLocation, titleKey, kind));
         }
@@ -112,6 +114,19 @@ public sealed class ResourceKeyAnalyzer : DiagnosticAnalyzer
         }
 
         impliedByKind[kind] = implied;
+    }
+
+    private static bool OverridesTitleIsFixed(INamedTypeSymbol type)
+    {
+        for (INamedTypeSymbol? current = type; current is not null; current = current.BaseType)
+        {
+            if (current.GetMembers(TitleIsFixedName).OfType<IPropertySymbol>().Any(property => property.IsOverride))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void ReportSatellites(CompilationAnalysisContext context, List<ResxFile> files)

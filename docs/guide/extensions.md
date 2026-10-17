@@ -233,7 +233,7 @@ the unshipped lines to the shipped file, in the same sorted order. A project wit
 | NPA010 | warning | A declared key is not in either file. The fix adds it to `NodePins.Unshipped.txt`. |
 | NPA011 | error | A shipped key is no longer declared; the message names the old and the new key. Keep the key with `[Pin("old")]` on the replacing property, or remove it on purpose with a `*REMOVED*<line>` in the unshipped file. |
 
-| NPA040 | warning | A `Node.<kind>.Title` or `Node.<kind>.Pin.<in\|out>.<exec\|data\|type>.<key>` key that a `[NodeKind]` class implies is not in the neutral resx. Add the resx as an `AdditionalFiles` item; a project without one is not checked. |
+| NPA040 | warning | A `Node.<kind>.Title` (only for a node class that overrides `TitleIsFixed`; the editor shows the key only then, and otherwise shows the node's own text) or `Node.<kind>.Pin.<in\|out>.<exec\|data\|type>.<key>` key that a `[NodeKind]` class implies is not in the neutral resx. Add the resx as an `AdditionalFiles` item; a project without one is not checked. |
 | NPA041 | error | A satellite resx (`Name.es.resx`) has a key its neutral file lacks, or a `{n}` placeholder count that differs. |
 | NPA042 | info | A `Node.<kind>.*` key of a `[NodeKind]` class in the project that no declaration uses. |
 

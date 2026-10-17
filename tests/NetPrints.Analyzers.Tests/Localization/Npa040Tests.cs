@@ -20,14 +20,24 @@ public class Npa040Tests
     }
 
     [Fact]
-    public async Task AMissingTitleKeyIsReportedOnTheClass()
+    public async Task AMissingTitleKeyIsReportedOnTheClassOfAFixedTitle()
+    {
+        string resx = ResxSamples.Resx((ResxSamples.ExecutionKey, "Execution"), (ResxSamples.LoopKey, "Loop body"));
+
+        ImmutableArray<Diagnostic> found = await PinAnalyzerHarness.AnalyzeWithResxAsync(ResxSamples.FixedTitleLoop(), [(ResxSamples.NeutralPath, resx)], Id);
+
+        Diagnostic diagnostic = Assert.Single(found);
+        Assert.Contains(ResxSamples.TitleKey, diagnostic.GetMessage(), System.StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AMissingTitleKeyIsQuietWhenTheTitleIsBuiltFromTheNode()
     {
         string resx = ResxSamples.Resx((ResxSamples.ExecutionKey, "Execution"), (ResxSamples.LoopKey, "Loop body"));
 
         ImmutableArray<Diagnostic> found = await PinAnalyzerHarness.AnalyzeWithResxAsync(ResxSamples.Loop(), [(ResxSamples.NeutralPath, resx)], Id);
 
-        Diagnostic diagnostic = Assert.Single(found);
-        Assert.Contains(ResxSamples.TitleKey, diagnostic.GetMessage(), System.StringComparison.Ordinal);
+        Assert.Empty(found);
     }
 
     [Fact]

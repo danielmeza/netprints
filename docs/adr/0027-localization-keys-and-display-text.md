@@ -55,8 +55,8 @@ owner; they are marked and listed in the P3 notes under "Owner questions taken b
   (the extensions first, so a language pack can translate a built-in key). A node shows its `Node.<kind>.Title` only when
   `Node.TitleIsFixed` is true (its text is the same for every instance); a title that depends on content stays as built. A
   pin shows `Node.<kind>.Pin.<pinRef>` for its name and keeps what its own text adds after the name (a data pin's type). A
-  category header uses `Category.<name in lower case, spaces as hyphens>`; a node suggestion's display name is the key of
-  its translation. L2 moves the rest.
+  category header uses `Category.<name in lower case, spaces as hyphens>`; a node suggestion's display name is a `LocalizedText`
+  (a plain string is its own key; an explicit key keeps two suggestions with the same text apart). L2 moves the rest.
 - Satellite resx files are not shipped yet; the fallback chain is tested against in-memory resources, and the first
   translation adds a satellite and NPA041 starts to apply to it.
 - Semi has locales for 16 cultures and Ursa for 7 (versions pinned in `Directory.Packages.props`); any other culture shows
