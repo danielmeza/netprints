@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace NetPrints.Testing
 {
@@ -29,6 +30,9 @@ namespace NetPrints.Testing
 
         /// <summary>Whether the gate is judged in this run.</summary>
         public static bool Strict => Environment.GetEnvironmentVariable(StrictVariable) == "1";
+
+        /// <summary>The CPU model of this machine (the first <c>model name</c> of <c>/proc/cpuinfo</c> on Linux), or the architecture and core count.</summary>
+        public static string CpuModel { get; } = ReadCpuModel();
 
         /// <summary>The median of the values.</summary>
         public static double Median(IReadOnlyList<double> values)
@@ -80,8 +84,26 @@ namespace NetPrints.Testing
             double limit = baselineRatio * Tolerance;
             bool passed = ratio <= limit;
             string message = string.Create(CultureInfo.InvariantCulture,
-                $"{metric}: {measuredMilliseconds:F1} ms against a calibration of {calibrationMilliseconds:F1} ms is a ratio of {ratio:F3}; the baseline is {baselineRatio:F3}, the gate {limit:F3} (+10%), {ratio / baselineRatio - 1:+0.0%;-0.0%} over the baseline.");
+                $"{metric}: {measuredMilliseconds:F1} ms against a calibration of {calibrationMilliseconds:F1} ms is a ratio of {ratio:F3}; the baseline is {baselineRatio:F3}, the gate {limit:F3} (+10%), {ratio / baselineRatio - 1:+0.0%;-0.0%} over the baseline; cpu {CpuModel}.");
             return new GateVerdict(passed, message);
+        }
+
+        private static string ReadCpuModel()
+        {
+            const string CpuInfo = "/proc/cpuinfo";
+            const string ModelKey = "model name";
+            if (File.Exists(CpuInfo))
+            {
+                foreach (string line in File.ReadLines(CpuInfo))
+                {
+                    if (line.StartsWith(ModelKey, StringComparison.Ordinal) && line.IndexOf(':', StringComparison.Ordinal) is var colon and >= 0)
+                    {
+                        return line[(colon + 1)..].Trim();
+                    }
+                }
+            }
+
+            return string.Create(CultureInfo.InvariantCulture, $"{RuntimeInformation.OSArchitecture} x{Environment.ProcessorCount}");
         }
 
         private static async ValueTask WarmUpAsync(Func<ValueTask<double>> timeOnce)

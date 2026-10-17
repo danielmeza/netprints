@@ -22,6 +22,19 @@ public sealed class PerformanceGateTests
     }
 
     [Fact]
+    public void TheVerdictCarriesTheNumbersAndTheCpuOnPassAndOnFail()
+    {
+        foreach (GateVerdict verdict in new[] { PerformanceGate.Judge("M2", 10, 10, 1.0), PerformanceGate.Judge("M2", 30, 10, 1.0) })
+        {
+            Assert.Contains("a ratio of", verdict.Message, StringComparison.Ordinal);
+            Assert.Contains("the baseline is 1.000", verdict.Message, StringComparison.Ordinal);
+            Assert.Contains($"cpu {PerformanceGate.CpuModel}", verdict.Message, StringComparison.Ordinal);
+        }
+
+        Assert.False(string.IsNullOrWhiteSpace(PerformanceGate.CpuModel));
+    }
+
+    [Fact]
     public void TheMedianIsTheMiddleValue()
     {
         Assert.Equal(3, PerformanceGate.Median([5, 1, 3, 100, 2]));
