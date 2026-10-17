@@ -241,6 +241,7 @@ public sealed class DocumentMapper : IDocumentMapper
                 Name = node.Name == node.DefaultName ? null : node.Name,
                 Pins = BuildPinStates(node, context),
                 ExtensionData = PreservedMembers.Recall(node, PreservedMembers.Member),
+                KindVersion = nodes.DataVersionOf(converter.Kind) is > 0 and int dataVersion ? dataVersion : null,
             });
         }
 

@@ -602,7 +602,7 @@ SC-005 rechecked (research R4).
   `ProjectTemplateDescriptor.Files`, the console and library trees embedded in `src/NetPrints.Workspace/Templates/`,
   `src/NetPrints.Editor/StartPage/ProjectTemplateService.cs` writing through them, and `AddProjectTemplate`
   (NPXE0012) on the builder.
-- [ ] T067 [US3] Node-data migrations (FR-026, research R18, NPXE0013; 2 units). Test first:
+- [x] T067 [US3] Node-data migrations (FR-026, research R18, NPXE0013; 2 units). Test first:
   `tests/NetPrints.Core.Tests/Serialization/NodeDataMigrationTests.cs`: a fixture graph whose `Fx` node has no
   `kindVersion` (version 0) is migrated on open and loads (US3 scenario 7); migrations run in `FromVersion` order up to
   the kind's `DataVersion`; `kindVersion` is written only when above 0, so every built-in node and every existing file

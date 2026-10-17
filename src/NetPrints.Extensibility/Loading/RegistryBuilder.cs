@@ -7,11 +7,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NetPrints.Catalog;
 using NetPrints.Core;
+using NetPrints.Extensibility.Editor;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Nodes;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Reflection;
 using NetPrints.Serialization.Mapping;
+using NetPrints.Serialization.Migrations;
 using NetPrints.Translator;
 
 namespace NetPrints.Extensibility.Loading;
@@ -47,7 +49,10 @@ internal sealed class RegistryBuilder(ILogger logger, ILoggerFactory loggerFacto
     private readonly HashSet<string> catalogProfileIds = new(BuiltInCatalogProfiles.Ids, StringComparer.Ordinal);
     private readonly List<ResourceManager> stringResources = [];
     private readonly List<INodeSuggestionProvider> suggestionProviders = [];
+    private readonly List<INodeDataMigration> nodeDataMigrations = [];
     private readonly HashSet<string> suggestionProviderIds = new(StringComparer.Ordinal);
+    private readonly HashSet<string> projectTemplateIds = new(StringComparer.Ordinal);
+    private readonly List<ProjectTemplateDescriptor> projectTemplates = [];
     private readonly List<object> owned = [];
     private readonly List<ExtensionContributionIssue> issues = [];
 
@@ -177,6 +182,34 @@ internal sealed class RegistryBuilder(ILogger logger, ILoggerFactory loggerFacto
             }
         }
 
+        foreach (ProjectTemplateDescriptor template in contributions.ProjectTemplates)
+        {
+            if (!HasIdPrefix(template.Id, manifest.Id))
+            {
+                Reject(manifest, ExtensionDiagnosticCodes.IdPrefix, $"project template {template.Id}", $"the id must start with the manifest id '{manifest.Id}'.");
+            }
+            else if (!projectTemplateIds.Add(template.Id))
+            {
+                Reject(manifest, ExtensionDiagnosticCodes.DuplicateId, $"project template {template.Id}", "a project template with this id is already registered.");
+            }
+            else
+            {
+                projectTemplates.Add(template);
+            }
+        }
+
+        foreach (INodeDataMigration migration in contributions.NodeDataMigrations)
+        {
+            if (!HasPrefix(migration.NodeKind ?? string.Empty, manifest.Id))
+            {
+                Reject(manifest, ExtensionDiagnosticCodes.IdPrefix, $"node data migration for {migration.NodeKind}", $"the node kind must start with '{manifest.Id}/' followed by a name.");
+            }
+            else
+            {
+                nodeDataMigrations.Add(migration);
+            }
+        }
+
         foreach (string property in contributions.ProjectProperties)
         {
             if (!projectProperties.Contains(property, StringComparer.OrdinalIgnoreCase))
@@ -202,9 +235,12 @@ internal sealed class RegistryBuilder(ILogger logger, ILoggerFactory loggerFacto
         }
 
         ReportShadowingResolvers();
+        Dictionary<string, int> dataVersions = nodeKinds.Where(kind => kind.DataVersion > 0).ToDictionary(kind => kind.Kind, kind => kind.DataVersion, StringComparer.Ordinal);
         var converters = new NodeDocumentConverterRegistry(
             nodeKinds.ConvertAll(kind => kind.Converter),
-            [new OwnerRoutingJsonTypeInfoResolver(routing), .. resolvers]);
+            [new OwnerRoutingJsonTypeInfoResolver(routing), .. resolvers],
+            dataVersions);
+        var nodeMigrator = new NodeDataMigrator(nodeDataMigrations, dataVersions);
 
         return new ExtensionRegistry(
             results,
@@ -221,9 +257,11 @@ internal sealed class RegistryBuilder(ILogger logger, ILoggerFactory loggerFacto
             catalogProfiles,
             stringResources,
             suggestionProviders,
+            projectTemplates,
             issues,
             translation,
             converters,
+            nodeMigrator,
             owned,
             providers,
             loggerFactory.CreateLogger<ExtensionRegistry>());

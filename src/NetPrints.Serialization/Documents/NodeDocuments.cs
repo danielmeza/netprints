@@ -61,6 +61,12 @@ public abstract record NodeDocument(
     [property: JsonPropertyOrder(-2)] string? Name,
     [property: JsonPropertyOrder(-1)] IReadOnlyList<PinStateDocument>? Pins)
 {
+    /// <summary>Gets the data version of the node's kind this node was written with; absent (version 0) for every built-in kind and for a kind that declares no version.</summary>
+    [JsonPropertyName("kindVersion")]
+    [JsonPropertyOrder(-1)]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? KindVersion { get; init; }
+
     /// <summary>Gets the members this build does not know, kept as opaque values and written after the known ones.</summary>
     [JsonExtensionData]
     [JsonInclude]

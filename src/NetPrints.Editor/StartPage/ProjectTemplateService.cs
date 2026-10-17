@@ -23,7 +23,7 @@ internal sealed class ProjectTemplateService(
     /// <param name="projects">Creates the project files.</param>
     /// <returns>The service.</returns>
     internal static ProjectTemplateService Create(IContributionRegistry registry, IExtensionHost extensions, IProjectSystem projects) =>
-        new(() => registry.ProjectTemplates, profileId => FindProfile(extensions, profileId), projects);
+        new(() => [.. registry.ProjectTemplates, .. extensions.Current.ProjectTemplates], profileId => FindProfile(extensions, profileId), projects);
 
     /// <summary>Finds a project profile among the loaded extensions' profiles and the default one.</summary>
     /// <param name="extensions">Provides the project profiles.</param>

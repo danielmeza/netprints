@@ -5,11 +5,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NetPrints.Catalog;
 using NetPrints.Core;
+using NetPrints.Extensibility.Editor;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Nodes;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Reflection;
 using NetPrints.Serialization.Mapping;
+using NetPrints.Serialization.Migrations;
 using NetPrints.Translator;
 
 namespace NetPrints.Extensibility.Loading;
@@ -44,9 +46,11 @@ public sealed class ExtensionRegistry : IAsyncDisposable
         IReadOnlyList<CatalogProfile> catalogProfiles,
         IReadOnlyList<ResourceManager> stringResources,
         IReadOnlyList<INodeSuggestionProvider> suggestionProviders,
+        IReadOnlyList<ProjectTemplateDescriptor> projectTemplates,
         IReadOnlyList<ExtensionContributionIssue> issues,
         TranslationEnvironment translation,
         NodeDocumentConverterRegistry nodeConverters,
+        NodeDataMigrator nodeMigrator,
         List<object> owned,
         Dictionary<string, ServiceProvider> providers,
         ILogger logger)
@@ -66,9 +70,11 @@ public sealed class ExtensionRegistry : IAsyncDisposable
         CatalogProfiles = catalogProfiles;
         StringResources = stringResources;
         SuggestionProviders = suggestionProviders;
+        ProjectTemplates = projectTemplates;
         Issues = issues;
         Translation = translation;
         NodeConverters = nodeConverters;
+        NodeMigrator = nodeMigrator;
         this.owned = owned;
         this.logger = logger;
     }
@@ -151,6 +157,12 @@ public sealed class ExtensionRegistry : IAsyncDisposable
     public IReadOnlyList<INodeSuggestionProvider> SuggestionProviders { get; }
 
     /// <summary>
+    /// The project templates extensions contributed, in registry order; an editor host adds them to the New project flow.
+    /// </summary>
+    [Experimental(ExperimentalApiIds.ProjectTemplates, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    public IReadOnlyList<ProjectTemplateDescriptor> ProjectTemplates { get; }
+
+    /// <summary>
     /// The contributions that were rejected (<c>NPX006</c>, or <c>NPX004</c> and <c>NPX013</c> for an id problem) while their extension stayed loaded.
     /// </summary>
     public IReadOnlyList<ExtensionContributionIssue> Issues { get; }
@@ -164,6 +176,12 @@ public sealed class ExtensionRegistry : IAsyncDisposable
     /// The node document converters and JSON resolvers for the document mapper.
     /// </summary>
     public NodeDocumentConverterRegistry NodeConverters { get; }
+
+    /// <summary>
+    /// The migrator that upgrades the stored data of node kinds that declare a data version, from the extensions' document migrations (<c>NPXE0013</c>).
+    /// </summary>
+    [Experimental(ExperimentalApiIds.NodeDataMigrations, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    public NodeDataMigrator NodeMigrator { get; }
 
     /// <summary>
     /// Finds a project profile.

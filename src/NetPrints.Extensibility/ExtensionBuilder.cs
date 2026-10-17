@@ -11,6 +11,7 @@ using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Nodes;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Reflection;
+using NetPrints.Serialization.Migrations;
 using NetPrints.Translator;
 
 namespace NetPrints.Extensibility;
@@ -31,6 +32,8 @@ internal sealed record ExtensionContributions(
     IReadOnlyList<CatalogProfile> CatalogProfiles,
     IReadOnlyList<ResourceManager> StringResources,
     IReadOnlyList<INodeSuggestionProvider> SuggestionProviders,
+    IReadOnlyList<INodeDataMigration> NodeDataMigrations,
+    IReadOnlyList<ProjectTemplateDescriptor> ProjectTemplates,
     IServiceCollection Services,
     Assembly OwnAssembly);
 
@@ -52,6 +55,8 @@ internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactor
     private readonly List<CatalogProfile> catalogProfiles = [];
     private readonly List<ResourceManager> stringResources = [];
     private readonly List<INodeSuggestionProvider> suggestionProviders = [];
+    private readonly List<INodeDataMigration> nodeDataMigrations = [];
+    private readonly List<ProjectTemplateDescriptor> projectTemplates = [];
     private bool sealedBuilder;
     private BufferedEditorContributions? editor;
 
@@ -97,6 +102,10 @@ internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactor
 
     public IExtensionBuilder AddSuggestionProvider(INodeSuggestionProvider provider) => Add(suggestionProviders, provider);
 
+    public IExtensionBuilder AddProjectTemplate(ProjectTemplateDescriptor template) => Add(projectTemplates, template);
+
+    public IExtensionBuilder AddDocumentMigration(INodeDataMigration migration) => Add(nodeDataMigrations, migration);
+
     /// <summary>
     /// Ends registration: later builder calls throw. Returns what was buffered.
     /// </summary>
@@ -105,7 +114,7 @@ internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactor
         sealedBuilder = true;
         return new ExtensionContributions(
             [.. nodeLibraries], [.. classEmitters], [.. memberEmitters], [.. typeCatalogs], [.. profiles], [.. jsonResolvers], [.. projectProperties],
-            [.. hostChannels], [.. settings], [.. catalogProfiles], [.. stringResources], [.. suggestionProviders], Services, ownAssembly);
+            [.. hostChannels], [.. settings], [.. catalogProfiles], [.. stringResources], [.. suggestionProviders], [.. nodeDataMigrations], [.. projectTemplates], Services, ownAssembly);
     }
 
     private ExtensionBuilder Add<T>(List<T> list, T item)

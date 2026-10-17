@@ -69,6 +69,8 @@ NetPrints.Extensibility.Loading.ExtensionRegistry.Issues.get -> System.Collectio
 NetPrints.Extensibility.Loading.ExtensionRegistry.JsonTypeInfoResolvers.get -> System.Collections.Generic.IReadOnlyList<System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver!>!
 NetPrints.Extensibility.Loading.ExtensionRegistry.Loaded.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Loading.ExtensionManifest!>!
 NetPrints.Extensibility.Loading.ExtensionRegistry.NodeConverters.get -> NetPrints.Serialization.Mapping.NodeDocumentConverterRegistry!
+[NPXE0012]NetPrints.Extensibility.Loading.ExtensionRegistry.ProjectTemplates.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Editor.ProjectTemplateDescriptor!>!
+[NPXE0013]NetPrints.Extensibility.Loading.ExtensionRegistry.NodeMigrator.get -> NetPrints.Serialization.Migrations.NodeDataMigrator!
 NetPrints.Extensibility.Loading.ExtensionRegistry.NodeKinds.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Nodes.NodeKindDescriptor!>!
 NetPrints.Extensibility.Loading.ExtensionRegistry.Profiles.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Core.IProjectProfile!>!
 NetPrints.Extensibility.Loading.ExtensionRegistry.ProjectProperties.get -> System.Collections.Generic.IReadOnlyList<string!>!

@@ -5,6 +5,8 @@ using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.StartPage;
 using NetPrints.Editor.Tests.Hosting;
+using NetPrints.Extensibility;
+using NetPrints.Extensibility.Loading;
 
 namespace NetPrints.Editor.Tests.StartPage;
 
@@ -116,7 +118,7 @@ public sealed class ProjectTemplateFilesTests : IDisposable
     }
 
     [Fact]
-    public async Task ARegisteredTemplateKeepsItsFiles()
+    public void ARegisteredTemplateKeepsItsFiles()
     {
         ContributionRegistry registry = Registry();
         registry.AddProjectTemplate(WithFiles(new TemplateFile("a.txt", "A")));
@@ -124,6 +126,25 @@ public sealed class ProjectTemplateFilesTests : IDisposable
         ProjectTemplateDescriptor stored = registry.ProjectTemplates.Single(t => t.Id == "ext.template.files");
 
         Assert.Equal("a.txt", Assert.Single(stored.Files ?? []).Path);
-        await Task.CompletedTask;
+    }
+
+    [Fact]
+    public async Task ATemplateAnExtensionAddsThroughTheBuilderIsOffered()
+    {
+        var manifest = new ExtensionManifest("ext", "ext", "1.0.0", "ext.dll", "1.0", []);
+        var extension = new TemplateExtension(WithFiles(new TemplateFile("a.txt", "A")));
+        await using var host = new ExtensionHost(
+            new ExtensionLoaderOptions([], [], [BuiltInExtension.InProcessEntry, (manifest, extension)]), NullLoggerFactory.Instance);
+        ContributionRegistry registry = Registry();
+
+        ProjectTemplateService service = ProjectTemplateService.Create(registry, host, editor.Projects);
+
+        Assert.Contains(service.Templates, template => template.Id == "ext.template.files");
+        Assert.Contains(service.Templates, template => template.Id == "netprints.template.console");
+    }
+
+    private sealed class TemplateExtension(ProjectTemplateDescriptor template) : INetPrintsExtension
+    {
+        public void Register(IExtensionBuilder builder) => builder.AddProjectTemplate(template);
     }
 }

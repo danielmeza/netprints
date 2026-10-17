@@ -108,6 +108,17 @@ editor, or an extension, add a field without an older editor discarding it. Insi
 value reference, `format`, `show` and the merge driver keep an unknown member, but the editor rewrites those
 references from its own types, so its save drops it.
 
+## Node data versions
+
+A node of an extension kind may carry a `kindVersion` member: the version of the data its kind wrote it with. The member
+is written only when the kind declares a data version above 0, so every built-in node, and every file written before an
+extension versions its data, stays byte for byte as it was. A node without the member has version 0.
+
+When the extension declares a newer data version, the editor upgrades the node as the file opens: the migrations the
+extension registered for that kind run in order, from the node's stored version up to the current one, and the node is
+saved with the new `kindVersion`. A migration changes only the JSON of its own node. An older editor that does not know
+the kind keeps the node, `kindVersion` included, as an unknown node.
+
 ## Version control
 
 Graph files are designed to work well in git: they are text, canonical (deterministic bytes), and

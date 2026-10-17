@@ -11,6 +11,7 @@ using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Nodes;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Reflection;
+using NetPrints.Serialization.Migrations;
 using NetPrints.Translator;
 
 namespace NetPrints.Extensibility;
@@ -130,6 +131,26 @@ public interface IExtensionBuilder
     /// <returns>This builder.</returns>
     [Experimental(ExperimentalApiIds.NodeSearchProviders, UrlFormat = ExperimentalApiIds.UrlFormat)]
     IExtensionBuilder AddSuggestionProvider(INodeSuggestionProvider provider);
+
+    /// <summary>
+    /// Adds a project template to the New project flow of an editor host (<c>NPXE0012</c>); a host without an editor ignores it. The template's
+    /// <see cref="ProjectTemplateDescriptor.Id"/> must start with the manifest id (<c>NPX013</c> otherwise) and be unique (<c>NPX004</c> for a duplicate);
+    /// a template that breaks either rule is dropped.
+    /// </summary>
+    /// <param name="template">The template, with its files.</param>
+    /// <returns>This builder.</returns>
+    [Experimental(ExperimentalApiIds.ProjectTemplates, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    IExtensionBuilder AddProjectTemplate(ProjectTemplateDescriptor template);
+
+    /// <summary>
+    /// Adds a migration of the stored data of one of this extension's node kinds (<c>NPXE0013</c>). On load, before a node is created, the migrations of its kind
+    /// run in <see cref="INodeDataMigration.FromVersion"/> order from the node's stored <c>kindVersion</c> (absent is 0) up to <see cref="NodeKindDescriptor.DataVersion"/>.
+    /// The kind must start with the manifest id and a slash (<c>NPX013</c> otherwise); a migration that breaks the rule is dropped.
+    /// </summary>
+    /// <param name="migration">The migration.</param>
+    /// <returns>This builder.</returns>
+    [Experimental(ExperimentalApiIds.NodeDataMigrations, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    IExtensionBuilder AddDocumentMigration(INodeDataMigration migration);
 
     /// <summary>
     /// Gets the collection the extension registers its own services in; the registry builds one provider from it for this extension alone, plus the

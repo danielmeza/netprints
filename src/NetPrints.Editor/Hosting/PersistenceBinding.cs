@@ -36,7 +36,7 @@ public sealed class PersistenceBinding : IDisposable
         ArgumentNullException.ThrowIfNull(registry);
         ArgumentNullException.ThrowIfNull(loggerFactory);
         var jsonFormat = new JsonDocumentFormat(new NetPrintsJsonOptions(registry.NodeConverters),
-            new DocumentMigrator([], loggerFactory.CreateLogger<DocumentMigrator>()));
+            new DocumentMigrator([], loggerFactory.CreateLogger<DocumentMigrator>()), registry.NodeMigrator);
         return (new DocumentFormatRegistry([jsonFormat]), new DocumentMapper(registry.NodeConverters, loggerFactory.CreateLogger<DocumentMapper>()));
     }
 

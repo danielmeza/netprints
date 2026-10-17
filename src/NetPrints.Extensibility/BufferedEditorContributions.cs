@@ -26,8 +26,6 @@ internal sealed class BufferedEditorContributions(string extensionId, Func<bool>
 
     public IEditorContributions AddStatusBarItem(StatusBarItemDescriptor item) => Buffer(item, target => target.AddStatusBarItem(item));
 
-    public IEditorContributions AddProjectTemplate(ProjectTemplateDescriptor template) => Buffer(template, target => target.AddProjectTemplate(template));
-
     public IEditorContributions AddDialog(DialogDescriptor dialog) => Buffer(dialog, target => target.AddDialog(dialog));
 
     public IEditorContributions AddViewResources(string resourceUri)

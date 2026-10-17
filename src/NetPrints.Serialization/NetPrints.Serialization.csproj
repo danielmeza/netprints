@@ -12,6 +12,9 @@
     <PackageReference Include="System.Reactive" />
   </ItemGroup>
   <ItemGroup>
+    <NetPrintsExperimentalOptIn Include="NPXE0013" />
+  </ItemGroup>
+  <ItemGroup>
     <InternalsVisibleTo Include="NetPrints.Editor" />
     <InternalsVisibleTo Include="NetPrints.Editor.Tests" />
   </ItemGroup>

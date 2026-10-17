@@ -879,6 +879,31 @@ consumers restore from `local-packages/` plus a scratch feed and build with `-p:
   `SnapshotTests`, `ScaledSnapshotTests`, `ThemeSettingTests`, `ShellAdapterTests`, `ContactSheetTests` and `RegistrySurfaceTests` green; the whole UITests project
   (14 minutes) was not run again. No E2E run.
 
+## Batch C2c (T066-T067)
+
+- T066: `ProjectTemplateDescriptor` and `ProjectOutputType` moved to `NetPrints.Extensibility.Editor` in Abstractions (the builder cannot name an editor type); the
+  descriptor gained `Files` (`TemplateFile`: path and text, with the `NetPrintsProject`, `NetPrintsRootNamespace` and `NetPrintsProfileId` literals as constants) and
+  `IExtensionBuilder.AddProjectTemplate` (NPXE0012: `ExperimentalApiIds.ProjectTemplates`, opt-in added to the projects that use it). Decision: it is on the builder, not
+  on the editor facet, because `ExperimentalApiTests` requires a member that mentions NPXE0012 types to carry NPXE0012, and the facet type is NPXE0005. The registry
+  keeps the accepted ones (`ExtensionRegistry.ProjectTemplates`; an id without the manifest prefix is NPX013, a duplicate NPX004) and `ProjectTemplateService` lists them after
+  the editor registry's.
+  `ProjectTemplateService` writes the files after the project file (UTF-8 without BOM, LF); a path that is rooted or leaves the project folder throws
+  `InvalidOperationException` and the cleanup of a failed creation removes what was written. `NetPrints.Workspace/Templates/console/Program.netpc.json` is the embedded
+  console tree (`BuiltInTemplateTrees.Read`), and `ProgramGraphSeed` is gone.
+- Deviation: the project file and `.gitattributes` still come from the project system and the profile (the SDK version and target framework are options, not template
+  text), so the trees hold the files next to them: Program.netpc.json for the console template, none for the library template (its `SetOutputType` edit stays).
+  The `dotnet new` package and `netprints new` (T106, T130) read `BuiltInTemplateTrees` and add the project file themselves.
+- T067: `NodeKindDescriptor.DataVersion` (NPXE0013, default 0), `NodeDocument.KindVersion` (`kindVersion`, ignored when null) set by `DocumentMapper` from
+  `NodeDocumentConverterRegistry.DataVersionOf` only above 0, `INodeDataMigration` and `NodeDataMigrator` (Serialization.Migrations: walks the parsed JSON, runs the
+  migrations of each versioned kind in `FromVersion` order from the stored version, then stamps the current one), `JsonDocumentFormat` takes the migrator as an optional
+  argument, `IExtensionBuilder.AddDocumentMigration` and `ExtensionRegistry.NodeMigrator`. A migration whose kind lacks the `<manifest id>/` prefix is dropped with NPX013.
+  The editor and the generator pass the registry's migrator; `netprints format` and `show` read with no extensions, so an extension node stays an unknown node there and
+  is written back unchanged. `docs/guide/graph-format.md` documents `kindVersion`. The unknown-member round trip (AB-1, `UnknownMembersEditorRoundTripTests`) is unchanged.
+- Red/green. T066: the two tree pins (`TheConsoleTemplateWritesTheTreeP3aWrote`, `TheLibraryTemplateWritesTheTreeP3aWrote`, hashes recorded from the code before the
+  refactor) passed before and after; the token, launch-settings and path-escape tests were red on assertions against the stubbed service (`File.Exists` false, no
+  exception thrown), then green. T067: against stubs (`DataVersionOf` 0, `Upgrade` returning the document) 4 of 6 `NodeDataMigrationTests` failed on assertions and the NPX013
+  test failed on `Assert.Equal` of the issue count, then green.
+
 ## Build-time budget (ADR-0024, S2a; B-F3)
 
 - `dotnet build NetPrints.slnx -c Release --no-incremental`, warm compile server, 6 runs at the end of B: 24.2, 19.1 and 12.2 s

@@ -23,8 +23,6 @@ internal sealed class NullEditorContributions : IEditorContributions
 
     public IEditorContributions AddStatusBarItem(StatusBarItemDescriptor item) => this;
 
-    public IEditorContributions AddProjectTemplate(ProjectTemplateDescriptor template) => this;
-
     public IEditorContributions AddDialog(DialogDescriptor dialog) => this;
 
     public IEditorContributions AddViewResources(string resourceUri) => this;

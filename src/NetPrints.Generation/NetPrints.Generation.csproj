@@ -6,6 +6,9 @@
     <WarningsAsErrors>$(WarningsAsErrors);CA1848;CA2254</WarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <NetPrintsExperimentalOptIn Include="NPXE0013" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\NetPrints.Core\NetPrints.Core.csproj" />
     <ProjectReference Include="..\NetPrints.Extensibility\NetPrints.Extensibility.csproj" />
     <ProjectReference Include="..\NetPrints.Serialization\NetPrints.Serialization.csproj" />
