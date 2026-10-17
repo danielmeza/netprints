@@ -1,0 +1,23 @@
+# Reviewed exceptions to the NPH hygiene analyzers (ADR-0003). One row per site: CODE | path | detail.
+# The path matches the end of the file's path. The ledger only shrinks; a fresh site is fixed, not added.
+#
+# NPH001: detail is the trimmed text of the line that holds the null-forgiving operator.
+NPH001 | tests/NetPrints.Desktop.E2ETests/Hosting/Tool.cs | using var process = Process.Start(info)!;
+NPH001 | tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs | var process = Process.Start(info)!;
+NPH001 | tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs | windowManager = Process.Start(wm)!;
+NPH001 | tests/NetPrints.Editor.Tests/Graph/NodeGraphViewModelTests.cs | Assert.Equal(variable.Name, graph.GetSetChooser.Variable!.Name);
+NPH001 | tests/NetPrints.Editor.Tests/Graph/Pins/NodePinViewModelTests.cs | Assert.Contains("Monday", enumPin.PossibleEnumNames!.ToList());
+NPH001 | tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs | Assert.Contains("Monday", pin.PossibleEnumNames!);
+NPH001 | tests/NetPrints.Editor.Tests/Search/SearchPerformanceTests.cs | var output = TestContext.Current.TestOutputHelper!;
+NPH001 | tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs | var getter = variable.Getter!;
+NPH001 | tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs | var setter = variable.Setter!;
+NPH001 | tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs | Assert.Equal(MemberVisibility.Public, variable.Getter!.Visibility);
+NPH001 | tests/NetPrints.Editor.UITests/Graph/GridRenderTests.cs | Application.Current!.RequestedThemeVariant = ThemeVariant.Light;
+NPH001 | tests/NetPrints.Editor.UITests/TestAppBuilder.cs | .AfterSetup(builder => ((EditorApp)builder.Instance!).DisableTransitions())
+NPH001 | tests/NetPrints.Testing.Ui/Driving/UiElement.cs | (await UiWait.ForAsync(Driver, () => TryGetAsync(cancellationToken), e => e is not null, $"{this} to be shown", cancellationToken))!;
+NPH001 | tests/NetPrints.Testing.Ui/Driving/UiWait.cs | T value = default!;
+NPH001 | tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs | return (double.Parse(e[AutomationPropertyNames.ViewportX]!, CultureInfo.InvariantCulture), double.Parse(e[AutomationPropertyNames.ViewportY]!, CultureInfo.InvariantCulture));
+NPH001 | tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs | return (double.Parse(e[AutomationPropertyNames.ViewportX]!, CultureInfo.InvariantCulture), double.Parse(e[AutomationPropertyNames.ViewportY]!, CultureInfo.InvariantCulture),
+NPH001 | tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs | double.Parse(e[AutomationPropertyNames.ViewportZoom]!, CultureInfo.InvariantCulture));
+NPH001 | tests/NetPrints.Testing.Ui/Graph/NodeObject.cs | return (double.Parse(e[AutomationPropertyNames.LocationX]!, CultureInfo.InvariantCulture), double.Parse(e[AutomationPropertyNames.LocationY]!, CultureInfo.InvariantCulture));
+NPH001 | tests/NetPrints.Testing.Ui/Snapshots/UiImage.cs | Directory.CreateDirectory(Path.GetDirectoryName(path)!);

@@ -112,6 +112,21 @@ These rules check NetPrints' own source. They are not shipped in any package and
 | NPS002 | error | No blank line between adjacent members when either is a property, indexer, method, constructor, operator or event, any public member (consts and fields included), or a member with braces, a comment or attributes. Enum members and record parameters are out of scope. The fix inserts a blank line. |
 | NPS003 | suggestion | Non-public fields and consts on one line each, with no comment or attribute, are grouped without a blank line. A hint only; it never fails a build. |
 
+## NPH: repository hygiene
+
+These rules check NetPrints' own source in `src/` and `tests/`. They are not shipped in any package and are off unless a repository turns them on in `.editorconfig`; the severities are the ones this repository sets. Reviewed exceptions live in `HygieneLedger.txt` at the repository root, one row per site (`CODE | path | detail`); the ledger only shrinks.
+
+<span id="nph001"></span><span id="nph002"></span><span id="nph003"></span><span id="nph004"></span><span id="nph005"></span><span id="nph006"></span>
+
+| Code | Severity | Cause |
+|---|---|---|
+| NPH001 | error | The null-forgiving operator (`x!`, `null!`, `default!`) at a site the ledger does not list. Model the null instead. |
+| NPH002 | error | A type or delegate name that ends in `VM` or has `VM` before an upper-case letter (`MVVM` excepted). Use `ViewModel`. |
+| NPH003 | error | A diagnostic or kind code literal (`NPT`, `NPD`, `NPX`, `NPW`, `NPC`, `NPS`, `NPA`, `NPH`, `NPI`, `NPK`, `NPR`, `NPXE`) outside its constants class, or a code constant declared outside a designated file or twice in one project. |
+| NPH004 | error | A `#pragma warning` directive, a `#nullable disable` or `restore`, or a `[SuppressMessage]` the ledger does not list for its file, member and rule (ADR-0003); a listed one must carry an `ADR-0003` justification. |
+| NPH005 | error | `ConfigureAwait(false)` in a file where `.editorconfig` sets `VSTHRD111` to `none` (UI-bound code resumes on the UI thread). |
+| NPH006 | error | A string literal passed to a user-visible text sink (a command label, a dialog title or message, status-bar text). Use a resource key. |
+
 ## NPT: translation and code generation
 
 | Code | Severity | Cause |

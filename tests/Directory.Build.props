@@ -8,6 +8,7 @@
 
   <!-- ADR-0024: the internal analyzers run over the tests too. -->
   <ItemGroup>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)..\HygieneLedger.txt" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\src\NetPrints.RepoAnalyzers\NetPrints.RepoAnalyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\src\NetPrints.RepoAnalyzers.CodeFixes\NetPrints.RepoAnalyzers.CodeFixes.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>

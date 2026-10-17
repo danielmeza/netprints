@@ -145,7 +145,10 @@ internal static class AnalyzerHarness
             .Select(type => Assert.IsType<CodeFixProvider>(Activator.CreateInstance(type), exactMatch: false))
             .Single(provider => provider.FixableDiagnosticIds.Contains(id));
 
-    private static DiagnosticAnalyzer Analyzer(string id) =>
+    /// <summary>Creates the repository analyzer that supports a diagnostic id.</summary>
+    /// <param name="id">The diagnostic id.</param>
+    /// <returns>The analyzer.</returns>
+    public static DiagnosticAnalyzer Analyzer(string id) =>
         AnalyzerBinaries.Load(RepoAnalyzers).GetTypes()
             .Where(type => !type.IsAbstract && typeof(DiagnosticAnalyzer).IsAssignableFrom(type) && type.GetCustomAttribute<DiagnosticAnalyzerAttribute>() is not null)
             .Select(type => Assert.IsType<DiagnosticAnalyzer>(Activator.CreateInstance(type), exactMatch: false))
