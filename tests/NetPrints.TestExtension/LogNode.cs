@@ -86,7 +86,10 @@ public sealed class TestNodeLibrary : INodeLibrary
             new LogNodeConverter(),
             new LogNodeTranslator(),
             GraphKinds.Method | GraphKinds.Constructor,
-            [new NodeSuggestion("Test", "Log", null, graph => new LogNode(graph))]),
+            [new NodeSuggestion("Test", "Log", null, graph => new LogNode(graph))])
+        {
+            DataVersion = 1,
+        },
     ];
 }
 

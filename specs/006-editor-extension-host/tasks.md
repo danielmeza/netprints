@@ -710,25 +710,25 @@ tests. **Gate (plan)**: SC-004, SC-006, SC-007, SC-009.
 
 ### Batch D1b — model: sonnet — T081–T083, T173 — 5 units
 
-- [ ] T081 [US4] Failure isolation (FR-034, FR-035, research R27; 2 units; load `avalonia-xaml` and `avalonia-styling`).
+- [x] T081 [US4] Failure isolation (FR-034, FR-035, research R27; 2 units; load `avalonia-xaml` and `avalonia-styling`).
   Test first: failure fixtures in `tests/Fixtures/Extensions/` (a throwing `Register`, handler, provider and view
   factory; a duplicate command id; a gesture conflict; an unknown referenced id): each leaves the editor usable and
   names the extension (US4 scenarios 3–5); NPX005, NPX004, NPX009 and NPX010 appear in Errors and the log; NPX011 is
   logged once per provider and session; a throwing view shows `ContributionErrorView` naming the extension while the
   rest of the surface renders (edge case 1). Then one boundary guard in `src/NetPrints.Editor/Contributions/` used by
   every call into extension code, and `ContributionErrorView` (resource text, theme tokens).
-- [ ] T082 [US4] Per-user extensions in the groups (FR-032, Clarifications answer 2, NPX012; 1 unit). Test first:
+- [x] T082 [US4] Per-user extensions in the groups (FR-032, Clarifications answer 2, NPX012; 1 unit). Test first:
   extensions in the configured directories (`netprints.extensionPaths`, `NETPRINTS_EXTENSION_PATH`) load once at start,
   with app-level kinds in the app group and project-level kinds added to each session group; a project that declares
   the same id serves its session and NPX012 names both versions; a saved layout naming a panel of an extension that is
   not loaded drops it, and the panel opens at its default place once the extension loads again (edge case 2). Then the
   loading in `src/NetPrints.Editor/Hosting/`.
-- [ ] T083 [US4] Every kind on its surface, none after unload (SC-004; 1 unit). Extend `tests/NetPrints.TestExtension/`
+- [x] T083 [US4] Every kind on its surface, none after unload (SC-004; 1 unit). Extend `tests/NetPrints.TestExtension/`
   to contribute one item of every public kind so far (command, panel, tile, template, context-menu item, tooltip
   provider, go-to provider, status-bar item, settings page, dialog, icon, node search provider, document migration). A
   headless test opens the fixture project that declares it, finds each item on its surface, unloads the project and
   finds none (US4 independent test, SC-004).
-- [ ] T173 [US4] View resources of an extension, by URI (FR-032, FR-033; 1 unit; load `avalonia-xaml` and
+- [x] T173 [US4] View resources of an extension, by URI (FR-032, FR-033; 1 unit; load `avalonia-xaml` and
   `avalonia-styling`). Added by Review C1+C2 (CD-19): `ViewResourceLoader` throws `NotSupportedException` for a URI that
   is not a compiled built-in resource, "until D1", and no task owned the replacement. Test first:
   `tests/NetPrints.Editor.Tests/Hosting/ViewResourceLoaderTests.cs`: a fixture extension declares a view resource

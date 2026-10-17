@@ -1445,3 +1445,48 @@ T076, Checkpoint C2, gate items measured on this head (Release).
   shell starts are created). Settings pages are a D1 task of their own (T090 onward).
 - Full suite (Release, `dotnet test --solution NetPrints.slnx --ignore-exit-code 8`): 4902 total, 4869 passed, 33 skipped, 0 failed (22 min 31 s); build 0 warnings;
   `dotnet format` clean; `eng/trim-warnings.sh` 9.
+
+## Batch D1b (T081-T083, T173)
+
+- **T082 red (assertions)**: `AProjectCopyShadowsAUserCopyWithNpx012NamingBothVersions` (Core.Tests) failed with `Assert.Single() Failure` (the user copy was an NPX004 duplicate);
+  `ProjectExtensionGroupTests` (2) failed 2 of 2 on `Assert.Contains() Failure` / `Assert.Single() Failure` before `ProjectLoader` added and removed the session group;
+  `AProjectCopyThatShadowsAUserCopyIsReportedAsInfoNpx012NamingBothVersions` failed with `Assert.Equal() Failure: Expected: Info, Actual: Error`. The two
+  `ExtensionContributionRecorderTests` were written after `ExtensionContributionRecorder` (no red run).
+- **T082 design**: `ExtensionContributionRecorder` (Hosting) is the `EditorContributions` factory of the `ExtensionHost`: it records each extension's facet calls (the latest load of an id
+  wins). `ApplyToAppGroup` replays the application-level kinds of the extensions loaded at start once, from `ContributionRegistry.Create`; `ProjectLoader` adds one session group per
+  open project (key = project file path, replaced on reopen, removed on close) filled by `PopulateSessionGroup`: project-level kinds of every loaded extension, and every kind of an
+  extension loaded from one of the project's folders. `EditorHostServices.Contributions` and `EditorContext.Contributions` carry the recorder; Desktop creates it.
+- **Decision**: application-level kinds are tiles, settings pages, dialogs, view resources and `Global`-scope commands; project-level kinds are panels, status bar items, context-menu
+  items, tooltip and go-to providers and commands of any other scope (Clarifications answer 2 names the kinds loosely; the scope is the only signal a command carries).
+  Project templates, node search providers and document migrations are not in the groups: they already follow `IExtensionHost.Current`.
+- **Decision**: closing a project now reloads the extensions without the project's folders (`CloseProjectAsync`), so a project's node kinds, templates and providers go with it too (SC-004).
+- **Decision**: a project extension whose id also loads from a user directory: the loader reports the user copy as `NPX012` (new `ExtensionDiagnosticCodes.Shadowed`, shown with Info severity,
+  naming both versions) instead of NPX004; the project's copy puts every kind in the session group, so a duplicate id with the user copy's app-level item is an NPX004 issue (first wins).
+- **T173 red (assertions)**: with `ViewResourceLoader.Sync` a stub returning nothing, the 3 `ViewResourceLoaderTests` failed 3 of 3 (`Assert.Equal() Failure: Expected: 1, Actual: 0`, `Collection: []`).
+  `Sync` keeps one entry per URI per application: it loads new URIs (`AvaloniaXamlLoader.Load` for an `avares://` URI of an extension's assembly, the compiled table for the built-in views),
+  removes the ones no longer declared, and reports (`ViewResourceFailure`, logged as 1042) a URI that resolves to nothing or to a document that is none of `DataTemplates`, `ResourceDictionary`
+  and `Styles`, once per URI. `ShellHost` syncs on every registry change. `Apply` is gone.
+- **Deviation**: the T173 tests are in `tests/NetPrints.Editor.UITests/Hosting/` (they need the headless application), with a new fixture `Fx.Views` (compiled `Templates`, `Icons`, `Styles`
+  and a `UserControl` view). The compiled XAML of an extension assembly loads through the extension's load context without extra work.
+- **T081 red (assertions)**: `FailureIsolationTests` 5 failed of 6 before the guard (the exception escaped as `InvalidOperationException`, the unknown reference was not an issue, the Errors
+  dialog was empty); `ContributionErrorViewTests` failed with `Assert.NotEmpty() Failure: Collection was empty` with the placeholder template removed.
+- **T081 design**: `ContributionGuard` (Contributions) wraps, when an extension (not a built-in owner) registers: command handlers (`ExecuteAsync` rethrows `ExtensionFailureException` naming the
+  extension and the command, which the invoker's fault callback shows in the error dialog; `CanExecute`, `DynamicLabel`, `IsChecked` log and answer false/null), tooltip and go-to providers
+  (empty result), view model factories of panels, tiles, status bar items, dialogs and settings pages (a `ContributionErrorViewModel`, drawn by `ContributionErrorView` through a
+  `BuiltInViews` template) and the `AppliesTo` predicates (false). Provider, factory and predicate failures log NPX011 once per contribution and registry (event 1071); handler failures
+  log 1072 each time. Built-in command handlers (`IEditorCommandHandler`) are never wrapped, so `ShowPanelCommandHandler` detection keeps working.
+- **Decision**: a view template that throws while it builds (the compiled view of an extension, not its view model factory) is not wrapped: Avalonia builds templates inside its own layout
+  pass. Only the factories the registry calls are guarded.
+- **Decision**: registry issues reach the Errors dialog (`ReportExtensionFailuresAsync`, once each) as warnings: `DuplicateId` is NPX004, `GestureConflict` NPX009 (new constant),
+  new `ContributionIssueKind.UnknownReference` NPX010 (a context-menu item naming a command nothing registered, a settings page with an unknown parent; computed per snapshot and logged once),
+  anything else NPX006. NPX005 was already shown there. NPX011 is added to `ExtensionDiagnosticCodes` and the diagnostics guide; the 0.4 hash row in `ExtensionApiVersionTests` is updated (not shipped).
+- **T083**: `NetPrints.TestExtension` contributes a command (with an icon and a File menu entry), panel, tile, project template, context-menu item, tooltip provider, go-to provider, status bar item,
+  settings page, dialog, icon dictionary (`TestIcons.axaml`, compiled with the `Avalonia` package reference, omitted from the packaged-verification build), node search provider and a document migration
+  (`netprints.test/Log` now has data version 1). Red (assertions): `ExtensionKindsTests` failed with `Expected: ["command", "panel", ...] Actual: []` with the registrations removed; green with them.
+  The icon is checked headless in `ExtensionIconSurfaceTests`. `SessionPanelTests` (2) failed 2 of 2 before the panel gap was closed: `ShellViewModel` now adds and removes `PanelViewModel`s on registry
+  changes (`PanelsChanged`), and `DockShellAdapter` docks an added panel at its default place and removes a removed one from the layout and the hidden list. A saved layout that names a panel of an
+  extension that is not loaded drops it (existing mapper behaviour) and the panel docks at its default place when it loads (T082 edge case 2).
+- **Decision (dialog gap)**: the palette and the shortcuts sheet still read the snapshot when they open and are not rebuilt while open; with the editor modal dialogs that only matters if a project
+  loads while one is open, which the unsaved-changes flow does not allow. Left as is.
+- **Fix for the trim ratchet**: `AvaloniaXamlLoader.Load` is the one new IL2026 in the Editor; two `JsonArray.Add<T>` warnings in `NetPrintsJsonSchema` were removed with a non-generic overload
+  and the baseline in `eng/trim-warnings.txt` is now 8.

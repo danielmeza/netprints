@@ -29,6 +29,17 @@ public static class FixtureExtensions
         "extensions",
         "fx.editor");
 
+    /// <summary>The extension folder of <c>netprints.test</c>: the test extension that contributes one item of every kind.</summary>
+    /// <returns>The folder holding <c>netprints-extension.json</c>, in the configuration of the running tests.</returns>
+    public static string TestExtensionFolder() => Path.Combine(
+        LocalSdkLayout.FindRepositoryRoot(),
+        "tests",
+        "NetPrints.TestExtension",
+        "bin",
+        LocalSdkLayout.DetectConfiguration(),
+        "extensions",
+        "netprints.test");
+
     /// <summary>The extension folder of <c>fx.faulty</c>: contributions that throw at runtime and ones the registry must report.</summary>
     /// <returns>The folder holding <c>netprints-extension.json</c>, in the configuration of the running tests.</returns>
     public static string FaultyFolder() => OutputOf("Fx.Faulty", "fx.faulty");

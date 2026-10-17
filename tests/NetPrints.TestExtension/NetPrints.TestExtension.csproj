@@ -15,6 +15,14 @@
     <NetPrintsExperimentalOptIn Include="NPXE0001" />
     <NetPrintsExperimentalOptIn Include="NPXE0002" />
     <NetPrintsExperimentalOptIn Include="NPXE0003" />
+    <NetPrintsExperimentalOptIn Include="NPXE0005" />
+    <NetPrintsExperimentalOptIn Include="NPXE0006" />
+    <NetPrintsExperimentalOptIn Include="NPXE0012" />
+    <NetPrintsExperimentalOptIn Include="NPXE0013" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(NetPrintsPackagedExtensionVersion)' == ''">
+    <!-- Compiles TestIcons.axaml into the extension; the host supplies the Avalonia runtime. -->
+    <PackageReference Include="Avalonia" ExcludeAssets="runtime" />
   </ItemGroup>
   <ItemGroup Condition="'$(NetPrintsPackagedExtensionVersion)' != ''">
     <!-- scripts/verify-packages.sh: the single reference an extension author writes, restored from the local feed. -->
