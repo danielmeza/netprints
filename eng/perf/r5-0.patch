@@ -1,5 +1,5 @@
 diff --git a/tests/NetPrints.Editor.Tests/Graph/GraphScopePerformanceTests.cs b/tests/NetPrints.Editor.Tests/Graph/GraphScopePerformanceTests.cs
-index 32fed7f7..2b1f96bc 100644
+index 32fed7f7..43f9360f 100644
 --- a/tests/NetPrints.Editor.Tests/Graph/GraphScopePerformanceTests.cs
 +++ b/tests/NetPrints.Editor.Tests/Graph/GraphScopePerformanceTests.cs
 @@ -8,6 +8,7 @@ using NetPrints.Editor.Hosting;
@@ -23,7 +23,7 @@ index 32fed7f7..2b1f96bc 100644
      {
          var output = TestContext.Current.TestOutputHelper
              ?? throw new InvalidOperationException($"{nameof(TestContext)} has no {nameof(TestContext.Current.TestOutputHelper)}.");
-@@ -63,6 +65,25 @@ public sealed class GraphScopePerformanceTests(TestEditor editor)
+@@ -63,6 +65,22 @@ public sealed class GraphScopePerformanceTests(TestEditor editor)
 
          Assert.Equal(NodeCount + 2, nodes);
          Assert.InRange(pins, NodeCount * 3, NodeCount * 6);
@@ -36,21 +36,18 @@ index 32fed7f7..2b1f96bc 100644
 +        }
 +    }
 +
-+    private double TimeOneBuild()
++    private Sample TimeOneBuild()
 +    {
 +        MethodGraph method = BuildGraph();
 +        var counting = new CountingServices(editor.Context);
-+        GC.Collect();
-+        GC.WaitForPendingFinalizers();
-+        var stopwatch = Stopwatch.StartNew();
++        SampleClock clock = PerformanceGate.StartSample();
 +        _ = new NodeGraphViewModel(method, counting.Services);
-+        stopwatch.Stop();
-+        return stopwatch.Elapsed.TotalMilliseconds;
++        return clock.Stop();
      }
 
      private static MethodGraph BuildGraph()
 diff --git a/tests/NetPrints.Editor.UITests/Hosting/ShellStartupPerformanceTests.cs b/tests/NetPrints.Editor.UITests/Hosting/ShellStartupPerformanceTests.cs
-index 2a34d3d7..39810cb7 100644
+index 2a34d3d7..9d6880a9 100644
 --- a/tests/NetPrints.Editor.UITests/Hosting/ShellStartupPerformanceTests.cs
 +++ b/tests/NetPrints.Editor.UITests/Hosting/ShellStartupPerformanceTests.cs
 @@ -2,6 +2,7 @@ using System.Diagnostics;
@@ -69,7 +66,7 @@ index 2a34d3d7..39810cb7 100644
 
      [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
      [Trait("Category", "Performance")]
-@@ -47,6 +49,23 @@ public class ShellStartupPerformanceTests
+@@ -47,6 +49,20 @@ public class ShellStartupPerformanceTests
 
          output.WriteLine(string.Create(CultureInfo.InvariantCulture,
              $"M1 median of the warm runs: {Median(times):F1} ms, {Median(bytes):F0} bytes"));
@@ -82,14 +79,11 @@ index 2a34d3d7..39810cb7 100644
 +        }
 +    }
 +
-+    private static async ValueTask<double> TimeOneStartAsync()
++    private static async ValueTask<Sample> TimeOneStartAsync()
 +    {
-+        GC.Collect();
-+        GC.WaitForPendingFinalizers();
-+        var stopwatch = Stopwatch.StartNew();
++        SampleClock clock = PerformanceGate.StartSample();
 +        await using ShellApp app = ShellApp.Start();
-+        stopwatch.Stop();
-+        return stopwatch.Elapsed.TotalMilliseconds;
++        return clock.Stop();
      }
 
      private static double Median(List<double> values)

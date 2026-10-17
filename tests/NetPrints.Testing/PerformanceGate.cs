@@ -33,13 +33,26 @@ namespace NetPrints.Testing
         }
 
         /// <summary>
-        /// Runs <paramref name="timeOnce"/> (one measured run, in milliseconds) for at least a second and until three runs
-        /// in a row agree within 10% (at most six seconds), then measures <paramref name="samples"/> more.
+        /// Starts one sample: a full blocking collection first, so every sample starts from the same heap, then the clock.
+        /// Call it after the sample's setup and stop it right after the measured work.
         /// </summary>
-        /// <param name="timeOnce">One measured run; returns its time in milliseconds.</param>
-        /// <param name="samples">The number of measured runs after the warm-up, at least one.</param>
-        /// <returns>The fastest and the median of the samples.</returns>
-        public static async ValueTask<SteadyState> MeasureAsync(Func<ValueTask<double>> timeOnce, int samples)
+        /// <returns>The running clock.</returns>
+        public static SampleClock StartSample()
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+            return new SampleClock();
+        }
+
+        /// <summary>
+        /// Runs <paramref name="sampleOnce"/> (one sample, timed with <see cref="StartSample"/>) for at least a second and
+        /// until three samples in a row agree within 10% (at most six seconds), then measures <paramref name="samples"/> more.
+        /// </summary>
+        /// <param name="sampleOnce">One sample.</param>
+        /// <param name="samples">The number of samples after the warm-up, at least one.</param>
+        /// <returns>The fastest and the median time of the samples, and their median allocation.</returns>
+        public static async ValueTask<SteadyState> MeasureAsync(Func<ValueTask<Sample>> sampleOnce, int samples)
         {
             ArgumentOutOfRangeException.ThrowIfLessThan(samples, 1);
             var recent = new Queue<double>();
@@ -48,7 +61,7 @@ namespace NetPrints.Testing
             while (elapsed.Elapsed < WarmUpMaximum)
             {
                 warmUpRuns++;
-                recent.Enqueue(await timeOnce());
+                recent.Enqueue((await sampleOnce()).Milliseconds);
                 if (recent.Count > WarmUpAgreeing)
                 {
                     recent.Dequeue();
@@ -61,40 +74,79 @@ namespace NetPrints.Testing
             }
 
             TimeSpan warmUp = elapsed.Elapsed;
-            var measured = new List<double>(samples);
+            var measured = new List<Sample>(samples);
             for (int sample = 0; sample < samples; sample++)
             {
-                measured.Add(await timeOnce());
+                measured.Add(await sampleOnce());
             }
 
-            return new SteadyState(measured.Min(), Median(measured), measured.Count, warmUpRuns, warmUp.TotalSeconds, elapsed.Elapsed.TotalSeconds);
+            double[] times = [.. measured.Select(sample => sample.Milliseconds)];
+            return new SteadyState(
+                times.Min(),
+                Median(times),
+                (long)Median([.. measured.Select(sample => (double)sample.Bytes)]),
+                Median([.. measured.Select(sample => sample.GcPauseMilliseconds)]),
+                measured.Count,
+                warmUpRuns,
+                warmUp.TotalSeconds,
+                elapsed.Elapsed.TotalSeconds);
         }
 
         /// <summary>
-        /// Appends <paramref name="state"/> to <paramref name="path"/> as one line: the metric, the fastest, the median, the count,
-        /// the warm-up runs, the warm-up seconds and the total seconds.
+        /// Appends <paramref name="state"/> to <paramref name="path"/> as one line that <c>eng/perf/ab.sh</c> reads: the metric,
+        /// the fastest and the median time, the median bytes, the median GC pause, the count, the warm-up runs, the warm-up
+        /// seconds and the total seconds.
         /// </summary>
         /// <param name="path">The file named by <see cref="OutputVariable"/>.</param>
         /// <param name="metric">The metric id, <c>M1</c> or <c>M2</c>; the script reads the lines that start with it.</param>
         /// <param name="state">The measurement.</param>
         public static void Record(string path, string metric, SteadyState state) =>
             File.AppendAllText(path, string.Create(CultureInfo.InvariantCulture,
-                $"{metric} {state.Fastest:F3} {state.Median:F3} {state.Count} {state.WarmUpRuns} {state.WarmUpSeconds:F2} {state.TotalSeconds:F2}{Environment.NewLine}"));
+                $"{metric} {state.Fastest:F3} {state.Median:F3} {state.Bytes} {state.GcPause:F3} {state.Count} {state.WarmUpRuns} {state.WarmUpSeconds:F2} {state.TotalSeconds:F2}{Environment.NewLine}"));
     }
+
+    /// <summary>The clock of one sample, from <see cref="PerformanceGate.StartSample"/>.</summary>
+    public sealed class SampleClock
+    {
+        private readonly long allocated = GC.GetTotalAllocatedBytes(precise: true);
+        private readonly TimeSpan paused = GC.GetTotalPauseDuration();
+        private readonly long started = Stopwatch.GetTimestamp();
+
+        /// <summary>
+        /// Stops the clock. The time leaves out the GC pauses inside the sample: whether a collection falls inside one depends
+        /// on the machine's gen0 budget, so the pauses would make two machines disagree; the bytes carry the collector's cost.
+        /// </summary>
+        /// <returns>The sample.</returns>
+        public Sample Stop()
+        {
+            long ended = Stopwatch.GetTimestamp();
+            TimeSpan pause = GC.GetTotalPauseDuration() - paused;
+            long bytes = GC.GetTotalAllocatedBytes(precise: true) - allocated;
+            return new Sample((Stopwatch.GetElapsedTime(started, ended) - pause).TotalMilliseconds, bytes, pause.TotalMilliseconds);
+        }
+    }
+
+    /// <summary>One sample of <see cref="PerformanceGate.MeasureAsync"/>.</summary>
+    /// <param name="Milliseconds">The time without the GC pauses inside the sample.</param>
+    /// <param name="Bytes">The bytes the process allocated during the sample.</param>
+    /// <param name="GcPauseMilliseconds">The GC pauses inside the sample, left out of <paramref name="Milliseconds"/>.</param>
+    public readonly record struct Sample(double Milliseconds, long Bytes, double GcPauseMilliseconds);
 
     /// <summary>A steady-state measurement of <see cref="PerformanceGate.MeasureAsync"/>.</summary>
     /// <param name="Fastest">The fastest sample, in milliseconds.</param>
     /// <param name="Median">The median sample, in milliseconds.</param>
+    /// <param name="Bytes">The median bytes allocated by a sample.</param>
+    /// <param name="GcPause">The median GC pause inside a sample, in milliseconds (left out of the times).</param>
     /// <param name="Count">The number of samples.</param>
-    /// <param name="WarmUpRuns">The runs before the samples.</param>
+    /// <param name="WarmUpRuns">The samples before the measured ones.</param>
     /// <param name="WarmUpSeconds">The time of the warm-up.</param>
     /// <param name="TotalSeconds">The time of the warm-up and the samples.</param>
-    public sealed record SteadyState(double Fastest, double Median, int Count, int WarmUpRuns, double WarmUpSeconds, double TotalSeconds)
+    public sealed record SteadyState(double Fastest, double Median, long Bytes, double GcPause, int Count, int WarmUpRuns, double WarmUpSeconds, double TotalSeconds)
     {
         /// <summary>The numbers, for the test output.</summary>
         /// <param name="metric">The metric id.</param>
         /// <returns>One line.</returns>
         public string Describe(string metric) => string.Create(CultureInfo.InvariantCulture,
-            $"{metric} steady state: fastest {Fastest:F1} ms, median {Median:F1} ms of {Count} runs, after {WarmUpRuns} warm-up runs in {WarmUpSeconds:F1} s; {TotalSeconds:F1} s in all.");
+            $"{metric} steady state: fastest {Fastest:F1} ms, median {Median:F1} ms of {Count} runs (GC pauses left out, median {GcPause:F1} ms), {Bytes} bytes; after {WarmUpRuns} warm-up runs in {WarmUpSeconds:F1} s, {TotalSeconds:F1} s in all.");
     }
 }

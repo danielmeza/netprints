@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # SC-005 time gate (M1, M2): the head against R5-0 on the same machine, in the same job, interleaved.
 # Usage: eng/perf/ab.sh [--rounds N] [--metrics "M2 M1"] [--results FILE] BASE_TREE HEAD_TREE
+# (--results keeps one line per run: round, tree, metric, fastest ms, median ms, bytes, GC pause ms, samples, warm-up
+# runs, warm-up s, total s.)
 # Both trees are built in Release first (eng/perf/prepare-r5-0.sh prepares R5-0). Each round runs every metric once per
-# tree, each run in a fresh test process, the base first in odd rounds and the head first in even ones. A run reports the
-# fastest of 15 steady-state samples (tests/NetPrints.Testing/PerformanceGate.cs). A tree's statistic is the median of its
-# runs; the gate is head / base <= 1.10. Exit 0 within the gate, 1 over it, 2 on a usage or run error.
+# tree, each run in a fresh test process, the base first in odd rounds and the head first in even ones. A run reports
+# its steady state (tests/NetPrints.Testing/PerformanceGate.cs): the fastest sample, GC pauses left out, and the median
+# bytes a sample allocates. A tree's time is the median of its runs' fastest samples, its bytes the median of its runs'.
+# The gate is head / base <= 1.10 for the time and for the bytes. Exit 0 within the gate, 1 over it, 2 on an error.
 set -euo pipefail
 
 gate=1.10
@@ -12,7 +15,7 @@ rounds=10
 metrics="M2 M1"
 results=""
 
-usage() { sed -n '2,7p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
+usage() { sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -51,7 +54,7 @@ done
 cpu="$(grep -m1 '^model name' /proc/cpuinfo 2>/dev/null | sed 's/^[^:]*: *//' || true)"
 [ -n "$cpu" ] || cpu="$(uname -m)"
 echo "SC-005 A/B: base $base ($(git -C "$base" rev-parse --short HEAD 2>/dev/null || echo '?')), head $head ($(git -C "$head" rev-parse --short HEAD 2>/dev/null || echo '?'))"
-echo "CPU: $cpu ($(nproc) cores); rounds: $rounds; metrics: $metrics; gate: head / base <= $gate"
+echo "CPU: $cpu ($(nproc) cores); rounds: $rounds; metrics: $metrics; gate: head / base <= $gate (time and bytes)"
 
 run_one() {
   local name="$1" tree="$2" metric="$3" round="$4"
@@ -63,11 +66,11 @@ run_one() {
     tail -n 40 "$log"
     exit 2
   fi
-  local fastest median count warm_runs warm_seconds total
-  read -r _ fastest median count warm_runs warm_seconds total < <(grep -m1 "^$metric " "$out")
-  echo "$round $name $metric $fastest $median $count $warm_runs $warm_seconds $total" >> "$results"
-  LC_ALL=C printf 'round %2d  %-4s %s  fastest %8.2f ms  median %8.2f ms  (%d warm-up runs, process %ds)\n' \
-    "$round" "$name" "$metric" "$fastest" "$median" "$warm_runs" "$((SECONDS - start))"
+  local fastest median bytes gc count warm_runs warm_seconds total
+  read -r _ fastest median bytes gc count warm_runs warm_seconds total < <(grep -m1 "^$metric " "$out")
+  echo "$round $name $metric $fastest $median $bytes $gc $count $warm_runs $warm_seconds $total" >> "$results"
+  LC_ALL=C printf 'round %2d  %-4s %s  fastest %8.2f ms  median %8.2f ms  %10d bytes  GC %6.2f ms  (%d warm-up runs, process %ds)\n' \
+    "$round" "$name" "$metric" "$fastest" "$median" "$bytes" "$gc" "$warm_runs" "$((SECONDS - start))"
 }
 
 for round in $(seq 1 "$rounds"); do
@@ -82,15 +85,20 @@ for round in $(seq 1 "$rounds"); do
   done
 done
 
-LC_ALL=C awk -v gate="$gate" -v metrics="$metrics" '
+LC_ALL=C awk -v gate="$gate" -v metrics="$metrics" -v cpu="$cpu" '
   function median(list, n,    sorted, i, j, t) {
     for (i = 1; i <= n; i++) sorted[i] = list[i]
     for (i = 2; i <= n; i++) for (j = i; j > 1 && sorted[j - 1] > sorted[j]; j--) { t = sorted[j]; sorted[j] = sorted[j - 1]; sorted[j - 1] = t }
     return n % 2 ? sorted[(n + 1) / 2] : (sorted[n / 2] + sorted[n / 2 + 1]) / 2
   }
+  function judge(m, what, unit, base, head,    ratio) {
+    ratio = head / base
+    if (ratio > gate) failed = 1
+    printf "%s %-5s head / base = %.3f (%+.1f%%; base %.2f %s, head %.2f %s), gate %.2f: %s\n", m, what, ratio, (ratio - 1) * 100, base, unit, head, unit, gate, ratio <= gate ? "PASS" : "FAIL"
+  }
   {
     key = $3 SUBSEP $2
-    n[key]++; value[key, n[key]] = $4
+    n[key]++; fastest[key, n[key]] = $4; bytes[key, n[key]] = $6; gc[key, n[key]] = $7
     runs[key] = runs[key] sprintf("%s%.2f", n[key] > 1 ? " " : "", $4)
   }
   END {
@@ -100,14 +108,14 @@ LC_ALL=C awk -v gate="$gate" -v metrics="$metrics" '
       m = ids[k]
       for (t = 1; t <= 2; t++) {
         tree = t == 1 ? "base" : "head"; key = m SUBSEP tree
-        delete list; for (i = 1; i <= n[key]; i++) list[i] = value[key, i]
-        stat[tree] = median(list, n[key])
-        printf "%s %s: median %.2f ms of %d runs (fastest sample per run: %s)\n", m, tree, stat[tree], n[key], runs[key]
+        delete a; delete b; delete c
+        for (i = 1; i <= n[key]; i++) { a[i] = fastest[key, i]; b[i] = bytes[key, i]; c[i] = gc[key, i] }
+        time[tree] = median(a, n[key]); size[tree] = median(b, n[key]); pause[tree] = median(c, n[key])
+        printf "%s %s: %.2f ms (median of %d runs; fastest sample per run: %s), %.0f bytes, GC pause %.2f ms left out\n", m, tree, time[tree], n[key], runs[key], size[tree], pause[tree]
       }
-      ratio = stat["head"] / stat["base"]
-      verdict = ratio <= gate ? "PASS" : "FAIL"
-      if (ratio > gate) failed = 1
-      printf "%s: head / base = %.3f (%+.1f%%), gate %.2f: %s\n", m, ratio, (ratio - 1) * 100, gate, verdict
+      judge(m, "time", "ms", time["base"], time["head"])
+      judge(m, "bytes", "MB", size["base"] / 1e6, size["head"] / 1e6)
     }
+    printf "SC-005 A/B on %s: %s\n", cpu, failed ? "FAIL" : "PASS"
     exit failed
   }' "$results"

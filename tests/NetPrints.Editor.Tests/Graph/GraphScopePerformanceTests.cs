@@ -81,16 +81,13 @@ public sealed class GraphScopePerformanceTests(TestEditor editor)
         }
     }
 
-    private double TimeOneBuild()
+    private Sample TimeOneBuild()
     {
         MethodGraph method = BuildGraph();
         var counting = new CountingServices(editor.Context);
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        var stopwatch = Stopwatch.StartNew();
+        SampleClock clock = PerformanceGate.StartSample();
         _ = new NodeGraphViewModel(method, counting.Services);
-        stopwatch.Stop();
-        return stopwatch.Elapsed.TotalMilliseconds;
+        return clock.Stop();
     }
 
     private static MethodGraph BuildGraph()

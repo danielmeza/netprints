@@ -67,14 +67,11 @@ public class ShellStartupPerformanceTests
         }
     }
 
-    private static async ValueTask<double> TimeOneStartAsync()
+    private static async ValueTask<Sample> TimeOneStartAsync()
     {
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-        var stopwatch = Stopwatch.StartNew();
+        SampleClock clock = PerformanceGate.StartSample();
         await using ShellApp app = ShellApp.Start();
-        stopwatch.Stop();
-        return stopwatch.Elapsed.TotalMilliseconds;
+        return clock.Stop();
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
