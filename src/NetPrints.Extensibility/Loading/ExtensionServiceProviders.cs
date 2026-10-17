@@ -90,7 +90,7 @@ internal static class ExtensionServiceProviders
         }
         else if (export == typeof(ILogger<>))
         {
-            foreach (Type own in OwnTypes(ownAssembly))
+            foreach (Type own in OwnTypes(accepted, ownAssembly))
             {
                 accepted.AddSingleton(typeof(ILogger<>).MakeGenericType(own), typeof(ExtensionLogger<>).MakeGenericType(own));
             }
@@ -111,19 +111,22 @@ internal static class ExtensionServiceProviders
         }
     }
 
-    private static IEnumerable<Type> OwnTypes(Assembly ownAssembly)
+    private static HashSet<Type> OwnTypes(IServiceCollection accepted, Assembly ownAssembly)
     {
-        Type?[] types;
-        try
+        var own = new HashSet<Type>();
+        foreach (ServiceDescriptor descriptor in accepted)
         {
-            types = ownAssembly.GetTypes();
-        }
-        catch (ReflectionTypeLoadException ex)
-        {
-            types = ex.Types;
+            Type? implementation = descriptor.ImplementationType ?? descriptor.ImplementationInstance?.GetType();
+            foreach (Type? type in new[] { descriptor.ServiceType, implementation })
+            {
+                if (type is { IsGenericTypeDefinition: false, IsByRefLike: false, IsPointer: false, IsByRef: false } && IsOwn(type, ownAssembly))
+                {
+                    own.Add(type);
+                }
+            }
         }
 
-        return types.OfType<Type>().Where(type => !type.IsGenericTypeDefinition && !type.IsByRefLike && !type.IsPointer && !type.IsByRef);
+        return own;
     }
 
     private static string? Violation(Type serviceType, Assembly ownAssembly)
