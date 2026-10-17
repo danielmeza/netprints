@@ -1177,4 +1177,4 @@ T076, Checkpoint C2, gate items measured on this head (Release).
   Dock check (pin stays 12.1.0.6): read from CI at the final head of the review batch; not re-measured locally here.
 - Docs: ADR-0003 and ADR-0007 amended here; the extensions guide, ADR-0030, ADR-0020, ADR-0021, `releasing.md`, `graph-format.md` and
   `docs/api/docfx.json` were done in C2a to C2e.
-- T076 stays unticked until CI is green at the head of this batch.
+- Checkpoint C2, CI at 9d82b72a green: CI run 38996910612, CLI (Windows) run 38996910613, Release run 38996910683, Docs run 38996910605. T076 ticked.

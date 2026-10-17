@@ -661,7 +661,7 @@ SC-005 rechecked (research R4).
 - [x] T075 [US3] NPA020–NPA024 (FR-031, research S6; 1 unit). Test first: one class per rule in
   `tests/NetPrints.Analyzers.Tests/Contributions/`. Then the analyzers in `src/NetPrints.Authoring/Contributions/`;
   guide rows; 0 hits in the repository.
-- [ ] T076 **Checkpoint C2 (publish gate)**. Whole suite plus the E2E pass; CI green, including the `packages` job.
+- [x] T076 **Checkpoint C2 (publish gate)**. Whole suite plus the E2E pass; CI green, including the `packages` job.
   Report the plan's gate C2: SC-001 for NPH (0 hits; each replaced test's red/green); package validation and the API
   checks; the XML docs count; `NetPrints.TestExtension` built from the packed packages; SC-005 rechecked in the perf
   job; the longest CI job; the Dock check. Docs updated: the extensions guide, ADR-0030, ADR-0020, ADR-0021, ADR-0003,
