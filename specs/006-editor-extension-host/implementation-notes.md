@@ -1062,6 +1062,75 @@ NPS, NPA003/NPA005/NPA011 and the STJ extension-data shapes.
   Fixed in c11763f8 (B-F2): `NodeKindIds` in Core, `[NodeKind]` uses it, `BuiltInNodeKinds` forwards it; a hygiene test rejects a
   literal (red on the assertion).
 
+### Review C1+C2
+
+(T077, at 9d82b72a; PR #20 review 5555816642, one inline thread per finding.) 0 blocker, 8 major, 14 minor, 5 nit. Evidence:
+Release build 0 warnings; Core.Tests 1036/1036, Editor.Tests 2013/2013, the publish-gate classes 60/60, Cli.Tests facet, writer
+identity and project-extension classes 12/12; Analyzers.Tests 274 with one intermittent failure (CD-2); M1 and M2 read from the
+`test-results-perf` TRX artifacts of runs 38899627936 (the first green perf run), 38948068721, 38973466744, 38977152765 and
+38993704432; a scan of every `PublicAPI.*.txt` for members that name an experimental type without its id. No `!` was added
+to `src/` or `tests/` code in C1a to C2f.
+
+- CD-1 major `tests/NetPrints.Editor.Tests/Graph/GraphScopePerformanceTests.cs:70`: the +10% M1/M2 time gate is asserted
+  nowhere and the R5-0 perf-job baseline was never recorded; the perf TRX does carry the numbers (the C1 note says it does
+  not), and at 70c75b75 they are over the gate (M1 warm +12.7%, M2 +47.2% against run 38899627936).
+- CD-2 major `src/NetPrints.RepoAnalyzers/Hygiene/RawDiagnosticCodeAnalyzer.cs:78`: NPH003's duplicate check depends on
+  callback order under concurrent execution; `ASecondDeclarationOfOneCodeInAProjectIsReported` failed 3 of 7 full runs.
+- CD-3 major `src/NetPrints.Serialization/PublicAPI.Unshipped.txt:535`: AP-T02 (`ExperimentalApiTests.cs:95`) scans Core,
+  Abstractions and Catalog only; the stable `NodeDataMigrator` constructor names the NPXE0013 interface, and
+  `ExtensionLoaderOptions.SettingsStore` (NPXE0008) returns an NPXE0002 type.
+- CD-4 major `src/NetPrints.Extensibility.Abstractions/Nodes/NodeKindDescriptor.cs:31`: `DataVersion` (NPXE0013) is a
+  parameter of the stable positional constructor and `Deconstruct`.
+- CD-5 major `src/NetPrints.Extensibility.Abstractions/Editor/SettingsPageDescriptor.cs:11`: settings pages moved to NPXE0005
+  and NPXE0010 was dropped without amending ADR-0040, R16, the contract, the plan or T068.
+- CD-6 major `src/NetPrints.Extensibility.Abstractions/Editor/DialogDescriptor.cs:11`: dialog and tile titles, template names
+  and descriptions, and the stable `NodeSuggestion` labels are strings, against FR-027 and contract §4; suggestion text doubles
+  as its resource key.
+- CD-7 major `src/NetPrints.Core/Translator/TranslatorUtil.cs:97`: the two-argument `ObjectToLiteral` shipped in 0.2.0 now
+  writes `\e`, which C# before 13 rejects.
+- CD-8 major `tests/NetPrints.Cli.Tests/Generation/CSharpTargetWriterIdentityTests.cs:61`: no fixture holds a
+  version-dependent construct, so the SC-010 byte comparison cannot fail on the language version.
+- CD-9 minor `src/NetPrints.Extensibility/Loading/ExtensionServiceProviders.cs:56`: `ILogger<T>` resolves for any `T`, and
+  the pinned `HostExports.AllowedServiceTypes` is not what the provider is built from.
+- CD-10 minor `src/NetPrints.Extensibility/Loading/ExtensionServiceProviders.cs:68`: a deny-list seam filter, contributions
+  disposed between sessions and providers, and no startup validation, against ADR-0031 decision 5 and R15, unamended.
+- CD-11 minor `src/NetPrints.Editor/Shell/ProjectSessionViewModel.cs:278`: after a failed project switch the open session
+  keeps extension scopes the old registry disposed (the rollback in `ProjectLoader.cs:448-457`).
+- CD-12 minor `src/NetPrints.Authoring/Contributions/ContributionLiteralsAnalyzer.cs:20`: NPA022's owner prefix reads a
+  property no shipped target makes compiler-visible.
+- CD-13 minor `src/NetPrints.RepoAnalyzers/Hygiene/LiteralUiTextAnalyzer.cs:63`: NPH006 misses `StatusBarViewModel.Show` and
+  interpolated strings, which the contract's "status-bar text" covers.
+- CD-14 minor `src/NetPrints.Editor/Contributions/BuiltIn/StatusBarContributions.cs:68`: the new segments build English text
+  and plurals in code (FR-027).
+- CD-15 minor `src/NetPrints.Editor/Graph/NodeTexts.cs:32`: NPA040 requires an extension kind's title key, which is shown only
+  when `TitleIsFixed` is overridden; the guide does not say so.
+- CD-16 minor `.github/release-notes.md:1`: no C1 or C2 entry (NPX002 for `netprintsApi` 1.0, new packages, `kindVersion`,
+  the escape output, `netprints.language`, the status bar, the author analyzers).
+- CD-17 minor `tests/NetPrints.Core.Tests/Extensibility/PackageValidationTests.cs:88`: only CP0002 and CP0009 are
+  cross-checked; the documented release step turns three tests red; the 0.2.0 baseline goes stale if 0.3.0 publishes first.
+- CD-18 minor `tests/NetPrints.Core.Tests/Extensibility/ExtensionApiVersionTests.cs:27`: a shipped row can be rehashed with
+  the version unchanged.
+- CD-19 minor `src/NetPrints.Editor/Hosting/ViewResourceLoader.cs:44`: no task owns multi-target common capabilities,
+  view resources by URI, VSTHRD002/103 in tests, or per-extension services for panel and start-page contexts.
+- CD-20 minor `src/NetPrints.Core/Projects/CSharpTarget.cs:103`: ADR-0038 decision 2 and FR-071 still name the editor
+  Roslyn's maximum; `CSharpTarget.Resolve`, its input and result records and `INodeHintSource`/`NodeHint` are stable and
+  unclassified in R16.
+- CD-21 minor `HygieneLedger.txt:37`: the 19 grandfathered test `!` sites all have a proper form (`Assert.NotNull`,
+  `?? throw`, a pattern match, a nullable local); fix them and drop the NPH001 section.
+- CD-22 minor `src/NetPrints.Extensibility.Abstractions/Editor/CommandSelection.cs:10`: `Nodes` hands extensions the
+  editor's view models, against ADR-0020 Amendment 1.
+- CD-23 nit `docs/adr/0003-analyzer-promotion-and-string-literal-discipline.md:444`: ADR-0003 (:25, :65, :301, :387) and
+  ADR-0007 (:39) still name the removed hygiene tests as the enforcement.
+- CD-24 nit `specs/006-editor-extension-host/contracts/extension-api.md:18`: contract §1, §4 and §6, R13, R17 and data-model §2
+  do not follow recorded deviations (`InMemoryHostChannel`, opt-in form, `PublicClass`, built-in owner id, `AppliesTo`,
+  library tree).
+- CD-25 nit `docs/guide/extensions.md:258`: the NPXE0005 and NPXE0013 rows are incomplete; no opt-in probe for NPXE0009,
+  0012 and 0013.
+- CD-26 nit `specs/006-editor-extension-host/implementation-notes.md:757`: red-first was compile-only in C1c, C1d and C2a, and
+  two C1e tests were never run red.
+- CD-27 nit `tests/NetPrints.Editor.Tests/Hosting/CompositionResolveAllTests.cs:75`: the session-scoped template service runs
+  in a scope with no project, where the backup services throw (fails fast).
+
 ## Batch C2f (T074-T076)
 
 Red/green. Every rule's tests were written against an analyzer stub that declares its descriptor and reports nothing, and failed on the

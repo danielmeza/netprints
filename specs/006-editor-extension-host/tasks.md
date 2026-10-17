@@ -669,7 +669,7 @@ SC-005 rechecked (research R4).
 
 ### Batch C2-R — model: opus — T077 (checkpoint C1+C2 review)
 
-- [ ] T077 Review sub-phases C1 and C2 (the C1+C2 checkpoint) against their decision corpus (constitution II, III, IV and
+- [x] T077 Review sub-phases C1 and C2 (the C1+C2 checkpoint) against their decision corpus (constitution II, III, IV and
   V, ADR-0003, ADR-0007, ADR-0010, ADR-0017, ADR-0020, ADR-0021, ADR-0023, ADR-0027, ADR-0030, ADR-0031, ADR-0038,
   ADR-0040, spec US3 and US9, FR-019–FR-031, FR-038, FR-070–FR-072, FR-075, research R4, R10, R12–R19,
   contracts/extension-api.md, data-model §1–§2): the whole diff of batches C1a–C2f. Check the composition gates'
