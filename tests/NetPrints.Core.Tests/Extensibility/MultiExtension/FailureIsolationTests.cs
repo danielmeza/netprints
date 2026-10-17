@@ -193,7 +193,7 @@ public sealed class FailureIsolationTests : IAsyncLifetime
                 folders.Add(failing);
                 break;
             case "NPX003":
-                WriteManifest(failing, ManifestJson("fx.dependent", "fx.dependent.dll", "1.0", "fx.absent"));
+                WriteManifest(failing, ManifestJson("fx.dependent", "fx.dependent.dll", "0.4", "fx.absent"));
                 folders.Add(failing);
                 break;
             case "NPX004":

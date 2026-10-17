@@ -14,7 +14,7 @@ public class HostChannelSelectorTests
     private static ExtensionRegistry RegistryWith(RecordingFactory factory)
     {
         var manifest = ExtensionManifest.Parse(
-            new MemoryStream(Encoding.UTF8.GetBytes("""{ "id": "test.host", "name": "Host test", "version": "1.0.0", "netprintsApi": "1.0", "assembly": "x.dll" }""")),
+            new MemoryStream(Encoding.UTF8.GetBytes("""{ "id": "test.host", "name": "Host test", "version": "1.0.0", "netprintsApi": "0.4", "assembly": "x.dll" }""")),
             "/x/netprints-extension.json");
         var extension = new HostExtension(factory);
         var options = new ExtensionLoaderOptions([], [], [BuiltInExtension.InProcessEntry, (manifest, extension)]);

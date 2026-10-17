@@ -40,6 +40,11 @@ NetPrints.Extensibility.Loading.ExtensionManifest.Name.get -> string!
 NetPrints.Extensibility.Loading.ExtensionManifest.Name.init -> void
 NetPrints.Extensibility.Loading.ExtensionManifest.NetprintsApi.get -> string!
 NetPrints.Extensibility.Loading.ExtensionManifest.NetprintsApi.init -> void
+NetPrints.Extensibility.Loading.ExtensionManifest.Themes.get -> System.Collections.Generic.IReadOnlyList<string!>!
+NetPrints.Extensibility.Loading.ExtensionManifest.Themes.init -> void
+NetPrints.Extensibility.Loading.ExtensionManifest.UnknownFields.get -> System.Collections.Generic.IReadOnlyList<string!>!
+NetPrints.Extensibility.Loading.ExtensionManifest.UnknownFields.init -> void
+static NetPrints.Extensibility.Loading.ExtensionManifest.ThemesSinceApi.get -> System.Version!
 NetPrints.Extensibility.Loading.ExtensionManifest.Version.get -> string!
 NetPrints.Extensibility.Loading.ExtensionManifest.Version.init -> void
 NetPrints.Extensibility.Loading.ExtensionManifestException
@@ -898,3 +903,37 @@ NetPrints.Extensibility.Editor.ProjectOutputType.Library = 1 -> NetPrints.Extens
 [NPXE0012]static NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.operator ==(NetPrints.Extensibility.Editor.ProjectTemplateDescriptor? left, NetPrints.Extensibility.Editor.ProjectTemplateDescriptor? right) -> bool
 [NPXE0012]static NetPrints.Extensibility.Editor.TemplateFile.operator !=(NetPrints.Extensibility.Editor.TemplateFile? left, NetPrints.Extensibility.Editor.TemplateFile? right) -> bool
 [NPXE0012]static NetPrints.Extensibility.Editor.TemplateFile.operator ==(NetPrints.Extensibility.Editor.TemplateFile? left, NetPrints.Extensibility.Editor.TemplateFile? right) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorContributions.AddSettingsPage(NetPrints.Extensibility.Editor.SettingsPageDescriptor! page) -> NetPrints.Extensibility.Editor.IEditorContributions!
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.<Clone>$() -> NetPrints.Extensibility.Editor.SettingsPageDescriptor!
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.CreateViewModel.get -> System.Func<NetPrints.Extensibility.Editor.ISettingsPageContext!, object!>?
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.CreateViewModel.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.Deconstruct(out string! Id, out NetPrints.Core.LocalizedText Title, out string? SectionKey, out int Order) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.Equals(NetPrints.Extensibility.Editor.SettingsPageDescriptor? other) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.Id.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.Id.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.Order.get -> int
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.Order.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.ParentPageId.get -> string?
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.ParentPageId.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.SectionKey.get -> string?
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.SectionKey.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.SettingsPageDescriptor(string! Id, NetPrints.Core.LocalizedText Title, string? SectionKey, int Order) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.Title.get -> NetPrints.Core.LocalizedText
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.Title.init -> void
+[NPXE0005]override NetPrints.Extensibility.Editor.SettingsPageDescriptor.Equals(object? obj) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.SettingsPageDescriptor.GetHashCode() -> int
+[NPXE0005]override NetPrints.Extensibility.Editor.SettingsPageDescriptor.ToString() -> string!
+[NPXE0005]static NetPrints.Extensibility.Editor.SettingsPageDescriptor.operator !=(NetPrints.Extensibility.Editor.SettingsPageDescriptor? left, NetPrints.Extensibility.Editor.SettingsPageDescriptor? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.SettingsPageDescriptor.operator ==(NetPrints.Extensibility.Editor.SettingsPageDescriptor? left, NetPrints.Extensibility.Editor.SettingsPageDescriptor? right) -> bool
+[NPXE0009]NetPrints.Extensibility.Settings.PathKind
+[NPXE0009]NetPrints.Extensibility.Settings.PathKind.File = 0 -> NetPrints.Extensibility.Settings.PathKind
+[NPXE0009]NetPrints.Extensibility.Settings.PathKind.Folder = 1 -> NetPrints.Extensibility.Settings.PathKind
+[NPXE0009]NetPrints.Extensibility.Settings.RequiresRestartAttribute
+[NPXE0009]NetPrints.Extensibility.Settings.RequiresRestartAttribute.RequiresRestartAttribute() -> void
+[NPXE0009]NetPrints.Extensibility.Settings.SettingChoicesAttribute
+[NPXE0009]NetPrints.Extensibility.Settings.SettingChoicesAttribute.ProviderId.get -> string!
+[NPXE0009]NetPrints.Extensibility.Settings.SettingChoicesAttribute.SettingChoicesAttribute(string! providerId) -> void
+[NPXE0009]NetPrints.Extensibility.Settings.SettingPathAttribute
+[NPXE0009]NetPrints.Extensibility.Settings.SettingPathAttribute.Kind.get -> NetPrints.Extensibility.Settings.PathKind
+[NPXE0009]NetPrints.Extensibility.Settings.SettingPathAttribute.SettingPathAttribute(NetPrints.Extensibility.Settings.PathKind kind) -> void

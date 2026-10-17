@@ -87,7 +87,7 @@ public class ExtensionFailureReportTests : IDisposable
                 break;
             case ExtensionDiagnosticCodes.AssemblyLoadFailed:
                 File.WriteAllText(Path.Combine(folder, ExtensionManifest.FileName),
-                    """{ "id": "bad.assembly", "name": "Bad assembly", "version": "1.0.0", "assembly": "missing.dll", "netprintsApi": "1.0", "dependsOn": [] }""");
+                    """{ "id": "bad.assembly", "name": "Bad assembly", "version": "1.0.0", "assembly": "missing.dll", "netprintsApi": "0.4", "dependsOn": [] }""");
                 folders.Add(folder);
                 break;
             default:

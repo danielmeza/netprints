@@ -25,6 +25,27 @@ public sealed partial record ExtensionManifest(
     /// </summary>
     public const string FileName = "netprints-extension.json";
 
+    private const int ThemesSinceMinor = 4;
+    private const string DependsOnField = "dependsOn";
+    private const string ThemesField = "themes";
+
+    private static readonly HashSet<string> KnownFields = new(["id", "name", "version", "assembly", "netprintsApi", DependsOnField, ThemesField], StringComparer.Ordinal);
+
+    /// <summary>
+    /// The first <c>netprintsApi</c> version that accepts <c>themes</c>.
+    /// </summary>
+    public static System.Version ThemesSinceApi { get; } = new(0, ThemesSinceMinor);
+
+    /// <summary>
+    /// Gets the relative paths of the extension's <c>*.nptheme.json</c> files (data only); empty when the manifest lists none.
+    /// </summary>
+    public IReadOnlyList<string> Themes { get; init; } = [];
+
+    /// <summary>
+    /// Gets the names of the manifest fields this host does not know; they are ignored and reported once as information.
+    /// </summary>
+    public IReadOnlyList<string> UnknownFields { get; init; } = [];
+
     /// <summary>
     /// The parsed <see cref="NetprintsApi"/> as a version, or <see langword="null"/> when it is not <c>major.minor</c>.
     /// </summary>
@@ -78,28 +99,58 @@ public sealed partial record ExtensionManifest(
                 throw new ExtensionManifestException(manifestPath, $"'netprintsApi' must be 'major.minor': '{api}'.");
             }
 
-            var dependsOn = new List<string>();
-            if (root.TryGetProperty("dependsOn", out JsonElement dependencies) && dependencies.ValueKind != JsonValueKind.Null)
+            List<string> dependsOn = StringArray(root, DependsOnField, "extension ids", manifestPath);
+            List<string> themes = StringArray(root, ThemesField, "relative paths", manifestPath);
+            if (themes.Count > 0 && System.Version.Parse(api) < ThemesSinceApi)
             {
-                if (dependencies.ValueKind != JsonValueKind.Array)
-                {
-                    throw new ExtensionManifestException(manifestPath, "'dependsOn' must be an array of extension ids.");
-                }
-
-                for (int i = 0; i < dependencies.GetArrayLength(); i++)
-                {
-                    JsonElement item = dependencies[i];
-                    if (item.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(item.GetString()))
-                    {
-                        throw new ExtensionManifestException(manifestPath, "'dependsOn' must contain only non-empty strings.");
-                    }
-
-                    dependsOn.Add(item.GetString() ?? string.Empty);
-                }
+                throw new ExtensionManifestException(manifestPath, $"'{ThemesField}' needs 'netprintsApi' {ThemesSinceApi} or later, but the manifest says '{api}'.");
             }
 
-            return new ExtensionManifest(id, name, version, assembly, api, dependsOn);
+            return new ExtensionManifest(id, name, version, assembly, api, dependsOn) { Themes = themes, UnknownFields = UnknownFieldNames(root) };
         }
+    }
+
+    private static List<string> UnknownFieldNames(JsonElement root)
+    {
+        var unknown = new List<string>();
+        using JsonElement.ObjectEnumerator properties = root.EnumerateObject();
+        while (properties.MoveNext())
+        {
+            string field = properties.Current.Name;
+            if (!KnownFields.Contains(field))
+            {
+                unknown.Add(field);
+            }
+        }
+
+        return unknown;
+    }
+
+    private static List<string> StringArray(JsonElement root, string property, string what, string manifestPath)
+    {
+        var values = new List<string>();
+        if (!root.TryGetProperty(property, out JsonElement array) || array.ValueKind == JsonValueKind.Null)
+        {
+            return values;
+        }
+
+        if (array.ValueKind != JsonValueKind.Array)
+        {
+            throw new ExtensionManifestException(manifestPath, $"'{property}' must be an array of {what}.");
+        }
+
+        for (int i = 0; i < array.GetArrayLength(); i++)
+        {
+            JsonElement item = array[i];
+            if (item.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(item.GetString()))
+            {
+                throw new ExtensionManifestException(manifestPath, $"'{property}' must contain only non-empty strings.");
+            }
+
+            values.Add(item.GetString() ?? string.Empty);
+        }
+
+        return values;
     }
 
     private static string RequiredString(JsonElement root, string property, string manifestPath)

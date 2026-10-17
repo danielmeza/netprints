@@ -52,6 +52,11 @@ public interface IEditorContributions
     /// <returns>This facet.</returns>
     IEditorContributions AddDialog(DialogDescriptor dialog);
 
+    /// <summary>Adds a page of the Settings document; a page with no <see cref="SettingsPageDescriptor.CreateViewModel"/> is generated from its section's schema.</summary>
+    /// <param name="page">The page.</param>
+    /// <returns>This facet.</returns>
+    IEditorContributions AddSettingsPage(SettingsPageDescriptor page);
+
     /// <summary>
     /// Adds the resources of this extension's views: an <c>avares</c> URI of a document whose root is a <c>DataTemplates</c> list (view templates),
     /// a <c>ResourceDictionary</c> (its <c>Icon.&lt;extension id&gt;.&lt;name&gt;</c> geometries) or a <c>Styles</c> file. An extension with more than one kind calls this once for each.

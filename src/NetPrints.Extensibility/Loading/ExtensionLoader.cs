@@ -153,6 +153,10 @@ public sealed class ExtensionLoader
             }
 
             Log.ExtensionDiscovered(logger, manifest.Id, fullPath);
+            if (manifest.UnknownFields.Count > 0)
+            {
+                Log.ManifestFieldsIgnored(logger, manifest.Id, string.Join(", ", manifest.UnknownFields));
+            }
 
             if (!seenIds.Add(manifest.Id))
             {

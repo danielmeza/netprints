@@ -54,4 +54,8 @@ internal static partial class Log
     /// <summary>Logs 2012: checking an extension folder for shadowed assemblies failed; the extension still loads.</summary>
     [LoggerMessage(EventId = 2012, Level = LogLevel.Debug, Message = "Shadow check of extension {Id} folder {Folder} failed")]
     public static partial void ShadowCheckFailed(ILogger logger, Exception exception, string id, string folder);
+
+    /// <summary>Logs 2013: a manifest has fields this host does not know; they are ignored.</summary>
+    [LoggerMessage(EventId = 2013, Level = LogLevel.Information, Message = "Extension {Id} has manifest fields this host ignores: {Fields}")]
+    public static partial void ManifestFieldsIgnored(ILogger logger, string id, string fields);
 }

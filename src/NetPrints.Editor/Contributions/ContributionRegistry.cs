@@ -31,6 +31,7 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
     private readonly List<DashboardTileDescriptor> tiles = [];
     private readonly List<StatusBarItemDescriptor> statusBarItems = [];
     private readonly List<DialogDescriptor> dialogs = [];
+    private readonly List<SettingsPageDescriptor> settingsPages = [];
     private readonly List<ProjectTemplateDescriptor> templates = [];
     private readonly List<ContextMenuItemDescriptor> menuItems = [];
     private readonly List<ITooltipProvider> tooltipProviders = [];
@@ -94,6 +95,8 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
 
         public IEditorContributions AddDialog(DialogDescriptor dialog) => Forward(() => registry.AddDialog(dialog));
 
+        public IEditorContributions AddSettingsPage(SettingsPageDescriptor page) => Forward(() => registry.AddSettingsPage(page));
+
         public IEditorContributions AddViewResources(string resourceUri) => Forward(() => registry.AddViewResources(owner, resourceUri));
 
         private OwnerFacet Forward(Action add)
@@ -117,6 +120,9 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
 
     /// <inheritdoc/>
     public IReadOnlyList<DialogDescriptor> Dialogs => dialogs;
+
+    /// <inheritdoc/>
+    public IReadOnlyList<SettingsPageDescriptor> SettingsPages => settingsPages;
 
     /// <inheritdoc/>
     public IReadOnlyList<ProjectTemplateDescriptor> ProjectTemplates => templates;
@@ -229,6 +235,19 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
         if (TryAccept(dialog.Id, !IsBlank(dialog.Title) && dialog.CreateViewModel is not null, "a title and a view model factory", dialogs.Select(d => d.Id)))
         {
             dialogs.Add(dialog);
+        }
+    }
+
+    /// <summary>Adds a settings page; an invalid or duplicate one is ignored.</summary>
+    /// <param name="page">The page.</param>
+    /// <exception cref="InvalidOperationException">The registry is frozen.</exception>
+    public void AddSettingsPage(SettingsPageDescriptor page)
+    {
+        ArgumentNullException.ThrowIfNull(page);
+        ThrowIfFrozen();
+        if (TryAccept(page.Id, !IsBlank(page.Title.Text), "a title", settingsPages.Select(p => p.Id)))
+        {
+            settingsPages.Add(page);
         }
     }
 

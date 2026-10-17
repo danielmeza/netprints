@@ -25,5 +25,7 @@ internal sealed class NullEditorContributions : IEditorContributions
 
     public IEditorContributions AddDialog(DialogDescriptor dialog) => this;
 
+    public IEditorContributions AddSettingsPage(SettingsPageDescriptor page) => this;
+
     public IEditorContributions AddViewResources(string resourceUri) => this;
 }

@@ -51,6 +51,17 @@ public class EditorFacetTests
     }
 
     [Fact]
+    public async Task ASettingsPageReachesTheHostFacet()
+    {
+        var recorder = new RecordingFacet();
+        var extension = InProcess("test.ext", builder => builder.Editor.AddSettingsPage(new SettingsPageDescriptor("test.ext.settings.page", "Page", "test.ext", 0)));
+
+        await using ExtensionRegistry registry = Load(Options([BuiltInExtension.InProcessEntry, extension]) with { EditorContributions = manifest => recorder.For(manifest.Id) });
+
+        Assert.Equal(["test.ext:settings:test.ext.settings.page"], recorder.Calls);
+    }
+
+    [Fact]
     public async Task AnExtensionWhoseRegisterThrowsContributesNothingToTheEditor()
     {
         var recorder = new RecordingFacet();
@@ -108,6 +119,8 @@ public class EditorFacetTests
             public IEditorContributions AddStatusBarItem(StatusBarItemDescriptor item) => Record("status:" + item.Id);
 
             public IEditorContributions AddDialog(DialogDescriptor dialog) => Record("dialog:" + dialog.Id);
+
+            public IEditorContributions AddSettingsPage(SettingsPageDescriptor page) => Record("settings:" + page.Id);
 
             public IEditorContributions AddViewResources(string resourceUri) => Record("view:" + resourceUri);
 

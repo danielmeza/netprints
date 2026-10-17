@@ -22,6 +22,7 @@ const NetPrints.Core.ExperimentalApiIds.Emitters = "NPXE0003" -> string!
 const NetPrints.Core.ExperimentalApiIds.HostChannel = "NPXE0001" -> string!
 const NetPrints.Core.ExperimentalApiIds.Settings = "NPXE0002" -> string!
 const NetPrints.Core.ExperimentalApiIds.ExtensionServices = "NPXE0008" -> string!
+const NetPrints.Core.ExperimentalApiIds.SettingsPages = "NPXE0009" -> string!
 const NetPrints.Core.ExperimentalApiIds.StringResources = "NPXE0011" -> string!
 const NetPrints.Core.ExperimentalApiIds.ProjectTemplates = "NPXE0012" -> string!
 const NetPrints.Core.ExperimentalApiIds.NodeDataMigrations = "NPXE0013" -> string!

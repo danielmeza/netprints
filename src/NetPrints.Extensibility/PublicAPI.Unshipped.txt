@@ -165,3 +165,8 @@ NetPrints.Extensibility.Settings.NetPrintsSettings.Language.init -> void
 [NPXE0008]NetPrints.Extensibility.Loading.ExtensionLoaderOptions.SettingsStore.init -> void
 [NPXE0008]NetPrints.Extensibility.Loading.HostExports
 [NPXE0008]static NetPrints.Extensibility.Loading.HostExports.AllowedServiceTypes.get -> System.Collections.Generic.IReadOnlyList<System.Type!>!
+NetPrints.Extensibility.Settings.SettingsSchema
+const NetPrints.Extensibility.Settings.SettingsSchema.ChoicesKeyword = "x-netprints-choices" -> string!
+const NetPrints.Extensibility.Settings.SettingsSchema.PathKeyword = "x-netprints-path" -> string!
+const NetPrints.Extensibility.Settings.SettingsSchema.RestartKeyword = "x-netprints-restart" -> string!
+static NetPrints.Extensibility.Settings.SettingsSchema.Export(System.Text.Json.Serialization.Metadata.JsonTypeInfo! typeInfo) -> System.Text.Json.Nodes.JsonNode!

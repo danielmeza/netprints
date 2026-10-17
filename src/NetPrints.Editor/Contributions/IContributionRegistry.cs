@@ -23,6 +23,9 @@ public interface IContributionRegistry
     /// <summary>Gets the accepted dialogs, in registration order.</summary>
     IReadOnlyList<DialogDescriptor> Dialogs { get; }
 
+    /// <summary>Gets the accepted settings pages, in registration order.</summary>
+    IReadOnlyList<SettingsPageDescriptor> SettingsPages { get; }
+
     /// <summary>Gets the accepted project templates, in registration order.</summary>
     IReadOnlyList<ProjectTemplateDescriptor> ProjectTemplates { get; }
 

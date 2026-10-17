@@ -30,6 +30,9 @@ public static class ExperimentalApiIds
     /// <summary>The extension services API: <c>IExtensionBuilder.Services</c>, <c>HostExports</c> and the per-extension providers and sessions of <c>ExtensionRegistry</c>.</summary>
     public const string ExtensionServices = "NPXE0008";
 
+    /// <summary>The settings metadata API: <c>PathKind</c>, <c>RequiresRestartAttribute</c>, <c>SettingPathAttribute</c> and <c>SettingChoicesAttribute</c>. The page descriptor is part of the editor contributions (<c>NPXE0005</c>).</summary>
+    public const string SettingsPages = "NPXE0009";
+
     /// <summary>The extension string resources API: <c>IExtensionBuilder.AddStringResources</c> and the registry's <c>StringResources</c>.</summary>
     public const string StringResources = "NPXE0011";
 

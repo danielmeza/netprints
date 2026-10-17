@@ -23,7 +23,7 @@ public class ExtensionLoaderTests : IDisposable
 
     public void Dispose() => Directory.Delete(root, recursive: true);
 
-    private static string Sample(string id, string api = "1.0", params string[] dependsOn) =>
+    private static string Sample(string id, string api = "0.4", params string[] dependsOn) =>
         ManifestJson(id, api: api, dependsOn: dependsOn);
 
     [Fact]
@@ -94,7 +94,7 @@ public class ExtensionLoaderTests : IDisposable
     [Fact]
     public async Task ACompatibleApiVersionPassesValidation()
     {
-        string folder = Path.GetDirectoryName(WriteManifest(Path.Combine(root, "x"), Sample("test.x", "1.0"))) ?? root;
+        string folder = Path.GetDirectoryName(WriteManifest(Path.Combine(root, "x"), Sample("test.x", "0.4"))) ?? root;
 
         await using ExtensionRegistry registry = Load(Options(folders: [folder]));
 

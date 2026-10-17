@@ -69,10 +69,12 @@ Next to the built assembly, a `netprints-extension.json` manifest describes it:
   "name": "Sample extension",
   "version": "1.0.0",
   "assembly": "Example.NetPrints.Sample.dll",
-  "netprintsApi": "1.0",
+  "netprintsApi": "0.4",
   "dependsOn": []
 }
 ```
+
+`netprintsApi` is the `major.minor` API version the extension was built for; the host accepts the same major and a minor up to its own (0.4 in NetPrints 0.4.0). An optional `themes` array lists relative paths of `*.nptheme.json` files (data only) and needs `netprintsApi` 0.4 or later. A field the host does not know is ignored and logged once as information.
 
 `NetPrints.Extensibility` (and whatever of `NetPrints.Core`, `NetPrints.Reflection` and
 `NetPrints.Serialization` the extension's contributions need) is not published as a standalone NuGet

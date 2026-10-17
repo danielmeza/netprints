@@ -156,7 +156,7 @@ public class BuiltInNodeLibraryTests
     public void BuiltInExtensionUsesTheBuiltInId()
     {
         Assert.Equal(BuiltInNodeLibrary.Id, BuiltInExtension.Manifest.Id);
-        Assert.Equal(new Version(1, 0), BuiltInExtension.Manifest.ApiVersion);
+        Assert.Equal(ExtensionApi.Version, BuiltInExtension.Manifest.ApiVersion);
         Assert.Same(BuiltInExtension.Manifest, BuiltInExtension.InProcessEntry.Manifest);
     }
 }

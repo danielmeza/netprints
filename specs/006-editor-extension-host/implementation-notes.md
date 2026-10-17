@@ -904,6 +904,27 @@ consumers restore from `local-packages/` plus a scratch feed and build with `-p:
   exception thrown), then green. T067: against stubs (`DataVersionOf` 0, `Upgrade` returning the document) 4 of 6 `NodeDataMigrationTests` failed on assertions and the NPX013
   test failed on `Assert.Equal` of the issue count, then green.
 
+## Batch C2d (T068-T070)
+
+- T068: `IEditorContributions.AddSettingsPage(SettingsPageDescriptor)` (Id, Title, SectionKey, Order, ParentPageId, CreateViewModel), buffered and replayed like the other facet
+  calls; `ContributionRegistry.SettingsPages` accepts a page with a valid id and a non-blank title (duplicate: first wins, reported). Settings metadata in
+  `NetPrints.Extensibility.Settings` (NPXE0009): `PathKind`, `[RequiresRestart]`, `[SettingPath]`, `[SettingChoices(providerId)]`. `SettingsSchema.Export(JsonTypeInfo)` runs
+  `JsonSchemaExporter` with a transform that writes `description` (from `[Description]`), `x-netprints-restart`, `x-netprints-path` (`file` or `folder`) and
+  `x-netprints-choices`; the Settings document (T089) consumes it.
+- Deviation: the descriptor and `AddSettingsPage` carry NPXE0005 (the editor contributions id), not NPXE0009, and `CreateViewModel` is not under NPXE0010 (the constant
+  was not added). `ExperimentalApiTests.EveryPublicSymbolThatMentionsAnExperimentalTypeIsExperimentalWithTheSameId` requires a symbol to carry the id of every experimental
+  type it mentions, and the descriptor mentions `ISettingsPageContext`, `LocalizedText`-keyed facet types and the facet itself, all NPXE0005. NPXE0009 marks only the metadata attributes.
+- T069: `ExtensionManifest.Themes` and `ExtensionManifest.UnknownFields` are `init` properties (the positional constructor is unchanged). `themes` with a `netprintsApi` below
+  `ThemesSinceApi` (0.4), or not a string array, is NPX001; the loader logs the unknown fields once at information level (event 2013) and ignores them.
+- T070: `ExtensionApi.Version` is 0.4 (P3 releases as 0.4.0). The loader accepts the same major, so every discovered manifest and fixture moved from `1.0` to `0.4`
+  (13 fixtures, `TestExtension`, the test helpers, the guide). A 1.x manifest is now NPX002. `ExtensionApiVersionTests` hashes the four `PublicAPI.*.txt` files of Abstractions and Extensibility
+  and compares the last row of a (version, hash) table to the current version and hash; the next batch that changes those files updates the hash in the last row (or adds a row with the new version).
+- Red/green. T068: stubs (`Export` returning an empty object, facet and registry methods that ignore the page): 4 of 4 `SettingsSchemaTests`, `ASettingsPageReachesTheHostFacet` and both
+  `SettingsPageRegistrationTests` failed on assertions (a missing property node, an empty call list, an empty collection), then green. T069: the new manifest tests (themes list, NPX001 for an older api or a
+  non-array, unknown field list) failed on `Assert.Equal`/`Assert.Throws` against properties that were never filled, then green. T070: with the recorded row at version 0.4 and a placeholder hash, and the code
+  still at 1.0, `TheVersionIsTheLastRecordedOne` and `TheApiFilesMatchTheHashRecordedForTheVersion` failed on `Assert.Equal`, then green.
+- Suite (Release): Core.Tests 1035/1035, Editor.Tests 2013/2013; solution run 4737 total with the one failure above fixed. `eng/trim-warnings.sh`: 9, unchanged.
+
 ## Build-time budget (ADR-0024, S2a; B-F3)
 
 - `dotnet build NetPrints.slnx -c Release --no-incremental`, warm compile server, 6 runs at the end of B: 24.2, 19.1 and 12.2 s

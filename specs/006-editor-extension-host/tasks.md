@@ -612,15 +612,15 @@ SC-005 rechecked (research R4).
 
 ### Batch C2d — model: sonnet — T068–T070 — 3 units
 
-- [ ] T068 [US5] The settings page kind and the settings metadata attributes (FR-021, FR-040, research R6, R16; 1
+- [x] T068 [US5] The settings page kind and the settings metadata attributes (FR-021, FR-040, research R6, R16; 1
   unit). Test first: an `Fx` page registered with `AddSettingsPage` reaches the registry; the schema transform reads
   `[RequiresRestart]`, `[SettingPath(PathKind.File|Folder)]`, `[Description]` and a choices provider id into
   `x-netprints-restart`, `x-netprints-path`, `description` and `x-netprints-choices`. Then `SettingsPageDescriptor`
   (NPXE0009; `CreateViewModel` under NPXE0010), the attributes and `AddSettingsPage`. The Settings document is T089.
-- [ ] T069 [US3] The manifest's `themes` field (FR-029, contracts/extension-api.md §9, data-model §1; 1 unit; T145
+- [x] T069 [US3] The manifest's `themes` field (FR-029, contracts/extension-api.md §9, data-model §1; 1 unit; T145
   consumes it, FR-115). Test first: manifest tests: `themes` is accepted from `netprintsApi` 0.4; with an older `netprintsApi` it is NPX001;
   unknown manifest fields are ignored with an info message. Then the manifest model and its validation.
-- [ ] T070 [US3] The `ExtensionApi.Version` tie (FR-020, research R12; 1 unit). Test first:
+- [x] T070 [US3] The `ExtensionApi.Version` tie (FR-020, research R12; 1 unit). Test first:
   `tests/NetPrints.Core.Tests/Extensibility/ExtensionApiVersionTests.cs`: a recorded hash of the Abstractions and
   Extensibility `PublicAPI.*.txt` files changes only together with `ExtensionApi.Version`. Then set the version to 0.4
   (P3's release is 0.4.0) and record the hash.

@@ -14,7 +14,7 @@ public sealed class BuiltInExtension : INetPrintsExtension
     /// The manifest of the built-in extension; its id is <see cref="BuiltInNodeLibrary.Id"/>.
     /// </summary>
     public static ExtensionManifest Manifest { get; } = new(
-        BuiltInNodeLibrary.Id, "NetPrints built-in nodes", "1.0.0", string.Empty, "1.0", []);
+        BuiltInNodeLibrary.Id, "NetPrints built-in nodes", "1.0.0", string.Empty, $"{ExtensionApi.Version.Major}.{ExtensionApi.Version.Minor}", []);
 
     /// <summary>
     /// The manifest and an instance, as an <see cref="ExtensionLoaderOptions.InProcess"/> entry.

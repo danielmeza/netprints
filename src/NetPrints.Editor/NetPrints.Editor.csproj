@@ -13,6 +13,7 @@
     <NetPrintsExperimentalOptIn Include="NPXE0006" />
     <NetPrintsExperimentalOptIn Include="NPXE0007" />
     <NetPrintsExperimentalOptIn Include="NPXE0008" />
+    <NetPrintsExperimentalOptIn Include="NPXE0009" />
     <NetPrintsExperimentalOptIn Include="NPXE0011" />
     <NetPrintsExperimentalOptIn Include="NPXE0012" />
     <NetPrintsExperimentalOptIn Include="NPXE0013" />
