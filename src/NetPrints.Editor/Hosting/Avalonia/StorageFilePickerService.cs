@@ -5,8 +5,14 @@ using NetPrints.Editor.Hosting;
 namespace NetPrints.Editor.Hosting.Avalonia;
 
 /// <summary>Platform file and folder pickers through <see cref="TopLevel.StorageProvider"/>.</summary>
+[Singleton<IFilePickerService>(Factory = "Create")]
 public sealed class StorageFilePickerService(Func<TopLevel?> topLevel) : IFilePickerService
 {
+    /// <summary>Creates the picker over the active window of <paramref name="windows"/>.</summary>
+    /// <param name="windows">Picks the window that owns the pickers.</param>
+    /// <returns>The picker.</returns>
+    internal static StorageFilePickerService Create(WindowService windows) => new(() => windows.ActiveWindow);
+
     private IStorageProvider StorageProvider =>
         topLevel()?.StorageProvider ?? throw new InvalidOperationException("No window is available for the file picker.");
 
@@ -24,7 +30,7 @@ public sealed class StorageFilePickerService(Func<TopLevel?> topLevel) : IFilePi
             FileTypeFilter = ToFileTypes(filters),
         });
 
-        return files.FirstOrDefault()?.TryGetLocalPath();
+        return files.Count > 0 ? files[0].TryGetLocalPath() : null;
     }
 
     /// <inheritdoc/>
@@ -53,6 +59,6 @@ public sealed class StorageFilePickerService(Func<TopLevel?> topLevel) : IFilePi
             AllowMultiple = false,
         });
 
-        return folders.FirstOrDefault()?.TryGetLocalPath();
+        return folders.Count > 0 ? folders[0].TryGetLocalPath() : null;
     }
 }

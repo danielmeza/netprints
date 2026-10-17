@@ -4,7 +4,7 @@ using NetPrints.Editor.Shell;
 namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>projectSettings</c> command: opens the Project settings document.</summary>
-public sealed class ProjectSettingsCommandHandler : ICommandHandler
+public sealed class ProjectSettingsCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => context.Session is not null;

@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using NetPrints.Testing.Roslyn;
 using Xunit;
 
 namespace NetPrints.Catalog.Tests.Generator;

@@ -1,5 +1,6 @@
 #nullable enable
 NetPrints.Core.ExperimentalApiIds
+const NetPrints.Projects.ProjectMessage.UnreadableReference = "NPW009" -> string!
 const NetPrints.Translator.TranslationDiagnosticCodes.ConstVariableUnsupported = "NPT009" -> string!
 *REMOVED*NetPrints.Translator.IClassEmitter
 *REMOVED*NetPrints.Translator.IClassEmitter.EmitClass(NetPrints.Translator.ClassEmitContext! context) -> void
@@ -14,9 +15,17 @@ const NetPrints.Translator.TranslationDiagnosticCodes.ConstVariableUnsupported =
 [NPXE0003]NetPrints.Translator.IMemberEmitter.EmitMember(NetPrints.Translator.MemberEmitContext! context) -> void
 [NPXE0003]NetPrints.Translator.IMemberEmitter.Id.get -> string!
 const NetPrints.Core.ExperimentalApiIds.CatalogProfiles = "NPXE0004" -> string!
+const NetPrints.Core.ExperimentalApiIds.CSharpFeatures = "NPXE0007" -> string!
+const NetPrints.Core.ExperimentalApiIds.EditorContributions = "NPXE0005" -> string!
+const NetPrints.Core.ExperimentalApiIds.NodeSearchProviders = "NPXE0006" -> string!
 const NetPrints.Core.ExperimentalApiIds.Emitters = "NPXE0003" -> string!
 const NetPrints.Core.ExperimentalApiIds.HostChannel = "NPXE0001" -> string!
 const NetPrints.Core.ExperimentalApiIds.Settings = "NPXE0002" -> string!
+const NetPrints.Core.ExperimentalApiIds.ExtensionServices = "NPXE0008" -> string!
+const NetPrints.Core.ExperimentalApiIds.SettingsPages = "NPXE0009" -> string!
+const NetPrints.Core.ExperimentalApiIds.StringResources = "NPXE0011" -> string!
+const NetPrints.Core.ExperimentalApiIds.ProjectTemplates = "NPXE0012" -> string!
+const NetPrints.Core.ExperimentalApiIds.NodeDataMigrations = "NPXE0013" -> string!
 const NetPrints.Core.ExperimentalApiIds.UrlFormat = "https://danielmeza.github.io/netprints/guide/extensions#api-stability" -> string!
 *REMOVED*NetPrints.Translator.TranslationEnvironment.ClassEmitters.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IClassEmitter!>!
 *REMOVED*NetPrints.Translator.TranslationEnvironment.ClassEmitters.init -> void
@@ -41,6 +50,7 @@ NetPrints.Graph.EventEntryNode.SetArguments(System.Collections.Generic.IReadOnly
 NetPrints.Core.RenameResult
 NetPrints.Core.RenameResult.Undo() -> void
 NetPrints.Graph.CallMethodNode.Retarget(NetPrints.Core.MethodSpecifier! specifier) -> void
+override NetPrints.Graph.CallMethodNode.GetPinKeyName(NetPrints.Graph.NodePin! pin) -> string!
 NetPrints.Graph.MakeDelegateNode.Retarget(NetPrints.Core.MethodSpecifier! specifier) -> void
 NetPrints.Core.MethodSpecifier.WithName(string! name) -> NetPrints.Core.MethodSpecifier!
 static NetPrints.Core.GraphKeys.AllGraphs(NetPrints.Core.ClassGraph! cls) -> System.Collections.Generic.IEnumerable<NetPrints.Core.NodeGraph!>!
@@ -104,3 +114,244 @@ static NetPrints.Core.MemberNames.ThrowIfTaken(NetPrints.Core.ClassGraph! cls, s
 static NetPrints.Core.MemberNames.Unique(NetPrints.Core.ClassGraph! cls, string! baseName) -> string!
 NetPrints.Compilation.SharedMetadataReferences
 static NetPrints.Compilation.SharedMetadataReferences.For(NetPrints.Projects.ResolvedAssembly! assembly) -> Microsoft.CodeAnalysis.MetadataReference!
+NetPrints.Graph.NodeBaseAttribute
+NetPrints.Graph.NodeBaseAttribute.NodeBaseAttribute() -> void
+NetPrints.Graph.NodeInputDataPin<T>
+NetPrints.Graph.NodeInputDataPin<T>.NodeInputDataPin(NetPrints.Graph.Node! node, string! name, NetPrints.Graph.ObservableValue<NetPrints.Core.BaseType!>! pinType) -> void
+NetPrints.Graph.NodeInputDataPin<T>.NodeInputDataPin(NetPrints.Graph.Node! node, string! name) -> void
+NetPrints.Graph.NodeKindAttribute
+NetPrints.Graph.NodeKindAttribute.Id.get -> string!
+NetPrints.Graph.NodeKindAttribute.NodeKindAttribute(string! id) -> void
+NetPrints.Graph.NodeKindIds
+const NetPrints.Graph.NodeKindIds.ClassReturn = "classReturn" -> string!
+const NetPrints.Graph.NodeKindIds.ConstructorEntry = "constructorEntry" -> string!
+const NetPrints.Graph.NodeKindIds.Default = "default" -> string!
+const NetPrints.Graph.NodeKindIds.EventEntry = "eventEntry" -> string!
+const NetPrints.Graph.NodeKindIds.ForLoop = "forLoop" -> string!
+const NetPrints.Graph.NodeKindIds.IfElse = "ifElse" -> string!
+const NetPrints.Graph.NodeKindIds.MakeArrayType = "makeArrayType" -> string!
+const NetPrints.Graph.NodeKindIds.MethodEntry = "methodEntry" -> string!
+const NetPrints.Graph.NodeKindIds.Return = "return" -> string!
+const NetPrints.Graph.NodeKindIds.Throw = "throw" -> string!
+const NetPrints.Graph.NodeKindIds.TypeOf = "typeOf" -> string!
+const NetPrints.Graph.NodeKindIds.TypeReturn = "typeReturn" -> string!
+NetPrints.Graph.NodeOutputDataPin<T>
+NetPrints.Graph.NodeOutputDataPin<T>.NodeOutputDataPin(NetPrints.Graph.Node! node, string! name, NetPrints.Graph.ObservableValue<NetPrints.Core.BaseType!>! pinType) -> void
+NetPrints.Graph.NodeOutputDataPin<T>.NodeOutputDataPin(NetPrints.Graph.Node! node, string! name) -> void
+NetPrints.Graph.NodePinLayoutAttribute
+NetPrints.Graph.NodePinLayoutAttribute.NodePinLayoutAttribute(params string![]! pins) -> void
+NetPrints.Graph.NodePinLayoutAttribute.Pins.get -> string![]!
+NetPrints.Graph.PinAttribute
+NetPrints.Graph.PinAttribute.Key.get -> string?
+NetPrints.Graph.PinAttribute.PinAttribute(string! key) -> void
+NetPrints.Graph.PinAttribute.PinAttribute() -> void
+NetPrints.Graph.PinAttribute.Role.get -> NetPrints.Graph.PinRole
+NetPrints.Graph.PinAttribute.Role.set -> void
+NetPrints.Graph.PinRole
+NetPrints.Graph.PinRole.Argument = 0 -> NetPrints.Graph.PinRole
+NetPrints.Graph.PinRole.Exception = 4 -> NetPrints.Graph.PinRole
+NetPrints.Graph.PinRole.OutParam = 3 -> NetPrints.Graph.PinRole
+NetPrints.Graph.PinRole.Result = 2 -> NetPrints.Graph.PinRole
+NetPrints.Graph.PinRole.Target = 1 -> NetPrints.Graph.PinRole
+NetPrints.Graph.PinTypeAttribute
+NetPrints.Graph.PinTypeAttribute.Member.get -> string!
+NetPrints.Graph.PinTypeAttribute.PinTypeAttribute(string! member) -> void
+NetPrints.Graph.ExecutionEntryNode.DeclarePins() -> void
+*REMOVED*NetPrints.Graph.ForLoopNode.IndexPin.get -> NetPrints.Graph.NodeOutputDataPin!
+NetPrints.Graph.ForLoopNode.IndexPin.get -> NetPrints.Graph.NodeOutputDataPin<int>!
+*REMOVED*NetPrints.Graph.ForLoopNode.InitialIndexPin.get -> NetPrints.Graph.NodeInputDataPin!
+NetPrints.Graph.ForLoopNode.InitialIndexPin.get -> NetPrints.Graph.NodeInputDataPin<int>!
+*REMOVED*NetPrints.Graph.ForLoopNode.MaxIndexPin.get -> NetPrints.Graph.NodeInputDataPin!
+NetPrints.Graph.ForLoopNode.MaxIndexPin.get -> NetPrints.Graph.NodeInputDataPin<int>!
+*REMOVED*NetPrints.Graph.IfElseNode.ConditionPin.get -> NetPrints.Graph.NodeInputDataPin!
+NetPrints.Graph.IfElseNode.ConditionPin.get -> NetPrints.Graph.NodeInputDataPin<bool>!
+*REMOVED*NetPrints.Graph.ThrowNode.ExceptionPin.get -> NetPrints.Graph.NodeInputDataPin!
+NetPrints.Graph.ThrowNode.ExceptionPin.get -> NetPrints.Graph.NodeInputDataPin<System.Exception!>!
+*REMOVED*NetPrints.Graph.TypeOfNode.TypePin.get -> NetPrints.Graph.NodeOutputDataPin!
+NetPrints.Graph.TypeOfNode.TypePin.get -> NetPrints.Graph.NodeOutputDataPin<System.Type!>!
+*REMOVED*override NetPrints.Graph.DefaultNode.HandleInputTypeChanged(object? sender, System.EventArgs? eventArgs) -> void
+*REMOVED*override NetPrints.Graph.MakeArrayTypeNode.HandleInputTypeChanged(object? sender, System.EventArgs? eventArgs) -> void
+*REMOVED*override NetPrints.Graph.MethodEntryNode.HandleInputTypeChanged(object? sender, System.EventArgs? eventArgs) -> void
+*REMOVED*override NetPrints.Graph.ReturnNode.HandleInputTypeChanged(object? sender, System.EventArgs? eventArgs) -> void
+*REMOVED*NetPrints.Graph.ClassReturnNode.SuperTypePin.get -> NetPrints.Graph.NodeInputTypePin!
+*REMOVED*NetPrints.Graph.DefaultNode.DefaultValuePin.get -> NetPrints.Graph.NodeOutputDataPin!
+*REMOVED*NetPrints.Graph.EventEntryNode.InitialExecutionPin.get -> NetPrints.Graph.NodeOutputExecPin!
+*REMOVED*NetPrints.Graph.ExecutionEntryNode.InitialExecutionPin.get -> NetPrints.Graph.NodeOutputExecPin!
+*REMOVED*NetPrints.Graph.ForLoopNode.ExecutionPin.get -> NetPrints.Graph.NodeInputExecPin!
+*REMOVED*NetPrints.Graph.IfElseNode.ExecutionPin.get -> NetPrints.Graph.NodeInputExecPin!
+*REMOVED*NetPrints.Graph.ReturnNode.ReturnPin.get -> NetPrints.Graph.NodeInputExecPin!
+NetPrints.Graph.ClassReturnNode.BaseTypePin.get -> NetPrints.Graph.NodeInputTypePin!
+NetPrints.Graph.DefaultNode.DefaultPin.get -> NetPrints.Graph.NodeOutputDataPin!
+NetPrints.Graph.EventEntryNode.ExecPin.get -> NetPrints.Graph.NodeOutputExecPin!
+NetPrints.Graph.ExecutionEntryNode.ExecPin.get -> NetPrints.Graph.NodeOutputExecPin!
+NetPrints.Graph.ForLoopNode.ExecPin.get -> NetPrints.Graph.NodeInputExecPin!
+NetPrints.Graph.IfElseNode.ExecPin.get -> NetPrints.Graph.NodeInputExecPin!
+NetPrints.Graph.ReturnNode.ExecPin.get -> NetPrints.Graph.NodeInputExecPin!
+NetPrints.Core.PrimitiveCategory
+NetPrints.Core.PrimitiveCategory.Boolean = 0 -> NetPrints.Core.PrimitiveCategory
+NetPrints.Core.PrimitiveCategory.Character = 3 -> NetPrints.Core.PrimitiveCategory
+NetPrints.Core.PrimitiveCategory.Float = 2 -> NetPrints.Core.PrimitiveCategory
+NetPrints.Core.PrimitiveCategory.Integer = 1 -> NetPrints.Core.PrimitiveCategory
+NetPrints.Core.PrimitiveCategory.Text = 4 -> NetPrints.Core.PrimitiveCategory
+NetPrints.Core.PrimitiveKind
+NetPrints.Core.PrimitiveKind.Category.get -> NetPrints.Core.PrimitiveCategory
+NetPrints.Core.PrimitiveKind.ClrType.get -> System.Type!
+NetPrints.Core.PrimitiveKind.Convert(object! value) -> object!
+NetPrints.Core.PrimitiveKind.DefaultValue.get -> object!
+NetPrints.Core.PrimitiveKind.FullName.get -> string!
+NetPrints.Core.PrimitiveKind.IsNumeric.get -> bool
+NetPrints.Core.PrimitiveKind.Keyword.get -> string!
+NetPrints.Core.PrimitiveKind.LiteralSuffix.get -> string!
+NetPrints.Core.PrimitiveKinds
+abstract NetPrints.Core.PrimitiveKind.Format(object! value) -> string!
+abstract NetPrints.Core.PrimitiveKind.Parse(string! text) -> object!
+static NetPrints.Core.PrimitiveKinds.All.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Core.PrimitiveKind!>!
+static NetPrints.Core.PrimitiveKinds.TryGet(string? fullName, out NetPrints.Core.PrimitiveKind? kind) -> bool
+*REMOVED*override NetPrints.Graph.TernaryNode.CanSetPure.get -> bool
+*REMOVED*override NetPrints.Graph.CallMethodNode.CanSetPure.get -> bool
+*REMOVED*override NetPrints.Graph.ConstructorNode.CanSetPure.get -> bool
+*REMOVED*override NetPrints.Graph.ExplicitCastNode.CanSetPure.get -> bool
+NetPrints.Graph.CallMethodNode.OutParamPins.get -> System.Collections.Generic.IList<NetPrints.Graph.NodeOutputDataPin!>!
+const NetPrints.Graph.MakeArrayNode.UseInitializerListOverload = "Use initializer list" -> string!
+const NetPrints.Graph.MakeArrayNode.UsePredefinedSizeOverload = "Use predefined size" -> string!
+NetPrints.Graph.NodePin.Role.get -> NetPrints.Graph.PinRole
+NetPrints.Graph.NodePin.Role.set -> void
+NetPrints.Graph.IPinListEditor
+NetPrints.Graph.IPinListEditor.AddPin() -> void
+NetPrints.Graph.IPinListEditor.AddPinLabel.get -> string!
+NetPrints.Graph.IPinListEditor.CanRemovePin.get -> bool
+NetPrints.Graph.IPinListEditor.ChangesMethodSignature.get -> bool
+NetPrints.Graph.IPinListEditor.RemovePin() -> void
+NetPrints.Graph.IPinListEditor.RemovePinLabel.get -> string!
+NetPrints.Graph.IPinListEditor.ShowsPinButtons.get -> bool
+NetPrints.Graph.IPinListEditor.SlotsAfterAdd.get -> System.Collections.Generic.IReadOnlyList<int>?
+NetPrints.Graph.IPinListEditor.SlotsAfterRemove.get -> System.Collections.Generic.IReadOnlyList<int>?
+NetPrints.Graph.IOverloadableNode
+NetPrints.Graph.IOverloadableNode.ChangeOverload(object! overload) -> NetPrints.Graph.Node?
+NetPrints.Graph.IOverloadableNode.CurrentOverload.get -> object!
+NetPrints.Graph.IPinNameEditor
+NetPrints.Graph.IPinNameEditor.CanRenamePin(NetPrints.Graph.NodePin! pin) -> bool
+NetPrints.Graph.GraphPoint
+NetPrints.Graph.GraphPoint.Deconstruct(out double X, out double Y) -> void
+NetPrints.Graph.GraphPoint.Equals(NetPrints.Graph.GraphPoint other) -> bool
+NetPrints.Graph.GraphPoint.GraphPoint(double X, double Y) -> void
+NetPrints.Graph.GraphPoint.GraphPoint() -> void
+NetPrints.Graph.GraphPoint.X.get -> double
+NetPrints.Graph.GraphPoint.X.init -> void
+NetPrints.Graph.GraphPoint.Y.get -> double
+NetPrints.Graph.GraphPoint.Y.init -> void
+~override NetPrints.Graph.GraphPoint.Equals(object obj) -> bool
+override NetPrints.Graph.GraphPoint.GetHashCode() -> int
+override NetPrints.Graph.GraphPoint.ToString() -> string!
+static NetPrints.Graph.GraphPoint.Lerp(NetPrints.Graph.GraphPoint a, NetPrints.Graph.GraphPoint b, double t) -> NetPrints.Graph.GraphPoint
+static NetPrints.Graph.GraphPoint.operator *(NetPrints.Graph.GraphPoint a, double s) -> NetPrints.Graph.GraphPoint
+static NetPrints.Graph.GraphPoint.operator +(NetPrints.Graph.GraphPoint a, NetPrints.Graph.GraphPoint b) -> NetPrints.Graph.GraphPoint
+static NetPrints.Graph.GraphPoint.operator -(NetPrints.Graph.GraphPoint a, NetPrints.Graph.GraphPoint b) -> NetPrints.Graph.GraphPoint
+static NetPrints.Graph.GraphPoint.operator !=(NetPrints.Graph.GraphPoint left, NetPrints.Graph.GraphPoint right) -> bool
+static NetPrints.Graph.GraphPoint.operator ==(NetPrints.Graph.GraphPoint left, NetPrints.Graph.GraphPoint right) -> bool
+static readonly NetPrints.Graph.GraphPoint.Zero -> NetPrints.Graph.GraphPoint
+NetPrints.Core.CoreStrings
+static NetPrints.Core.CoreStrings.Resources.get -> System.Resources.ResourceManager!
+NetPrints.Core.LocalizedText
+NetPrints.Core.LocalizedText.DefaultText.get -> string?
+NetPrints.Core.LocalizedText.DefaultText.init -> void
+NetPrints.Core.LocalizedText.Deconstruct(out string! Key, out string? DefaultText) -> void
+NetPrints.Core.LocalizedText.Equals(NetPrints.Core.LocalizedText other) -> bool
+NetPrints.Core.LocalizedText.Key.get -> string!
+NetPrints.Core.LocalizedText.Key.init -> void
+NetPrints.Core.LocalizedText.LocalizedText() -> void
+NetPrints.Core.LocalizedText.LocalizedText(string! Key, string? DefaultText = null) -> void
+NetPrints.Core.LocalizedText.Resolve(System.Collections.Generic.IEnumerable<System.Resources.ResourceManager!>! resources, System.Globalization.CultureInfo? culture) -> string!
+NetPrints.Core.LocalizedText.Resolve(System.Resources.ResourceManager? resources, System.Globalization.CultureInfo? culture) -> string!
+NetPrints.Core.LocalizedText.Text.get -> string!
+~override NetPrints.Core.LocalizedText.Equals(object obj) -> bool
+override NetPrints.Core.LocalizedText.GetHashCode() -> int
+override NetPrints.Core.LocalizedText.ToString() -> string!
+static NetPrints.Core.LocalizedText.FromLiteral(string! text) -> NetPrints.Core.LocalizedText
+static NetPrints.Core.LocalizedText.implicit operator NetPrints.Core.LocalizedText(string! text) -> NetPrints.Core.LocalizedText
+static NetPrints.Core.LocalizedText.operator !=(NetPrints.Core.LocalizedText left, NetPrints.Core.LocalizedText right) -> bool
+static NetPrints.Core.LocalizedText.operator ==(NetPrints.Core.LocalizedText left, NetPrints.Core.LocalizedText right) -> bool
+const NetPrints.Projects.ProjectMessage.LanguageVersionNewerThanFramework = "NPW007" -> string!
+const NetPrints.Projects.ProjectMessage.LanguageVersionResolved = "NPW006" -> string!
+const NetPrints.Projects.ProjectMessage.LanguageVersionUnknown = "NPW008" -> string!
+NetPrints.Core.Project.CSharpTarget.get -> NetPrints.Projects.CSharpTarget!
+NetPrints.Projects.CSharpFrameworkInput
+NetPrints.Projects.CSharpFrameworkInput.<Clone>$() -> NetPrints.Projects.CSharpFrameworkInput!
+NetPrints.Projects.CSharpFrameworkInput.CSharpFrameworkInput(string! Framework, string? LangVersion, string? MaxSupportedLangVersion) -> void
+NetPrints.Projects.CSharpFrameworkInput.Deconstruct(out string! Framework, out string? LangVersion, out string? MaxSupportedLangVersion) -> void
+NetPrints.Projects.CSharpFrameworkInput.Equals(NetPrints.Projects.CSharpFrameworkInput? other) -> bool
+NetPrints.Projects.CSharpFrameworkInput.Framework.get -> string!
+NetPrints.Projects.CSharpFrameworkInput.Framework.init -> void
+NetPrints.Projects.CSharpFrameworkInput.LangVersion.get -> string?
+NetPrints.Projects.CSharpFrameworkInput.LangVersion.init -> void
+NetPrints.Projects.CSharpFrameworkInput.MaxSupportedLangVersion.get -> string?
+NetPrints.Projects.CSharpFrameworkInput.MaxSupportedLangVersion.init -> void
+NetPrints.Projects.CSharpLanguageVersion
+NetPrints.Projects.CSharpLanguageVersion.CompareTo(NetPrints.Projects.CSharpLanguageVersion other) -> int
+NetPrints.Projects.CSharpLanguageVersion.CSharpLanguageVersion(int Major, int Minor) -> void
+NetPrints.Projects.CSharpLanguageVersion.CSharpLanguageVersion() -> void
+NetPrints.Projects.CSharpLanguageVersion.Deconstruct(out int Major, out int Minor) -> void
+NetPrints.Projects.CSharpLanguageVersion.Equals(NetPrints.Projects.CSharpLanguageVersion other) -> bool
+NetPrints.Projects.CSharpLanguageVersion.Major.get -> int
+NetPrints.Projects.CSharpLanguageVersion.Major.init -> void
+NetPrints.Projects.CSharpLanguageVersion.Minor.get -> int
+NetPrints.Projects.CSharpLanguageVersion.Minor.init -> void
+NetPrints.Projects.CSharpTarget
+NetPrints.Projects.CSharpTarget.Check(NetPrints.Projects.CSharpLanguageVersion required) -> bool
+NetPrints.Projects.CSharpTarget.<Clone>$() -> NetPrints.Projects.CSharpTarget!
+NetPrints.Projects.CSharpTarget.Equals(NetPrints.Projects.CSharpTarget? other) -> bool
+NetPrints.Projects.CSharpTargetResolution
+NetPrints.Projects.CSharpTargetResolution.<Clone>$() -> NetPrints.Projects.CSharpTargetResolution!
+NetPrints.Projects.CSharpTargetResolution.CSharpTargetResolution(NetPrints.Projects.CSharpTarget! Target, System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ProjectMessage!>! Messages) -> void
+NetPrints.Projects.CSharpTargetResolution.Deconstruct(out NetPrints.Projects.CSharpTarget! Target, out System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ProjectMessage!>! Messages) -> void
+NetPrints.Projects.CSharpTargetResolution.Equals(NetPrints.Projects.CSharpTargetResolution? other) -> bool
+NetPrints.Projects.CSharpTargetResolution.Messages.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ProjectMessage!>!
+NetPrints.Projects.CSharpTargetResolution.Messages.init -> void
+NetPrints.Projects.CSharpTargetResolution.Target.get -> NetPrints.Projects.CSharpTarget!
+NetPrints.Projects.CSharpTargetResolution.Target.init -> void
+NetPrints.Projects.CSharpTarget.Specified.get -> string!
+NetPrints.Projects.CSharpTarget.TargetFrameworks.get -> System.Collections.Generic.IReadOnlyList<string!>!
+NetPrints.Projects.CSharpTarget.Version.get -> NetPrints.Projects.CSharpLanguageVersion
+NetPrints.Projects.ProjectSnapshot.CSharpTarget.get -> NetPrints.Projects.CSharpTarget!
+NetPrints.Projects.ProjectSnapshot.CSharpTarget.init -> void
+override NetPrints.Projects.CSharpFrameworkInput.Equals(object? obj) -> bool
+override NetPrints.Projects.CSharpFrameworkInput.GetHashCode() -> int
+override NetPrints.Projects.CSharpFrameworkInput.ToString() -> string!
+~override NetPrints.Projects.CSharpLanguageVersion.Equals(object obj) -> bool
+override NetPrints.Projects.CSharpLanguageVersion.GetHashCode() -> int
+override NetPrints.Projects.CSharpLanguageVersion.ToString() -> string!
+override NetPrints.Projects.CSharpTarget.Equals(object? obj) -> bool
+override NetPrints.Projects.CSharpTarget.GetHashCode() -> int
+override NetPrints.Projects.CSharpTargetResolution.Equals(object? obj) -> bool
+override NetPrints.Projects.CSharpTargetResolution.GetHashCode() -> int
+override NetPrints.Projects.CSharpTargetResolution.ToString() -> string!
+override NetPrints.Projects.CSharpTarget.ToString() -> string!
+static NetPrints.Projects.CSharpFrameworkInput.operator !=(NetPrints.Projects.CSharpFrameworkInput? left, NetPrints.Projects.CSharpFrameworkInput? right) -> bool
+static NetPrints.Projects.CSharpFrameworkInput.operator ==(NetPrints.Projects.CSharpFrameworkInput? left, NetPrints.Projects.CSharpFrameworkInput? right) -> bool
+static NetPrints.Projects.CSharpLanguageVersion.IsKeyword(string? text) -> bool
+static NetPrints.Projects.CSharpLanguageVersion.operator !=(NetPrints.Projects.CSharpLanguageVersion left, NetPrints.Projects.CSharpLanguageVersion right) -> bool
+static NetPrints.Projects.CSharpLanguageVersion.operator <(NetPrints.Projects.CSharpLanguageVersion left, NetPrints.Projects.CSharpLanguageVersion right) -> bool
+static NetPrints.Projects.CSharpLanguageVersion.operator <=(NetPrints.Projects.CSharpLanguageVersion left, NetPrints.Projects.CSharpLanguageVersion right) -> bool
+static NetPrints.Projects.CSharpLanguageVersion.operator ==(NetPrints.Projects.CSharpLanguageVersion left, NetPrints.Projects.CSharpLanguageVersion right) -> bool
+static NetPrints.Projects.CSharpLanguageVersion.operator >(NetPrints.Projects.CSharpLanguageVersion left, NetPrints.Projects.CSharpLanguageVersion right) -> bool
+static NetPrints.Projects.CSharpLanguageVersion.operator >=(NetPrints.Projects.CSharpLanguageVersion left, NetPrints.Projects.CSharpLanguageVersion right) -> bool
+static NetPrints.Projects.CSharpLanguageVersion.TryParse(string? text, out NetPrints.Projects.CSharpLanguageVersion version) -> bool
+static NetPrints.Projects.CSharpTarget.operator !=(NetPrints.Projects.CSharpTarget? left, NetPrints.Projects.CSharpTarget? right) -> bool
+static NetPrints.Projects.CSharpTarget.operator ==(NetPrints.Projects.CSharpTarget? left, NetPrints.Projects.CSharpTarget? right) -> bool
+static NetPrints.Projects.CSharpTargetResolution.operator !=(NetPrints.Projects.CSharpTargetResolution? left, NetPrints.Projects.CSharpTargetResolution? right) -> bool
+static NetPrints.Projects.CSharpTargetResolution.operator ==(NetPrints.Projects.CSharpTargetResolution? left, NetPrints.Projects.CSharpTargetResolution? right) -> bool
+static NetPrints.Projects.CSharpTarget.Resolve(string! projectFilePath, System.Collections.Generic.IReadOnlyList<NetPrints.Projects.CSharpFrameworkInput!>! frameworks) -> NetPrints.Projects.CSharpTargetResolution!
+static NetPrints.Projects.CSharpTarget.Unconstrained.get -> NetPrints.Projects.CSharpTarget!
+static readonly NetPrints.Projects.CSharpLanguageVersion.MaxKnown -> NetPrints.Projects.CSharpLanguageVersion
+NetPrints.Translator.IExecutionTranslationContext.Target.get -> NetPrints.Projects.CSharpTarget!
+static NetPrints.Translator.TranslatorUtil.ObjectToLiteral(object? obj, NetPrints.Core.TypeSpecifier! type, NetPrints.Projects.CSharpTarget! target) -> string!
+virtual NetPrints.Graph.Node.TitleIsFixed.get -> bool
+override NetPrints.Graph.AwaitNode.TitleIsFixed.get -> bool
+override NetPrints.Graph.ClassReturnNode.TitleIsFixed.get -> bool
+override NetPrints.Graph.ForLoopNode.TitleIsFixed.get -> bool
+override NetPrints.Graph.IfElseNode.TitleIsFixed.get -> bool
+override NetPrints.Graph.RerouteNode.TitleIsFixed.get -> bool
+override NetPrints.Graph.ReturnNode.TitleIsFixed.get -> bool
+override NetPrints.Graph.ThrowNode.TitleIsFixed.get -> bool
+override NetPrints.Graph.TypeOfNode.TitleIsFixed.get -> bool
+override NetPrints.Graph.TypeReturnNode.TitleIsFixed.get -> bool

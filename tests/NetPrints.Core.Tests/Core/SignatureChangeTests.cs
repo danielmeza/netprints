@@ -33,8 +33,8 @@ namespace NetPrints.Tests.Core
                 entry.Arguments.Select(argument => new MethodParameter(argument.Name, argument.Type, MethodParameterPassType.Default, false, null)),
                 Array.Empty<BaseType>(), MethodModifiers.None, MemberVisibility.Public, cls.Type, Array.Empty<BaseType>());
             var call = new CallMethodNode(run, specifier);
-            GraphUtil.ConnectExecPins(run.EntryNode.InitialExecutionPin, call.InputExecPins[0]);
-            GraphUtil.ConnectExecPins(call.OutputExecPins[0], run.MainReturnNode.ReturnPin);
+            GraphUtil.ConnectExecPins(run.EntryNode.ExecPin, call.InputExecPins[0]);
+            GraphUtil.ConnectExecPins(call.OutputExecPins[0], run.MainReturnNode.ExecPin);
             return (cls, entry, run, call);
         }
 
@@ -121,8 +121,8 @@ namespace NetPrints.Tests.Core
 
             Assert.Same(call, run.Nodes.OfType<CallMethodNode>().Single(node => node.MethodName == "OnHit"));
             Assert.Same(source.OutputDataPins[0], call.ArgumentPins[0].IncomingPin);
-            Assert.Same(run.EntryNode.InitialExecutionPin, call.InputExecPins[0].IncomingPins.Single());
-            Assert.Same(run.MainReturnNode.ReturnPin, call.OutputExecPins[0].OutgoingPin);
+            Assert.Same(run.EntryNode.ExecPin, call.InputExecPins[0].IncomingPins.Single());
+            Assert.Same(run.MainReturnNode.ExecPin, call.OutputExecPins[0].OutgoingPin);
         }
 
         [Fact]

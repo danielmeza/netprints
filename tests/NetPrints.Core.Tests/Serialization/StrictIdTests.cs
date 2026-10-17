@@ -28,6 +28,7 @@ namespace NetPrints.Tests.Serialization
             new(new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []), NullLogger<DocumentMapper>.Instance);
 
         private static string NodeId(long value) => IdFormat.Format('n', value);
+
         private static string MemberId(long value) => IdFormat.Format('m', value);
 
         [Fact]
@@ -81,7 +82,7 @@ namespace NetPrints.Tests.Serialization
             Assert.Matches(IdFormat.Pattern, returnNode.Id);
 
             // The connection followed the rename (no NPD002).
-            NodeInputExecPin? incoming = entryNode.InitialExecutionPin.OutgoingPin;
+            NodeInputExecPin? incoming = entryNode.ExecPin.OutgoingPin;
             Assert.NotNull(incoming);
             Assert.Same(returnNode, incoming.Node);
 

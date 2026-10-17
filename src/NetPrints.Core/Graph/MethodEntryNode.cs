@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using NetPrints.Core;
 
@@ -8,7 +9,8 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing the initial execution node of a method.
     /// </summary>
-    public class MethodEntryNode : ExecutionEntryNode
+    [NodeKind(NodeKindIds.MethodEntry)]
+    public sealed partial class MethodEntryNode : ExecutionEntryNode, IPinListEditor, IPinNameEditor
     {
         /// <summary>
         /// Same as the base <see cref="Node.MethodGraph"/>, but non-nullable: the constructor only
@@ -24,7 +26,7 @@ namespace NetPrints.Graph
         public MethodEntryNode(MethodGraph graph)
             : base(graph)
         {
-            AddOutputExecPin("Exec");
+            DeclarePins();
         }
 
         /// <summary>
@@ -94,8 +96,8 @@ namespace NetPrints.Graph
         {
             if (OutputDataPins.Count > 0)
             {
-                NodeOutputDataPin odpToRemove = OutputDataPins.Last();
-                NodeInputTypePin itpToRemove = InputTypePins.Last();
+                NodeOutputDataPin odpToRemove = OutputDataPins[^1];
+                NodeInputTypePin itpToRemove = InputTypePins[^1];
 
                 GraphUtil.DisconnectOutputDataPin(odpToRemove);
                 GraphUtil.DisconnectInputTypePin(itpToRemove);
@@ -123,12 +125,42 @@ namespace NetPrints.Graph
         {
             if (OutputTypePins.Count > 0)
             {
-                NodeOutputTypePin otpToRemove = OutputTypePins.Last();
+                NodeOutputTypePin otpToRemove = OutputTypePins[^1];
 
                 GraphUtil.DisconnectOutputTypePin(otpToRemove);
 
                 OutputTypePins.Remove(otpToRemove);
             }
         }
+
+        /// <inheritdoc />
+        bool IPinListEditor.ShowsPinButtons => true;
+
+        /// <inheritdoc />
+        string IPinListEditor.AddPinLabel => "Add method parameter";
+
+        /// <inheritdoc />
+        string IPinListEditor.RemovePinLabel => "Remove method parameter";
+
+        /// <inheritdoc />
+        bool IPinListEditor.CanRemovePin => OutputDataPins.Count > 0;
+
+        /// <inheritdoc />
+        bool IPinListEditor.ChangesMethodSignature => true;
+
+        /// <inheritdoc />
+        IReadOnlyList<int>? IPinListEditor.SlotsAfterAdd => [.. Enumerable.Range(0, OutputDataPins.Count), -1];
+
+        /// <inheritdoc />
+        IReadOnlyList<int>? IPinListEditor.SlotsAfterRemove => [.. Enumerable.Range(0, Math.Max(OutputDataPins.Count - 1, 0))];
+
+        /// <inheritdoc />
+        void IPinListEditor.AddPin() => AddArgument();
+
+        /// <inheritdoc />
+        void IPinListEditor.RemovePin() => RemoveArgument();
+
+        /// <inheritdoc />
+        bool IPinNameEditor.CanRenamePin(NodePin pin) => pin is NodeOutputDataPin dataPin && OutputDataPins.Contains(dataPin);
     }
 }

@@ -3,6 +3,6 @@
   "name": "Fixture diamond dependency extension",
   "version": "1.0.0",
   "assembly": "Fx.Diamond.dll",
-  "netprintsApi": "1.0",
+  "netprintsApi": "0.4",
   "dependsOn": ["fx.libv1", "fx.libv2"]
 }

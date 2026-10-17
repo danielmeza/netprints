@@ -2,7 +2,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ed="clr-namespace:NetPrints.Editor"
         xmlns:edb="clr-namespace:NetPrints.Editor.Behaviors"
-        xmlns:edcontrib="clr-namespace:NetPrints.Editor.Contributions"
+        xmlns:edcon="clr-namespace:NetPrints.Editor.Controls"
+        xmlns:edcontrib="clr-namespace:NetPrints.Extensibility.Editor;assembly=NetPrints.Extensibility.Abstractions"
         xmlns:eddialogs="clr-namespace:NetPrints.Editor.Dialogs"
         x:Class="NetPrints.Editor.Dialogs.NewProjectDialog"
         x:DataType="eddialogs:NewProjectDialogViewModel"
@@ -15,14 +16,20 @@
     <edb:DialogCloseBehavior />
   </Interaction.Behaviors>
   <Grid RowDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto" Margin="{StaticResource Space.M}" RowSpacing="8">
-    <TextBlock Text="Template" />
+    <StackPanel Orientation="Horizontal" Spacing="12">
+      <TextBlock Text="Template" VerticalAlignment="Center" />
+      <TextBlock Text="{Binding ProfileNote}" Classes="secondary" VerticalAlignment="Center" IsVisible="{Binding IsFiltered}"
+                 AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NewProjectProfileNote}" />
+      <CheckBox Content="Show all templates" IsChecked="{Binding ShowAll}" IsVisible="{Binding IsFiltered}"
+                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NewProjectShowAll}" />
+    </StackPanel>
     <ListBox Grid.Row="1" ItemsSource="{Binding Templates}" SelectedItem="{Binding SelectedTemplate}" MaxHeight="{StaticResource Dialog.ListMaxHeight}"
              AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NewProjectTemplates}">
       <ListBox.ItemTemplate>
         <DataTemplate x:DataType="edcontrib:ProjectTemplateDescriptor">
-          <StackPanel AutomationProperties.Name="{Binding DisplayName}">
-            <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
-            <TextBlock Text="{Binding Description}" TextWrapping="Wrap" FontSize="{StaticResource Font.Caption}" />
+          <StackPanel AutomationProperties.Name="{Binding DisplayName, Converter={x:Static edcon:LocalizedTextConverter.Instance}}">
+            <TextBlock Text="{Binding DisplayName, Converter={x:Static edcon:LocalizedTextConverter.Instance}}" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding Description, Converter={x:Static edcon:LocalizedTextConverter.Instance}}" TextWrapping="Wrap" FontSize="{StaticResource Font.Caption}" />
           </StackPanel>
         </DataTemplate>
       </ListBox.ItemTemplate>

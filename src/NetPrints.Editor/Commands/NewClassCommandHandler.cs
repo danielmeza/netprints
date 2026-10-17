@@ -4,7 +4,7 @@ using NetPrints.Editor.Shell;
 namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>newClass</c> command: adds a uniquely named class to the open project.</summary>
-public sealed class NewClassCommandHandler : ICommandHandler
+public sealed class NewClassCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => context.Session is not null;

@@ -12,6 +12,7 @@ public sealed class KeyboardOnlyTests(DesktopWorkerPool pool) : ProjectEditorTes
     private const string MainMethod = "Main";
     private const string ClassGraph = "Program";
     private const string DebugWriteLine = "System.Diagnostics.Debug WriteLine (value: System.Object)";
+
     private const string HoldingSource = """
         using System;
         using System.Runtime.CompilerServices;

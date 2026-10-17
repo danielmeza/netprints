@@ -7,7 +7,9 @@ namespace NetPrints.Cli.Tests.Support;
 internal sealed class SampleCopy : System.IDisposable
 {
     public const string ProjectName = "HelloWorld.csproj";
+
     public const string GraphName = "HelloWorld.Program.netpc.json";
+
     public const string GeneratedName = "HelloWorld.Program.netpc.g.cs";
 
     public SampleCopy()

@@ -2,6 +2,7 @@
 using System;
 using NetPrints.Core;
 using NetPrints.Graph;
+using NetPrints.Projects;
 
 namespace NetPrints.Translator;
 
@@ -28,6 +29,13 @@ public interface IExecutionTranslationContext
     /// class. Class-specific convenience over <see cref="Declaration"/>.
     /// </summary>
     ClassGraph? Class { get; }
+
+    /// <summary>
+    /// The C# language the generated code is written for (ADR-0038): the project's target, or
+    /// <see cref="CSharpTarget.Unconstrained"/> when the graph is not part of a project. A translator checks it before
+    /// emitting syntax that needs a newer language version. Implemented by default, so existing implementers compile unchanged.
+    /// </summary>
+    CSharpTarget Target => (Class?.Project ?? Graph.Project)?.CSharpTarget ?? CSharpTarget.Unconstrained;
 
     /// <summary>
     /// Appends <paramref name="code"/> to the output.

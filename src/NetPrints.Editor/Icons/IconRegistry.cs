@@ -1,19 +1,34 @@
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
+using Avalonia;
+using Avalonia.Media;
 using Material.Icons;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using NetPrints.Extensibility.Loading;
 
 namespace NetPrints.Editor.Icons;
 
 /// <summary>A resolved vector glyph; the only type that carries the icon library's glyph kind.</summary>
-/// <param name="Kind">The library glyph kind.</param>
-public readonly record struct IconGlyph(MaterialIconKind Kind);
+/// <param name="Kind">The library glyph kind, drawn when <paramref name="Geometry"/> is null.</param>
+/// <param name="Geometry">The geometry an extension's view resources define for its icon id, or null for a library glyph.</param>
+public readonly record struct IconGlyph(MaterialIconKind Kind, Geometry? Geometry = null);
 
-/// <summary>Resolves icon ids to Material Design Icons glyphs (ADR-0021 Amendment 1); the only code that names <see cref="MaterialIconKind"/>.</summary>
+/// <summary>An icon id that resolved to the fallback glyph.</summary>
+/// <param name="Code">The diagnostic code, <see cref="ExtensionDiagnosticCodes.UnknownReference"/>.</param>
+/// <param name="IconId">The unknown icon id.</param>
+public sealed record IconIssue(string Code, string IconId);
+
+/// <summary>
+/// Resolves icon ids to Material Design Icons glyphs (ADR-0021 Amendment 1), or, for an extension's id, to the <c>Icon.&lt;id&gt;</c> geometry in
+/// the view resources it added; the only code that names <see cref="MaterialIconKind"/>.
+/// </summary>
 /// <param name="logger">Receives one warning per unknown id.</param>
-public sealed class IconRegistry(ILogger<IconRegistry> logger)
+/// <param name="extensionIcons">Finds the geometry of the resource key <c>Icon.&lt;id&gt;</c>, or null when no view resources define it.</param>
+public sealed class IconRegistry(ILogger<IconRegistry> logger, Func<string, Geometry?>? extensionIcons = null)
 {
+    private const string ResourcePrefix = "Icon.";
+
     private static readonly FrozenDictionary<string, (MaterialIconKind Regular, MaterialIconKind Active)> Glyphs = new[]
     {
         Entry(IconIds.Unknown, MaterialIconKind.HelpRhombusOutline),
@@ -125,14 +140,28 @@ public sealed class IconRegistry(ILogger<IconRegistry> logger)
     }.ToFrozenDictionary(entry => entry.Id, entry => (entry.Regular, entry.Active));
 
     private readonly ConcurrentDictionary<string, byte> warned = new(StringComparer.Ordinal);
+    private readonly ConcurrentQueue<IconIssue> issues = new();
 
     /// <summary>Gets or sets the registry the icon presenters use; the host replaces it with one that logs.</summary>
     public static IconRegistry Shared { get; set; } = new(NullLogger<IconRegistry>.Instance);
 
+    /// <summary>Gets the unknown ids met so far, one entry for each id.</summary>
+    public IReadOnlyCollection<IconIssue> Issues => issues;
+
+    /// <summary>Creates a registry that finds extension icons among the resources of the application.</summary>
+    /// <param name="application">The application whose resources hold the <c>Icon.&lt;id&gt;</c> geometries that extensions added.</param>
+    /// <param name="logger">Receives one warning per unknown id.</param>
+    /// <returns>The registry.</returns>
+    public static IconRegistry ForApplication(Application application, ILogger<IconRegistry> logger)
+    {
+        ArgumentNullException.ThrowIfNull(application);
+        return new IconRegistry(logger, id => application.TryGetResource(ResourcePrefix + id, application.ActualThemeVariant, out object? value) ? value as Geometry : null);
+    }
+
     /// <summary>Determines whether the registry knows an id.</summary>
     /// <param name="id">The icon id.</param>
     /// <returns><see langword="true"/> when the id resolves without the fallback.</returns>
-    public bool IsKnown(string? id) => id is not null && Glyphs.ContainsKey(id);
+    public bool IsKnown(string? id) => id is not null && (Glyphs.ContainsKey(id) || extensionIcons?.Invoke(id) is not null);
 
     /// <summary>Resolves an id to its glyph, or to the <see cref="IconIds.Unknown"/> glyph with one warning per unknown id.</summary>
     /// <param name="id">The icon id; a blank id draws the fallback without a warning.</param>
@@ -150,8 +179,14 @@ public sealed class IconRegistry(ILogger<IconRegistry> logger)
             return Pick(known, active);
         }
 
+        if (extensionIcons?.Invoke(id) is { } geometry)
+        {
+            return new IconGlyph(Glyphs[IconIds.Unknown].Regular, geometry);
+        }
+
         if (warned.TryAdd(id, 0))
         {
+            issues.Enqueue(new IconIssue(ExtensionDiagnosticCodes.UnknownReference, id));
             Log.UnknownIcon(logger, id);
         }
 

@@ -118,4 +118,12 @@ internal static partial class Log
     /// <param name="exception">The exception the rollback threw.</param>
     [LoggerMessage(EventId = 1041, Level = LogLevel.Error, Message = "Restoring the previous project's extensions after a failed load also failed")]
     public static partial void ExtensionRollbackFailed(ILogger logger, Exception exception);
+
+    /// <summary>Logs 1042: a view resource an extension declared could not be used and was ignored.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="owner">The id of the extension that declared it.</param>
+    /// <param name="uri">The declared URI.</param>
+    /// <param name="reason">Why it could not be used.</param>
+    [LoggerMessage(EventId = 1042, Level = LogLevel.Warning, Message = "The view resource {Uri} of extension {Owner} was ignored: {Reason}")]
+    public static partial void ViewResourceIgnored(ILogger logger, string owner, string uri, string reason);
 }

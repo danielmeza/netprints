@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using NetPrints.Core;
@@ -24,7 +25,9 @@ internal sealed class GraphMerger(IDocumentFormat format)
     private const string ExecOutputMarker = "/out.exec.";
     private const string VisibilitySuffix = ".visibility";
     private const string GraphSuffix = ".graph";
+    private const string UnknownSuffix = ".unknown";
     private static readonly GraphDocument EmptyGraph = new([], null, null);
+
     private static readonly ClassDocument Shell = new(
         1, null, "Shell", MemberVisibility.Public, ClassModifiers.None, null, EmptyGraph, null, null, null, null, null);
 
@@ -68,9 +71,33 @@ internal sealed class GraphMerger(IDocumentFormat format)
             IReadOnlyList<EventGraphDocument>? eventGraphs = await MergeMembersAsync(
                 b.EventGraphs, o.EventGraphs, t.EventGraphs, "eventGraphs", e => e.Id, PrintAsync, MergeEventGraphAsync, MergeConflictKind.DuplicateMember).ConfigureAwait(false);
 
-            var merged = new ClassDocument(schema, ns, name, visibility, modifiers, generics, classGraph, variables, methods, constructors, eventGraphs, null);
+            var merged = new ClassDocument(schema, ns, name, visibility, modifiers, generics, classGraph, variables, methods, constructors, eventGraphs, null)
+            {
+                ExtensionData = MergeUnknown(b.ExtensionData, o.ExtensionData, t.ExtensionData, "unknown"),
+            };
             return merged with { Layout = MergeLayout(b.Layout, o.Layout, t.Layout, GraphNodeIds(merged)) };
         }
+
+        private UnknownMembers? MergeUnknown(UnknownMembers? b, UnknownMembers? o, UnknownMembers? t, string path)
+        {
+            var merged = new UnknownMembers();
+            foreach (string key in Keys(b).Concat(Keys(o)).Concat(Keys(t)).Distinct(StringComparer.Ordinal))
+            {
+                JsonElement? kept = Three(Find(b, key), Find(o, key), Find(t, key), $"{path}.{key}", SameMember);
+                if (kept is { } value)
+                {
+                    merged[key] = value;
+                }
+            }
+
+            return merged.Count == 0 ? null : merged;
+        }
+
+        private static JsonElement? Find(UnknownMembers? members, string key) =>
+            members is not null && members.TryGetValue(key, out JsonElement value) ? value : null;
+
+        private static bool SameMember(JsonElement? left, JsonElement? right) =>
+            left is null ? right is null : right is { } other && JsonElement.DeepEquals(left.Value, other);
 
         public void Validate(ClassDocument merged)
         {
@@ -384,7 +411,10 @@ internal sealed class GraphMerger(IDocumentFormat format)
                 .Distinct()
                 .Where(connection => !(baseConnections.Contains(connection) && (!ourConnections.Contains(connection) || !theirConnections.Contains(connection))));
             ConnectionDocument[] sorted = [.. connections.OrderBy(c => c.From, StringComparer.Ordinal).ThenBy(c => c.To, StringComparer.Ordinal)];
-            return new GraphDocument(nodes ?? [], sorted.Length == 0 ? null : sorted, locals);
+            return new GraphDocument(nodes ?? [], sorted.Length == 0 ? null : sorted, locals)
+            {
+                ExtensionData = MergeUnknown(b.ExtensionData, o.ExtensionData, t.ExtensionData, path + UnknownSuffix),
+            };
         }
 
         // A node's shape (its pins) follows from its properties, which the merger cannot evaluate; a property change on one side
@@ -407,16 +437,17 @@ internal sealed class GraphMerger(IDocumentFormat format)
                     continue;
                 }
 
-                string baseProperties = await PrintAsync(baseNode with { Pins = null }).ConfigureAwait(false);
-                bool ourPropertiesChanged = await PrintAsync(ours with { Pins = null }).ConfigureAwait(false) != baseProperties;
-                bool theirPropertiesChanged = await PrintAsync(theirs with { Pins = null }).ConfigureAwait(false) != baseProperties;
+                string baseProperties = await PrintAsync(baseNode with { Pins = null, ExtensionData = null }).ConfigureAwait(false);
+                bool ourPropertiesChanged = await PrintAsync(ours with { Pins = null, ExtensionData = null }).ConfigureAwait(false) != baseProperties;
+                bool theirPropertiesChanged = await PrintAsync(theirs with { Pins = null, ExtensionData = null }).ConfigureAwait(false) != baseProperties;
                 if (ourPropertiesChanged == theirPropertiesChanged)
                 {
                     continue;
                 }
 
                 (NodeDocument other, HashSet<ConnectionDocument> otherConnections) = ourPropertiesChanged ? (theirs, theirConnections) : (ours, ourConnections);
-                bool pinsChanged = await PrintAsync(other).ConfigureAwait(false) != await PrintAsync(baseNode).ConfigureAwait(false);
+                bool pinsChanged = await PrintAsync(other with { ExtensionData = null }).ConfigureAwait(false)
+                    != await PrintAsync(baseNode with { ExtensionData = null }).ConfigureAwait(false);
                 bool rewired = otherConnections.Except(baseConnections).Concat(baseConnections.Except(otherConnections)).Any(connection => Touches(connection, baseNode.Id));
                 if (pinsChanged || rewired)
                 {
@@ -430,9 +461,9 @@ internal sealed class GraphMerger(IDocumentFormat format)
 
         private async Task<NodeDocument> MergeNodeAsync(NodeDocument b, NodeDocument o, NodeDocument t, string path)
         {
-            string baseProperties = await PrintAsync(b with { Pins = null }).ConfigureAwait(false);
-            string ourProperties = await PrintAsync(o with { Pins = null }).ConfigureAwait(false);
-            string theirProperties = await PrintAsync(t with { Pins = null }).ConfigureAwait(false);
+            string baseProperties = await PrintAsync(b with { Pins = null, ExtensionData = null }).ConfigureAwait(false);
+            string ourProperties = await PrintAsync(o with { Pins = null, ExtensionData = null }).ConfigureAwait(false);
+            string theirProperties = await PrintAsync(t with { Pins = null, ExtensionData = null }).ConfigureAwait(false);
             NodeDocument chosen = o;
             if (ourProperties != theirProperties && theirProperties != baseProperties)
             {
@@ -446,7 +477,11 @@ internal sealed class GraphMerger(IDocumentFormat format)
                 }
             }
 
-            return chosen with { Pins = MergePins(b.Pins, o.Pins, t.Pins, path) };
+            return chosen with
+            {
+                Pins = MergePins(b.Pins, o.Pins, t.Pins, path),
+                ExtensionData = MergeUnknown(b.ExtensionData, o.ExtensionData, t.ExtensionData, path + UnknownSuffix),
+            };
         }
 
         private IReadOnlyList<PinStateDocument>? MergePins(
@@ -478,6 +513,7 @@ internal sealed class GraphMerger(IDocumentFormat format)
                 Visibility = Three(b.Visibility, o.Visibility, t.Visibility, path + VisibilitySuffix),
                 Modifiers = Three(b.Modifiers, o.Modifiers, t.Modifiers, path + ".modifiers"),
                 Graph = await MergeGraphAsync(b.Graph, o.Graph, t.Graph, path + GraphSuffix).ConfigureAwait(false),
+                ExtensionData = MergeUnknown(b.ExtensionData, o.ExtensionData, t.ExtensionData, path + UnknownSuffix),
             };
 
         private async Task<ConstructorDocument> MergeConstructorAsync(ConstructorDocument b, ConstructorDocument o, ConstructorDocument t, string path) =>
@@ -485,6 +521,7 @@ internal sealed class GraphMerger(IDocumentFormat format)
             {
                 Visibility = Three(b.Visibility, o.Visibility, t.Visibility, path + VisibilitySuffix),
                 Graph = await MergeGraphAsync(b.Graph, o.Graph, t.Graph, path + GraphSuffix).ConfigureAwait(false),
+                ExtensionData = MergeUnknown(b.ExtensionData, o.ExtensionData, t.ExtensionData, path + UnknownSuffix),
             };
 
         private async Task<EventGraphDocument> MergeEventGraphAsync(EventGraphDocument b, EventGraphDocument o, EventGraphDocument t, string path) =>
@@ -492,6 +529,7 @@ internal sealed class GraphMerger(IDocumentFormat format)
             {
                 Name = Three(b.Name, o.Name, t.Name, path + ".name"),
                 Graph = await MergeGraphAsync(b.Graph, o.Graph, t.Graph, path + GraphSuffix).ConfigureAwait(false),
+                ExtensionData = MergeUnknown(b.ExtensionData, o.ExtensionData, t.ExtensionData, path + UnknownSuffix),
             };
 
         private async Task<VariableDocument> MergeVariableAsync(VariableDocument b, VariableDocument o, VariableDocument t, string path) =>
@@ -503,6 +541,7 @@ internal sealed class GraphMerger(IDocumentFormat format)
                 TypeGraph = await MergeGraphAsync(b.TypeGraph, o.TypeGraph, t.TypeGraph, path + ".typeGraph").ConfigureAwait(false),
                 Getter = await MergeAccessorAsync(b.Getter, o.Getter, t.Getter, path + ".getter").ConfigureAwait(false),
                 Setter = await MergeAccessorAsync(b.Setter, o.Setter, t.Setter, path + ".setter").ConfigureAwait(false),
+                ExtensionData = MergeUnknown(b.ExtensionData, o.ExtensionData, t.ExtensionData, path + UnknownSuffix),
             };
 
         private async Task<AccessorDocument?> MergeAccessorAsync(AccessorDocument? b, AccessorDocument? o, AccessorDocument? t, string path)
@@ -543,6 +582,7 @@ internal sealed class GraphMerger(IDocumentFormat format)
             {
                 Visibility = Three(b.Visibility, o.Visibility, t.Visibility, path + VisibilitySuffix),
                 Graph = await MergeGraphAsync(b.Graph, o.Graph, t.Graph, path + GraphSuffix).ConfigureAwait(false),
+                ExtensionData = MergeUnknown(b.ExtensionData, o.ExtensionData, t.ExtensionData, path + UnknownSuffix),
             };
         }
 

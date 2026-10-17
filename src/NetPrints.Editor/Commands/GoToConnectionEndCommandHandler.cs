@@ -11,7 +11,7 @@ namespace NetPrints.Editor.Commands;
 /// the parameter, or, without one, the only connection on the relevant side (incoming for source, outgoing for target) of the single selected node.
 /// </summary>
 /// <param name="end">The end to go to.</param>
-public sealed class GoToConnectionEndCommandHandler(ConnectionEnd end) : ICommandHandler
+public sealed class GoToConnectionEndCommandHandler(ConnectionEnd end) : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) =>
@@ -47,12 +47,12 @@ public sealed class GoToConnectionEndCommandHandler(ConnectionEnd end) : IComman
             return connection;
         }
 
-        if (context.Parameter is not null || context.ActiveGraph is not { } graph || context.Selection.Nodes is not [NodeViewModel selected])
+        if (context.Parameter is not null || context.ActiveGraph is not { } graph || context.Selection.Nodes is not [{ } selected])
         {
             return null;
         }
 
-        ConnectionViewModel[] ends = [.. graph.Connections.Where(candidate => (end == ConnectionEnd.Source ? candidate.Target : candidate.Source).Node == selected)];
+        ConnectionViewModel[] ends = [.. graph.Connections.Where(candidate => (end == ConnectionEnd.Source ? candidate.Target : candidate.Source).Node.Node == selected)];
         return ends.Length == 1 ? ends[0] : null;
     }
 

@@ -143,7 +143,7 @@ namespace NetPrints.Tests.Core
                 var call = new CallMethodNode(method, StaticMethod());
                 GraphUtil.ConnectExecPins(
                     call.CatchPin ?? throw new InvalidOperationException("An impure call has a Catch pin."),
-                    method.MainReturnNode.ReturnPin);
+                    method.MainReturnNode.ExecPin);
                 return call;
             });
 

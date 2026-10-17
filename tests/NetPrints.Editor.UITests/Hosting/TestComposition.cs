@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Avalonia;
@@ -25,7 +27,24 @@ public sealed class TestComposition : IDisposable
     /// <param name="backups">Where the open project's unsaved files are backed up; <see langword="null"/> for no backups.</param>
     /// <param name="stateStore">Keeps the dock layout and the sessions; <see langword="null"/> for neither.</param>
     public TestComposition(EditorHostServices host, IEditorDialogs dialogs, IFilePickerService filePicker, IProcessLauncher processes, BackupOptions? backups = null, IEditorStateStore? stateStore = null) =>
-        services = new EditorServices(host, new WindowService(), dialogs, filePicker, processes, backups, stateStore: stateStore);
+        services = new EditorServices(host, collection =>
+        {
+            collection.Replace(ServiceDescriptor.Singleton(dialogs));
+            collection.Replace(ServiceDescriptor.Singleton(filePicker));
+            collection.Replace(ServiceDescriptor.Singleton(processes));
+            if (backups is not null)
+            {
+                collection.AddSingleton(backups);
+            }
+
+            if (stateStore is not null)
+            {
+                collection.AddSingleton(stateStore);
+            }
+        });
+
+    /// <summary>The container the editor was composed in.</summary>
+    public IServiceProvider Services => services.Services;
 
     /// <summary>The composed host services, with the given test doubles standing in for the Avalonia dialogs, file picker and process launcher.</summary>
     public EditorContext Context => services.Context;

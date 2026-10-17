@@ -70,6 +70,7 @@ namespace NetPrints.Graph
         public partial double PositionY { get; set; }
 
         partial void OnPositionXChanged(double oldValue, double newValue) => OnPositionChanged?.Invoke(this, PositionX, PositionY);
+
         partial void OnPositionYChanged(double oldValue, double newValue) => OnPositionChanged?.Invoke(this, PositionX, PositionY);
 
         /// <summary>
@@ -107,13 +108,15 @@ namespace NetPrints.Graph
         }
 
         /// <summary>
-        /// Whether <see cref="IsPure"/> can be set on this node type. <see langword="false"/> by
-        /// default; a node type that can toggle purity (adding or removing its exec pins) overrides
-        /// this to <see langword="true"/> together with <see cref="SetPurity"/>.
+        /// Whether <see cref="IsPure"/> can be set on this node. True exactly when an output data pin has the
+        /// <see cref="PinRole.Result"/> or <see cref="PinRole.OutParam"/> role: a pure node runs only when a consumer
+        /// needs one of its outputs, so a node without one would vanish from the generated code. The
+        /// <see cref="PinRole.Exception"/> pin never counts. A node type that can toggle purity (adding or removing its
+        /// exec pins) overrides <see cref="SetPurity"/>.
         /// </summary>
         public virtual bool CanSetPure
         {
-            get => false;
+            get => OutputDataPins.Any(pin => pin.Role is PinRole.Result or PinRole.OutParam);
         }
 
         /// <summary>
@@ -169,6 +172,13 @@ namespace NetPrints.Graph
         /// <param name="pin">Pin of this node to get the key name of.</param>
         /// <returns>The pin's keyName.</returns>
         public virtual string GetPinKeyName(NodePin pin) => pin.Name;
+
+        /// <summary>
+        /// Whether the node's <see cref="ToString"/> text is the same for every instance of its kind, so the editor
+        /// shows the text of the <c>Node.&lt;kind&gt;.Title</c> resource instead (FR-027). A node whose text depends
+        /// on its content (a type, a method, a name) keeps the default <see langword="false"/> and shows its text as is.
+        /// </summary>
+        public virtual bool TitleIsFixed => false;
 
         /// <summary>
         /// Adds the new node to <paramref name="graph"/>'s <see cref="NodeGraph.Nodes"/>, allocates its

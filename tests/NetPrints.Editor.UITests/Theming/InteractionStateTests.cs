@@ -20,7 +20,7 @@ using NetPrints.Editor.Commands.CommandPalette;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Dialogs;
-using NetPrints.Editor.Search;
+using NetPrints.Editor.NodeSearch;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.UITests.Commands;
 using NetPrints.Editor.UITests.Driving;
@@ -29,7 +29,7 @@ using NetPrints.Editor.UITests.Shell;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Projects;
 using NetPrints.Testing.Ui.Driving;
-using DocumentId = NetPrints.Editor.Shell.DocumentId;
+using DocumentId = NetPrints.Extensibility.Editor.DocumentId;
 using ShellWindow = NetPrints.Editor.Shell.ShellWindow;
 
 namespace NetPrints.Editor.UITests.Theming;
@@ -41,9 +41,9 @@ public class InteractionStateTests
 
     private sealed class Probe : ICommandHandler
     {
-        public bool CanExecute(CommandContext context) => true;
+        public bool CanExecute(ICommandContext context) => true;
 
-        public Task ExecuteAsync(CommandContext context, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task ExecuteAsync(ICommandContext context, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private sealed class Contexts : ICommandContextProvider

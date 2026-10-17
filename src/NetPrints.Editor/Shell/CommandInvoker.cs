@@ -12,6 +12,8 @@ namespace NetPrints.Editor.Shell;
 /// <param name="onFaulted">Receives the exception of a command that fails.</param>
 public sealed class CommandInvoker(IContributionRegistry registry, ICommandContextProvider contexts, Action<Exception> onFaulted)
 {
+    private EventHandler? commandsChanged;
+
     /// <summary>Gets the commands that have a gesture and are active in <paramref name="scope"/>.</summary>
     /// <param name="scope">The scope; <see cref="CommandScope.Global"/> returns only the shell-wide commands.</param>
     /// <returns>The commands, in registration order.</returns>
@@ -21,10 +23,16 @@ public sealed class CommandInvoker(IContributionRegistry registry, ICommandConte
     /// <summary>Gets the commands the context-menu items of a target run, in item order.</summary>
     /// <param name="target">The item a context menu opens on.</param>
     /// <returns>The commands; an item naming an unregistered command is left out.</returns>
-    public IReadOnlyList<CommandDescriptor> ContextMenuCommands(ContextMenuTarget target) =>
+    public IReadOnlyList<CommandDescriptor> ContextMenuCommands(ContextMenuTarget target) => ContextMenuCommands(target, null);
+
+    /// <summary>Gets the commands the context-menu items of a target run for the context of the open menu.</summary>
+    /// <param name="target">The item a context menu opens on.</param>
+    /// <param name="context">The context of the open menu; an item whose <see cref="ContextMenuItemDescriptor.AppliesTo"/> rejects it is left out (hidden, not disabled). <see langword="null"/> applies no filter.</param>
+    /// <returns>The commands; an item naming an unregistered command is left out.</returns>
+    public IReadOnlyList<CommandDescriptor> ContextMenuCommands(ContextMenuTarget target, ICommandContext? context) =>
     [
         .. registry.ContextMenuItems
-            .Where(item => item.Target == target)
+            .Where(item => item.Target == target && (context is null || item.AppliesTo is null || item.AppliesTo(context)))
             .OrderBy(item => item.Order)
             .Select(item => registry.Commands.FirstOrDefault(command => command.Id == item.CommandId))
             .OfType<CommandDescriptor>(),
@@ -34,6 +42,29 @@ public sealed class CommandInvoker(IContributionRegistry registry, ICommandConte
     /// <param name="target">What the pointer is over.</param>
     /// <returns>The first provider's content, or null.</returns>
     public TooltipContent? TooltipFor(TooltipTarget target) => TooltipResolver.Resolve(registry.TooltipProviders, target);
+
+    /// <summary>Raised when the registry changed: commands, key bindings and context-menu items may have been added or removed (see <see cref="IContributionRegistry.Changed"/>).</summary>
+    public event EventHandler? CommandsChanged
+    {
+        add
+        {
+            if (commandsChanged is null)
+            {
+                registry.Changed += OnRegistryChanged;
+            }
+
+            commandsChanged += value;
+        }
+
+        remove
+        {
+            commandsChanged -= value;
+            if (commandsChanged is null)
+            {
+                registry.Changed -= OnRegistryChanged;
+            }
+        }
+    }
 
     /// <summary>Raised when the enabled state or label of any command may have changed (see <see cref="ICommandContextProvider.CommandStatesChanged"/>).</summary>
     public event EventHandler? CommandStatesChanged
@@ -50,7 +81,7 @@ public sealed class CommandInvoker(IContributionRegistry registry, ICommandConte
     public bool CanRun(CommandDescriptor command, CommandScope scope = CommandScope.Global, object? parameter = null)
     {
         ArgumentNullException.ThrowIfNull(command);
-        return command.Handler.CanExecute(contexts.Create(parameter, scope));
+        return command.Handler.CanExecute(CreateFor(command, scope, parameter));
     }
 
     /// <summary>Builds the context of an invocation made now.</summary>
@@ -67,7 +98,7 @@ public sealed class CommandInvoker(IContributionRegistry registry, ICommandConte
     public bool TryRun(CommandDescriptor command, CommandScope scope = CommandScope.Global, object? parameter = null)
     {
         ArgumentNullException.ThrowIfNull(command);
-        CommandContext context = contexts.Create(parameter, scope);
+        CommandContext context = CreateFor(command, scope, parameter);
         if (!command.Handler.CanExecute(context))
         {
             return false;
@@ -87,6 +118,14 @@ public sealed class CommandInvoker(IContributionRegistry registry, ICommandConte
         ArgumentException.ThrowIfNullOrEmpty(commandName);
         CommandDescriptor? command = registry.Commands.FirstOrDefault(c => c.Id == ContributionIds.CommandPrefix + commandName);
         return command is not null && TryRun(command, scope, parameter);
+    }
+
+    private void OnRegistryChanged(object? sender, ContributionSnapshot snapshot) => commandsChanged?.Invoke(this, EventArgs.Empty);
+
+    private CommandContext CreateFor(CommandDescriptor command, CommandScope scope, object? parameter)
+    {
+        CommandContext context = contexts.Create(parameter, scope);
+        return context with { Owner = registry.OwnerOf(command.Id), Contributions = registry };
     }
 
     private static async Task RunAsync(CommandDescriptor command, CommandContext context) =>

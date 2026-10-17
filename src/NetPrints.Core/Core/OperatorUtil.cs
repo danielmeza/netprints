@@ -54,8 +54,6 @@ namespace NetPrints.Core
     /// </summary>
     public static class OperatorUtil
     {
-        private const string OperatorPrefix = "op_";
-
         /// <summary>
         /// Mapping from operator method name to operator definitions (display name, symbol, arity, position).
         /// </summary>

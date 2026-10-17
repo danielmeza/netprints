@@ -7,7 +7,7 @@ namespace NetPrints.Editor.Commands;
 /// The <c>exit</c> command: closes the main window. It asks nothing itself; the window-close path owns the unload
 /// prompt, so Exit and the OS close ask once each.
 /// </summary>
-public sealed class ExitCommandHandler : ICommandHandler
+public sealed class ExitCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => true;

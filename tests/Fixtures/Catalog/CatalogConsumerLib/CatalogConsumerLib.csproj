@@ -11,6 +11,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CatalogFixtureLib\CatalogFixtureLib.csproj" />
+    <!-- Both generators define the compiler's Embedded attribute; this fixture runs the product generator only. -->
+    <ProjectReference Remove="$(MSBuildThisFileDirectory)..\..\..\..\src\NetPrints.RepoAnalyzers\NetPrints.RepoAnalyzers.csproj" />
     <!-- The in-repo form of PackageReference NetPrints.Annotations PrivateAssets="all". -->
     <ProjectReference Include="..\..\..\..\src\NetPrints.Annotations\NetPrints.Annotations.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <AdditionalFiles Include="..\..\..\NetPrints.Catalog.Tests\Profiles\fixture-flags.npprofile.json" Link="fixture-flags.npprofile.json" />

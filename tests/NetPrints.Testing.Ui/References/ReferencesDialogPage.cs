@@ -15,7 +15,9 @@ public sealed class ReferencesDialogPage(IUiDriver driver) : UiElement(driver, n
     }
 
     public UiElement AddAssemblyButton => Find(AutomationIds.ReferencesAddAssemblyButton);
+
     public UiElement AddSourceButton => Find(AutomationIds.ReferencesAddSourceButton);
+
     public UiElement CloseButton => Find(AutomationIds.ReferencesCloseButton);
 
     /// <summary>A reference row by its display text.</summary>

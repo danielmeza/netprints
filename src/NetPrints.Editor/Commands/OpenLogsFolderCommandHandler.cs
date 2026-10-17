@@ -4,7 +4,7 @@ using NetPrints.Editor.Shell;
 namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>help.openLogsFolder</c> command: shows the folder of the session logs in the file manager.</summary>
-public sealed class OpenLogsFolderCommandHandler : ICommandHandler
+public sealed class OpenLogsFolderCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => true;

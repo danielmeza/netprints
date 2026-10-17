@@ -47,11 +47,6 @@ internal sealed class StartPageRig : IDisposable
         public DateTime GetLastWriteTimeUtc(string path) => inner.GetLastWriteTimeUtc(path);
     }
 
-    private sealed class NoServices : IServiceProvider
-    {
-        public object? GetService(Type serviceType) => null;
-    }
-
     private sealed class ImmediateDispatcher : IUiDispatcher
     {
         public void Post(Action action) => action();
@@ -78,7 +73,7 @@ internal sealed class StartPageRig : IDisposable
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         BuiltInContributions.Register(registry);
         registry.Freeze();
-        Shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, new ImmediateDispatcher());
+        Shell = new ShellViewModel(registry, PanelFactoryContext.Detached, TimeProvider.System, new ImmediateDispatcher());
         Actions = new NoProjectActions();
         HashSet<string> existing = [];
         var files = new ProjectFiles(new RealEditorFileSystem(), existing);
@@ -90,11 +85,7 @@ internal sealed class StartPageRig : IDisposable
             Seed(recent, clock, existing);
         }
 
-        var services = new StartPageServices().Add<IProjectActions>(Actions).Add(recent).Add<TimeProvider>(new FakeTimeProvider(Now));
-        if (startStore is not null)
-        {
-            services.Add(startStore);
-        }
+        var services = new StartPageContext(Actions, PanelFactoryContext.Detached, recent, startStore, time: new FakeTimeProvider(Now));
 
         Page = new StartPageViewModel(Shell, services);
         Ui = HeadlessUi.Create();

@@ -8,9 +8,9 @@ public sealed class CommandInvokerTests
 {
     private sealed class Handler(Func<Task> run) : ICommandHandler
     {
-        public bool CanExecute(CommandContext context) => true;
+        public bool CanExecute(ICommandContext context) => true;
 
-        public Task ExecuteAsync(CommandContext context, CancellationToken cancellationToken) => run();
+        public Task ExecuteAsync(ICommandContext context, CancellationToken cancellationToken) => run();
     }
 
     private sealed class Contexts : ICommandContextProvider

@@ -26,6 +26,8 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <Using Include="NetPrints.Extensibility.Editor" />
+    <NetPrintsExperimentalOptIn Include="NPXE0005" />
   </ItemGroup>
 
   <ItemGroup>

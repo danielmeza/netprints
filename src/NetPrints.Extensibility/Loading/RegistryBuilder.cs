@@ -1,14 +1,19 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Resources;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NetPrints.Catalog;
 using NetPrints.Core;
+using NetPrints.Extensibility.Editor;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Nodes;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Reflection;
 using NetPrints.Serialization.Mapping;
+using NetPrints.Serialization.Migrations;
 using NetPrints.Translator;
 
 namespace NetPrints.Extensibility.Loading;
@@ -17,8 +22,9 @@ namespace NetPrints.Extensibility.Loading;
 /// Commits the contributions of loaded extensions in load order, rejecting conflicting ones, and builds the
 /// <see cref="ExtensionRegistry"/>.
 /// </summary>
-internal sealed class RegistryBuilder(ILogger logger)
+internal sealed class RegistryBuilder(ILogger logger, ILoggerFactory loggerFactory, ISettingsStore? settingsStore)
 {
+    private readonly Dictionary<string, ServiceProvider> providers = new(StringComparer.Ordinal);
     private readonly List<NodeKindDescriptor> nodeKinds = [];
     private readonly HashSet<string> kindIds = new(StringComparer.Ordinal);
     private readonly HashSet<Type> nodeTypes = [];
@@ -27,7 +33,9 @@ internal sealed class RegistryBuilder(ILogger logger)
     private readonly List<IMemberEmitter> memberEmitters = [];
     private readonly List<ITypeCatalog> typeCatalogs = [];
     private readonly List<IProjectProfile> profiles = [DefaultProjectProfile.Instance];
+
     private readonly HashSet<string> profileIds = new(StringComparer.Ordinal) { DefaultProjectProfile.ProfileId };
+
     private readonly List<IJsonTypeInfoResolver> resolvers = [];
     private readonly Dictionary<Type, string> documentOwners = [];
     private readonly Dictionary<string, List<IJsonTypeInfoResolver>> resolversByOwner = new(StringComparer.Ordinal);
@@ -39,11 +47,27 @@ internal sealed class RegistryBuilder(ILogger logger)
     private readonly HashSet<string> settingsIds = new(StringComparer.Ordinal);
     private readonly List<CatalogProfile> catalogProfiles = [];
     private readonly HashSet<string> catalogProfileIds = new(BuiltInCatalogProfiles.Ids, StringComparer.Ordinal);
+    private readonly List<ResourceManager> stringResources = [];
+    private readonly List<INodeSuggestionProvider> suggestionProviders = [];
+    private readonly List<INodeDataMigration> nodeDataMigrations = [];
+    private readonly HashSet<string> suggestionProviderIds = new(StringComparer.Ordinal);
+    private readonly HashSet<string> projectTemplateIds = new(StringComparer.Ordinal);
+    private readonly List<ProjectTemplateDescriptor> projectTemplates = [];
     private readonly List<object> owned = [];
     private readonly List<ExtensionContributionIssue> issues = [];
 
+    [RequiresUnreferencedCode(DynamicLoading.Reason)]
     public void Commit(ExtensionManifest manifest, ExtensionContributions contributions)
     {
+        var serviceRejections = new List<(string Contribution, string Reason)>();
+        ServiceProvider extensionServices = ExtensionServiceProviders.Build(
+            contributions.Services,
+            contributions.OwnAssembly,
+            [.. contributions.Settings.Where(descriptor => descriptor.ExtensionId == manifest.Id).DistinctBy(descriptor => descriptor.ExtensionId, StringComparer.Ordinal)],
+            settingsStore,
+            loggerFactory,
+            (contribution, reason) => serviceRejections.Add((contribution, reason)));
+
         foreach (INodeLibrary library in contributions.NodeLibraries)
         {
             owned.Add(library);
@@ -124,6 +148,12 @@ internal sealed class RegistryBuilder(ILogger logger)
             }
         }
 
+        providers[manifest.Id] = extensionServices;
+        foreach ((string contribution, string reason) in serviceRejections)
+        {
+            Reject(manifest, ExtensionDiagnosticCodes.ContributionRejected, contribution, reason);
+        }
+
         foreach (CatalogProfile profile in contributions.CatalogProfiles)
         {
             if (BuiltInCatalogProfiles.Ids.Contains(profile.Id, StringComparer.Ordinal))
@@ -137,6 +167,53 @@ internal sealed class RegistryBuilder(ILogger logger)
             else
             {
                 catalogProfiles.Add(profile);
+            }
+        }
+
+        stringResources.AddRange(contributions.StringResources);
+
+        foreach (INodeSuggestionProvider provider in contributions.SuggestionProviders)
+        {
+            if (!HasIdPrefix(provider.Id, manifest.Id))
+            {
+                Reject(manifest, ExtensionDiagnosticCodes.IdPrefix, $"suggestion provider {provider.Id}", $"the id must start with the manifest id '{manifest.Id}'.");
+            }
+            else if (!suggestionProviderIds.Add(provider.Id))
+            {
+                Reject(manifest, ExtensionDiagnosticCodes.DuplicateId, $"suggestion provider {provider.Id}", "a suggestion provider with this id is already registered.");
+            }
+            else
+            {
+                suggestionProviders.Add(provider);
+                owned.Add(provider);
+            }
+        }
+
+        foreach (ProjectTemplateDescriptor template in contributions.ProjectTemplates)
+        {
+            if (!HasIdPrefix(template.Id, manifest.Id))
+            {
+                Reject(manifest, ExtensionDiagnosticCodes.IdPrefix, $"project template {template.Id}", $"the id must start with the manifest id '{manifest.Id}'.");
+            }
+            else if (!projectTemplateIds.Add(template.Id))
+            {
+                Reject(manifest, ExtensionDiagnosticCodes.DuplicateId, $"project template {template.Id}", "a project template with this id is already registered.");
+            }
+            else
+            {
+                projectTemplates.Add(template);
+            }
+        }
+
+        foreach (INodeDataMigration migration in contributions.NodeDataMigrations)
+        {
+            if (!HasPrefix(migration.NodeKind ?? string.Empty, manifest.Id))
+            {
+                Reject(manifest, ExtensionDiagnosticCodes.IdPrefix, $"node data migration for {migration.NodeKind}", $"the node kind must start with '{manifest.Id}/' followed by a name.");
+            }
+            else
+            {
+                nodeDataMigrations.Add(migration);
             }
         }
 
@@ -165,9 +242,12 @@ internal sealed class RegistryBuilder(ILogger logger)
         }
 
         ReportShadowingResolvers();
+        Dictionary<string, int> dataVersions = nodeKinds.Where(kind => kind.DataVersion > 0).ToDictionary(kind => kind.Kind, kind => kind.DataVersion, StringComparer.Ordinal);
         var converters = new NodeDocumentConverterRegistry(
             nodeKinds.ConvertAll(kind => kind.Converter),
-            [new OwnerRoutingJsonTypeInfoResolver(routing), .. resolvers]);
+            [new OwnerRoutingJsonTypeInfoResolver(routing), .. resolvers],
+            dataVersions);
+        var nodeMigrator = new NodeDataMigrator(nodeDataMigrations, dataVersions);
 
         return new ExtensionRegistry(
             results,
@@ -182,10 +262,15 @@ internal sealed class RegistryBuilder(ILogger logger)
             hostChannels,
             settings,
             catalogProfiles,
+            stringResources,
+            suggestionProviders,
+            projectTemplates,
             issues,
             translation,
             converters,
+            nodeMigrator,
             owned,
+            providers,
             loggerFactory.CreateLogger<ExtensionRegistry>());
     }
 
@@ -332,9 +417,15 @@ internal sealed class RegistryBuilder(ILogger logger)
         Log.NodeKindConflict(logger, kind, manifest.Id, reason);
     }
 
-    private void RejectOther(ExtensionManifest manifest, string contribution, string reason)
+    private static bool HasIdPrefix(string id, string extensionId) =>
+        !string.IsNullOrEmpty(id) && id.Length > extensionId.Length + 1 && id.StartsWith(extensionId, StringComparison.Ordinal) && id[extensionId.Length] is '.' or '/';
+
+    private void RejectOther(ExtensionManifest manifest, string contribution, string reason) =>
+        Reject(manifest, ExtensionDiagnosticCodes.ContributionRejected, contribution, reason);
+
+    private void Reject(ExtensionManifest manifest, string code, string contribution, string reason)
     {
-        issues.Add(new ExtensionContributionIssue(manifest.Id, ExtensionDiagnosticCodes.ContributionRejected, contribution, reason));
+        issues.Add(new ExtensionContributionIssue(manifest.Id, code, contribution, reason));
         Log.ContributionRejected(logger, contribution, manifest.Id, reason);
     }
 }

@@ -26,7 +26,8 @@ public class UiElement(IUiDriver driver, AutomationQuery query)
 
     /// <summary>Waits until exactly one element matches and returns it.</summary>
     public async Task<AutomationElement> GetAsync(CancellationToken cancellationToken) =>
-        (await UiWait.ForAsync(Driver, () => TryGetAsync(cancellationToken), e => e is not null, $"{this} to be shown", cancellationToken))!;
+        await UiWait.ForAsync(Driver, () => TryGetAsync(cancellationToken), e => e is not null, $"{this} to be shown", cancellationToken)
+        ?? throw new InvalidOperationException($"{this} was accepted without an element.");
 
     public async Task<bool> ExistsAsync(CancellationToken cancellationToken) => await TryGetAsync(cancellationToken) is not null;
 
@@ -51,6 +52,10 @@ public class UiElement(IUiDriver driver, AutomationQuery query)
         string? value = await PropertyAsync(property, cancellationToken);
         return T.Parse(value ?? throw new InvalidOperationException($"{this} has no {property}."), CultureInfo.InvariantCulture);
     }
+
+    /// <summary>A number property of an element snapshot, parsed with the invariant culture.</summary>
+    public static double Number(AutomationElement element, string property) =>
+        double.Parse(element[property] ?? throw new InvalidOperationException($"The element has no {property}."), CultureInfo.InvariantCulture);
 
     /// <summary>Waits until the element satisfies a condition.</summary>
     public Task WaitUntilAsync(Func<AutomationElement, bool> condition, string what, CancellationToken cancellationToken, TimeSpan? timeout = null) =>

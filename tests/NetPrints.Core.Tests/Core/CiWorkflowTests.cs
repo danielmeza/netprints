@@ -110,7 +110,7 @@ namespace NetPrints.Tests.Core
             string[] names = [.. legs.Select(leg => Text(Get(leg, "name")))];
             string[] slugs = [.. legs.Select(leg => Text(Get(leg, "leg")))];
 
-            Assert.Equal(["Core", "Catalog", "CLI", "Editor", "Editor UI (headless) 1/4", "Editor UI (headless) 2/4", "Editor UI (headless) 3/4", "Editor UI (headless) 4/4"], names);
+            Assert.Equal(["Core", "Analyzers", "Catalog", "CLI", "Editor", "Editor UI (headless) 1/4", "Editor UI (headless) 2/4", "Editor UI (headless) 3/4", "Editor UI (headless) 4/4"], names);
             Assert.All(slugs, slug => Assert.NotEmpty(slug));
             Assert.Equal(slugs.Length, slugs.Distinct(StringComparer.Ordinal).Count());
         }
@@ -212,6 +212,20 @@ namespace NetPrints.Tests.Core
             Assert.Contains("Category=Performance", script, StringComparison.Ordinal);
             object? strictStep = Items(Get(perf, "steps")).Single(step => Text(Get(step, "name")).StartsWith("Performance tests", StringComparison.Ordinal));
             Assert.Equal("1", Text(Get(strictStep, "env", "NETPRINTS_PERF_STRICT")));
+        }
+
+        // SC-005 (M1, M2): the head is judged against R5-0 built and run on the same runner, in the same job.
+        [Fact]
+        public void ThePerformanceJobComparesTheHeadWithR5ZeroOnTheSameRunner()
+        {
+            List<object?> steps = Items(Get(Get(Jobs(), "perf"), "steps"));
+            int prepare = steps.FindIndex(step => Text(Get(step, "run")).Contains("eng/perf/prepare-r5-0.sh", StringComparison.Ordinal));
+            int compare = steps.FindIndex(step => Text(Get(step, "run")).Contains("eng/perf/ab.sh", StringComparison.Ordinal));
+
+            Assert.True(prepare >= 0, "The perf job does not build R5-0 with eng/perf/prepare-r5-0.sh.");
+            Assert.True(compare > prepare, "The perf job does not run eng/perf/ab.sh after building R5-0.");
+            Assert.Equal("${{ !cancelled() }}", Text(Get(steps[prepare], "if")));
+            Assert.Equal("${{ !cancelled() }}", Text(Get(steps[compare], "if")));
         }
 
         [Fact]

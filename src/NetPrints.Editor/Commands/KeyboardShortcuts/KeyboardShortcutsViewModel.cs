@@ -14,11 +14,12 @@ public sealed class KeyboardShortcutsViewModel
     public KeyboardShortcutsViewModel(IContributionRegistry registry)
     {
         ArgumentNullException.ThrowIfNull(registry);
-        CommandDescriptor[] commands = [.. registry.Commands];
+        ContributionSnapshot snapshot = registry.Snapshot;
+        CommandDescriptor[] commands = [.. snapshot.Commands];
         CommandDescriptor[] withMenu = [.. commands.Where(command => command.Menu is not null)];
         string[] menus = [.. MenuBarViewModel.StandardMenus, .. withMenu.Select(command => command.Menu?.Path ?? "").Distinct(StringComparer.Ordinal).Except(MenuBarViewModel.StandardMenus, StringComparer.Ordinal)];
-        List<ShortcutGroup> groups = [.. menus.Select(menu => new ShortcutGroup(menu, MenuRows(withMenu, menu)))];
-        ShortcutRow[] others = [.. commands.Where(command => command.Menu is null).Select(Row)];
+        List<ShortcutGroup> groups = [.. menus.Select(menu => new ShortcutGroup(menu, MenuRows(snapshot, withMenu, menu)))];
+        ShortcutRow[] others = [.. commands.Where(command => command.Menu is null).Select(command => Row(snapshot, command))];
         if (others.Length > 0)
         {
             groups.Add(new ShortcutGroup(OtherTitle, others));
@@ -30,13 +31,13 @@ public sealed class KeyboardShortcutsViewModel
     /// <summary>Gets the groups: the menus in menu bar order, then <see cref="OtherTitle"/> when a command has no menu.</summary>
     public IReadOnlyList<ShortcutGroup> Groups { get; }
 
-    private static ShortcutRow[] MenuRows(CommandDescriptor[] withMenu, string menu)
+    private static ShortcutRow[] MenuRows(ContributionSnapshot snapshot, CommandDescriptor[] withMenu, string menu)
     {
         CommandDescriptor[] inMenu = [.. withMenu.Where(command => command.Menu?.Path == menu)];
         string[] groups = [.. inMenu.Select(command => command.Menu?.Group ?? "").Distinct(StringComparer.Ordinal)];
-        return [.. groups.SelectMany(group => inMenu.Where(command => command.Menu?.Group == group).OrderBy(command => command.Menu?.Order).Select(Row))];
+        return [.. groups.SelectMany(group => inMenu.Where(command => command.Menu?.Group == group).OrderBy(command => command.Menu?.Order).Select(command => Row(snapshot, command)))];
     }
 
-    private static ShortcutRow Row(CommandDescriptor command) =>
-        new(command.Id, command.Label, string.Join(", ", command.DefaultGestures ?? []));
+    private static ShortcutRow Row(ContributionSnapshot snapshot, CommandDescriptor command) =>
+        new(command.Id, command.DisplayLabel, string.Join(", ", (command.DefaultGestures ?? []).Select(gesture => gesture.Display)), snapshot.OwnerNameOf(command.Id) ?? "");
 }

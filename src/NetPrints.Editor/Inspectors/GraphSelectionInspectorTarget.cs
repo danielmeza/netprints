@@ -27,26 +27,34 @@ public static class GraphSelectionInspectorTarget
             return entry;
         }
 
-        return graph.Class?.Project is { } project
-            ? node switch
-            {
-                VariableNode { IsLocalVariable: false } variable => FindVariable(project, variable.Variable),
-                CallMethodNode call => FindMethod(project, call.MethodSpecifier),
-                _ => null,
-            }
+        return graph.Class?.Project is { } project && node is IMemberReferencingNode referencing
+            ? FindMember(project, referencing)
             : null;
     }
 
-    private static Variable? FindVariable(Project project, VariableSpecifier specifier) =>
-        ClassNamed(project, specifier.DeclaringType)?.Variables.FirstOrDefault(variable => string.Equals(variable.Name, specifier.Name, StringComparison.Ordinal));
+    private static object? FindMember(Project project, IMemberReferencingNode referencing)
+    {
+        foreach (ClassGraph cls in project.Classes)
+        {
+            foreach (Variable variable in cls.Variables)
+            {
+                if (referencing.RefersTo(new MemberKey(MemberKind.Variable, cls.Type, variable.Name, [])))
+                {
+                    return variable;
+                }
+            }
 
-    private static MethodGraph? FindMethod(Project project, MethodSpecifier specifier) =>
-        ClassNamed(project, specifier.DeclaringType)?.Methods.FirstOrDefault(method =>
-            string.Equals(method.Name, specifier.Name, StringComparison.Ordinal)
-            && method.NamedArgumentTypes.Select(argument => argument.Value.FullCodeName).SequenceEqual(specifier.ArgumentTypes.Select(argument => argument.FullCodeName), StringComparer.Ordinal));
+            foreach (MethodGraph method in cls.Methods)
+            {
+                if (referencing.RefersTo(new MemberKey(MemberKind.Method, cls.Type, method.Name, [.. method.ArgumentTypes])))
+                {
+                    return method;
+                }
+            }
+        }
 
-    private static ClassGraph? ClassNamed(Project project, TypeSpecifier? type) =>
-        type is null ? null : project.Classes.FirstOrDefault(cls => string.Equals(cls.FullName, type.Name, StringComparison.Ordinal));
+        return null;
+    }
 
     private static object OwnerOf(NodeGraph graph)
     {

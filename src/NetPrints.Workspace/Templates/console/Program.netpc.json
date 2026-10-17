@@ -1,0 +1,38 @@
+{
+  "$schema": "https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json",
+  "schemaVersion": 1,
+  "namespace": "NetPrintsRootNamespace",
+  "name": "Program",
+  "visibility": "Public",
+  "classGraph": {
+    "nodes": [
+      { "$kind": "classReturn", "id": "n000000000vny0" }
+    ]
+  },
+  "methods": [
+    {
+      "id": "m000000001gs20",
+      "name": "Main",
+      "visibility": "Public",
+      "modifiers": "Static",
+      "graph": {
+        "nodes": [
+          { "$kind": "methodEntry", "id": "n000000000vny1" },
+          { "$kind": "return", "id": "n000000000vny2" }
+        ],
+        "connections": [
+          { "from": "n000000000vny1/out.exec.Exec", "to": "n000000000vny2/in.exec.Exec" }
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "class": {
+      "n000000000vny0": [112, 112]
+    },
+    "m000000001gs20": {
+      "n000000000vny1": [112, 112],
+      "n000000000vny2": [420, 112]
+    }
+  }
+}

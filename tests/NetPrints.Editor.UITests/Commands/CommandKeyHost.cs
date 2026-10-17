@@ -17,9 +17,9 @@ internal sealed class ProbeHandler(bool enabled = true) : ICommandHandler
 
     public int Runs { get; private set; }
 
-    public bool CanExecute(CommandContext context) => Enabled;
+    public bool CanExecute(ICommandContext context) => Enabled;
 
-    public Task ExecuteAsync(CommandContext context, CancellationToken cancellationToken)
+    public Task ExecuteAsync(ICommandContext context, CancellationToken cancellationToken)
     {
         Runs++;
         return Task.CompletedTask;
@@ -120,7 +120,7 @@ internal sealed class KeyHost : IDisposable
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         foreach (var (id, gesture, scope, handler) in commands)
         {
-            registry.AddCommand(new CommandDescriptor(ContributionIds.CommandPrefix + id, id, handler, DefaultGestures: [gesture], Scope: scope));
+            registry.AddCommand(new CommandDescriptor(ContributionIds.CommandPrefix + id, id, handler, DefaultGestures: [CommandGesture.Parse(gesture, null)], Scope: scope));
         }
 
         return registry;

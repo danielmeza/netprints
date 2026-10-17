@@ -7,6 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <!-- Aliased, compile-only and private: the shared engine sources compiled into Annotations would clash with NetPrints.Catalog's own types, so a test project that runs the host references Annotations itself, aliased. -->
+    <ProjectReference Include="..\..\src\NetPrints.Annotations\NetPrints.Annotations.csproj" Aliases="Annotations" PrivateAssets="all" Private="false" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- ExtensionHarness: loads extensions and drives the translator, the document format and the generator. -->
     <ProjectReference Include="..\..\src\NetPrints.Core\NetPrints.Core.csproj" />
     <ProjectReference Include="..\..\src\NetPrints.Extensibility\NetPrints.Extensibility.csproj" />

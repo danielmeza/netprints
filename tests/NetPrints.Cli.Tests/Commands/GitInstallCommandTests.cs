@@ -102,6 +102,33 @@ public sealed class GitInstallCommandTests : IAsyncLifetime
         Assert.Equal("dotnet /opt/np/NetPrints.Cli.dll merge %O %A %B --marker-size %L --path %P", await Repo.ConfigAsync("merge.netprints.driver"));
     }
 
+    // US11 scenario 4 (FR-087): git runs the stored command through sh, which splits at spaces and eats backslashes.
+    [Fact]
+    public async Task ACommandThatIsAPathWithSpacesIsQuotedForShAndGitRunsIt()
+    {
+        string folder = Path.Combine(Directory.CreateTempSubdirectory("np-git-bin-").FullName, "with space");
+        _other = Path.GetDirectoryName(folder);
+        Directory.CreateDirectory(folder);
+        string script = Path.Combine(folder, "netprints");
+        await File.WriteAllTextAsync(script, "#!/bin/sh\necho converted:$(cat \"$3\")\n", TestContext.Current.CancellationToken);
+        if (!OperatingSystem.IsWindows())
+        {
+            File.SetUnixFileMode(script, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+
+        (int exit, CliTestHost host) = await InstallAsync("--command", script);
+
+        host.AssertExit(ExitCodes.Success, exit);
+        Assert.Equal($"'{script.Replace('\\', '/')}' show --textconv", await Repo.ConfigAsync("diff.netprints.textconv"));
+
+        File.WriteAllText(Repo.File("A.netpc.json"), "{}\n");
+        await Repo.GitAsync("add", "A.netpc.json", ".gitattributes");
+        await Repo.GitAsync("commit", "-q", "-m", "graph");
+        File.WriteAllText(Repo.File("A.netpc.json"), "{ }\n");
+
+        Assert.Contains("+converted:{ }", await Repo.GitAsync("diff"), StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task ASecondRunLeavesTheGitConfigBytesAlone()
     {

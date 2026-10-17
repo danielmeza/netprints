@@ -16,6 +16,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <NetPrintsExperimentalOptIn Include="NPXE0005" />
+    <Using Include="NetPrints.Extensibility.Editor" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\NetPrints.Editor\NetPrints.Editor.csproj" />
   </ItemGroup>
 </Project>

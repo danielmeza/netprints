@@ -1,5 +1,6 @@
 #nullable enable
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using NetPrints.Core;
 
 namespace NetPrints.Serialization.Documents;
@@ -16,7 +17,13 @@ namespace NetPrints.Serialization.Documents;
 /// <param name="IsInterface"><see langword="true"/> if the type is an interface.</param>
 /// <param name="Args">The type's generic arguments, or <see langword="null"/> if it takes none.</param>
 public sealed record TypeRef(string Name, bool Generic = false, bool IsEnum = false, bool IsInterface = false,
-    IReadOnlyList<TypeRef>? Args = null);
+    IReadOnlyList<TypeRef>? Args = null)
+{
+    /// <summary>Gets the members this build does not know, kept as opaque values and written after the known ones.</summary>
+    [JsonExtensionData]
+    [JsonInclude]
+    public UnknownMembers? ExtensionData;
+}
 
 /// <summary>
 /// Reference to a method parameter (document-format.md §1.6): its name, type, how it is passed, and
@@ -28,7 +35,13 @@ public sealed record TypeRef(string Name, bool Generic = false, bool IsEnum = fa
 /// <param name="Default">The parameter's explicit default value, present only when the parameter has
 /// one.</param>
 public sealed record ParameterRef(string Name, TypeRef Type,
-    MethodParameterPassType PassType = MethodParameterPassType.Default, TypedValue? Default = null);
+    MethodParameterPassType PassType = MethodParameterPassType.Default, TypedValue? Default = null)
+{
+    /// <summary>Gets the members this build does not know, kept as opaque values and written after the known ones.</summary>
+    [JsonExtensionData]
+    [JsonInclude]
+    public UnknownMembers? ExtensionData;
+}
 
 /// <summary>
 /// Reference to a method (document-format.md §1.6): name, declaring type, parameters, return types,
@@ -45,7 +58,13 @@ public sealed record ParameterRef(string Name, TypeRef Type,
 /// none.</param>
 public sealed record MethodRef(string Name, TypeRef DeclaringType, IReadOnlyList<ParameterRef>? Parameters,
     IReadOnlyList<TypeRef>? ReturnTypes, MethodModifiers Modifiers, MemberVisibility Visibility,
-    IReadOnlyList<TypeRef>? GenericArgs);
+    IReadOnlyList<TypeRef>? GenericArgs)
+{
+    /// <summary>Gets the members this build does not know, kept as opaque values and written after the known ones.</summary>
+    [JsonExtensionData]
+    [JsonInclude]
+    public UnknownMembers? ExtensionData;
+}
 
 /// <summary>
 /// Reference to a constructor (document-format.md §1.6): the constructed type and its parameters.
@@ -53,7 +72,13 @@ public sealed record MethodRef(string Name, TypeRef DeclaringType, IReadOnlyList
 /// <param name="DeclaringType">Type the constructor constructs.</param>
 /// <param name="Parameters">The constructor's parameters, or <see langword="null"/> if it takes
 /// none.</param>
-public sealed record ConstructorRef(TypeRef DeclaringType, IReadOnlyList<ParameterRef>? Parameters);
+public sealed record ConstructorRef(TypeRef DeclaringType, IReadOnlyList<ParameterRef>? Parameters)
+{
+    /// <summary>Gets the members this build does not know, kept as opaque values and written after the known ones.</summary>
+    [JsonExtensionData]
+    [JsonInclude]
+    public UnknownMembers? ExtensionData;
+}
 
 /// <summary>
 /// Reference to a variable (field or property, document-format.md §1.6): name, type, declaring type
@@ -70,7 +95,13 @@ public sealed record ConstructorRef(TypeRef DeclaringType, IReadOnlyList<Paramet
 /// <param name="Scope">Whether this is a class member or a method-local variable.</param>
 public sealed record VariableRef(string Name, TypeRef Type, TypeRef? DeclaringType, MemberVisibility GetterVisibility,
     MemberVisibility SetterVisibility, MemberVisibility Visibility, VariableModifiers Modifiers,
-    VariableScope Scope = VariableScope.Member);
+    VariableScope Scope = VariableScope.Member)
+{
+    /// <summary>Gets the members this build does not know, kept as opaque values and written after the known ones.</summary>
+    [JsonExtensionData]
+    [JsonInclude]
+    public UnknownMembers? ExtensionData;
+}
 
 /// <summary>
 /// A typed, unconnected pin value (document-format.md §1.6, §1.4/§2.6): the value's runtime type (full
@@ -79,4 +110,10 @@ public sealed record VariableRef(string Name, TypeRef Type, TypeRef? DeclaringTy
 /// </summary>
 /// <param name="Type">Full CLR name of the value's runtime type.</param>
 /// <param name="Value">The value's string form, or <see langword="null"/>.</param>
-public sealed record TypedValue(string Type, string? Value);
+public sealed record TypedValue(string Type, string? Value)
+{
+    /// <summary>Gets the members this build does not know, kept as opaque values and written after the known ones.</summary>
+    [JsonExtensionData]
+    [JsonInclude]
+    public UnknownMembers? ExtensionData;
+}

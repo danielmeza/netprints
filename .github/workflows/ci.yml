@@ -121,6 +121,9 @@ jobs:
           - name: Core
             leg: core
             project: tests/NetPrints.Core.Tests
+          - name: Analyzers
+            leg: analyzers
+            project: tests/NetPrints.Analyzers.Tests
           - name: Catalog
             leg: catalog
             project: tests/NetPrints.Catalog.Tests
@@ -249,11 +252,12 @@ jobs:
 
   # SC-005 and SC-006 wall-clock budgets at their strict values. Not a required check and not in build-test's needs:
   # a shared runner's speed is not something the product controls (issues #17, #18). The blocking legs run the same
-  # tests with a sanity bound.
+  # tests with a sanity bound. The SC-005 M1 and M2 gate compares the head with R5-0 built and run on this runner,
+  # interleaved (eng/perf/ab.sh; ADR-0031 amendment 1).
   perf:
     name: Performance budgets (non-blocking)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     continue-on-error: true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -280,18 +284,30 @@ jobs:
         env:
           NETPRINTS_PERF_STRICT: 1
         run: |
+          status=0
           for project in NetPrints.Core.Tests NetPrints.Catalog.Tests NetPrints.Editor.Tests NetPrints.Editor.UITests; do
             dotnet test --project tests/$project -c Release --no-build \
               --report-xunit-trx --results-directory TestResults \
-              -- --filter-trait "Category=Performance" --ignore-exit-code 8
+              -- --filter-trait "Category=Performance" --ignore-exit-code 8 || status=1
           done
+          exit $status
+
+      - name: Build R5-0 (the SC-005 baseline)
+        if: ${{ !cancelled() }}
+        run: bash eng/perf/prepare-r5-0.sh "$RUNNER_TEMP/r5-0"
+
+      - name: SC-005 M1 and M2 against R5-0 (same runner, interleaved)
+        if: ${{ !cancelled() }}
+        run: bash eng/perf/ab.sh --rounds 8 --results TestResults/perf-ab.txt "$RUNNER_TEMP/r5-0" .
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: test-results-perf
-          path: TestResults/**/*.trx
+          path: |
+            TestResults/**/*.trx
+            TestResults/perf-ab.txt
           if-no-files-found: warn
 
   # M4 trimming ratchet (P5 preparation). Not a required check and not in the gate's needs: the count may only go down,
@@ -434,7 +450,7 @@ jobs:
           fi
           [[ "$ver" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]
 
-      - name: Pack into local-packages
+      - name: Pack into local-packages (package validation runs in the pack)
         id: pack
         run: |
           v=$(scripts/pack-local.sh --print-version)

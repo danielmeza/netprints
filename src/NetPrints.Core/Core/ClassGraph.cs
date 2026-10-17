@@ -123,7 +123,7 @@ namespace NetPrints.Core
         /// </summary>
         public TypeSpecifier SuperType
         {
-            get => (TypeSpecifier?)ReturnNode.SuperTypePin.InferredType?.Value ?? TypeSpecifier.FromType<object>();
+            get => (TypeSpecifier?)ReturnNode.BaseTypePin.InferredType?.Value ?? TypeSpecifier.FromType<object>();
         }
 
         /// <summary>

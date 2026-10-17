@@ -4,7 +4,7 @@ using NetPrints.Editor.Shell;
 namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>goToAnything</c> command: opens go to anything.</summary>
-public sealed class GoToAnythingCommandHandler : ICommandHandler
+public sealed class GoToAnythingCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => true;

@@ -10,16 +10,16 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing a constructor call.
     /// </summary>
-    public partial class ConstructorNode : ExecNode
+    public partial class ConstructorNode : ExecNode, IOverloadableNode
     {
-        /// <summary>
-        /// Always <see langword="true"/>: a constructor node can become pure (no exec pins) since
-        /// construction alone is not considered a side effect worth sequencing.
-        /// </summary>
-        public override bool CanSetPure
-        {
-            get => true;
-        }
+        /// <inheritdoc />
+        object IOverloadableNode.CurrentOverload => ConstructorSpecifier;
+
+        /// <inheritdoc />
+        Node? IOverloadableNode.ChangeOverload(object overload) =>
+            overload is ConstructorSpecifier specifier
+                ? new ConstructorNode(Graph, specifier)
+                : throw new ArgumentException("A constructor node switches between constructor overloads.", nameof(overload));
 
         /// <summary>
         /// Specifier for the constructor.
@@ -80,6 +80,7 @@ namespace NetPrints.Graph
             }
 
             AddOutputDataPin(ConstructorSpecifier.DeclaringType.ShortName, ConstructorSpecifier.DeclaringType);
+            OutputDataPins[^1].Role = PinRole.Result;
 
             // TODO: Set the correct types to begin with.
             UpdateTypes();

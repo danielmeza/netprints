@@ -15,11 +15,6 @@ namespace NetPrints.Editor.UITests.Shell;
 /// <summary>The shell window over the real registry, the real command context provider and, optionally, an open project session.</summary>
 internal sealed class SurfaceRig : IDisposable
 {
-    private sealed class NoServices : IServiceProvider
-    {
-        public object? GetService(Type serviceType) => null;
-    }
-
     private sealed class ImmediateDispatcher : IUiDispatcher
     {
         public void Post(Action action) => action();
@@ -58,13 +53,14 @@ internal sealed class SurfaceRig : IDisposable
 
     public List<Exception> Faults { get; }
 
-    public static SurfaceRig Create(Action<IContributionRegistry>? extra = null, ProjectSessionViewModel? session = null)
+    public static SurfaceRig Create(Action<ContributionRegistry>? extra = null, ProjectSessionViewModel? session = null)
     {
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         BuiltInContributions.Register(registry);
         extra?.Invoke(registry);
         registry.Freeze();
-        var shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, new ImmediateDispatcher());
+        ViewResourceLoader.Sync(Avalonia.Application.Current ?? throw new InvalidOperationException("The headless application is not running."), registry.ViewResources);
+        var shell = new ShellViewModel(registry, PanelFactoryContext.Detached, TimeProvider.System, new ImmediateDispatcher());
         var adapter = new DockShellAdapter(shell, new NoProjectActions(), id => new TestDocumentViewModel(id, id.GraphKey ?? id.ToString()), NullLogger.Instance);
         shell.Layout = adapter;
         var faults = new List<Exception>();

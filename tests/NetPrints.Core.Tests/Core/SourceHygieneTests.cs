@@ -42,79 +42,27 @@ namespace NetPrints.Tests.Core
         }
 
         /// <summary>
-        /// A stable <c>NPTnnn</c>/<c>NPDnnn</c>/<c>NPXnnn</c>/<c>NPWnnn</c> diagnostic code is declared
-        /// exactly once, as a named constant, and referenced everywhere else
-        /// (compilation-and-diagnostics.md §2): gates the smell found in
-        /// <c>TranslationDiagnosticCodes.cs</c>'s introduction, where the translator's <c>NPT</c> codes
-        /// were raw literals scattered across several files. Unlike the declaration itself, a raw
-        /// literal is not allowed even inside a declaring file: only the one line that declares a code
-        /// is exempt from the "no raw literal" check below.
+        /// A stable diagnostic code is declared once across <c>src/</c>. NPH003 covers the literals and the
+        /// duplicates inside one project; this covers a code declared in two projects, of which only
+        /// <c>NPXE0004</c> is allowed.
         /// </summary>
         [Fact]
-        public void NoRawDiagnosticCodeLiteralsOutsideTheirConstants()
+        public void NoDiagnosticCodeIsDeclaredInTwoProjects()
         {
             string src = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "src");
-            Regex codePattern = DiagnosticCodeLiteralPattern();
             Regex declarationPattern = DiagnosticCodeDeclarationPattern();
 
-            // Files that declare one or more of these codes as a named constant. NPW is split across
-            // ProjectSystemException (NPW001, NPW003) and ProjectMessage (the rest), same as NPD/NPX/NPT.
-            string[] declaringFiles =
-            [
-                Path.Combine("NetPrints.Core", "Translator", "TranslationDiagnosticCodes.cs"),
-                Path.Combine("NetPrints.Extensibility", "Loading", "ExtensionDiagnosticCodes.cs"),
-                Path.Combine("NetPrints.Serialization", "DocumentIssue.cs"),
-                Path.Combine("NetPrints.Generation", "GraphCodeGenerator.cs"),
-                Path.Combine("NetPrints.Core", "Projects", "ProjectSystemException.cs"),
-                Path.Combine("NetPrints.Core", "Projects", "ProjectMessage.cs"),
-                Path.Combine("NetPrints.Core", "ExperimentalApiIds.cs"),
-                Path.Combine("NetPrints.Catalog", "Engine", "CatalogDiagnosticCodes.cs"),
-                Path.Combine("NetPrints.Catalog", "Engine", "ExperimentalApis.cs"),
-            ];
-
-            string[] sourceFiles = [.. Directory.EnumerateFiles(src, "*.cs", SearchOption.AllDirectories)
-                .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-                    && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))];
-
             var declaredCodes = new List<(string Code, string File)>();
-            var offenders = new List<string>();
-
-            foreach (string path in sourceFiles)
+            foreach (string path in EnumerateSourceFiles(src, "*.cs"))
             {
                 string relativePath = Path.GetRelativePath(src, path);
-                bool isDeclaringFile = declaringFiles.Any(f => path.EndsWith(f, StringComparison.Ordinal));
-                bool foundRawLiteral = false;
-
-                foreach (string line in File.ReadAllLines(path))
+                foreach (Match declaration in declarationPattern.Matches(File.ReadAllText(path)))
                 {
-                    string trimmed = line.TrimStart();
-                    if (trimmed.StartsWith("///", StringComparison.Ordinal))
-                    {
-                        // XML doc prose (e.g. "for example \"NPT006\"") documents the format, not a duplicated literal.
-                        continue;
-                    }
-
-                    Match declaration = declarationPattern.Match(line);
-                    if (declaration.Success)
-                    {
-                        Assert.True(isDeclaringFile, $"{relativePath}: a diagnostic code constant must be declared in one of the designated files.");
-                        declaredCodes.Add((declaration.Groups["code"].Value, relativePath));
-                        continue;
-                    }
-
-                    if (codePattern.IsMatch(line))
-                    {
-                        foundRawLiteral = true;
-                    }
-                }
-
-                if (foundRawLiteral)
-                {
-                    offenders.Add(relativePath);
+                    declaredCodes.Add((declaration.Groups["code"].Value, relativePath));
                 }
             }
 
-            Assert.Empty(offenders);
+            Assert.NotEmpty(declaredCodes);
 
             IEnumerable<string> duplicates = declaredCodes.GroupBy(declaration => declaration.Code, StringComparer.Ordinal)
                 .Where(group => group.Count() > 1 && !IsAllowedDuplicate(group.Key, [.. group.Select(declaration => declaration.File)]))
@@ -137,175 +85,8 @@ namespace NetPrints.Tests.Core
             && files.Count == AllowedDuplicateFiles.Length
             && files.Select(file => file.Replace('\\', '/')).Order(StringComparer.Ordinal).SequenceEqual(AllowedDuplicateFiles.Order(StringComparer.Ordinal));
 
-        [GeneratedRegex(@"""(?:(?:NPT|NPD|NPX|NPW|NPC)\d{3,}|NPXE\d{4})""")]
-        private static partial Regex DiagnosticCodeLiteralPattern();
-
-        [GeneratedRegex(@"const string \w+ = ""(?<code>(?:NPT|NPD|NPX|NPW|NPC)\d{3,}|NPXE\d{4})""")]
+        [GeneratedRegex(@"const string \w+ = ""(?<code>(?:NP[TDXWCSAHIKR])\d{3,}|NPXE\d{4})""")]
         private static partial Regex DiagnosticCodeDeclarationPattern();
-
-        /// <summary>
-        /// ADR-0003 "no `!`" (AGENTS.md "Nullable reference types"): no analyzer flags the
-        /// null-forgiving operator, so this parses every <c>src/**/*.cs</c> and <c>tests/**/*.cs</c> file
-        /// with Roslyn and fails on any <see cref="SyntaxKind.SuppressNullableWarningExpression"/> node
-        /// outside <see cref="NullForgivingAllowlist"/> (R1-22/R2-18/R3-15: the gate used to scan only
-        /// <c>src/</c>). <c>src/</c> is clean, so its half of the allowlist is empty by design. The
-        /// <c>tests/</c> half lists every site that predates this gate (F-Hyg fixed the sites the review
-        /// actually named — Extensibility/Serialization/Characterization/Translator/CodeView/hosting — and
-        /// extended the scan to catch every future one); it can only shrink, one file at a time, never grow.
-        /// </summary>
-        private static readonly HashSet<(string File, string Line)> NullForgivingAllowlist =
-        [
-            ("tests/NetPrints.Desktop.E2ETests/Hosting/Tool.cs", "using var process = Process.Start(info)!;"),
-            ("tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs", "var process = Process.Start(info)!;"),
-            ("tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs", "windowManager = Process.Start(wm)!;"),
-            ("tests/NetPrints.Editor.Tests/Graph/NodeGraphViewModelTests.cs", "Assert.Equal(variable.Name, graph.GetSetChooser.Variable!.Name);"),
-            ("tests/NetPrints.Editor.Tests/Graph/Pins/NodePinViewModelTests.cs", "Assert.Contains(\"Monday\", enumPin.PossibleEnumNames!.ToList());"),
-            ("tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs", "Assert.Contains(\"Monday\", pin.PossibleEnumNames!);"),
-            ("tests/NetPrints.Editor.Tests/Search/SearchPerformanceTests.cs", "var output = TestContext.Current.TestOutputHelper!;"),
-            ("tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs", "var getter = variable.Getter!;"),
-            ("tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs", "var setter = variable.Setter!;"),
-            ("tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs", "Assert.Equal(MemberVisibility.Public, variable.Getter!.Visibility);"),
-            ("tests/NetPrints.Editor.UITests/Graph/GridRenderTests.cs", "Application.Current!.RequestedThemeVariant = ThemeVariant.Light;"),
-            ("tests/NetPrints.Editor.UITests/TestAppBuilder.cs", ".AfterSetup(builder => ((EditorApp)builder.Instance!).DisableTransitions())"),
-            ("tests/NetPrints.Testing.Ui/Driving/UiElement.cs", "(await UiWait.ForAsync(Driver, () => TryGetAsync(cancellationToken), e => e is not null, $\"{this} to be shown\", cancellationToken))!;"),
-            ("tests/NetPrints.Testing.Ui/Driving/UiWait.cs", "T value = default!;"),
-            ("tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs", "return (double.Parse(e[AutomationPropertyNames.ViewportX]!, CultureInfo.InvariantCulture), double.Parse(e[AutomationPropertyNames.ViewportY]!, CultureInfo.InvariantCulture));"),
-            ("tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs", "return (double.Parse(e[AutomationPropertyNames.ViewportX]!, CultureInfo.InvariantCulture), double.Parse(e[AutomationPropertyNames.ViewportY]!, CultureInfo.InvariantCulture),"),
-            ("tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs", "double.Parse(e[AutomationPropertyNames.ViewportZoom]!, CultureInfo.InvariantCulture));"),
-            ("tests/NetPrints.Testing.Ui/Graph/NodeObject.cs", "return (double.Parse(e[AutomationPropertyNames.LocationX]!, CultureInfo.InvariantCulture), double.Parse(e[AutomationPropertyNames.LocationY]!, CultureInfo.InvariantCulture));"),
-            ("tests/NetPrints.Testing.Ui/Snapshots/UiImage.cs", "Directory.CreateDirectory(Path.GetDirectoryName(path)!);"),
-        ];
-
-        /// <summary>
-        /// The null-forgiving sites of <paramref name="source"/> that <paramref name="allowlist"/> does not list,
-        /// each as <c>file: line text</c>. A site is keyed by its file and the trimmed text of the line it starts on,
-        /// so edits elsewhere in the file do not move it.
-        /// </summary>
-        internal static List<string> NullForgivingOffenders(string relativePath, string source, ISet<(string File, string Line)> allowlist, System.Threading.CancellationToken cancellationToken)
-        {
-            SyntaxNode root = CSharpSyntaxTree.ParseText(source, cancellationToken: cancellationToken).GetRoot(cancellationToken);
-            var offenders = new List<string>();
-
-            foreach (PostfixUnaryExpressionSyntax node in root.DescendantNodes()
-                .OfType<PostfixUnaryExpressionSyntax>()
-                .Where(n => n.IsKind(SyntaxKind.SuppressNullableWarningExpression)))
-            {
-                int line = node.GetLocation().GetLineSpan().StartLinePosition.Line;
-                string lineText = node.SyntaxTree.GetText(cancellationToken).Lines[line].ToString().Trim();
-                if (!allowlist.Contains((relativePath, lineText)))
-                {
-                    offenders.Add($"{relativePath}: {lineText}");
-                }
-            }
-
-            return offenders;
-        }
-
-        [Fact]
-        public void NoNullForgivingOperator()
-        {
-            string repoRoot = SampleProjectFactory.FindRepositoryRoot();
-            string[] sourceFiles = EnumerateSourceAndTestFiles(repoRoot);
-            var offenders = new List<string>();
-            int parsedFileCount = 0;
-
-            foreach (string path in sourceFiles)
-            {
-                parsedFileCount++;
-                string relativePath = Path.GetRelativePath(repoRoot, path).Replace('\\', '/');
-                offenders.AddRange(NullForgivingOffenders(relativePath, File.ReadAllText(path), NullForgivingAllowlist, TestContext.Current.CancellationToken));
-            }
-
-            Assert.True(parsedFileCount > 0, "Expected to parse at least one src/**/*.cs or tests/**/*.cs file.");
-            Assert.Empty(offenders);
-        }
-
-        [Fact]
-        public void TheNullForgivingAllowlistSurvivesAShiftedLineButNotAChangedOne()
-        {
-            const string FxFile = "tests/Fx/Fx.cs";
-            const string Site = "var value = Lookup()!;";
-            HashSet<(string File, string Line)> allowlist = [(FxFile, Site)];
-            string original = $"class Fx\n{{\n    void Run()\n    {{\n        {Site}\n    }}\n}}\n";
-            string shifted = "using System;\n\n// unrelated edit\n" + original;
-            string changed = original.Replace(Site, "var value = Other()!;", StringComparison.Ordinal);
-
-            Assert.Empty(NullForgivingOffenders(FxFile, original, allowlist, TestContext.Current.CancellationToken));
-            Assert.Empty(NullForgivingOffenders(FxFile, shifted, allowlist, TestContext.Current.CancellationToken));
-            Assert.Single(NullForgivingOffenders(FxFile, changed, allowlist, TestContext.Current.CancellationToken));
-            Assert.Single(NullForgivingOffenders("tests/Fx/Other.cs", original, allowlist, TestContext.Current.CancellationToken));
-        }
-
-        /// <summary>
-        /// ADR-0003 "Real fixes vs. suppression": every suppression mechanism in <c>src/</c> or
-        /// <c>tests/</c> (R1-22/R2-18/R3-15: the gate used to scan only <c>src/</c>) — a
-        /// <c>#pragma warning disable</c>, <c>[SuppressMessage]</c> (short or <c>Attribute</c>-suffixed,
-        /// qualified or not) or a nullable-context escape (<c>#nullable disable</c>/<c>restore</c>) in a
-        /// <c>.cs</c> file — must match a row in ADR-0003's suppression ledger. A <c>[SuppressMessage]</c>
-        /// is keyed by its file, containing member and rule id (not file and rule alone), so a second
-        /// suppression of the same rule on a different member of the same file is still unlisted.
-        /// Tighter than <c>S1309</c>: per rule and per site, not per file. <c>&lt;NoWarn&gt;</c> and the
-        /// rest of a project's warning configuration are covered by
-        /// <see cref="NoUnlistedBuildWarningSuppressions"/> instead, since those live in
-        /// <c>.csproj</c>/<c>.props</c>/<c>.targets</c> files, not <c>.cs</c> ones. Allowlist entries only
-        /// shrink; a fresh site is fixed, not added.
-        /// </summary>
-        private static readonly HashSet<(string File, string Member, string Rule)> SuppressionAllowlist = new()
-        {
-            ("src/NetPrints.Editor/Graph/GraphDragDrop.cs", "Moved", "VSTHRD100"),
-            ("src/NetPrints.Editor/Graph/GridBackground.cs", "Render", "IDISP004"),
-            ("src/NetPrints.Editor/Hosting/Automation/AutomationAgent.cs", "ServeAsync", "IDISP007"),
-        };
-
-        [Fact]
-        public void NoUnlistedSuppressions()
-        {
-            string repoRoot = SampleProjectFactory.FindRepositoryRoot();
-            var offenders = new List<string>();
-            int parsedFileCount = 0;
-
-            foreach (string path in EnumerateSourceAndTestFiles(repoRoot))
-            {
-                parsedFileCount++;
-                string relativePath = Path.GetRelativePath(repoRoot, path).Replace('\\', '/');
-                SyntaxNode root = CSharpSyntaxTree.ParseText(File.ReadAllText(path), path: path, cancellationToken: TestContext.Current.CancellationToken).GetRoot(TestContext.Current.CancellationToken);
-
-                foreach (var trivia in root.DescendantTrivia().Where(t => t.IsKind(SyntaxKind.PragmaWarningDirectiveTrivia)))
-                {
-                    offenders.Add($"{relativePath}: unlisted #pragma warning ({trivia})");
-                }
-
-                foreach (var trivia in root.DescendantTrivia().Where(t => t.IsKind(SyntaxKind.NullableDirectiveTrivia)))
-                {
-                    if (trivia.GetStructure() is NullableDirectiveTriviaSyntax { SettingToken: var setting }
-                        && (setting.IsKind(SyntaxKind.DisableKeyword) || setting.IsKind(SyntaxKind.RestoreKeyword)))
-                    {
-                        offenders.Add($"{relativePath}: unlisted #nullable {setting.Text}");
-                    }
-                }
-
-                foreach (AttributeSyntax attribute in root.DescendantNodes().OfType<AttributeSyntax>()
-                    .Where(a => IsSuppressMessageAttribute(a)))
-                {
-                    var arguments = attribute.ArgumentList?.Arguments ?? default;
-                    string? ruleId = arguments.Count > 1 ? arguments[1].Expression.ToString().Trim('"') : null;
-                    string? member = ContainingMemberName(attribute);
-                    string justification = attribute.ToString();
-
-                    if (ruleId is null || member is null || !SuppressionAllowlist.Contains((relativePath, member, ruleId)))
-                    {
-                        offenders.Add($"{relativePath}: unlisted [SuppressMessage] for {ruleId ?? "?"} on {member ?? "?"}");
-                    }
-                    else if (!justification.Contains("ADR-0003", StringComparison.Ordinal))
-                    {
-                        offenders.Add($"{relativePath}: [SuppressMessage] for {ruleId} has no ADR-0003 justification");
-                    }
-                }
-            }
-
-            Assert.True(parsedFileCount > 0, "Expected to scan at least one src/ or tests/ file.");
-            Assert.Empty(offenders);
-        }
 
         /// <summary>
         /// ADR-0003 "no sync-over-async": no analyzer flags blocking on a <see cref="Task"/> result, so
@@ -386,42 +167,6 @@ namespace NetPrints.Tests.Core
         }
 
         /// <summary>
-        /// Matches <c>[SuppressMessage(...)]</c> and <c>[SuppressMessageAttribute(...)]</c>, with or
-        /// without a namespace qualifier: <see cref="AttributeSyntax.Name"/> renders the qualifier too
-        /// (e.g. <c>System.Diagnostics.CodeAnalysis.SuppressMessageAttribute</c>), so only the suffix
-        /// after stripping a trailing "Attribute" is compared.
-        /// </summary>
-        private static bool IsSuppressMessageAttribute(AttributeSyntax attribute)
-        {
-            string name = attribute.Name.ToString();
-            if (name.EndsWith("Attribute", StringComparison.Ordinal))
-            {
-                name = name[..^"Attribute".Length];
-            }
-
-            return name.EndsWith("SuppressMessage", StringComparison.Ordinal);
-        }
-
-        /// <summary>The name of the method, property or constructor <paramref name="attribute"/> is declared on, or null.</summary>
-        private static string? ContainingMemberName(AttributeSyntax attribute)
-        {
-            for (SyntaxNode? node = attribute.Parent; node is not null; node = node.Parent)
-            {
-                switch (node)
-                {
-                    case MethodDeclarationSyntax method:
-                        return method.Identifier.Text;
-                    case PropertyDeclarationSyntax property:
-                        return property.Identifier.Text;
-                    case ConstructorDeclarationSyntax constructor:
-                        return constructor.Identifier.Text;
-                }
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// No <c>.props</c>, <c>.targets</c> or <c>.csproj</c> file anywhere in the repository (except
         /// <c>legacy/</c>, kept for reference and not built) lowers the warning bar the root
         /// <c>Directory.Build.props</c> sets (<c>TreatWarningsAsErrors</c>) or the curated analyzer
@@ -429,7 +174,7 @@ namespace NetPrints.Tests.Core
         /// entry, <c>&lt;TreatWarningsAsErrors&gt;false&lt;/TreatWarningsAsErrors&gt;</c>, an explicit
         /// <c>&lt;WarningLevel&gt;</c> override, or an unlisted <c>&lt;MSBuildWarningsNotAsErrors&gt;</c>/
         /// <c>&lt;MSBuildWarningsAsMessages&gt;</c> engine-level suppression (<see cref="BuildPropertyAllowlist"/>)
-        /// would each silently do that project-wide, bypassing <see cref="NoUnlistedSuppressions"/>'s
+        /// would each silently do that project-wide, bypassing NPH004's
         /// per-site ledger entirely.
         /// </summary>
         [Fact]
@@ -540,48 +285,6 @@ namespace NetPrints.Tests.Core
         [GeneratedRegex(@"^dotnet_diagnostic\.(?<rule>[A-Za-z0-9_-]+)\.severity\s*=\s*(?<severity>\S+)")]
         private static partial Regex EditorConfigSeverityPattern();
 
-        /// <summary>
-        /// ADR-0007 amendment (2026-10-01): view model types are named <c>&lt;Name&gt;ViewModel</c>, never
-        /// <c>&lt;Name&gt;VM</c>. This check parses every <c>src/**/*.cs</c> and <c>tests/**/*.cs</c> file,
-        /// finds every type declaration (class, record, struct, interface, enum) and delegate, and fails on any
-        /// name ending in <c>VM</c> or containing <c>VM</c> before an uppercase letter (<c>MVVM</c> excepted),
-        /// listing each.
-        /// </summary>
-        [Fact]
-        public void NoTypeNameEndsInVM()
-        {
-            string repoRoot = SampleProjectFactory.FindRepositoryRoot();
-            string[] sourceFiles = EnumerateSourceAndTestFiles(repoRoot);
-            var offenders = new List<string>();
-            int parsedFileCount = 0;
-
-            foreach (string path in sourceFiles)
-            {
-                parsedFileCount++;
-                SyntaxNode root = CSharpSyntaxTree.ParseText(File.ReadAllText(path), path: path, cancellationToken: TestContext.Current.CancellationToken).GetRoot(TestContext.Current.CancellationToken);
-                string relativePath = Path.GetRelativePath(repoRoot, path).Replace('\\', '/');
-
-                foreach (string? declared in root.DescendantNodes().Select(node => node switch
-                {
-                    BaseTypeDeclarationSyntax type => type.Identifier.Text,
-                    DelegateDeclarationSyntax @delegate => @delegate.Identifier.Text,
-                    _ => null,
-                }))
-                {
-                    if (declared is not null && (declared.EndsWith("VM", StringComparison.Ordinal) || EmbeddedVmName().IsMatch(declared.Replace("MVVM", string.Empty, StringComparison.Ordinal))))
-                    {
-                        offenders.Add(declared);
-                    }
-                }
-            }
-
-            Assert.True(parsedFileCount > 0, "Expected to parse at least one src/**/*.cs or tests/**/*.cs file.");
-            Assert.Empty(offenders);
-        }
-
-        [GeneratedRegex(@"VM[A-Z]")]
-        private static partial Regex EmbeddedVmName();
-
         [GeneratedRegex(@"<(?:\w+:)?Popup(?=[\s/>])")]
         private static partial Regex RawPopupTagPattern();
 
@@ -688,136 +391,6 @@ namespace NetPrints.Tests.Core
 
             Assert.True(checkedCount > 0, "Expected to check at least one src/... severity entry in .editorconfig.");
             Assert.Empty(offenders);
-        }
-
-        /// <summary>Reviewed exceptions to <see cref="UiBoundCodeNeverUsesConfigureAwaitFalse"/>, keyed
-        /// <c>relative/path.cs:line</c> with a one-line reason.</summary>
-        private static readonly Dictionary<string, string> ConfigureAwaitFalseAllowlist = new(StringComparer.Ordinal);
-
-        /// <summary>Converts an .editorconfig section glob (<c>**</c>, <c>*</c>, <c>{a,b}</c>) to a regex.</summary>
-        private static Regex EditorConfigGlobToRegex(string glob)
-        {
-            var pattern = new System.Text.StringBuilder("^");
-            for (int i = 0; i < glob.Length; i++)
-            {
-                switch (glob[i])
-                {
-                    case '*' when i + 1 < glob.Length && glob[i + 1] == '*':
-                        pattern.Append(".*");
-                        i++;
-                        break;
-                    case '*':
-                        pattern.Append("[^/]*");
-                        break;
-                    case '{':
-                        pattern.Append("(?:");
-                        break;
-                    case '}':
-                        pattern.Append(')');
-                        break;
-                    case ',':
-                        pattern.Append('|');
-                        break;
-                    case '.':
-                        pattern.Append("\\.");
-                        break;
-                    default:
-                        pattern.Append(glob[i]);
-                        break;
-                }
-            }
-
-            return new Regex(pattern.Append('$').ToString(), RegexOptions.None, TimeSpan.FromSeconds(5));
-        }
-
-        /// <summary>
-        /// UI-bound code resumes on the UI thread, so a <c>ConfigureAwait(false)</c> there is a latent
-        /// cross-thread bug. The scope is whatever <c>.editorconfig</c> sets <c>VSTHRD111</c> to
-        /// <c>none</c> for; the non-UI scopes (which keep it at <c>error</c>) must use <c>false</c>.
-        /// </summary>
-        [Fact]
-        public void UiBoundCodeNeverUsesConfigureAwaitFalse()
-        {
-            string repoRoot = SampleProjectFactory.FindRepositoryRoot();
-            List<Regex> scopes = ConfigureAwaitUiScopes(File.ReadAllLines(Path.Combine(repoRoot, ".editorconfig")));
-            Assert.True(scopes.Count > 0, "Expected .editorconfig to define at least one VSTHRD111 = none scope.");
-
-            var offenders = new List<string>();
-            var seen = new HashSet<string>(StringComparer.Ordinal);
-            int scannedCount = 0;
-
-            foreach (string path in EnumerateSourceFiles(Path.Combine(repoRoot, "src"), "*.cs"))
-            {
-                string relativePath = Path.GetRelativePath(repoRoot, path).Replace('\\', '/');
-                if (!scopes.Any(scope => scope.IsMatch(relativePath)))
-                {
-                    continue;
-                }
-
-                scannedCount++;
-                offenders.AddRange(FindConfigureAwaitFalse(File.ReadAllText(path), relativePath, seen));
-            }
-
-            Assert.True(scannedCount > 0, "Expected at least one UI-bound source file.");
-            Assert.Empty(offenders);
-            Assert.True(ConfigureAwaitFalseAllowlist.Keys.All(seen.Contains), "A ConfigureAwait(false) allowlist entry no longer matches a call: remove it.");
-        }
-
-        [Fact]
-        public void ConfigureAwaitScopeIsReadFromEditorConfigAndFlagsAPlantedViolation()
-        {
-            List<Regex> scopes = ConfigureAwaitUiScopes(["[src/Ui/**.cs]", "dotnet_diagnostic.VSTHRD111.severity = none", "[src/Lib/**.cs]", "dotnet_diagnostic.VSTHRD111.severity = error"]);
-
-            Assert.Contains(scopes, scope => scope.IsMatch("src/Ui/Deep/View.cs"));
-            Assert.DoesNotContain(scopes, scope => scope.IsMatch("src/Lib/Thing.cs"));
-            Assert.Single(FindConfigureAwaitFalse("class C { async System.Threading.Tasks.Task M() { await System.Threading.Tasks.Task.Delay(1).ConfigureAwait(false); } }", "src/Ui/View.cs", []));
-            Assert.Empty(FindConfigureAwaitFalse("class C { async System.Threading.Tasks.Task M() { await System.Threading.Tasks.Task.Delay(1).ConfigureAwait(true); } }", "src/Ui/View.cs", []));
-        }
-
-        private static List<Regex> ConfigureAwaitUiScopes(string[] editorConfigLines)
-        {
-            var scopes = new List<Regex>();
-            string? section = null;
-            foreach (string line in editorConfigLines)
-            {
-                string trimmed = line.Trim();
-                Match header = EditorConfigSectionPattern().Match(trimmed);
-                if (header.Success)
-                {
-                    section = header.Groups["section"].Value;
-                    continue;
-                }
-
-                Match severity = EditorConfigSeverityPattern().Match(trimmed);
-                if (section is not null && severity.Success && severity.Groups["rule"].Value == "VSTHRD111" && severity.Groups["severity"].Value == "none")
-                {
-                    scopes.Add(EditorConfigGlobToRegex(section));
-                }
-            }
-
-            return scopes;
-        }
-
-        private static List<string> FindConfigureAwaitFalse(string code, string relativePath, HashSet<string> seen)
-        {
-            var offenders = new List<string>();
-            SyntaxNode root = CSharpSyntaxTree.ParseText(code, cancellationToken: TestContext.Current.CancellationToken).GetRoot(TestContext.Current.CancellationToken);
-            foreach (InvocationExpressionSyntax call in root.DescendantNodes().OfType<InvocationExpressionSyntax>())
-            {
-                if (call.Expression is MemberAccessExpressionSyntax { Name.Identifier.Text: "ConfigureAwait" }
-                    && call.ArgumentList.Arguments is [{ Expression: LiteralExpressionSyntax literal }]
-                    && literal.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.FalseLiteralExpression))
-                {
-                    string key = $"{relativePath}:{call.GetLocation().GetLineSpan().StartLinePosition.Line + 1}";
-                    seen.Add(key);
-                    if (!ConfigureAwaitFalseAllowlist.ContainsKey(key))
-                    {
-                        offenders.Add(key);
-                    }
-                }
-            }
-
-            return offenders;
         }
 
         [Fact]

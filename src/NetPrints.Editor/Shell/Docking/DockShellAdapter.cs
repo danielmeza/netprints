@@ -56,6 +56,7 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
         factory.DockableUndocked += OnLayoutEvent;
         factory.WindowAdded += OnLayoutEvent;
         factory.WindowMoveDragEnd += OnLayoutEvent;
+        shell.PanelsChanged += OnShellPanelsChanged;
     }
 
     /// <summary>Raised when the layout changed in a way worth saving: a tab or panel moved, opened, closed, hidden or activated, a window came or went, or the layout was replaced.</summary>
@@ -231,6 +232,7 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
         factory.DockableUndocked -= OnLayoutEvent;
         factory.WindowAdded -= OnLayoutEvent;
         factory.WindowMoveDragEnd -= OnLayoutEvent;
+        shell.PanelsChanged -= OnShellPanelsChanged;
         foreach ((DocumentViewModel model, PropertyChangedEventHandler handler) in titleWatchers)
         {
             model.PropertyChanged -= handler;
@@ -596,4 +598,36 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
     }
 
     private void OnPanelsMayHaveChanged(object? sender, EventArgs e) => SyncPanels();
+
+    private void OnShellPanelsChanged(object? sender, PanelsChangedEventArgs e)
+    {
+        foreach (PanelViewModel removed in e.Removed)
+        {
+            RemoveTool(removed.Id);
+        }
+
+        if (!PanelsSuspended)
+        {
+            foreach (PanelViewModel added in e.Added)
+            {
+                ShowPanel(added.Id);
+            }
+        }
+
+        SyncPanels();
+    }
+
+    private void RemoveTool(string panelId)
+    {
+        suspendedPanels.Remove(panelId);
+        if (ShellDockFactory.Walk(Layout).OfType<ShellTool>().FirstOrDefault(tool => tool.Id == panelId) is { } shown)
+        {
+            factory.RemoveDockable(shown, true);
+        }
+
+        if (Layout.HiddenDockables?.FirstOrDefault(hidden => hidden.Id == panelId) is { } hidden)
+        {
+            Layout.HiddenDockables.Remove(hidden);
+        }
+    }
 }

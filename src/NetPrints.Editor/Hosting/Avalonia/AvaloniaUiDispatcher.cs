@@ -4,6 +4,7 @@ using NetPrints.Editor.Hosting;
 namespace NetPrints.Editor.Hosting.Avalonia;
 
 /// <summary><see cref="IUiDispatcher"/> over <see cref="Dispatcher.UIThread"/>.</summary>
+[Singleton<IUiDispatcher>]
 public sealed class AvaloniaUiDispatcher : IUiDispatcher
 {
     /// <inheritdoc/>

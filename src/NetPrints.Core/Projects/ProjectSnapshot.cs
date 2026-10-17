@@ -53,6 +53,12 @@ public sealed record ProjectSnapshot(
     IReadOnlyList<ProjectMessage> Messages)
 {
     /// <summary>
+    /// The C# language the project compiles with (ADR-0038). <see cref="CSharpTarget.Unconstrained"/> until the project
+    /// system resolves it from the project's evaluation.
+    /// </summary>
+    public CSharpTarget CSharpTarget { get; init; } = CSharpTarget.Unconstrained;
+
+    /// <summary>
     /// Returns the evaluated value of the MSBuild property <paramref name="name"/>, or
     /// <see langword="null"/> if it was not requested via
     /// <c>ProjectSystemOptions.ExtraProperties</c> or is not set.

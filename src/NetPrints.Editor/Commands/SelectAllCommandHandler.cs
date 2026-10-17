@@ -4,7 +4,7 @@ using NetPrints.Editor.Shell;
 namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>selectAll</c> command: selects every node of the active graph.</summary>
-public sealed class SelectAllCommandHandler : ICommandHandler
+public sealed class SelectAllCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => context.ActiveGraph is not null;

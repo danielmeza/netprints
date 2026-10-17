@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.CodeAnalysis.CSharp;
 using NetPrints.Core;
 using NetPrints.Editor.Contributions;
+using NetPrints.Extensibility.Loading;
 using NetPrints.Projects;
 
 namespace NetPrints.Editor.StartPage;
@@ -14,6 +15,21 @@ internal sealed class ProjectTemplateService(
 {
     private static readonly string[] ReservedDeviceNames =
         ["con", "prn", "aux", "nul", "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9", "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9"];
+
+    /// <summary>Creates the service over the registry's templates and the loaded extensions' profiles.</summary>
+    /// <param name="registry">Holds the registered templates.</param>
+    /// <param name="extensions">Provides the project profiles.</param>
+    /// <param name="projects">Creates the project files.</param>
+    /// <returns>The service.</returns>
+    internal static ProjectTemplateService Create(IContributionRegistry registry, IExtensionHost extensions, IProjectSystem projects) =>
+        new(() => [.. registry.ProjectTemplates, .. extensions.Current.ProjectTemplates], profileId => FindProfile(extensions, profileId), projects);
+
+    /// <summary>Finds a project profile among the loaded extensions' profiles and the default one.</summary>
+    /// <param name="extensions">Provides the project profiles.</param>
+    /// <param name="profileId">The profile id.</param>
+    /// <returns>The profile, or <see langword="null"/> when none has that id.</returns>
+    internal static IProjectProfile? FindProfile(IExtensionHost extensions, string profileId) =>
+        extensions.Current.FindProfile(profileId) ?? (profileId == DefaultProjectProfile.ProfileId ? DefaultProjectProfile.Instance : null);
 
     /// <summary>Gets the registered templates, in registration order.</summary>
     public IReadOnlyList<ProjectTemplateDescriptor> Templates => templates();
@@ -87,7 +103,7 @@ internal sealed class ProjectTemplateService(
         }
 
         IProjectProfile profile = findProfile(template.ProfileId)
-            ?? throw new InvalidOperationException($"The template '{template.DisplayName}' needs the project profile '{template.ProfileId}', which no loaded extension provides.");
+            ?? throw new InvalidOperationException($"The template '{template.DisplayNameText}' needs the project profile '{template.ProfileId}', which no loaded extension provides.");
 
         string directory = Path.GetFullPath(folder);
         bool createdFolder = !Directory.Exists(directory);
@@ -95,15 +111,14 @@ internal sealed class ProjectTemplateService(
         try
         {
             string csproj = await projects.CreateAsync(directory, name, profile, name, cancellationToken).ConfigureAwait(true);
-            switch (template.OutputType)
+            if (template.OutputType == ProjectOutputType.Library)
             {
-                case ProjectOutputType.Library:
-                    await projects.ApplyAsync(csproj, [new ProjectEdit.SetOutputType(BinaryType.SharedLibrary)], cancellationToken).ConfigureAwait(true);
-                    break;
-                case ProjectOutputType.Console:
-                    await File.WriteAllTextAsync(Path.Combine(directory, ProgramGraphSeed.FileName), ProgramGraphSeed.Render(name), new UTF8Encoding(false), cancellationToken)
-                        .ConfigureAwait(true);
-                    break;
+                await projects.ApplyAsync(csproj, [new ProjectEdit.SetOutputType(BinaryType.SharedLibrary)], cancellationToken).ConfigureAwait(true);
+            }
+
+            foreach (TemplateFile file in template.Files ?? [])
+            {
+                await WriteFileAsync(directory, file, name, template.ProfileId, cancellationToken).ConfigureAwait(true);
             }
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -114,6 +129,25 @@ internal sealed class ProjectTemplateService(
             RemoveWritten(directory, createdFolder);
             throw;
         }
+    }
+
+    private static string Replace(string text, string name, string profileId) =>
+        text.Replace(TemplateFile.RootNamespaceToken, name, StringComparison.Ordinal)
+            .Replace(TemplateFile.ProfileIdToken, profileId, StringComparison.Ordinal)
+            .Replace(TemplateFile.SourceName, name, StringComparison.Ordinal);
+
+    private static async Task WriteFileAsync(string directory, TemplateFile file, string name, string profileId, CancellationToken cancellationToken)
+    {
+        string relative = Replace(file.Path, name, profileId);
+        string path = Path.GetFullPath(Path.Combine(directory, relative));
+        string rootedDirectory = Path.TrimEndingDirectorySeparator(directory) + Path.DirectorySeparatorChar;
+        if (Path.IsPathRooted(relative) || !path.StartsWith(rootedDirectory, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"The template file '{file.Path}' is outside the project folder.");
+        }
+
+        Directory.CreateDirectory(Path.GetDirectoryName(path) ?? directory);
+        await File.WriteAllTextAsync(path, Replace(file.Content, name, profileId), new UTF8Encoding(false), cancellationToken).ConfigureAwait(true);
     }
 
     private static bool IsIdentifier(string segment) =>

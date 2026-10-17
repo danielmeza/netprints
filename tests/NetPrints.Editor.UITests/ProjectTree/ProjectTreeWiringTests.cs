@@ -17,7 +17,7 @@ using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.UITests.Hosting;
 using NetPrints.Editor.UITests.Shell;
 using NetPrints.Testing.Ui.Driving;
-using DocumentId = NetPrints.Editor.Shell.DocumentId;
+using DocumentId = NetPrints.Extensibility.Editor.DocumentId;
 
 namespace NetPrints.Editor.UITests.ProjectTree;
 
@@ -25,11 +25,6 @@ namespace NetPrints.Editor.UITests.ProjectTree;
 public class ProjectTreeWiringTests
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;
-
-    private sealed class NoServices : IServiceProvider
-    {
-        public object? GetService(Type serviceType) => null;
-    }
 
     private sealed class ImmediateDispatcher : IUiDispatcher
     {
@@ -57,7 +52,7 @@ public class ProjectTreeWiringTests
             var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
             BuiltInContributions.Register(registry);
             registry.Freeze();
-            Shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, new ImmediateDispatcher());
+            Shell = new ShellViewModel(registry, PanelFactoryContext.Detached, TimeProvider.System, new ImmediateDispatcher());
             Adapter = new DockShellAdapter(Shell, new NoProjectActions(), id => new TestDocumentViewModel(id, id.GraphKey ?? id.ToString()), NullLogger.Instance);
             Shell.Layout = Adapter;
             Invoker = new CommandInvoker(registry, new ShellCommandContextProvider(Shell, Adapter), Faults.Add);

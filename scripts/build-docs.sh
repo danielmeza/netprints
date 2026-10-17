@@ -16,6 +16,7 @@ cp assets/brand/netprints-mark-32.png website/static/img/favicon.png
 
 dotnet tool restore
 dotnet restore NetPrints.slnx
+dotnet build src/NetPrints.Core/NetPrints.Core.csproj -c Release -v q -tl:off --nologo
 dotnet docfx docs/api/docfx.json
 
 (cd website && npm ci --silent && npm run build --silent)

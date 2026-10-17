@@ -119,12 +119,26 @@ internal sealed class NodeListConverter : JsonConverter<IReadOnlyList<NodeDocume
         {
             if (derivedType.TypeDiscriminator is string discriminator && discriminator == kind)
             {
-                return (NodeDocument?)element.Deserialize(options.GetTypeInfo(derivedType.DerivedType))
+                NodeDocument node = (NodeDocument?)element.Deserialize(options.GetTypeInfo(derivedType.DerivedType))
                     ?? throw new DocumentFormatException($"Node '{id}' deserialized to null.");
+                return WithoutKindMember(node);
             }
         }
 
         return new UnknownNodeDocument(id, kind, element);
+    }
+
+    /// <summary>Drops the <c>$kind</c> discriminator that deserializing as the derived type leaves among the unknown members.</summary>
+    /// <param name="node">The node just read.</param>
+    /// <returns><paramref name="node"/>.</returns>
+    private static NodeDocument WithoutKindMember(NodeDocument node)
+    {
+        if (node.ExtensionData is { } unknown && unknown.Remove(KindPropertyName) && unknown.Count == 0)
+        {
+            node.ExtensionData = null;
+        }
+
+        return node;
     }
 
     /// <summary>Reads <paramref name="value"/> as a string, or throws a

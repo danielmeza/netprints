@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <NetPrintsTrackPublicApi>true</NetPrintsTrackPublicApi>
+    <AssemblyName>NetPrints.Extensibility.Abstractions</AssemblyName>
+    <RootNamespace>NetPrints.Extensibility</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <Description>The contracts for NetPrints extensions: the extension entry point, the builder, node kinds, the editor facet and the settings metadata. NetPrints continues the original NetPrints by Robin Kahlow (https://github.com/RobinKa/netprints).</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <NetPrintsExperimentalOptIn Include="NPXE0001" />
+    <NetPrintsExperimentalOptIn Include="NPXE0002" />
+    <NetPrintsExperimentalOptIn Include="NPXE0003" />
+    <NetPrintsExperimentalOptIn Include="NPXE0004" />
+    <NetPrintsExperimentalOptIn Include="NPXE0005" />
+    <NetPrintsExperimentalOptIn Include="NPXE0006" />
+    <NetPrintsExperimentalOptIn Include="NPXE0007" />
+    <NetPrintsExperimentalOptIn Include="NPXE0008" />
+    <NetPrintsExperimentalOptIn Include="NPXE0009" />
+    <NetPrintsExperimentalOptIn Include="NPXE0011" />
+    <NetPrintsExperimentalOptIn Include="NPXE0012" />
+    <NetPrintsExperimentalOptIn Include="NPXE0013" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NetPrints.Catalog\NetPrints.Catalog.csproj" />
+    <ProjectReference Include="..\NetPrints.Core\NetPrints.Core.csproj" PrivateAssets="none" />
+    <ProjectReference Include="..\NetPrints.Reflection\NetPrints.Reflection.csproj" />
+    <ProjectReference Include="..\NetPrints.Serialization\NetPrints.Serialization.csproj" />
+  </ItemGroup>
+</Project>

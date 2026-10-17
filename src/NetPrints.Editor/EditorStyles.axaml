@@ -839,6 +839,9 @@
   <Style Selector="TextBox.tabular">
     <Setter Property="FontFeatures" Value="tnum" />
   </Style>
+  <Style Selector="TextBlock.statusSegment">
+    <Setter Property="Margin" Value="16,0,0,0" />
+  </Style>
 
   <!-- Search box flush with its popup. -->
   <Style Selector="Grid.quickPickRow.disabled">

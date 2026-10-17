@@ -48,7 +48,7 @@ public sealed class ShortcutGuideTests
         Assert.Equal(registry.Commands.Count, lines.Length - 2);
         foreach (CommandDescriptor command in registry.Commands)
         {
-            Assert.Contains(lines.Skip(2), line => line.Split(" | ")[1].EndsWith(command.Label, StringComparison.Ordinal));
+            Assert.Contains(lines.Skip(2), line => line.Split(" | ")[1].EndsWith(command.DisplayLabel, StringComparison.Ordinal));
         }
     }
 

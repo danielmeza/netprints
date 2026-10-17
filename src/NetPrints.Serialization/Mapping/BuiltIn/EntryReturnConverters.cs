@@ -32,7 +32,9 @@ internal static class EntryReturnConverters
     private sealed class MethodEntryNodeConverter : INodeDocumentConverter
     {
         public string Kind => BuiltInNodeKinds.MethodEntry;
+
         public Type NodeType => typeof(MethodEntryNode);
+
         public Type DocumentType => typeof(MethodEntryNodeDocument);
 
         public NodeDocument ToDocument(Node node, NodeMappingContext context)
@@ -75,7 +77,9 @@ internal static class EntryReturnConverters
     private sealed class ConstructorEntryNodeConverter : INodeDocumentConverter
     {
         public string Kind => BuiltInNodeKinds.ConstructorEntry;
+
         public Type NodeType => typeof(ConstructorEntryNode);
+
         public Type DocumentType => typeof(ConstructorEntryNodeDocument);
 
         public NodeDocument ToDocument(Node node, NodeMappingContext context)
@@ -106,7 +110,9 @@ internal static class EntryReturnConverters
     private sealed class ReturnNodeConverter : INodeDocumentConverter
     {
         public string Kind => BuiltInNodeKinds.Return;
+
         public Type NodeType => typeof(ReturnNode);
+
         public Type DocumentType => typeof(ReturnNodeDocument);
 
         public NodeDocument ToDocument(Node node, NodeMappingContext context)
@@ -141,7 +147,9 @@ internal static class EntryReturnConverters
     private sealed class ClassReturnNodeConverter : INodeDocumentConverter
     {
         public string Kind => BuiltInNodeKinds.ClassReturn;
+
         public Type NodeType => typeof(ClassReturnNode);
+
         public Type DocumentType => typeof(ClassReturnNodeDocument);
 
         public NodeDocument ToDocument(Node node, NodeMappingContext context)
@@ -167,7 +175,9 @@ internal static class EntryReturnConverters
     private sealed class TypeReturnNodeConverter : INodeDocumentConverter
     {
         public string Kind => BuiltInNodeKinds.TypeReturn;
+
         public Type NodeType => typeof(TypeReturnNode);
+
         public Type DocumentType => typeof(TypeReturnNodeDocument);
 
         public NodeDocument ToDocument(Node node, NodeMappingContext context)

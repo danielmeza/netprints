@@ -3,6 +3,6 @@
   "name": "Fixture library v2 extension",
   "version": "1.0.0",
   "assembly": "Fx.LibV2.dll",
-  "netprintsApi": "1.0",
+  "netprintsApi": "0.4",
   "dependsOn": []
 }

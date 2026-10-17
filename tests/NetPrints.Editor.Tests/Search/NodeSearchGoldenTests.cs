@@ -2,7 +2,7 @@ using System.Text;
 using NetPrints.Core;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
-using NetPrints.Editor.Search;
+using NetPrints.Editor.NodeSearch;
 using NetPrints.Editor.Tests.Graph;
 using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Graph;
@@ -16,10 +16,10 @@ namespace NetPrints.Editor.Tests.Search;
 public sealed class NodeSearchGoldenTests(IReflectionHost sharedReflection)
     : FixtureGraphTestBase(sharedReflection)
 {
-    private static string Render(IEnumerable<SuggestionItem> rows)
+    private static string Render(IEnumerable<SuggestionRowViewModel> rows)
     {
         var text = new StringBuilder();
-        foreach (SuggestionItem row in rows)
+        foreach (SuggestionRowViewModel row in rows)
         {
             text.Append(row.IsHeader ? $"H:{row.Category}" : $"  {row.Text} | {row.IconKey}").Append('\n');
         }

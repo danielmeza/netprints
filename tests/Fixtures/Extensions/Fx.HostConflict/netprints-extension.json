@@ -1,0 +1,8 @@
+{
+  "id": "fx.host-conflict",
+  "name": "Fixture host conflict extension",
+  "version": "1.0.0",
+  "assembly": "Fx.HostConflict.dll",
+  "netprintsApi": "0.4",
+  "dependsOn": []
+}

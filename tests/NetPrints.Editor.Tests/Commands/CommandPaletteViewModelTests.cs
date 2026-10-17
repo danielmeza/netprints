@@ -14,9 +14,9 @@ public sealed class CommandPaletteViewModelTests
 
         public int Runs { get; private set; }
 
-        public bool CanExecute(CommandContext context) => Enabled;
+        public bool CanExecute(ICommandContext context) => Enabled;
 
-        public Task ExecuteAsync(CommandContext context, CancellationToken cancellationToken)
+        public Task ExecuteAsync(ICommandContext context, CancellationToken cancellationToken)
         {
             Runs++;
             return Task.CompletedTask;
@@ -54,7 +54,7 @@ public sealed class CommandPaletteViewModelTests
     {
         var probe = new Probe(enabled);
         probes[name] = probe;
-        registry.AddCommand(new CommandDescriptor(ContributionIds.CommandPrefix + name, label, probe, DefaultGestures: gestures,
+        registry.AddCommand(new CommandDescriptor(ContributionIds.CommandPrefix + name, label, probe, DefaultGestures: [.. gestures.Select(text => CommandGesture.Parse(text, null))],
             Menu: menu is null ? null : new MenuPlacement(menu, "g", 0)));
     }
 
@@ -85,10 +85,10 @@ public sealed class CommandPaletteViewModelTests
     public void TheQueryFiltersWithThePrefixWordStartSubstringRanking()
     {
         Add("resave", "Resave");
-        Add("undo", "Undo save");
+        Add("undoSave", "Undo save");
         Add("saveall", "Save all");
         Add("close", "Close tab");
-        Add("save", "Save");
+        Add("saveOnly", "Save");
         CommandPaletteViewModel palette = Open();
 
         palette.Query = "sa";

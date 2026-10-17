@@ -1,5 +1,6 @@
 using System.Globalization;
 using NetPrints.Editor;
+using NetPrints.Editor.Graph.Pins;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Testing.Ui.Driving;
 
@@ -9,9 +10,13 @@ namespace NetPrints.Testing.Ui.Graph;
 public sealed class NodeObject(IUiDriver driver, AutomationQuery query) : UiElement(driver, query)
 {
     public UiElement Label => Find(AutomationIds.NodeLabel);
+
     public UiElement Overloads => Find(AutomationIds.NodeOverloads);
+
     public UiElement Pure => Find(AutomationIds.NodePure);
+
     public UiElement LeftPlus => Find(AutomationIds.NodeLeftPlus);
+
     public UiElement LeftMinus => Find(AutomationIds.NodeLeftMinus);
 
     /// <summary>An input pin by name.</summary>
@@ -19,6 +24,9 @@ public sealed class NodeObject(IUiDriver driver, AutomationQuery query) : UiElem
 
     /// <summary>An output pin by name.</summary>
     public PinObject Output(string pin) => Pin("out:" + pin);
+
+    /// <summary>A pin by its per-pin automation id: direction, kind and key, independent of its label and position.</summary>
+    public PinObject PinById(bool isInput, PinKind kind, string key) => new(Driver, new AutomationQuery(AutomationIds.ForPin(isInput, kind, key)) { Within = Query });
 
     /// <summary>A pin by its full automation name, as <see cref="PinNamesAsync"/> returns it ("in:Exec", "out:Exec", …).</summary>
     public PinObject Pin(string fullName) => new(Driver, new AutomationQuery(AutomationIds.Pin) { Within = Query, Name = fullName });
@@ -37,7 +45,7 @@ public sealed class NodeObject(IUiDriver driver, AutomationQuery query) : UiElem
     public async Task<(double X, double Y)> LocationAsync(CancellationToken cancellationToken)
     {
         var e = await GetAsync(cancellationToken);
-        return (double.Parse(e[AutomationPropertyNames.LocationX]!, CultureInfo.InvariantCulture), double.Parse(e[AutomationPropertyNames.LocationY]!, CultureInfo.InvariantCulture));
+        return (Number(e, AutomationPropertyNames.LocationX), Number(e, AutomationPropertyNames.LocationY));
     }
 }
 

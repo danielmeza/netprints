@@ -2,7 +2,7 @@
   "metadata": [
     {
       "src": [
-        { "src": "../../src", "files": ["NetPrints.Core/NetPrints.Core.csproj", "NetPrints.Reflection/NetPrints.Reflection.csproj", "NetPrints.Catalog/NetPrints.Catalog.csproj"] }
+        { "src": "../../src", "files": ["NetPrints.Core/NetPrints.Core.csproj", "NetPrints.Reflection/NetPrints.Reflection.csproj", "NetPrints.Catalog/NetPrints.Catalog.csproj", "NetPrints.Serialization/NetPrints.Serialization.csproj", "NetPrints.Extensibility.Abstractions/NetPrints.Extensibility.Abstractions.csproj", "NetPrints.Extensibility/NetPrints.Extensibility.csproj"] }
       ],
       "dest": "reference",
       "properties": { "Configuration": "Release" },

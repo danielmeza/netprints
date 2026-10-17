@@ -42,7 +42,11 @@
             <Interaction.Behaviors>
               <ExecuteCommandOnDoubleTappedBehavior Command="{Binding $parent[ListBox].((edcp:CommandPaletteViewModel)DataContext).RunSelectedCommand}" />
             </Interaction.Behaviors>
-            <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Label}" />
+              <TextBlock Classes="secondary" Text="{Binding Owner}" IsVisible="{Binding Owner, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                         AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PaletteOwner}" />
+            </StackPanel>
             <TextBlock Grid.Column="1" Classes="secondary" Text="{Binding MenuPath}" VerticalAlignment="Center" />
             <TextBlock Grid.Column="2" Classes="menuShortcut" Text="{Binding Shortcuts}" VerticalAlignment="Center" />
           </Grid>

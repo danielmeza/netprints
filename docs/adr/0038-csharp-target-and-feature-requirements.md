@@ -34,8 +34,9 @@ research differ, the audit wins. Where the owner delegated a choice the choice i
    request lines), so the editor, `regen` and `NetPrintsGenerate` write identical bytes. Parsing is ours (`major.minor`,
    `latest`, `latestMajor`, `default`, `preview`), not Roslyn's `LanguageVersionFacts`, which loses versions newer than the
    editor's Roslyn.
-2. **`latest`, `preview` and `default`** resolve to the smaller of the TFM's maximum and the editor Roslyn's maximum, with
-   an info hint to pin `<LangVersion>`. Never cap at `_MaxAvailableLangVersion`.
+2. **`latest`, `preview` and `default`** resolve to the smaller of the TFM's maximum and the newest version NetPrints knows
+   (`CSharpLanguageVersion.MaxKnown`, a constant raised with each Roslyn bump; research R19 replaced the running Roslyn's
+   maximum), with an info hint to pin `<LangVersion>`. Never cap at `_MaxAvailableLangVersion`.
 3. **Multi-targeting** uses the minimum version and the intersection of capabilities across the TFMs.
 4. **Types and runtime features only gate availability and diagnostics.** A missing type is a warning ("may be provided by
    a source generator"; the real build confirms it). The editor runs no probe that executes generators; revisit with Godot
@@ -57,10 +58,16 @@ research differ, the audit wins. Where the owner delegated a choice the choice i
    - The target hangs on `ProjectSnapshot` as a non-positional `init` member and is reached through `Project` and
      `IProjectSession`, derived again on every snapshot replacement.
    - `IExecutionTranslationContext` gets a default-implemented `Target`, so implementers do not break; literal formatting
-     follows the version.
+     follows the version. The escape character is written `\e` from C# 13 and `\u001b` before, only by the overload that
+     takes a `CSharpTarget`; `TranslatorUtil.ObjectToLiteral(object, TypeSpecifier)` (0.2.0) keeps writing `\u001b`, valid in
+     every C# version.
+   - `CSharpTarget.Resolve` with its input and result records (`CSharpFrameworkInput`, `CSharpTargetResolution`), and the
+     catalog presentation hints (`INodeHintSource`, `NodeHint`), are stable (research R16).
    - Hosts without MSBuild evaluation (Unity) get an `ICSharpTargetProvider`.
 10. **Unknown document members are preserved on save** (`[JsonExtensionData]` on every document record, in canonical order,
-    opaque to `format`, `show` and the merge driver), before any new document field ships.
+    opaque to `format`, `show` and the merge driver), before any new document field ships. The editor's open and save keep
+    them on every record that has a model object; the reference records (type, method, variable, value) keep them in
+    `format`, `show` and `merge` only, since the editor writes references from the model's own types.
 11. **Diagnostics.** NPT010: feature unavailable (error). NPT011: fallback used (info).
 12. **Styles declare their requirements.** A style names the features it needs and an optional fallback style; the order is
     `.editorconfig`, then profile, then per-class override, then target gating, and an unavailable preferred style falls back

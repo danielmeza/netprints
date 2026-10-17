@@ -367,7 +367,7 @@ namespace NetPrints.Reflection
             }
             else
             {
-                return new MethodSpecifier[0];
+                return [];
             }
         }
 
@@ -396,7 +396,7 @@ namespace NetPrints.Reflection
             }
             else
             {
-                return new MethodSpecifier[0];
+                return [];
             }
         }
 
@@ -410,7 +410,7 @@ namespace NetPrints.Reflection
                 return symbol.Constructors.Select(c => ReflectionConverter.ConstructorSpecifierFromSymbol(c));
             }
 
-            return new ConstructorSpecifier[0];
+            return [];
         }
 
         /// <inheritdoc/>
@@ -425,7 +425,7 @@ namespace NetPrints.Reflection
                     .Select(member => member.Name);
             }
 
-            return new string[0];
+            return [];
         }
 
         /// <inheritdoc/>
@@ -466,11 +466,11 @@ namespace NetPrints.Reflection
             // Find array ranks and remove them from the lookup name.
             // Example: int[][,] -> arrayRanks: { 2, 1 } (innermost first), lookupName: int
             Queue<int> arrayRanks = new Queue<int>();
-            while (lookupName.EndsWith("]", StringComparison.Ordinal))
+            while (lookupName.EndsWith(']'))
             {
                 lookupName = lookupName.Remove(lookupName.Length - 1);
                 int arrayRank = 1;
-                while (lookupName.EndsWith(",", StringComparison.Ordinal))
+                while (lookupName.EndsWith(','))
                 {
                     arrayRank++;
                     lookupName = lookupName.Remove(lookupName.Length - 1);
@@ -601,7 +601,7 @@ namespace NetPrints.Reflection
 
                 if (type == null)
                 {
-                    return new MethodSpecifier[0];
+                    return [];
                 }
 
                 methodSymbols = type.GetMethods(memberCache);
@@ -730,7 +730,7 @@ namespace NetPrints.Reflection
 
                 if (type == null)
                 {
-                    return new VariableSpecifier[0];
+                    return [];
                 }
 
                 propertySymbols = type.GetAllMembers(memberCache)

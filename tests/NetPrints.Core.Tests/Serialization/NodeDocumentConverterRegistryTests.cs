@@ -16,10 +16,15 @@ namespace NetPrints.Tests.Serialization
         private sealed class FakeConverter : INodeDocumentConverter
         {
             public FakeConverter(string kind, Type nodeType) { Kind = kind; NodeType = nodeType; }
+
             public string Kind { get; }
+
             public Type NodeType { get; }
+
             public Type DocumentType => typeof(TypeReturnNodeDocument);
+
             public NodeDocument ToDocument(Node node, NodeMappingContext context) => throw new NotSupportedException();
+
             public Node CreateNode(NodeDocument document, NodeGraph graph, NodeMappingContext context) => throw new NotSupportedException();
         }
 

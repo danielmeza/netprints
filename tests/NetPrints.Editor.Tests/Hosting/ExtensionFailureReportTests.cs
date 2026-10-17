@@ -42,6 +42,28 @@ public class ExtensionFailureReportTests : IDisposable
     }
 
     [Fact]
+    public async Task AProjectCopyThatShadowsAUserCopyIsReportedAsInfoNpx012NamingBothVersions()
+    {
+        string userDirectory = TestPaths.CreateTempDirectory();
+        cleanup.Add(userDirectory);
+        string userCopy = Path.Combine(userDirectory, "netprints.test");
+        Directory.CreateDirectory(userCopy);
+        File.WriteAllText(Path.Combine(userCopy, ExtensionManifest.FileName),
+            """{ "id": "netprints.test", "name": "Older copy", "version": "0.9.0", "assembly": "missing.dll", "netprintsApi": "0.4", "dependsOn": [] }""");
+        await using var extensions = new ExtensionHost(
+            new ExtensionLoaderOptions([userDirectory], [TestExtensionFolder.Folder], [BuiltInExtension.InProcessEntry]), NullLoggerFactory.Instance);
+        var rig = new ProjectRig(testEditor.Context with { Extensions = extensions });
+
+        await rig.ReportExtensionFailuresAsync();
+
+        CodeDiagnostic row = Assert.Single(Assert.Single(testEditor.Dialogs.IssueDialogs).Issues);
+        Assert.Equal(ExtensionDiagnosticCodes.Shadowed, row.Id);
+        Assert.Equal(CodeDiagnosticSeverity.Info, row.Severity);
+        Assert.Contains("0.9.0", row.Message, StringComparison.Ordinal);
+        Assert.Contains("1.0.0", row.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task NoFailuresShowNoDialog()
     {
         var rig = new ProjectRig(testEditor.Context);
@@ -87,7 +109,7 @@ public class ExtensionFailureReportTests : IDisposable
                 break;
             case ExtensionDiagnosticCodes.AssemblyLoadFailed:
                 File.WriteAllText(Path.Combine(folder, ExtensionManifest.FileName),
-                    """{ "id": "bad.assembly", "name": "Bad assembly", "version": "1.0.0", "assembly": "missing.dll", "netprintsApi": "1.0", "dependsOn": [] }""");
+                    """{ "id": "bad.assembly", "name": "Bad assembly", "version": "1.0.0", "assembly": "missing.dll", "netprintsApi": "0.4", "dependsOn": [] }""");
                 folders.Add(folder);
                 break;
             default:

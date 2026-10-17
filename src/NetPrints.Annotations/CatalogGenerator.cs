@@ -9,6 +9,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using NetPrints.Catalog;
+using NetPrints.Roslyn;
 
 namespace NetPrints.Annotations
 {

@@ -25,8 +25,8 @@ public sealed partial class CommandEntryViewModel : ObservableObject
         Id = descriptor.Id;
         AutomationId = automationPrefix + descriptor.Id;
         IconId = descriptor.IconId;
-        StaticLabel = descriptor.Label;
-        FirstGesture = descriptor.DefaultGestures is { Count: > 0 } gestures ? gestures[0] : "";
+        StaticLabel = descriptor.DisplayLabel;
+        FirstGesture = descriptor.DefaultGestures is { Count: > 0 } gestures ? gestures[0].Display : "";
         Refresh();
     }
 
@@ -109,7 +109,7 @@ public sealed partial class CommandEntryViewModel : ObservableObject
         }
 
         CommandContext context = invoker.CreateContext(scope, parameter);
-        Label = descriptor.Handler.DynamicLabel(context) ?? descriptor.Label;
+        Label = descriptor.Handler.DynamicLabel(context) ?? descriptor.DisplayLabel;
         Tooltip = FirstGesture.Length > 0 ? $"{Label} ({FirstGesture})" : Label;
         IsEnabled = descriptor.Handler.CanExecute(context);
         bool? chosen = descriptor.Handler.IsChecked(context);

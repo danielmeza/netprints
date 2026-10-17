@@ -4,7 +4,7 @@ using NetPrints.Editor.Shell;
 namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>dockDocument</c> command.</summary>
-public sealed class DockDocumentCommandHandler : ICommandHandler
+public sealed class DockDocumentCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => context.ActiveDocument is { } id && context.Shell.IsFloating(id);

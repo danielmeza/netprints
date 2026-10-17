@@ -18,7 +18,7 @@ using NetPrints.Editor.UndoRedo;
 using NetPrints.Graph;
 using NetPrints.Projects;
 using NetPrints.Testing.Ui.Driving;
-using DocumentId = NetPrints.Editor.Shell.DocumentId;
+using DocumentId = NetPrints.Extensibility.Editor.DocumentId;
 
 namespace NetPrints.Editor.UITests.Shell;
 
@@ -477,7 +477,7 @@ public class RegistrySurfaceTests
         var handler = new AlwaysEnabled();
         using var rig = SurfaceRig.Create(registry =>
         {
-            registry.AddCommand(new CommandDescriptor("acme.command.hello", "Say hello", handler, "Hand", ["Ctrl+Alt+H"], CommandScope.Global, new MenuPlacement("View", "acme", 0), 8));
+            registry.AddCommand(new CommandDescriptor("acme.command.hello", "Say hello", handler, "Hand", [new CommandGesture(CommandModifiers.Ctrl | CommandModifiers.Alt, CommandKey.H)], CommandScope.Global, new MenuPlacement("View", "acme", 0), 8));
             registry.AddCommand(new CommandDescriptor("acme.command.report", "Report", handler, null, null, CommandScope.Global, new MenuPlacement("Reports", "reports", 0), null));
         });
 
@@ -497,9 +497,9 @@ public class RegistrySurfaceTests
     {
         public int Runs { get; private set; }
 
-        public bool CanExecute(CommandContext context) => true;
+        public bool CanExecute(ICommandContext context) => true;
 
-        public Task ExecuteAsync(CommandContext context, CancellationToken cancellationToken)
+        public Task ExecuteAsync(ICommandContext context, CancellationToken cancellationToken)
         {
             Runs++;
             return Task.CompletedTask;

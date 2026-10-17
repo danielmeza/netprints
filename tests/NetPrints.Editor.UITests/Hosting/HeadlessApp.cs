@@ -27,6 +27,7 @@ public sealed class HeadlessApp : IAsyncDisposable
 {
     /// <summary>The E2E screen size (Xvfb), used as the size of maximized windows.</summary>
     public const int ScreenWidth = 1600;
+
     public const int ScreenHeight = 1000;
 
     private readonly IDisposable exceptionHandler;
@@ -74,13 +75,21 @@ public sealed class HeadlessApp : IAsyncDisposable
     }
 
     public ISettingsStore Settings { get; }
+
     public TestComposition Composition { get; }
+
     public RecordingDialogs Dialogs { get; }
+
     public CapturingProcessLauncher Processes { get; }
+
     public QueuedFilePicker FilePicker { get; }
+
     public AutomationTree Tree { get; }
+
     public HeadlessDriver Driver { get; }
+
     public Actor Actor { get; }
+
     public ProjectSessionViewModel? Session => Composition.Shell?.Session;
 
     public static HeadlessApp Start() => new([]);

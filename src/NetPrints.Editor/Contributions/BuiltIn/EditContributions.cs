@@ -16,7 +16,7 @@ public static class EditContributions
 
     /// <summary>Registers the Edit menu's commands.</summary>
     /// <param name="registry">The registry to add to.</param>
-    public static void Register(IContributionRegistry registry)
+    public static void Register(IEditorContributions registry)
     {
         ArgumentNullException.ThrowIfNull(registry);
 
@@ -25,7 +25,7 @@ public static class EditContributions
             "Undo",
             new UndoCommandHandler(),
             IconId: IconIds.Undo,
-            DefaultGestures: ["Ctrl+Z"],
+            DefaultGestures: [new(CommandModifiers.Ctrl, CommandKey.Z)],
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, HistoryGroup, 0),
             CommandBarOrder: 4));
@@ -35,7 +35,7 @@ public static class EditContributions
             "Redo",
             new RedoCommandHandler(),
             IconId: IconIds.Redo,
-            DefaultGestures: ["Ctrl+Y", "Ctrl+Shift+Z"],
+            DefaultGestures: [new(CommandModifiers.Ctrl, CommandKey.Y), new(CommandModifiers.Ctrl | CommandModifiers.Shift, CommandKey.Z)],
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, HistoryGroup, 1),
             CommandBarOrder: 5));
@@ -45,7 +45,7 @@ public static class EditContributions
             "Delete",
             new DeleteCommandHandler(),
             IconId: IconIds.Delete,
-            DefaultGestures: ["Delete"],
+            DefaultGestures: [new(CommandModifiers.None, CommandKey.Delete)],
             Scope: CommandScope.Graph | CommandScope.ProjectTree | CommandScope.VariablesPanel,
             Menu: new MenuPlacement(MenuName, SelectionGroup, 0),
             CommandBarOrder: null));
@@ -55,7 +55,7 @@ public static class EditContributions
             "Rename",
             new RenameCommandHandler(),
             IconId: IconIds.Rename,
-            DefaultGestures: ["F2"],
+            DefaultGestures: [new(CommandModifiers.None, CommandKey.F2)],
             Scope: CommandScope.Graph | CommandScope.ProjectTree | CommandScope.VariablesPanel,
             Menu: new MenuPlacement(MenuName, SelectionGroup, 1),
             CommandBarOrder: null));
@@ -65,7 +65,7 @@ public static class EditContributions
             "Select all",
             new SelectAllCommandHandler(),
             IconId: IconIds.SelectAll,
-            DefaultGestures: ["Ctrl+A"],
+            DefaultGestures: [new(CommandModifiers.Ctrl, CommandKey.A)],
             Scope: CommandScope.Graph,
             Menu: new MenuPlacement(MenuName, SelectionGroup, 2),
             CommandBarOrder: null));
@@ -75,7 +75,7 @@ public static class EditContributions
             "Cancel",
             new CancelCommandHandler(),
             IconId: null,
-            DefaultGestures: ["Esc"],
+            DefaultGestures: [new(CommandModifiers.None, CommandKey.Escape)],
             Scope: CommandScope.Graph,
             Menu: null,
             CommandBarOrder: null));
@@ -85,7 +85,7 @@ public static class EditContributions
             "Add node…",
             new NodeSearchCommandHandler(),
             IconId: IconIds.AddMember,
-            DefaultGestures: ["Ctrl+Space"],
+            DefaultGestures: [new(CommandModifiers.Ctrl, CommandKey.Space)],
             Scope: CommandScope.Graph,
             Menu: new MenuPlacement(MenuName, "nodes", 0),
             CommandBarOrder: null));

@@ -94,3 +94,31 @@ Recorded together with their tests (contracts/contributions.md carries the same 
   instead of its hand-written Delete, Ctrl+Z and Ctrl+Y bindings, and `GraphEditorView`'s Ctrl+Space handler is the
   `nodeSearch` command. Graph gestures act only while the canvas has focus, and opening a graph focuses its canvas
   (`FocusOnDataContextBehavior` in `GraphEditorView`, Review B R5).
+
+## Amendment 1: the contract an extension sees (P3, sub-phases C1 and C2)
+
+The registry's descriptors became the public editor contract of `NetPrints.Extensibility.Abstractions` (NPXE0005,
+[ADR-0030](0030-extensibility-split-and-editor-facet.md)). What changed for authors:
+
+- **Typed contexts.** A handler or factory receives the context of its own surface (`ICommandContext`, `IPanelContext`,
+  `IStartPageContext`, `IStatusBarContext`, `ISettingsPageContext`, `IDialogContext`), each with the `IServiceProvider` of
+  the extension's own services and the session or shell members that surface needs, instead of one shared `CommandContext`.
+  `IProjectSession`, `IGraphEditor` and `IEditorShell` are interfaces; the editor's view models implement them and no extension
+  sees a view model type.
+- **Groups and order.** A menu entry and a context-menu entry carry a `Group` and an `Order`; entries of one group sit together
+  and a separator divides groups. `MenuPlacement` names the path and an optional submenu.
+- **`AppliesTo`.** Context-menu items and status bar items take a predicate on their typed context, so one contribution shows
+  only where it makes sense.
+- **More kinds.** Status bar items, dialogs, tooltip providers, go-to providers, settings pages (a page without a view model is
+  generated from its section's schema) and view resources join commands, panels, start page tiles and context-menu items.
+  Project templates (with files) and node-data migrations go through `IExtensionBuilder`, because the builder is also what the
+  CLI and the generator see.
+- **Label keys and menu ids.** Labels are `LocalizedText`: a key plus the invariant text. When an author gives no key,
+  `ConventionKeys` derives one from the id (`Command.<id>.Label`, `Panel.<id>.Title`, `Menu.<path>`), so a localisation file can
+  override any label and an extension ships its own resources through `AddStringResources`.
+- **Factories through DI.** A panel, dialog, tile, status bar item or settings page is created by a factory that receives its
+  typed context; the extension resolves its view model from its own `IServiceProvider` (`IExtensionBuilder.Services`, NPXE0008)
+  instead of constructing it, so a view model's dependencies are the extension's, not the editor's.
+- **Invalid descriptors.** A duplicate id keeps the first and an invalid descriptor is reported and ignored; neither stops
+  the editor or the other contributions. The builder's own contributions (templates, migrations) must also carry the
+  manifest prefix (NPX013).

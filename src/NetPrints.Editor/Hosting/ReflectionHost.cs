@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using Microsoft.Extensions.Logging;
 using NetPrints.Catalog;
 using NetPrints.Compilation;
@@ -20,6 +22,7 @@ namespace NetPrints.Editor.Hosting;
 /// the extensions' catalogs, the first catalog of an id wins, and the assemblies a catalog covers
 /// are left out of the live provider.
 /// </summary>
+[Singleton<IReflectionHost>]
 public sealed class ReflectionHost : IReflectionHost
 {
     private readonly IUiDispatcher dispatcher;
@@ -109,8 +112,9 @@ public sealed class ReflectionHost : IReflectionHost
             var translationWarnings = translation.Diagnostics.Select(d => $"{d.ClassFullName}: {d.Message}").ToList();
             IReadOnlyList<ITypeCatalog> registryCatalogs = registry.TypeCatalogs;
 
-            var (newProvider, types) = await Task.Run(() =>
+            var (newProvider, types, referenceWarnings) = await Task.Run(() =>
             {
+                (IReadOnlyList<ResolvedAssembly> readable, List<string> skipped) = SplitUnreadable(references, cancellationToken);
                 var sourceFiles = new List<SourceFile>(otherSources);
                 int generatedIndex = 0;
                 foreach (string generated in generatedSources)
@@ -119,9 +123,9 @@ public sealed class ReflectionHost : IReflectionHost
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
-                IReadOnlyList<ITypeCatalog> catalogs = CatalogLoader.FirstOfEachId([.. registryCatalogs, .. LoadEmbeddedCatalogs(references, cancellationToken)], logger);
+                IReadOnlyList<ITypeCatalog> catalogs = CatalogLoader.FirstOfEachId([.. registryCatalogs, .. LoadEmbeddedCatalogs(readable, cancellationToken)], logger);
                 IReadOnlySet<string> excludedAssemblyNames = catalogs.SelectMany(catalog => catalog.Info.CoveredAssemblyNames).ToHashSet(StringComparer.Ordinal);
-                IReflectionProvider live = new ReflectionProvider(references, sourceFiles, excludedAssemblyNames);
+                IReflectionProvider live = new ReflectionProvider(readable, sourceFiles, excludedAssemblyNames);
                 IReflectionProvider composed = catalogs.Count == 0 ? live : new CompositeReflectionProvider([.. catalogs, live]);
                 IReflectionProvider built = new MemoizedReflectionProvider(composed);
                 var types = UntilCancelled(built.GetNonStaticTypes(), cancellationToken).ToList();
@@ -132,8 +136,15 @@ public sealed class ReflectionHost : IReflectionHost
                 _ = UntilCancelled(built.GetMethods(new ReflectionProviderMethodQuery().WithStatic(true)), cancellationToken).Count();
                 _ = UntilCancelled(built.GetVariables(new ReflectionProviderVariableQuery().WithStatic(true)), cancellationToken).Count();
                 cancellationToken.ThrowIfCancellationRequested();
-                return (built, types);
+                return (built, types, skipped);
             }, cancellationToken).ConfigureAwait(false);
+
+            foreach (string warning in referenceWarnings)
+            {
+                Log.ProjectMessage(logger, ProjectMessage.UnreadableReference, warning);
+            }
+
+            translationWarnings.AddRange(referenceWarnings.Select(warning => $"{ProjectMessage.UnreadableReference}: {warning}"));
 
             await dispatcher.InvokeAsync(() =>
             {
@@ -162,6 +173,41 @@ public sealed class ReflectionHost : IReflectionHost
         {
             Log.ReflectionReloadFailed(logger, project.Name, ex);
             throw;
+        }
+    }
+
+    private static (IReadOnlyList<ResolvedAssembly> Readable, List<string> Skipped) SplitUnreadable(
+        IReadOnlyList<ResolvedAssembly> references, CancellationToken cancellationToken)
+    {
+        List<ResolvedAssembly> readable = new(references.Count);
+        List<string> skipped = [];
+        foreach (ResolvedAssembly reference in references)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!File.Exists(reference.Path) || ReadFailure(reference.Path) is not { } reason)
+            {
+                readable.Add(reference);
+            }
+            else
+            {
+                skipped.Add($"the reference '{reference.Path}' could not be read and was skipped: {reason}");
+            }
+        }
+
+        return (readable, skipped);
+    }
+
+    private static string? ReadFailure(string path)
+    {
+        try
+        {
+            using FileStream stream = File.OpenRead(path);
+            using var peReader = new PEReader(stream);
+            return peReader.HasMetadata && peReader.GetMetadataReader().IsAssembly ? null : "it is not a managed assembly";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or BadImageFormatException or InvalidOperationException)
+        {
+            return ex.Message;
         }
     }
 

@@ -18,14 +18,23 @@ namespace NetPrints.Cli.Tests.Support;
 internal sealed class FakeProjectSystem : IProjectSystem
 {
     public BuildResult? Result { get; set; }
+
     public Exception? ThrowOnBuild { get; set; }
+
     public ProcessStartRequest RunCommand { get; set; } = new("dotnet", ["run"], "/tmp");
+
     public List<string> BuiltProjects { get; } = [];
+
     public IReadOnlyList<string> GraphFiles { get; set; } = [];
+
     public IReadOnlyList<string> ExtensionFolders { get; set; } = [];
+
     public IReadOnlyList<ProjectMessage> Messages { get; set; } = [];
+
     public Dictionary<string, string> Properties { get; } = [];
+
     public Exception? ThrowOnLoad { get; set; }
+
     public List<string> LoadedProjects { get; } = [];
 
     public Task<ProjectSnapshot> LoadAsync(string projectFilePath, CancellationToken cancellationToken)
@@ -35,7 +44,9 @@ internal sealed class FakeProjectSystem : IProjectSystem
             ? Task.FromResult(new ProjectSnapshot(projectFilePath, "P", "P", "P", BinaryType.Executable, "net10.0", "", false, GraphFiles, ExtensionFolders, [], [], [], "", Properties, Messages))
             : throw ThrowOnLoad;
     }
+
     public Task<ProjectSnapshot> ApplyAsync(string projectFilePath, IReadOnlyList<ProjectEdit> edits, CancellationToken cancellationToken) => throw new NotSupportedException();
+
     public Task<string> CreateAsync(string directory, string projectName, IProjectProfile profile, string rootNamespace, CancellationToken cancellationToken) => throw new NotSupportedException();
 
     public Task<BuildResult> BuildAsync(string projectFilePath, CancellationToken cancellationToken)
@@ -53,8 +64,11 @@ internal sealed class FakeProjectSystem : IProjectSystem
 internal sealed class FakeProcessRunner : IProgramRunner
 {
     public ProcessResult Result { get; set; } = new(0, "", "");
+
     public List<ProcessStartRequest> Started { get; } = [];
+
     public TextWriter Out { get; set; } = TextWriter.Null;
+
     public TextWriter Error { get; set; } = TextWriter.Null;
 
     public async Task<int> RunAsync(ProcessStartRequest request, CancellationToken cancellationToken)
@@ -88,6 +102,7 @@ internal sealed class CapturingProgramRunner(TextWriter output, TextWriter error
 internal sealed class FakeMsBuildRegistration : IMsBuildRegistration
 {
     public bool Available { get; set; } = true;
+
     public int Calls { get; private set; }
 
     public bool EnsureRegistered(ILogger logger)
@@ -120,11 +135,17 @@ internal sealed class CliTestHost
     }
 
     public IAnsiConsole Console { get; init; }
+
     public StringWriter Error { get; } = new();
+
     public CliEnvironment Environment { get; }
+
     public FakeProjectSystem Projects { get; } = new();
+
     public FakeProcessRunner Processes { get; } = new();
+
     public FakeMsBuildRegistration MsBuild { get; } = new();
+
     public ToolVersion? Tool { get; set; }
 
     public string Output => _testConsole.Output;

@@ -33,7 +33,11 @@
                   <DataTemplate x:DataType="edks:ShortcutRow">
                     <Grid ColumnDefinitions="*,Auto" Margin="12,2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsRow}"
                           AutomationProperties.Name="{Binding Label}">
-                      <TextBlock Text="{Binding Label}" />
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="{Binding Label}" />
+                        <TextBlock Classes="secondary" Text="{Binding Owner}" IsVisible="{Binding Owner, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                   AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsOwner}" />
+                      </StackPanel>
                       <TextBlock Grid.Column="1" Text="{Binding Shortcuts}" FontFamily="{StaticResource Font.Mono}" />
                     </Grid>
                   </DataTemplate>

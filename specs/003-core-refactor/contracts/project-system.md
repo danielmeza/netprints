@@ -125,7 +125,8 @@ packing and publishing are specified in release-and-docs.md §3 and §7.
 
 `_NetPrintsExeExtension` = `.exe` when `$([MSBuild]::IsOSPlatform('Windows'))`, else empty (set in the props).
 The request is a UTF-8 line file (no JSON, so no path escaping in MSBuild): `key=value` per line, keys
-`project`, `rootNamespace`, `profile` (once each), `extension` (0..n), `graph` (1..n, `<input>|<output>`).
+`project`, `rootNamespace`, `profile` (once each), `extension` (0..n), `framework` (0..n, `<moniker>|<LangVersion>|<MaxSupportedLangVersion>`,
+one per target framework, in project order; none means an unconstrained C# target, ADR-0038), `graph` (1..n, `<input>|<output>`).
 In partial builds MSBuild passes only the out-of-date graphs. Example:
 
 ```text

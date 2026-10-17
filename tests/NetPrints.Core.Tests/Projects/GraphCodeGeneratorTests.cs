@@ -137,7 +137,7 @@ namespace NetPrints.Tests.Projects
                 TypeSpecifier.FromType(typeof(Console)), Array.Empty<BaseType>());
             var writeConsoleNode = new CallMethodNode(method, writeConsoleSpecifier);
 
-            GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, writeConsoleNode.InputExecPins[0]);
+            GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, writeConsoleNode.InputExecPins[0]);
             GraphUtil.ConnectExecPins(writeConsoleNode.OutputExecPins[0], method.ReturnNodes.First().InputExecPins[0]);
 
             // writeConsoleNode.ArgumentPins[0] is intentionally left unconnected with no default.

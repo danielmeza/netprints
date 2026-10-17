@@ -22,8 +22,8 @@ Follow-up batch landed the same day: the researched rule set (see "Follow-up, no
 promoted, and every violation it flagged fixed for real (see "Follow-up batch: the researched rule set
 lands", below). `S1309` and `CA2007` — both in the original research draft's table — are skipped, not
 landed: `S1309` (flags every `#pragma`/`[SuppressMessage]`, file-grained) is superseded by
-`SourceHygieneTests.NoUnlistedSuppressions` (rule- and site-grained, the tighter gate this ADR already
-requires); `CA2007` would duplicate `VSTHRD111`, which already enforces `ConfigureAwait` with this same
+NPH004 (rule- and site-grained, the tighter gate this ADR already
+requires; it was `SourceHygieneTests.NoUnlistedSuppressions` until the amendment below); `CA2007` would duplicate `VSTHRD111`, which already enforces `ConfigureAwait` with this same
 ADR's UI/non-UI layering table.
 
 ## Context
@@ -62,9 +62,10 @@ configured; `.editorconfig` documented that existing severities were "mostly sil
   `BuiltInNodeTranslators.cs`'s `"return;"` literal is `EarlyOutStatement`, named for why the translator
   writes it (an early-out from control-flow nodes that skip the rest of their body) rather than what it is.
 
-### Enforcement: `SourceHygieneTests.NoRawDiagnosticCodeLiteralsOutsideTheirConstants`
+### Enforcement: NPH003 (was `SourceHygieneTests.NoRawDiagnosticCodeLiteralsOutsideTheirConstants`)
 
-Follows the existing `NoSourceFileMentionsProgramFilesX86` pattern (plain file scan over `git
+The test below became the NPH003 analyzer (amendment "hygiene rules as analyzers"); the text describes the rule it
+enforces. The test followed the existing `NoSourceFileMentionsProgramFilesX86` pattern (plain file scan over `git
 ls-files`-style enumeration, xUnit v3). For every `src/**/*.cs` file (excluding `///` doc-comment prose,
 which documents the code format, not a duplicated value): a line declaring a diagnostic code as a
 `const string` is allowed only in the six designated files (`TranslationDiagnosticCodes.cs`,
@@ -101,6 +102,9 @@ files, each fail the test (reverted after verifying).
   amount of pre-existing debt behind them — left as a follow-up.
 - Not proposed here: StyleCop.Analyzers (redundant with `dotnet format`), Meziantou.Analyzer and Roslynator
   (large triage cost, high overlap — see the follow-up draft below for the fuller comparison).
+- Amended by [ADR-0024](0024-analyzer-and-generator-infrastructure.md) (2026-10-16): StyleCop still is not added, but
+  the layout rules `dotnet format` cannot express (attributes on their own line, the blank-line scope rule) are now
+  NetPrints analyzers (NPS001 to NPS003), and the hygiene tests move to NPH analyzers.
 
 ### Severity policy: `error` for a curated set, `suggestion` for the rest — never one global default
 
@@ -295,8 +299,8 @@ severities and scoping a dedicated research pass (`csharp-agent-rules-draft.md` 
 from that table are skipped rather than landed:
 
 - **S1309** (flags every `#pragma warning disable`/`[SuppressMessage]`, per file): superseded by
-  `SourceHygieneTests.NoUnlistedSuppressions` (landed alongside `NoNullForgivingOperator` in the batch
-  right before this one), which is strictly tighter — per rule ID and per site, not per file — and is
+  NPH004 (first `SourceHygieneTests.NoUnlistedSuppressions`, landed alongside `NoNullForgivingOperator`, now NPH001)
+  in the batch right before this one), which is strictly tighter — per rule ID and per site, not per file — and is
   this ADR's actual enforced ledger gate already.
 - **CA2007** (ConfigureAwait, scoped to libraries): `VSTHRD111` above already enforces `ConfigureAwait`
   with this exact ADR's UI/non-UI layering table; turning CA2007 on too would double-report every site
@@ -359,7 +363,7 @@ unchanged (`git status samples/ tests/NetPrints.Core.Tests/Fixtures` clean) and 
 - The suppression ledger above is the complete, reviewable record of every `[SuppressMessage]` in `src/`:
   `git grep -n "SuppressMessage" -- 'src/*.cs'` lists exactly those six sites, each with an `"ADR-0003: …"`
   justification, and `git grep -n "pragma warning" -- 'src/*.cs'` stays empty (there is no other suppression
-  mechanism in `.cs` source, and none in `.editorconfig`, by policy); `SourceHygieneTests` is the enforced
+  mechanism in `.cs` source, and none in `.editorconfig`, by policy); NPH003 (once `SourceHygieneTests`) is the enforced
   gate for the diagnostic/kind-code duplication this ADR was written for.
 - **Pre-merge analyzer check**: the curated rules are `error`-severity, so `dotnet build -c Release` failing
   is already the enforced gate for them — no separate step needed. The `suggestion`-severity remainder
@@ -380,9 +384,83 @@ unchanged (`git status samples/ tests/NetPrints.Core.Tests/Fixtures` clean) and 
     Logging (CA1848/2254/2017/1727) all landed at the severities/scoping above, every violation fixed for
     real, no escape hatch triggered. `S1309` and `CA2007` from that research draft are skipped by design
     (see above), not deferred. The remaining two items in that draft — the
-    `Microsoft.CodeAnalysis.BannedApiAnalyzers` package and the two `SourceHygieneTests` facts
-    (`NoNullForgivingOperator`, `NoUnlistedSuppressions`) — landed in the batch before this one (`RS0030`,
-    and the hygiene tests respectively). Nothing remains from the original research draft's table.
+    `Microsoft.CodeAnalysis.BannedApiAnalyzers` package and the two hygiene checks
+    (`NoNullForgivingOperator`, `NoUnlistedSuppressions`, now the analyzers NPH001 and NPH004) — landed in the batch
+    before this one (`RS0030`, and the hygiene tests respectively). Nothing remains from the original research draft's table.
+
+### Info-level backlog in `src/` (FU-5, P3 batch A5)
+
+`dotnet format analyzers NetPrints.slnx --severity info --verify-no-changes --no-restore` reports the rules that sit at
+`suggestion`. Over `src/` it found 932 hits (2026-10-16, A5 start). The rules whose fix is mechanical and local were fixed in
+code (zero-length arrays, `IndexOf(string)` on one character, `Last()` and `First()` on lists and arrays, `Append(string)` of a
+constant character, `AsSpan` for a hex parse, `FromType<T>()`, `FirstOrDefault()` on indexable lists), taking the count to 905.
+Every rule that remains is recorded here with its reason, so the count of unrecorded hits is 0. No suppression was added in
+code and no severity changed; a recorded rule stays at `suggestion` and is reconsidered when the code it flags is next
+rewritten. A new hit of a rule that is not in this table is unrecorded and is fixed or added here by the batch that causes it.
+
+| Rule | Hits | Reason it stays |
+|---|---|---|
+| NPS003 | 532 | A hint by design ([ADR-0024](0024-analyzer-and-generator-infrastructure.md)): grouped private fields without comments are the accepted layout, and the rule never fails a build. |
+| S3267 | 59 | A loop that also skips, accumulates or throws inside the body reads better than `Where` plus `foreach`; no defect risk. |
+| CA1859 | 48 | Locals, parameters and fields are typed by `IReadOnlyList<T>` and similar interfaces on purpose, to keep contracts narrow; the devirtualisation gain is not measurable on these paths. |
+| S1135 | 33 | Each `TODO` is a pre-P1 marker of unfinished work (for example the constraint handling of `GenericType`). None is tracked in the specs or the roadmap as its own item; the marker stays until the code around it is rewritten, and a new `TODO` is a hit that this row does not cover. |
+| S3358 | 25 | Flat `a ? x : b ? y : z` chains; splitting them into statements adds variables without clarity. |
+| S2325, CA1822 | 19, 19 | Instance members that a view binds to, an interface requires or a test replaces; making them static changes the shape of the API for no gain. |
+| S2365 | 15 | Computed properties of the pre-P1 model (`ExecutionGraph` argument types and similar); turning them into methods breaks the editor and its tests. |
+| S1075 | 15 | The schema, SchemaStore and documentation URLs are fixed constants of the file formats. |
+| S4136 | 11 | Overload adjacency is layout only; moving members churns diffs. |
+| S1104 | 11 | The `ExtensionData` fields of the document records (T012): `System.Text.Json` source generation cannot bind an `init` or non-public-set extension-data member (constructor binding, and extension contexts cannot reach it), and CA2227 forbids a settable collection property. |
+| S3875 | 7 | The `==` overloads of `GenericType` and `TypeSpecifier` carry pre-P1 value semantics that callers rely on. |
+| S3218 | 7 | A member of a private nested helper named like a member of its outer type (`Key`, `Write`); renaming adds noise. |
+| S125 | 7 | Comment blocks of the original WPF code that quote old code; removed when the file is next rewritten. |
+| S8949, CA1873 | 6, 6 | The calls end when the listener or the slot gate is disposed at shutdown, and the logging arguments are plain property reads under a source-generated logger that checks the level. |
+| S127 | 6 | Scanners that consume a two-character escape (`value[++index]`) by design. |
+| CA2227 | 5 | Setters on the `ClassGraph` collections, assigned by the editor and by tests; removing them is a model change outside P3. |
+| CA1854 | 5 | `ContainsKey` followed by the indexer on small dictionaries, in pre-P1 translator and documentation code; no defect. |
+| S1244 | 4 | Exact comparison with an assigned sentinel (`GraphPoint.Zero`, zoom `1`), never with a computed value. |
+| S1006 | 4 | `ShellOverlayServices` implements the overlay interfaces; the defaults live on the interface. |
+| CA1865, CA2249 | 4, 2 | In the projects that target `netstandard2.0` (`Catalog`, `Annotations`) there is no `Contains(char, StringComparison)`, and CA1307 forbids the `IndexOf(char)` that the rule suggests. |
+| S3604 | 3 | `[ObservableProperty]` partial properties: the generated code does not reassign the initializer, which the analyzer cannot see. |
+| S2094 | 3 | Marker types by design: the `IsExternalInit` polyfills and the abstract record root of the What's New segments. |
+| S5766 | 2 | `GenericType` and `TypeSpecifier` constructors are not deserialization constructors (the model has no serializer; documents map through `DocumentMapper`). |
+| S4456 | 2 | `ListAsync` of the stores validates when the enumeration starts; splitting the method changes when the exception surfaces. |
+| S3398 | 2 | Static helpers kept next to their only caller in the outer type. |
+| S2346 | 2 | The zero members `Invalid` and `Global` carry meaning that `None` would lose. |
+| S2245 | 2 | `new Random(0)` makes the names of generated temporaries deterministic; it is not a security use. |
+| S2234 | 2 | The swapped arguments of `CanConnectNodePins(pinB, pinA)` are the symmetric retry. |
+| S1643 | 2 | Concatenation in loops over the dimensions of an array type and the arguments of one event; both are a handful of iterations. |
+| S1066 | 2 | Nested `if` statements in the pre-P1 graph utilities and translator; merging them changes no behaviour and is left to the next rewrite of those methods. |
+| CA1806, S1848 | 1, 1 | `new ReturnNode(this)` in `MethodGraph` registers the node with the graph in its constructor. |
+| S1123, S1133, CA1041 | 1, 1, 1 | `[Obsolete]` without a message on `Variable.IsStatic`, a pre-P1 member whose removal belongs with the variable model rework. |
+| S2386, S3887 | 1, 1 | `TranslatorUtil.VisibilityTokens` is a public static dictionary of the pre-P1 translator. |
+| SYSLIB1045, S6444 | 1, 1 | The compiled `Regex` in `GraphUtil.SplitCamelCase` (pre-P1); it takes only editor-controlled input. |
+| S3168 | 1 | `GraphDragDrop.Moved` is an event-style handler called from a pointer event. |
+| S3264 | 1 | `NodeGraphViewModel.NodeRevealRequested` is subscribed by `GraphEditorView`; the analyzer sees no raise inside the declaring type. |
+| S3427, S1939, S1994, S1871 | 1 each | Overload and interface shapes that mirror the contract tables (`OpenSearchAsync`, `IBuiltInTranslationContext`) and a unique-name search loop (`ProjectLoader`). |
+| S3459 | 1 | `MakeArrayTypeNode.ElementTypePin`: a private partial property that only declares the pin; the pin generator supplies the getter, so the analyzer sees an unassigned auto-property. |
+| S3241, S3881, S3442, S3376, S3928, S2306, S2219, S1199, S1186, S927, S6618, S6607, S4487, MVVMTK0042, CA1868, CA1846 | 1 each | One-off style hints in pre-P1 or generated-pattern code (an `await` identifier mirroring a node kind, `ClassTranslationFailure` naming, an empty built-in translator, the `fileSystem` field of `BackupService`, which only its constructor reads); none points at a defect. |
+
+## Amendment: hygiene rules as analyzers (2026-10-17)
+
+The `SourceHygieneTests` checks that parsed every source file are now the NPH analyzers of `NetPrints.RepoAnalyzers`, at `error`
+in `.editorconfig`:
+
+| Code | Replaces | Scope |
+|---|---|---|
+| NPH001 | `NoNullForgivingOperator` | `src/`, `tests/` |
+| NPH002 | `NoTypeNameEndsInVM` | `src/`, `tests/` |
+| NPH003 | `NoRawDiagnosticCodeLiteralsOutsideTheirConstants` (literals and duplicates in one project) | `src/` |
+| NPH004 | `NoUnlistedSuppressions` | `src/`, `tests/` |
+| NPH005 | `UiBoundCodeNeverUsesConfigureAwaitFalse` (the scope is the files where `.editorconfig` sets `VSTHRD111` to `none`) | `src/` |
+| NPH006 | new: a string literal passed to a dialog title or message, or status text | `src/` |
+
+The suppression ledger and the allowlists became one additional file, `HygieneLedger.txt` at the repository root, one row per
+site (`CODE | path | detail`). It only shrinks. NPH004 reads the `[SuppressMessage]` rows (`member:rule`) and still requires the
+justification to name this ADR; NPH001 reads the test-only null-forgiving sites by line text; NPH006 reads the dialog literals
+that wait for the L2 localization batch. A code declared in two projects stays a test (`NoDiagnosticCodeIsDeclaredInTwoProjects`),
+because an analyzer sees one project. VSTHRD002 and VSTHRD103 in `tests/` stay at the `suggestion` severity of the policy table
+above: turning them to `error` in `tests/` reports at least 153 synchronous file calls (mostly `File.ReadAllText` and `WriteAllText`),
+which a follow-up batch fixes first.
 
 ## References
 

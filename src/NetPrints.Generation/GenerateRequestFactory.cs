@@ -19,6 +19,9 @@ public static class GenerateRequestFactory
             snapshot.RootNamespace,
             snapshot.ProfileId,
             [.. snapshot.GraphFiles.Select(graph => new GraphJob(graph, ProjectFiles.GetGeneratedFilePath(graph)))],
-            [.. snapshot.ExtensionFolders]);
+            [.. snapshot.ExtensionFolders])
+        {
+            Target = snapshot.CSharpTarget,
+        };
     }
 }

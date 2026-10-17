@@ -104,6 +104,12 @@
                       ]
                     }
                   },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
                   "argumentCount": {
                     "type": "integer"
                   },
@@ -145,6 +151,12 @@
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
                   },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
                   "argumentCount": {
                     "type": "integer"
                   }
@@ -176,6 +188,12 @@
                     "items": {
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
+                  },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
                   },
                   "returnCount": {
                     "type": "integer"
@@ -209,6 +227,12 @@
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
                   },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
                   "interfaceCount": {
                     "type": "integer"
                   }
@@ -240,6 +264,12 @@
                     "items": {
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
+                  },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
                   }
                 },
                 "required": [
@@ -269,6 +299,12 @@
                     "items": {
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
+                  },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
                   },
                   "eventName": {
                     "type": "string"
@@ -531,6 +567,12 @@
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
                   },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
                   "method": {
                     "type": "object",
                     "properties": {
@@ -596,6 +638,12 @@
                     "items": {
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
+                  },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
                   },
                   "constructor": {
                     "type": "object",
@@ -673,6 +721,12 @@
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
                   },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
                   "method": {
                     "type": "object",
                     "properties": {
@@ -732,6 +786,12 @@
                     "items": {
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
+                  },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
                   },
                   "variable": {
                     "type": "object",
@@ -853,6 +913,12 @@
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
                   },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
                   "variable": {
                     "type": "object",
                     "properties": {
@@ -922,6 +988,12 @@
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
                   },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
                   "literalType": {
                     "type": "object",
                     "properties": {
@@ -978,6 +1050,12 @@
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
                   },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
                   "type": {
                     "type": "object",
                     "properties": {
@@ -1033,6 +1111,12 @@
                     "items": {
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
+                  },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
                   }
                 },
                 "required": [
@@ -1062,6 +1146,12 @@
                     "items": {
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
+                  },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
                   },
                   "usePredefinedSize": {
                     "type": "boolean"
@@ -1098,6 +1188,12 @@
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
                   },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
                   "pure": {
                     "type": "boolean"
                   }
@@ -1129,6 +1225,12 @@
                     "items": {
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
+                  },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
                   }
                 },
                 "required": [
@@ -1158,6 +1260,12 @@
                     "items": {
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
+                  },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
                   }
                 },
                 "required": [
@@ -1187,6 +1295,12 @@
                     "items": {
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
+                  },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
                   }
                 },
                 "required": [
@@ -1216,6 +1330,12 @@
                     "items": {
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
+                  },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
                   },
                   "pure": {
                     "type": "boolean"
@@ -1249,6 +1369,12 @@
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
                   },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
                   "pure": {
                     "type": "boolean"
                   }
@@ -1280,6 +1406,12 @@
                     "items": {
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
+                  },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
                   }
                 },
                 "required": [
@@ -1309,6 +1441,12 @@
                     "items": {
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
+                  },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
                   }
                 },
                 "required": [
@@ -1338,6 +1476,12 @@
                     "items": {
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
+                  },
+                  "kindVersion": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
                   },
                   "pinKind": {
                     "type": "string"

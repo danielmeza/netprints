@@ -33,6 +33,7 @@ namespace NetPrints.Tests.Serialization
         // zero-padding keeps ordinal string order equal to numeric order, so this is exact, not just
         // approximate.
         private static string NodeId(long value) => IdFormat.Format('n', value);
+
         private static string MemberId(long value) => IdFormat.Format('m', value);
 
         private static (Project Project, ClassGraph Class, MethodGraph Method) BuildBase()
@@ -61,9 +62,9 @@ namespace NetPrints.Tests.Serialization
             Position(call2, 2);
             Position(ret, 3);
 
-            GraphUtil.ConnectExecPins(((MethodEntryNode)entry).InitialExecutionPin, call1.InputExecPins[0]);
+            GraphUtil.ConnectExecPins(((MethodEntryNode)entry).ExecPin, call1.InputExecPins[0]);
             GraphUtil.ConnectExecPins(call1.OutputExecPins[0], call2.InputExecPins[0]);
-            GraphUtil.ConnectExecPins(call2.OutputExecPins[0], ((ReturnNode)ret).ReturnPin);
+            GraphUtil.ConnectExecPins(call2.OutputExecPins[0], ((ReturnNode)ret).ExecPin);
 
             return (project, cls, method);
         }

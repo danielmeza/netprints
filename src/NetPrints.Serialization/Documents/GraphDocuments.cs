@@ -18,14 +18,26 @@ namespace NetPrints.Serialization.Documents;
 public sealed record GraphDocument(
     [property: JsonConverter(typeof(NodeListConverter))] IReadOnlyList<NodeDocument> Nodes,
     IReadOnlyList<ConnectionDocument>? Connections,
-    IReadOnlyList<LocalVariableDocument>? Locals);
+    IReadOnlyList<LocalVariableDocument>? Locals)
+{
+    /// <summary>Gets the members this build does not know, kept as opaque values and written after the known ones.</summary>
+    [JsonExtensionData]
+    [JsonInclude]
+    public UnknownMembers? ExtensionData;
+}
 
 /// <summary>
 /// A connection between an output pin and an input pin (document-format.md §1.4, §1.4.2).
 /// </summary>
 /// <param name="From">Endpoint of the connection's source (output) pin: <c>"&lt;nodeId&gt;/&lt;pin&gt;"</c>.</param>
 /// <param name="To">Endpoint of the connection's target (input) pin: <c>"&lt;nodeId&gt;/&lt;pin&gt;"</c>.</param>
-public sealed record ConnectionDocument(string From, string To);
+public sealed record ConnectionDocument(string From, string To)
+{
+    /// <summary>Gets the members this build does not know, kept as opaque values and written after the known ones.</summary>
+    [JsonExtensionData]
+    [JsonInclude]
+    public UnknownMembers? ExtensionData;
+}
 
 /// <summary>
 /// A class's method (document-format.md §1.4): its member id, name, visibility, modifiers and graph.
@@ -40,7 +52,13 @@ public sealed record MethodDocument(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] string Name,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] MemberVisibility Visibility,
     MethodModifiers Modifiers,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] GraphDocument Graph);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] GraphDocument Graph)
+{
+    /// <summary>Gets the members this build does not know, kept as opaque values and written after the known ones.</summary>
+    [JsonExtensionData]
+    [JsonInclude]
+    public UnknownMembers? ExtensionData;
+}
 
 /// <summary>
 /// A class's constructor (document-format.md §1.4): its member id, visibility and graph.
@@ -51,7 +69,13 @@ public sealed record MethodDocument(
 public sealed record ConstructorDocument(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] string Id,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] MemberVisibility Visibility,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] GraphDocument Graph);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] GraphDocument Graph)
+{
+    /// <summary>Gets the members this build does not know, kept as opaque values and written after the known ones.</summary>
+    [JsonExtensionData]
+    [JsonInclude]
+    public UnknownMembers? ExtensionData;
+}
 
 /// <summary>
 /// A variable's getter or setter (document-format.md §1.4): visibility and graph. Has no id of its
@@ -61,7 +85,13 @@ public sealed record ConstructorDocument(
 /// <param name="Graph">The accessor's graph.</param>
 public sealed record AccessorDocument(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] MemberVisibility Visibility,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] GraphDocument Graph);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] GraphDocument Graph)
+{
+    /// <summary>Gets the members this build does not know, kept as opaque values and written after the known ones.</summary>
+    [JsonExtensionData]
+    [JsonInclude]
+    public UnknownMembers? ExtensionData;
+}
 
 /// <summary>
 /// A class's variable (document-format.md §1.4): its member id, name, visibility, modifiers, type
@@ -81,7 +111,13 @@ public sealed record VariableDocument(
     VariableModifiers Modifiers,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] GraphDocument TypeGraph,
     AccessorDocument? Getter,
-    AccessorDocument? Setter);
+    AccessorDocument? Setter)
+{
+    /// <summary>Gets the members this build does not know, kept as opaque values and written after the known ones.</summary>
+    [JsonExtensionData]
+    [JsonInclude]
+    public UnknownMembers? ExtensionData;
+}
 
 /// <summary>
 /// A class's event graph (document-format.md §1.4, sub-phase G/US4): its member id, name and graph.
@@ -92,7 +128,13 @@ public sealed record VariableDocument(
 public sealed record EventGraphDocument(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] string Id,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] string Name,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] GraphDocument Graph);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] GraphDocument Graph)
+{
+    /// <summary>Gets the members this build does not know, kept as opaque values and written after the known ones.</summary>
+    [JsonExtensionData]
+    [JsonInclude]
+    public UnknownMembers? ExtensionData;
+}
 
 /// <summary>
 /// A method- or constructor-local variable (document-format.md §1.4, sub-phase H/US5): its name and
@@ -100,4 +142,10 @@ public sealed record EventGraphDocument(
 /// </summary>
 /// <param name="Name">Local variable name.</param>
 /// <param name="Type">Local variable type.</param>
-public sealed record LocalVariableDocument(string Name, TypeRef Type);
+public sealed record LocalVariableDocument(string Name, TypeRef Type)
+{
+    /// <summary>Gets the members this build does not know, kept as opaque values and written after the known ones.</summary>
+    [JsonExtensionData]
+    [JsonInclude]
+    public UnknownMembers? ExtensionData;
+}

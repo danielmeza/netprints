@@ -87,5 +87,8 @@ namespace NetPrints.Graph
                 }
             }
         }
+
+        /// <inheritdoc />
+        public override bool TitleIsFixed => true;
     }
 }

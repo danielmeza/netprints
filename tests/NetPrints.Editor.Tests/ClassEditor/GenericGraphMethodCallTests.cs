@@ -52,7 +52,7 @@ public sealed class GenericGraphMethodCallTests : GraphTestBase
             }
         }
 
-        GraphUtil.ConnectExecPins(Method.MethodEntryNode.InitialExecutionPin, Method.MainReturnNode.ReturnPin);
+        GraphUtil.ConnectExecPins(Method.MethodEntryNode.ExecPin, Method.MainReturnNode.ExecPin);
     }
 
     private CallMethodNode DropTheMethod() =>
@@ -85,9 +85,9 @@ public sealed class GenericGraphMethodCallTests : GraphTestBase
         GraphUtil.ConnectTypePins(intType.OutputTypePins[0], call.InputTypePins[0]);
         GraphUtil.ConnectDataPins(LiteralNode.WithValue(caller, 42).ValuePin, call.ArgumentPins[0]);
         GraphUtil.ConnectDataPins(call.ReturnValuePins[0], write.ArgumentPins[0]);
-        GraphUtil.ConnectExecPins(caller.EntryNode.InitialExecutionPin, call.InputExecPins[0]);
+        GraphUtil.ConnectExecPins(caller.EntryNode.ExecPin, call.InputExecPins[0]);
         GraphUtil.ConnectExecPins(call.OutputExecPins[0], write.InputExecPins[0]);
-        GraphUtil.ConnectExecPins(write.OutputExecPins[0], caller.MainReturnNode.ReturnPin);
+        GraphUtil.ConnectExecPins(write.OutputExecPins[0], caller.MainReturnNode.ExecPin);
 
         string directory = TestPaths.CreateTempDirectory();
         try

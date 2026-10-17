@@ -5,7 +5,7 @@ namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>navigateBack</c> and <c>navigateForward</c> commands: restore the previous or the next view of the navigation history.</summary>
 /// <param name="forward"><see langword="true"/> for Forward, <see langword="false"/> for Back.</param>
-public sealed class NavigateHistoryCommandHandler(bool forward) : ICommandHandler
+public sealed class NavigateHistoryCommandHandler(bool forward) : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) =>

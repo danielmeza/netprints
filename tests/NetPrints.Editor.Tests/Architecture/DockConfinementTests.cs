@@ -7,7 +7,7 @@ namespace NetPrints.Editor.Tests.Architecture;
 public partial class DockConfinementTests
 {
     private const string DockingFolder = "Shell/Docking";
-    private const string PinnedVersion = "[12.1.0.6]";
+    private const string PinnedVersion = "[12.1.0.10]";
 
     private static readonly string[] PinnedPackages =
     [

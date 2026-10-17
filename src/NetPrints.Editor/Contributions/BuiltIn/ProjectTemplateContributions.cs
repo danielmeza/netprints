@@ -1,5 +1,6 @@
 using NetPrints.Core;
 using NetPrints.Editor.Icons;
+using NetPrints.Workspace.Templates;
 
 namespace NetPrints.Editor.Contributions.BuiltIn;
 
@@ -18,13 +19,18 @@ public static class ProjectTemplateContributions
             "A program with an entry point: a Program class with an empty Main method.",
             DefaultProjectProfile.ProfileId,
             ProjectOutputType.Console,
-            IconId: IconIds.TemplateConsole));
+            IconId: IconIds.TemplateConsole,
+            Files: Files(BuiltInTemplateTrees.Console)));
         registry.AddProjectTemplate(new ProjectTemplateDescriptor(
             ContributionIds.TemplatePrefix + "library",
             "Class library",
             "A library with no entry point and no classes yet.",
             DefaultProjectProfile.ProfileId,
             ProjectOutputType.Library,
-            IconId: IconIds.TemplateLibrary));
+            IconId: IconIds.TemplateLibrary,
+            Files: Files(BuiltInTemplateTrees.Library)));
     }
+
+    private static TemplateFile[] Files(string tree) =>
+        [.. BuiltInTemplateTrees.Read(tree).Select(file => new TemplateFile(file.Path, file.Content))];
 }

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Fx.Views</AssemblyName>
+    <OutputPath>bin/$(Configuration)/extensions/fx.views/</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <NetPrintsExperimentalOptIn Include="NPXE0005" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Avalonia compiles the views; the host supplies the runtime assemblies, so nothing is copied to the extension folder. -->
+    <PackageReference Include="Avalonia" ExcludeAssets="runtime" />
+    <ProjectReference Include="..\..\..\..\src\NetPrints.Core\NetPrints.Core.csproj" Private="false" ExcludeAssets="runtime" />
+    <ProjectReference Include="..\..\..\..\src\NetPrints.Reflection\NetPrints.Reflection.csproj" Private="false" ExcludeAssets="runtime" />
+    <ProjectReference Include="..\..\..\..\src\NetPrints.Serialization\NetPrints.Serialization.csproj" Private="false" ExcludeAssets="runtime" />
+    <ProjectReference Include="..\..\..\..\src\NetPrints.Catalog\NetPrints.Catalog.csproj" Private="false" ExcludeAssets="runtime" />
+    <ProjectReference Include="..\..\..\..\src\NetPrints.Extensibility.Abstractions\NetPrints.Extensibility.Abstractions.csproj" Private="false" ExcludeAssets="runtime" />
+  </ItemGroup>
+</Project>

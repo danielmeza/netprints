@@ -94,7 +94,7 @@ public sealed class GraphCodeGenerator
         ArgumentNullException.ThrowIfNull(extensions);
         var mapper = new DocumentMapper(extensions.NodeConverters, NullLogger<DocumentMapper>.Instance);
         var jsonFormat = new JsonDocumentFormat(new NetPrintsJsonOptions(extensions.NodeConverters),
-            new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance));
+            new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance), extensions.NodeMigrator);
         return new GraphCodeGenerator(extensions, new DocumentFormatRegistry([jsonFormat]), mapper);
     }
 
@@ -159,7 +159,10 @@ public sealed class GraphCodeGenerator
             request.ProjectPath, projectName, request.RootNamespace ?? string.Empty, projectName, BinaryType.SharedLibrary,
             "net10.0", request.Profile, ReferencesNetPrintsSdk: true, GraphFiles: [], ExtensionFolders: [],
             References: [], DeclaredReferences: [], OtherSources: [], CompilationOptionsJson: "{}",
-            Properties: new Dictionary<string, string>(), Messages: []));
+            Properties: new Dictionary<string, string>(), Messages: [])
+        {
+            CSharpTarget = request.Target,
+        });
 
         var results = new List<GeneratedFileResult>(request.Graphs.Count);
         foreach (GraphJob job in request.Graphs)

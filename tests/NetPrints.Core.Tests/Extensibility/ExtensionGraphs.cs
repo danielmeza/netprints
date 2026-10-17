@@ -31,8 +31,8 @@ internal static class ExtensionGraphs
         var log = (Node)(Activator.CreateInstance(kind.NodeType, method) ?? throw new InvalidOperationException("Log node not created."));
         LiteralNode literal = LiteralNode.WithValue(method, "hello");
 
-        GraphUtil.ConnectExecPins(((MethodEntryNode)method.EntryNode).InitialExecutionPin, log.InputExecPins[0]);
-        GraphUtil.ConnectExecPins(log.OutputExecPins[0], ((ReturnNode)method.MainReturnNode).ReturnPin);
+        GraphUtil.ConnectExecPins(((MethodEntryNode)method.EntryNode).ExecPin, log.InputExecPins[0]);
+        GraphUtil.ConnectExecPins(log.OutputExecPins[0], ((ReturnNode)method.MainReturnNode).ExecPin);
         GraphUtil.ConnectDataPins(literal.OutputDataPins[0], log.InputDataPins[0]);
         return (cls, log);
     }

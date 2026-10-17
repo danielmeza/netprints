@@ -18,9 +18,9 @@ public class CommandPaletteTests
     {
         public int Runs { get; private set; }
 
-        public bool CanExecute(CommandContext context) => enabled;
+        public bool CanExecute(ICommandContext context) => enabled;
 
-        public Task ExecuteAsync(CommandContext context, CancellationToken cancellationToken)
+        public Task ExecuteAsync(ICommandContext context, CancellationToken cancellationToken)
         {
             Runs++;
             return Task.CompletedTask;
@@ -46,8 +46,8 @@ public class CommandPaletteTests
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         var save = new Probe(true);
         var run = new Probe(false);
-        registry.AddCommand(new CommandDescriptor(ContributionIds.CommandPrefix + "save", "Save", save, DefaultGestures: ["Ctrl+S"], Menu: new MenuPlacement("File", "save", 0)));
-        registry.AddCommand(new CommandDescriptor(ContributionIds.CommandPrefix + "run", "Run", run, DefaultGestures: ["F5"], Menu: new MenuPlacement("Build", "run", 0)));
+        registry.AddCommand(new CommandDescriptor(ContributionIds.CommandPrefix + "save", "Save", save, DefaultGestures: [new CommandGesture(CommandModifiers.Ctrl, CommandKey.S)], Menu: new MenuPlacement("File", "save", 0)));
+        registry.AddCommand(new CommandDescriptor(ContributionIds.CommandPrefix + "run", "Run", run, DefaultGestures: [new CommandGesture(CommandModifiers.None, CommandKey.F5)], Menu: new MenuPlacement("Build", "run", 0)));
         registry.AddCommand(new CommandDescriptor(ContributionIds.CommandPrefix + "undo", "Undo", new Probe(true)));
         registry.Freeze();
         return (new CommandPaletteViewModel(registry, new CommandInvoker(registry, new Contexts(), exception => throw exception)), save, run);

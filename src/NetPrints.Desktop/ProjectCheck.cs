@@ -47,6 +47,13 @@ internal static class ProjectCheck
     private const string UnusedSdkVersionPlaceholder = "1.0.0-dev";
 
     /// <summary>
+    /// The options the check loads the project with. Loading must not write generated files (FR-085), so generation on load is off; the
+    /// build step that follows is the one place generation may run.
+    /// </summary>
+    /// <returns>The options.</returns>
+    internal static ProjectSystemOptions CreateProjectSystemOptions() => new([], UnusedSdkVersionPlaceholder, GenerateOnLoad: false);
+
+    /// <summary>
     /// Runs the check for <c>NetPrints.Desktop --check-project &lt;path.csproj&gt; [--run]</c>. Calls
     /// <see cref="MsBuildRegistration.EnsureRegistered"/> itself (idempotent alongside <c>Program.Main</c>'s
     /// own call) and builds the real <see cref="IProjectSystem"/> for it.
@@ -85,7 +92,7 @@ internal static class ProjectCheck
         ArgumentNullException.ThrowIfNull(loggerFactory);
 
         IProjectSystem projects = msBuildAvailable
-            ? new MsBuildProjectSystem(new ProjectSystemOptions([], UnusedSdkVersionPlaceholder), new ProcessRunner(), loggerFactory.CreateLogger<MsBuildProjectSystem>())
+            ? new MsBuildProjectSystem(CreateProjectSystemOptions(), new ProcessRunner(), loggerFactory.CreateLogger<MsBuildProjectSystem>())
             : new NoSdkProjectSystem();
 
         return RunAsync(projectPath, run, output, msBuildAvailable, MsBuildRegistration.RegisteredInstance, projects, new ProcessRunner(), loggerFactory, cancellationToken);

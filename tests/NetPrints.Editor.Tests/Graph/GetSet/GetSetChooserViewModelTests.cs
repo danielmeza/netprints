@@ -15,7 +15,7 @@ public class GetSetChooserViewModelTests(TestEditor editor) : GraphTestBase(edit
         var publicGetPrivateSet = new VariableSpecifier("Value", IntType, MemberVisibility.Public, MemberVisibility.Private,
             TypeSpecifier.FromType<Version>(), VariableModifiers.None);
 
-        chooser.Open(publicGetPrivateSet, new NetPrints.Editor.Graph.GraphPoint(28, 28));
+        chooser.Open(publicGetPrivateSet, new GraphPoint(28, 28));
         Assert.True(chooser.IsOpen);
         Assert.True(chooser.CanGet);
         Assert.False(chooser.CanSet, "a private setter of another type is not visible");
@@ -27,12 +27,12 @@ public class GetSetChooserViewModelTests(TestEditor editor) : GraphTestBase(edit
         Assert.False(chooser.IsOpen);
 
         var own = new VariableSpecifier("Own", IntType, MemberVisibility.Private, MemberVisibility.Private, Class.Type, VariableModifiers.None);
-        chooser.Open(own, new NetPrints.Editor.Graph.GraphPoint(0, 0));
+        chooser.Open(own, new GraphPoint(0, 0));
         Assert.True(chooser.CanSet, "own private members are visible");
         chooser.SetCommand.Execute(null);
         Assert.Equal(1, Method.Nodes.OfType<VariableSetterNode>().ToList().Count());
 
-        chooser.Open(own, new NetPrints.Editor.Graph.GraphPoint(0, 0));
+        chooser.Open(own, new GraphPoint(0, 0));
         chooser.CloseCommand.Execute(null);
         Assert.False(chooser.IsOpen, "the close command closes it");
     }

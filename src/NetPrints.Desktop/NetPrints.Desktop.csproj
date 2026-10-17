@@ -18,6 +18,8 @@
 
   <ItemGroup>
     <NetPrintsExperimentalOptIn Include="NPXE0002" />
+    <NetPrintsExperimentalOptIn Include="NPXE0005" />
+    <NetPrintsExperimentalOptIn Include="NPXE0008" />
   </ItemGroup>
   <ItemGroup>
     <!-- Semi.Avalonia's SemiTheme creates the zh-CN culture in a static initializer, which throws in globalization-invariant mode (ADR-0023). -->

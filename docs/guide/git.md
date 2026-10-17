@@ -99,6 +99,8 @@ If `netprints` is installed as a local tool in your project (not global), use:
 netprints git-install --command "dotnet tool run netprints"
 ```
 
+Git runs the command through `sh`. When `--command` names an existing file, for example `C:\tools\net prints\netprints.exe`, git-install writes it with forward slashes inside single quotes so `sh` keeps the path intact; any other value is written as given.
+
 ### Removing the configuration
 
 To undo the installation:

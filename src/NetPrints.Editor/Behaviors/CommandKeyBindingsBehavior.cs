@@ -15,6 +15,7 @@ public sealed class CommandKeyBindingsBehavior : StyledElementBehavior<InputElem
         AvaloniaProperty.Register<CommandKeyBindingsBehavior, CommandInvoker?>(nameof(Invoker));
 
     private readonly List<KeyBinding> added = [];
+    private CommandInvoker? followed;
 
     /// <summary>Gets or sets the invoker whose global commands are bound.</summary>
     public CommandInvoker? Invoker
@@ -27,12 +28,14 @@ public sealed class CommandKeyBindingsBehavior : StyledElementBehavior<InputElem
     protected override void OnAttached()
     {
         base.OnAttached();
+        Follow(Invoker);
         Rebuild();
     }
 
     /// <inheritdoc/>
     protected override void OnDetaching()
     {
+        Follow(null);
         Clear();
         base.OnDetaching();
     }
@@ -43,9 +46,31 @@ public sealed class CommandKeyBindingsBehavior : StyledElementBehavior<InputElem
         base.OnPropertyChanged(change);
         if (change.Property == InvokerProperty)
         {
+            Follow(AssociatedObject is null ? null : Invoker);
             Rebuild();
         }
     }
+
+    private void Follow(CommandInvoker? invoker)
+    {
+        if (followed == invoker)
+        {
+            return;
+        }
+
+        if (followed is not null)
+        {
+            followed.CommandsChanged -= OnCommandsChanged;
+        }
+
+        followed = invoker;
+        if (followed is not null)
+        {
+            followed.CommandsChanged += OnCommandsChanged;
+        }
+    }
+
+    private void OnCommandsChanged(object? sender, EventArgs e) => Rebuild();
 
     private void Rebuild()
     {

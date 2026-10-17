@@ -42,7 +42,7 @@ public class NodeOverloadUndoTests
         MethodGraph method = NewMethod();
         var y = new CallMethodNode(method, WriteLine<string>());
         var a = new CallMethodNode(method, WriteLine<string>());
-        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, y.InputExecPins[0]);
+        GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, y.InputExecPins[0]);
         GraphUtil.ConnectExecPins(y.OutputExecPins[0], a.InputExecPins[0]);
         var stack = new UndoRedoStack();
         stack.Do(EditorCommands.RemoveNodes([a]));

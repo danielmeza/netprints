@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using NetPrints.Projects;
 
 namespace NetPrints.Generation;
 
@@ -27,7 +28,14 @@ public sealed record GraphJob(string Input, string Output);
 /// <param name="Extensions">Full paths of the project's <c>NetPrintsExtension</c> folders, in project
 /// order.</param>
 public sealed record GenerateRequest(string ProjectPath, string? RootNamespace, string Profile,
-    IReadOnlyList<GraphJob> Graphs, IReadOnlyList<string> Extensions);
+    IReadOnlyList<GraphJob> Graphs, IReadOnlyList<string> Extensions)
+{
+    /// <summary>
+    /// The C# language the generated code is written for (ADR-0038). Every writer of <c>.g.cs</c> resolves it from the same
+    /// inputs, so they write the same bytes. <see cref="CSharpTarget.Unconstrained"/> when the request names no framework.
+    /// </summary>
+    public CSharpTarget Target { get; init; } = CSharpTarget.Unconstrained;
+}
 
 /// <summary>
 /// Reads a <see cref="GenerateRequest"/> from the line-oriented request file the SDK's
@@ -42,8 +50,9 @@ public static class GenerateRequestFile
     /// <param name="path">Path of the request file to read.</param>
     /// <returns>The parsed request.</returns>
     /// <exception cref="FormatException">A line is not of the form <c>key=value</c>, has an
-    /// unrecognized key, a <c>graph</c> line has no <c>|</c> separating its input and output paths, or
-    /// the request has no <c>project</c> or <c>profile</c> line.</exception>
+    /// unrecognized key, a <c>graph</c> line has no <c>|</c> separating its input and output paths, a
+    /// <c>framework</c> line is not <c>moniker|LangVersion|MaxSupportedLangVersion</c>, or the request has no
+    /// <c>project</c> or <c>profile</c> line.</exception>
     public static GenerateRequest Parse(string path)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
@@ -53,6 +62,7 @@ public static class GenerateRequestFile
         string? profile = null;
         var extensions = new List<string>();
         var graphs = new List<GraphJob>();
+        var frameworks = new List<CSharpFrameworkInput>();
 
         foreach (string line in File.ReadLines(path))
         {
@@ -79,6 +89,9 @@ public static class GenerateRequestFile
                 case "extension":
                     extensions.Add(value);
                     break;
+                case "framework":
+                    frameworks.Add(ParseFramework(line, value));
+                    break;
                 case "graph":
                     int pipe = value.IndexOf('|', StringComparison.Ordinal);
                     if (pipe < 0)
@@ -103,6 +116,19 @@ public static class GenerateRequestFile
             throw new FormatException($"Request file '{path}' is missing a 'profile' line.");
         }
 
-        return new GenerateRequest(project, rootNamespace, profile, graphs, extensions);
+        return new GenerateRequest(project, rootNamespace, profile, graphs, extensions)
+        {
+            Target = CSharpTarget.Resolve(project, frameworks).Target,
+        };
+    }
+
+    private static CSharpFrameworkInput ParseFramework(string line, string value)
+    {
+        if (value.Split('|') is not [{ Length: > 0 } moniker, string langVersion, string maxSupported])
+        {
+            throw new FormatException($"Framework line '{line}' is not of the form 'framework=<moniker>|<LangVersion>|<MaxSupportedLangVersion>'.");
+        }
+
+        return new CSharpFrameworkInput(moniker, langVersion, maxSupported);
     }
 }

@@ -10,8 +10,16 @@
   <ItemGroup>
     <NetPrintsExperimentalOptIn Include="NPXE0001" />
     <NetPrintsExperimentalOptIn Include="NPXE0002" />
+    <NetPrintsExperimentalOptIn Include="NPXE0005" />
+    <NetPrintsExperimentalOptIn Include="NPXE0006" />
+    <NetPrintsExperimentalOptIn Include="NPXE0007" />
+    <NetPrintsExperimentalOptIn Include="NPXE0008" />
     <NetPrintsExperimentalOptIn Include="NPXE0003" />
     <NetPrintsExperimentalOptIn Include="NPXE0004" />
+    <NetPrintsExperimentalOptIn Include="NPXE0009" />
+    <NetPrintsExperimentalOptIn Include="NPXE0011" />
+    <NetPrintsExperimentalOptIn Include="NPXE0012" />
+    <NetPrintsExperimentalOptIn Include="NPXE0013" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
@@ -53,6 +61,8 @@
     <Compile Remove="Fixtures/**/*.cs" />
     <None Include="Fixtures/AllNodes/AllNodes.csproj" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Fixtures/HelloWorld/HelloWorld.csproj" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The C# target fixtures (T048): copied to a temp folder by each test, since the repository's props would set LangVersion. -->
+    <None Include="../Fixtures/CSharpTarget/**" LinkBase="Fixtures/CSharpTarget" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
@@ -79,6 +89,10 @@
     <ProjectReference Include="..\Fixtures\Extensions\Fx.TypesConsumer\Fx.TypesConsumer.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\Fixtures\Extensions\Fx.Diamond\Fx.Diamond.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\Fixtures\Extensions\Fx.Native\Fx.Native.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.HostConflict\Fx.HostConflict.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.TransitiveConflict\Fx.TransitiveConflict.csproj" ReferenceOutputAssembly="false" />
+    <!-- Referenced: the host-conflict test loads version 1 into the test process, which Fx.HostConflict (built against version 2) must then refuse. -->
+    <ProjectReference Include="..\Fixtures\Extensions\Fixture.HostLib.V1\Fixture.HostLib.V1.csproj" />
     <!-- Built first, never referenced: the catalog end-to-end tests reference the DLL from a temporary project. -->
     <ProjectReference Include="..\Fixtures\Catalog\CatalogFixtureLib\CatalogFixtureLib.csproj" ReferenceOutputAssembly="false" />
     <!-- Built first, never referenced: the annotated-library build test references the DLL from a temporary project. -->

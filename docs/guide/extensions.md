@@ -30,6 +30,12 @@ build is already trusting the project's contents, so there is no separate prompt
 extension directories are never used by a build, so builds stay reproducible outside your own
 machine.
 
+**Trust.** Project-declared extensions load in the CLI (`netprints build`, `regen`, `generate`, `migrate`, `catalog`) and in the
+build with no trust check, as analyzers and build tasks do: building a project already runs that project's code. The trust
+prompt exists only in the editor, where it decides whether the project's extensions are loaded into the editor process and show
+their menus, panels and pages. Declining it never changes what a build does. See
+[ADR-0030](../adr/0030-extensibility-split-and-editor-facet.md).
+
 If an extension a graph depends on is missing or untrusted, its nodes are kept as-is (not deleted)
 and reported, so you can fix the reference and get them back.
 
@@ -69,16 +75,17 @@ Next to the built assembly, a `netprints-extension.json` manifest describes it:
   "name": "Sample extension",
   "version": "1.0.0",
   "assembly": "Example.NetPrints.Sample.dll",
-  "netprintsApi": "1.0",
+  "netprintsApi": "0.4",
   "dependsOn": []
 }
 ```
 
-`NetPrints.Extensibility` (and whatever of `NetPrints.Core`, `NetPrints.Reflection` and
-`NetPrints.Serialization` the extension's contributions need) is not published as a standalone NuGet
-package in this release, so an in-repo extension references those projects directly, and the project
-needs a few settings so the host can load it into its own isolated `AssemblyLoadContext` without
-duplicating assemblies the host already provides:
+`netprintsApi` is the `major.minor` API version the extension was built for; the host accepts the same major and a minor up to its own (0.4 in NetPrints 0.4.0). An optional `themes` array lists relative paths of `*.nptheme.json` files (data only) and needs `netprintsApi` 0.4 or later. A field the host does not know is ignored and logged once as information.
+
+An extension needs one package reference, to `NetPrints.Extensibility.Abstractions`. It brings
+`NetPrints.Core`, `NetPrints.Reflection`, `NetPrints.Catalog` and `NetPrints.Serialization` as dependencies, and with
+`NetPrints.Core` the NetPrints analyzers (the `NPA` rules below), so the project file stays short. The host assembly,
+`NetPrints.Extensibility`, is for applications that load extensions; an extension never references it.
 
 ```xml
 <PropertyGroup>
@@ -86,18 +93,151 @@ duplicating assemblies the host already provides:
 </PropertyGroup>
 
 <ItemGroup>
-  <!-- The host supplies these at run time; the extension must see the host's own copies. -->
-  <ProjectReference Include="path/to/NetPrints.Extensibility.csproj" Private="false" ExcludeAssets="runtime" />
+  <!-- The host supplies the NetPrints assemblies at run time; the extension must see the host's own copies. -->
+  <PackageReference Include="NetPrints.Extensibility.Abstractions" Version="0.4.0" ExcludeAssets="runtime" />
 </ItemGroup>
 ```
 
-`Private="false"` with `ExcludeAssets="runtime"` keeps NetPrints assemblies (and anything else the
-host already loads — Roslyn, Avalonia, `Microsoft.Extensions.*.Abstractions`) out of the extension's
-own output folder; everything else the extension references ships in that folder and is resolved
-from there. The manifest is copied to the output folder with the assembly
+`EnableDynamicLoading` lets the host load the extension into its own isolated `AssemblyLoadContext`.
+`ExcludeAssets="runtime"` keeps the NetPrints assemblies (and anything else the host already loads — Roslyn, Avalonia,
+`Microsoft.Extensions.*.Abstractions`) out of the extension's own output folder; everything else the extension references
+ships in that folder and is resolved from there. The manifest is copied to the output folder with the assembly
 (`CopyToOutputDirectory`), since the loader looks for it next to the assembly.
-[`tests/NetPrints.TestExtension`](../../tests/NetPrints.TestExtension) in this repository is a small,
-complete example of this setup.
+[`tests/NetPrints.TestExtension`](../../tests/NetPrints.TestExtension) in this repository is a small, complete example; CI
+builds it from the packed packages alone (`scripts/verify-packages.sh`).
+
+Package versions follow the API version: `ExtensionApi.Version` is 0.4 for the 0.4.x packages, and the host loads an
+extension built for the same major and a minor up to its own.
+
+## The editor facet and the contribution kinds
+
+`IExtensionBuilder` takes what the CLI, the build and the editor all use. `IExtensionBuilder.Editor` is the **editor facet**:
+the contributions that only the editor shows. An extension registers both in `Register`, and a host without an editor
+(the CLI, the generator, tests) loads the same extension and ignores the facet calls, so a contribution kind never makes an
+extension fail to load. The facet and its descriptors are experimental (`NPXE0005`).
+
+| Contribution | Call | What it adds |
+| --- | --- | --- |
+| Node library, node kinds | `AddNodeLibrary` | Node kinds with their document converter, translator and search suggestions. |
+| Node search suggestions | `AddSuggestionProvider` | Entries in the node search, computed from the search context (`NPXE0006`). |
+| Node data migrations | `AddDocumentMigration` | Upgrades of a versioned node kind's stored data (`NPXE0013`). |
+| Class and member emitters | `AddClassEmitter`, `AddMemberEmitter` | Changes to the generated C# (`NPXE0003`). |
+| Type catalogs and profiles | `AddTypeCatalog`, `AddCatalogProfile`, `AddProjectProfile` | Catalogs of types and project profiles. |
+| JSON types | `AddJsonTypeInfoResolver` | The source-generated metadata for the extension's document types. |
+| Project properties | `AddProjectProperty` | MSBuild properties the editor reads and writes. |
+| Host channel | `AddHostChannel` | A link to an external process (`NPXE0001`). |
+| Settings | `AddSettings` | A typed settings section stored in the user settings file (`NPXE0002`). |
+| String resources | `AddStringResources` | The extension's own localisation resources (`NPXE0011`). |
+| Services | `Services` | The extension's own dependency injection container (`NPXE0008`). |
+| Project templates | `AddProjectTemplate` | A template for New project, with its files (`NPXE0012`). |
+| Commands | `Editor.AddCommand` | A command with a label, icon, default gestures, scope and menu placement. |
+| Panels | `Editor.AddPanel` | A dockable tool panel. |
+| Start page tiles | `Editor.AddDashboardTile` | A tile on the start page. |
+| Context menu items | `Editor.AddContextMenuItem` | An entry in a context menu that runs a command. |
+| Status bar items | `Editor.AddStatusBarItem` | A segment of the status bar. |
+| Dialogs | `Editor.AddDialog` | A dialog shown by id. |
+| Settings pages | `Editor.AddSettingsPage` | A page of the Settings document; without a view model it is generated from the section's schema. |
+| Tooltips and go-to | `Editor.AddTooltipProvider`, `Editor.AddGoToProvider` | Tooltip content and go-to-anything results. |
+| View resources | `Editor.AddViewResources` | The templates, styles and icon geometries the extension's views use. |
+
+Every id an extension adds starts with its manifest id (`com.example.sample.openPanel`); a contribution without the prefix
+is rejected with `NPX013`, and a conflicting one is reported (`NPX004` or `NPX006`) with the first kept. Neither stops
+the extension's other contributions.
+
+### Typed contexts
+
+A command handler, a view model factory or an `AppliesTo` predicate receives the context of its own surface:
+`ICommandContext`, `IPanelContext`, `IStartPageContext`, `IStatusBarContext`, `ISettingsPageContext` or `IDialogContext`.
+Each carries the extension's `IServiceProvider` and the part of the session or shell the surface needs (`IProjectSession`,
+`IGraphEditor`, `IEditorShell`, `IDialogService`, `IEditorOutput`, `IEditorUndo`). They are interfaces: an extension never
+sees an editor view model, and a factory creates its view model from its own services.
+
+Labels are `LocalizedText`. When you give no key, the key comes from the id (`Command.<id>.Label`, `Panel.<id>.Title`,
+`Dialog.<id>.Title`, `Tile.<id>.Title`, `Template.<id>.Name`, `Template.<id>.Description`, `Menu.<path>`), so a translation
+file can replace any label. A node suggestion's `DisplayName` is a `LocalizedText` too: give it an explicit key
+(`new LocalizedText("Node.myKind.Print", "Print")`) so that two suggestions with the same text translate separately; a plain
+string is its own key.
+
+### Icons
+
+A descriptor names its icon by `IconId`. A built-in id uses the Material Design Icons set. To add your own, give
+`AddViewResources` a `ResourceDictionary` of `StreamGeometry` entries keyed `Icon.<id>` and use `<id>` (starting with your
+manifest id) as the `IconId`. Use a single-path vector so the glyph follows the theme; raster images and brand logos are
+not accepted ([ADR-0021](../adr/0021-editor-icon-family-and-icon-ids.md)).
+
+### Diagnostics of the host
+
+A problem in an extension is a diagnostic with a stable code, never an exception that stops the host. The `NPX` codes cover
+the manifest, the load, a conflicting or unprefixed contribution, an unknown reference and a version mismatch; the list with
+causes is in [Diagnostics](diagnostics.md).
+
+## Declaring pins
+
+A node kind declares its pins as properties; the compiler and the NetPrints analyzers (shipped inside the `NetPrints.Core`
+package) check them. The rationale is in [ADR-0025](../adr/0025-declarative-node-pins.md).
+
+```csharp
+[NodeKind("myCompany.greet")]
+public sealed partial class GreetNode : Node
+{
+    public partial NodeInputExecPin ExecPin { get; }
+
+    public partial NodeInputDataPin<string> NamePin { get; }
+
+    public partial NodeOutputExecPin ThenPin { get; }
+
+    public GreetNode(NodeGraph graph)
+        : base(graph)
+    {
+        DeclarePins();
+    }
+}
+```
+
+- **Typed properties.** The property type says what the pin is: `NodeInputExecPin`, `NodeOutputExecPin`,
+  `NodeInputDataPin<T>`, `NodeOutputDataPin<T>`, `NodeInputTypePin`. The property is `partial` and get-only; the generator
+  implements it. An unconnected input starts at `default(T)`, or at the value of a `[DefaultValue]` attribute.
+- **The convention.** The pin's key, the name stored in the graph file, is the property name without the `Pin` suffix:
+  `NamePin` stores `Name`. Pins are numbered in declaration order inside their kind (`InputExecPins[0]`, ...). The
+  constructor calls `DeclarePins()` once, before it touches a pin.
+- **`[Pin("key")]`.** Sets the key when the property name cannot (a name that does not end in `Pin`, or one that would clash
+  with another member). It also keeps a key stable when you rename the property later.
+- **`[PinType(nameof(member))]`.** For a data pin whose type is decided at run time, such as a generic result: the member is
+  an `ObservableValue<BaseType>` field of the node, and the pin follows it.
+- **`[NodeBase]`.** Marks an abstract base class whose derived kinds continue the pin lists after the base's pins. A
+  base class never adds pins by hand to a collection it also declares; NPA005 reports it.
+- **Kinds that stay imperative.** A node whose pins depend on constructor arguments can still call `AddInputExecPin(...)` and
+  friends. Declared pins come first: add imperative pins only after `DeclarePins()`. NPA003 and NPA005 find the calls
+  by name inside the constructor (`AddInputDataPin`, `AddOutputDataPin` and the exec and type variants, and `Add` on the
+  pin collections); a pin added by a helper method the constructor calls is not seen.
+
+### The `NodePins` files
+
+An extension project that declares pins lists their keys, one per line, in two additional files next to its project file:
+
+```xml
+<ItemGroup>
+  <AdditionalFiles Include="NodePins.Shipped.txt" />
+  <AdditionalFiles Include="NodePins.Unshipped.txt" />
+</ItemGroup>
+```
+
+`NodePins.Shipped.txt` holds the keys of the released versions; `NodePins.Unshipped.txt` holds new ones. Before a release, move
+the unshipped lines to the shipped file, in the same sorted order. A project without the files is not tracked.
+
+### Rules
+
+| Code | Severity | Meaning |
+|---|---|---|
+| NPA001-NPA009 | error | The declaration is wrong: not `partial`, a duplicate or invalid key, a missing `[PinType]` member, pin properties outside a `[NodeKind]` or `[NodeBase]` class. The code fixes make the class partial, add `[Pin]` or add the marker. |
+| NPA010 | warning | A declared key is not in either file. The fix adds it to `NodePins.Unshipped.txt`. |
+| NPA011 | error | A shipped key is no longer declared; the message names the old and the new key. Keep the key with `[Pin("old")]` on the replacing property, or remove it on purpose with a `*REMOVED*<line>` in the unshipped file. |
+
+| NPA040 | warning | A `Node.<kind>.Title` (only for a node class that overrides `TitleIsFixed`; the editor shows the key only then, and otherwise shows the node's own text) or `Node.<kind>.Pin.<in\|out>.<exec\|data\|type>.<key>` key that a `[NodeKind]` class implies is not in the neutral resx. Add the resx as an `AdditionalFiles` item; a project without one is not checked. |
+| NPA041 | error | A satellite resx (`Name.es.resx`) has a key its neutral file lacks, or a `{n}` placeholder count that differs. |
+| NPA042 | info | A `Node.<kind>.*` key of a `[NodeKind]` class in the project that no declaration uses. |
+
+The full list is in [Diagnostics](diagnostics.md#npa-authoring).
 
 ## Host channel
 
@@ -115,9 +255,25 @@ disappear in a minor release.
 | Id | Covers |
 | --- | --- |
 | `NPXE0001` | The host channel: `IHostChannel`, `IHostChannelFactory`, `HostMessage`, `NullHostChannel`, `InMemoryHostChannel`, `IExtensionBuilder.AddHostChannel`, `ExtensionRegistry.HostChannels`, `ExtensionRegistry.FindHostChannel`. |
-| `NPXE0002` | Extension settings: `ExtensionSettingsDescriptor` and `ExtensionSettingsDescriptor<T>`, `ISettingsStore`, `JsonFileSettingsStore`, `NetPrintsSettings.Descriptor`, `IExtensionBuilder.AddSettings`, `ExtensionRegistry.Settings`. |
+| `NPXE0002` | Extension settings: `ExtensionSettingsDescriptor` and `ExtensionSettingsDescriptor<T>`, `ISettingsStore`, `JsonFileSettingsStore`, `NetPrintsSettings.Descriptor`, `IExtensionBuilder.AddSettings`, `ExtensionRegistry.Settings`, `ExtensionLoaderOptions.SettingsStore`. |
 | `NPXE0003` | Class and member emitters: `IClassEmitter`, `IMemberEmitter`, `IExtensionBuilder.AddClassEmitter`, `IExtensionBuilder.AddMemberEmitter`, the emitter lists of `ExtensionRegistry` and `TranslationEnvironment` (including its constructor). |
 | `NPXE0004` | The catalog engine and its profiles (see [Type catalogs](catalogs.md)). |
+| `NPXE0005` | Editor contributions: the typed contexts (`ICommandContext`, `IPanelContext`, `IStartPageContext`, `IStatusBarContext`, `ISettingsPageContext`, `IDialogContext`), `IProjectSession`, `IGraphEditor`, `IEditorShell`, `IDialogService`, `IEditorOutput`, `IEditorUndo`, `ICommandHandler`, `CommandScope`, `CommandSelection`, the facet `IExtensionBuilder.Editor` and `IEditorContributions`, the descriptors (`CommandDescriptor`, `PanelDescriptor`, `DashboardTileDescriptor`, `ContextMenuItemDescriptor`, `StatusBarItemDescriptor`, `DialogDescriptor`, `SettingsPageDescriptor`), `ITooltipProvider`, `IGoToProvider`, `ConventionKeys`, `DocumentId`, `NavigationTarget`, `ExtensionLoaderOptions.EditorContributions`. |
+| `NPXE0006` | Node search providers: `INodeSuggestionProvider`, `NodeSearchContext`, `NodeSearchEntry`, `INodeCreationContext`, `IExtensionBuilder.AddSuggestionProvider`, `ExtensionRegistry.SuggestionProviders`. |
+| `NPXE0007` | C# features and requirements: `CSharpFeature`, `CSharpFeatureId`, `Availability`, `NodeSearchEntry.Requires`. |
+| `NPXE0008` | Extension services: `IExtensionBuilder.Services`, `HostExports`, `ExtensionRegistry.ServicesOf`, `ExtensionRegistry.OpenSession`. |
+| `NPXE0009` | Settings metadata: `PathKind`, `[RequiresRestart]`, `[SettingPath]`, `[SettingChoices]`. The settings page descriptor, its custom view model factory and `AddSettingsPage` are part of `NPXE0005`. |
+| `NPXE0010` | Retired: never allocated and never reused. |
+| `NPXE0011` | Extension string resources: `IExtensionBuilder.AddStringResources`, `ExtensionRegistry.StringResources`. |
+| `NPXE0012` | Project templates with files: `TemplateFile`, `ProjectTemplateDescriptor`, `IExtensionBuilder.AddProjectTemplate`, `ExtensionRegistry.ProjectTemplates`. |
+| `NPXE0013` | Node-data migrations: `INodeDataMigration`, `NodeKindDescriptor.DataVersion`, `IExtensionBuilder.AddDocumentMigration`, `ExtensionRegistry.NodeMigrator`, `NodeDataMigrator`, the three-argument `JsonDocumentFormat` constructor. |
+
+Stable since 0.4.0, with no opt-in: the typed pins and the pin attributes (`[NodeKind]`, `[NodeBase]`, `[Pin]`,
+`[PinType]`), `PinRole`, `CSharpLanguageVersion`, the minimal `CSharpTarget` with `CSharpTarget.Resolve`, `CSharpFrameworkInput` and
+`CSharpTargetResolution`, `INodeHintSource` and `NodeHint`, `LocalizedText`, `GraphPoint`, `Node.TitleIsFixed` and the surface that already shipped. Ids for the surfaces that land later in the 0.4.0 work
+(inspector sections, graph rules, translation context additions, node kinds by convention and package reference edits) are
+added to this table when their API ships. From the publish gate of 0.4.0 a public shape changes only under an `NPXE` id or
+with a recorded `*REMOVED*` entry in the API files.
 
 `IClassEmitter` and `IMemberEmitter` shipped without the attribute in `NetPrints.Core` 0.1.1. Code that
 implements or references them, or that builds a `TranslationEnvironment` with emitter lists, now needs
@@ -136,8 +292,8 @@ repository declare `<NetPrintsExperimentalOptIn Include="NPXE0001" />` items ins
 `Directory.Build.targets` turns them into the one allowed `NoWarn` (ADR-0017). An id disappears when its API
 graduates to stable.
 
-The public API of `NetPrints.Core`, `NetPrints.Extensibility`, `NetPrints.Reflection`,
-`NetPrints.Serialization` and `NetPrints.Catalog` is tracked in each project's `PublicAPI.Shipped.txt` and
+The public API of `NetPrints.Core`, `NetPrints.Extensibility.Abstractions`, `NetPrints.Extensibility`,
+`NetPrints.Reflection`, `NetPrints.Serialization` and `NetPrints.Catalog` is tracked in each project's `PublicAPI.Shipped.txt` and
 `PublicAPI.Unshipped.txt`. A change to a public symbol shows up in review as a change to those files.
 
 ## Coexistence rules
@@ -218,8 +374,10 @@ requires that the version provided by a `dependsOn` extension matches or is newe
 If the dependency provides an older version, the extension fails to load with error NPX008, naming the dependency, the
 version your extension expects, and the version the dependency provides. This is an important safety check: if NetPrints
 silently loaded an older version, your extension would crash later with a `MissingMethodException` when it calls a
-method that did not exist in the older version. NetPrints does not yet check versions from host-provided assemblies
-(such as `NetPrints.Core` or standard library packages); that is a planned extension.
+method that did not exist in the older version. The same check covers the assemblies the host provides (such as
+`NetPrints.Core` or standard library packages) and the references of the private libraries your extension ships in its
+own folder: a library built against a newer version than the host or the dependency provides fails the load with
+NPX008, naming the library that asked for it.
 
 **Assembly name resolution**: all assembly resolution is by simple name (no version); NetPrints matches by name only
 and relies on the version check above to catch direct-dependency mismatches. This is the same lookup that the .NET

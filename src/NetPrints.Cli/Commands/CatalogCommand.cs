@@ -35,6 +35,8 @@ internal sealed class CatalogCommand(
 
     private const string DefaultNamespace = "NetPrints.Catalogs";
     private const string ClassSuffix = "Catalog";
+    private const byte CarriageReturn = (byte)'\r';
+    private const byte LineFeed = (byte)'\n';
 
     private static readonly UTF8Encoding Utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
@@ -352,11 +354,31 @@ internal sealed class CatalogCommand(
         return (config.OutputPath ?? Path.Combine(config.BaseDirectory, className + ".g.cs"), text);
     }
 
+    // A checkout with core.autocrlf turns the LF the command writes into CRLF; that alone must not make a catalog stale.
+    private static bool SameIgnoringLineEndings(byte[] existing, byte[] expected) =>
+        WithoutCarriageReturnBeforeLineFeed(existing).AsSpan().SequenceEqual(WithoutCarriageReturnBeforeLineFeed(expected));
+
+    private static byte[] WithoutCarriageReturnBeforeLineFeed(byte[] bytes)
+    {
+        var result = new List<byte>(bytes.Length);
+        for (int i = 0; i < bytes.Length; i++)
+        {
+            if (bytes[i] == CarriageReturn && i + 1 < bytes.Length && bytes[i + 1] == LineFeed)
+            {
+                continue;
+            }
+
+            result.Add(bytes[i]);
+        }
+
+        return [.. result];
+    }
+
     private async Task<int> WriteAsync(string path, string text, CatalogDocument document, bool check, CancellationToken cancellationToken)
     {
         byte[] bytes = Utf8.GetBytes(text);
         string summary = $"({document.Types.Count} types, {CountMembers(document)} members)";
-        bool same = File.Exists(path) && (await File.ReadAllBytesAsync(path, cancellationToken).ConfigureAwait(false)).AsSpan().SequenceEqual(bytes);
+        bool same = File.Exists(path) && SameIgnoringLineEndings(await File.ReadAllBytesAsync(path, cancellationToken).ConfigureAwait(false), bytes);
         if (same)
         {
             console.WriteLineRaw($"up to date: {path} {summary}");

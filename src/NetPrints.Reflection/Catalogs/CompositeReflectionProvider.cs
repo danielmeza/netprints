@@ -12,7 +12,7 @@ namespace NetPrints.Reflection;
 /// enumerations are concatenated in provider order without duplicates, and documentation comes from the
 /// first provider that has it. Holds no state of its own.
 /// </summary>
-public sealed class CompositeReflectionProvider : IReflectionProvider, ICatalogScope
+public sealed class CompositeReflectionProvider : IReflectionProvider, ICatalogScope, INodeHintSource
 {
     /// <summary>
     /// Creates a composite over <paramref name="providers"/>.
@@ -88,6 +88,14 @@ public sealed class CompositeReflectionProvider : IReflectionProvider, ICatalogS
         ArgumentNullException.ThrowIfNull(type);
         return CoveringCatalog(type) is { } catalog && !Lists(catalog, type) ? catalog.Info.Id : null;
     }
+
+    /// <inheritdoc />
+    public NodeHint? GetMethodHint(MethodSpecifier method) =>
+        Providers.OfType<INodeHintSource>().Select(source => source.GetMethodHint(method)).FirstOrDefault(hint => hint is not null);
+
+    /// <inheritdoc />
+    public NodeHint? GetTypeHint(TypeSpecifier type) =>
+        Providers.OfType<INodeHintSource>().Select(source => source.GetTypeHint(type)).FirstOrDefault(hint => hint is not null);
 
     /// <inheritdoc />
     public string? GetMethodDocumentation(MethodSpecifier methodSpecifier) =>

@@ -64,8 +64,13 @@ internal static class Program
         }
 
         var settings = new JsonFileSettingsStore(JsonFileSettingsStore.DefaultFilePath(), loggerFactory.CreateLogger<JsonFileSettingsStore>());
+        var contributions = new ExtensionContributionRecorder();
         var extensions = new ExtensionHost(
-            new ExtensionLoaderOptions(GetExtensionSearchDirectories(settings), [], [BuiltInExtension.InProcessEntry]), loggerFactory);
+            new ExtensionLoaderOptions(GetExtensionSearchDirectories(settings), [], [BuiltInExtension.InProcessEntry])
+            {
+                SettingsStore = settings,
+                EditorContributions = contributions.Factory,
+            }, loggerFactory);
         HostChannelSelection channel = HostChannelSelector.Select(
             extensions.Current, GetEnvironment(), loggerFactory.CreateLogger(nameof(HostChannelSelector)));
         EditorApp.HostServices = new EditorHostServices(loggerFactory, extensions, settings, channel.Channel, channel.Error, msBuildAvailable,
@@ -73,7 +78,8 @@ internal static class Program
             {
                 await extensions.DisposeAsync();
                 await channel.Channel.DisposeAsync();
-            });
+            },
+            contributions);
 
         // EditorApp's ShutdownRequested handler awaits HostServices.DisposeAsync() before the app exits.
         return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);

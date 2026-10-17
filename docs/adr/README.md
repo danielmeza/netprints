@@ -34,6 +34,12 @@ instead.
 - [0021: Editor icons come from one vector family, Material Design Icons, named by icon id](0021-editor-icon-family-and-icon-ids.md)
 - [0022: A pre-release editor build writes the latest released SDK version](0022-sdk-version-written-by-pre-release-builds.md)
 - [0023: The editor's base theme and controls are Semi.Avalonia and Ursa.Avalonia](0023-semi-ursa-base-theme.md)
+- [0024: Analyzer and generator infrastructure: four Roslyn projects, four rule families](0024-analyzer-and-generator-infrastructure.md)
+- [0025: Node pins are declared as typed partial properties, and their keys are tracked](0025-declarative-node-pins.md)
+- [0027: Localization keys and display text](0027-localization-keys-and-display-text.md)
+- [0028: Node search providers, node creation and ranking](0028-node-search-providers-and-creation.md)
+- [0029: Node capabilities are role interfaces, and pins carry roles that decide purity](0029-node-capabilities-and-pin-roles.md)
+- [0030: The Extensibility package is split into Abstractions and host, with the editor as a facet](0030-extensibility-split-and-editor-facet.md)
 - [0031: The editor composes with MS.DI and our own registration generator](0031-editor-composition-and-di.md)
 - [0033: Logging goes through NLog 6 behind `ILogger`, and per-user files live in per-OS folders](0033-logging-and-per-user-folders.md)
 - [0034: Smart enums keep behaviour in each member; generic math builds the primitive table](0034-smart-enums-and-generic-math.md)
@@ -42,7 +48,8 @@ instead.
 - [0037: Run profile kinds](0037-run-profile-kinds.md)
 - [0038: The C# target and feature requirements](0038-csharp-target-and-feature-requirements.md)
 - [0039: User attributes and their editor extension model](0039-user-attributes-and-editor-extension-model.md)
+- [0040: Editor settings: one store, typed sections, generated pages and user key bindings](0040-editor-settings-pages-and-key-bindings.md)
 
-Numbers 0024-0030 and 0032 are reserved by the roadmap for ADRs not yet written (analyzer and generator
-infrastructure, declarative pins, node kinds, localization, node search, node capabilities, the Extensibility
-Stairway split, graph rules); 0031 and later were written first.
+Numbers 0026 and 0032 are reserved by the roadmap for ADRs not yet written (node kinds,
+graph rules); 0031 and later were written first. Declarative pins
+(0025), localization (0027), node search (0028), node capabilities (0029) and the Extensibility split (0030) are written.

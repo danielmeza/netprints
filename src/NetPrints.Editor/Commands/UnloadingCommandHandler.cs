@@ -8,7 +8,7 @@ namespace NetPrints.Editor.Commands;
 /// <see cref="IProjectActions.ConfirmUnloadAsync"/> first. The window-close path is its other caller (exit and the OS
 /// close), so each path asks once. With no project open there is nothing to unload and nothing is asked.
 /// </summary>
-public abstract class UnloadingCommandHandler : ICommandHandler
+public abstract class UnloadingCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public virtual bool CanExecute(CommandContext context) => true;

@@ -16,8 +16,8 @@ topic, so it takes the first free one after the reserved 0024-0032 and 0033.
 - A class cannot be an attribute argument, and the attribute-driven plan writes `[DefaultGesture(...)]`, so the keys
   also need an enum for attributes.
 - Primitive types are listed in five places (`TypedValueConverter`, `SignatureChange`, `TranslatorUtil` suffixes,
-  `NodePinViewModel`, `TypeSpecifier.IsPrimitive`). The one reflection-shaped spot, `TypedValueConverter`, produces an
-  IL2057 trim warning.
+  `NodePinViewModel`, `TypeSpecifier.IsPrimitive`). `NodePinViewModel` resolves the type by name and produces an
+  IL2057 trim warning (`TypedValueConverter.ParseEnum` has one too, for enums, which the table does not cover).
 
 ## Decision
 
@@ -72,8 +72,9 @@ topic, so it takes the first free one after the reserved 0024-0032 and 0033.
 4. **`ISpanParsable<CommandKey>` and `ISpanFormattable` are implemented directly**, with public `Parse` and `TryParse`
    on the type, backed by a `FrozenDictionary` with an alternate span lookup (.NET 9). `CommandGesture` implements the
    same two interfaces. Strings are parsed only at the boundaries: keybinding JSON, manifests and display.
-   `DefaultGestures` becomes `IReadOnlyList<CommandGesture>?` under the 0.3.0 hard-rename policy. How tolerant a
-   future keybindings file must be is a separate decision; the state-files rule only requires the whole-file fallback.
+   `DefaultGestures` becomes `IReadOnlyList<CommandGesture>?` under the 0.4.0 hard-rename policy (P3's release; P3a
+   ships as 0.3.0). How tolerant a future keybindings file must be is a separate decision; the state-files rule only
+   requires the whole-file fallback.
 5. **The generic `ISmartEnum<TSelf>` waits for the second smart enum.** An ADR then chooses between a base class with
    `static abstract All` and `ISmartEnum` as prototyped.
 6. **Smart enums are never bound through `IConfiguration`.** Settings bind strings and parse them; the configuration
@@ -94,7 +95,7 @@ topic, so it takes the first free one after the reserved 0024-0032 and 0033.
    - Numeric rows are registered through `Number<T>() where T : INumberBase<T>`, using `T.Zero` and `T.Parse` /
      `ToString` with the invariant culture.
    - `bool`, `char` and `string` quoting, NaN and Infinity literals and enums keep special rows.
-   - The table removes one trim-ratchet warning (IL2057 at `TypedValueConverter`).
+   - The table removes one trim-ratchet warning (IL2057 in `NodePinViewModel`; the one at `TypedValueConverter.ParseEnum` stays).
    - It gets a golden test built from the 18 wire-form samples and the 240-input parse matrix.
    - Switch node (B1) case literals reuse the table.
    - Cost, accepted by the owner: about 36 generic methods JIT-compiled once at first use, roughly 1.4 ms.

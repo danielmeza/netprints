@@ -15,6 +15,24 @@
     <_NetPrintsRequest>$(IntermediateOutputPath)netprints.generate.rsp</_NetPrintsRequest>
   </PropertyGroup>
 
+  <!-- The C# target (ADR-0038): the language version of every target framework, so that each inner build of a multi-targeted
+       project writes the same request and the generator resolves the same version as the editor and `netprints regen`. -->
+  <Target Name="_NetPrintsFrameworkInfo" Returns="@(_NetPrintsFrameworkInfoItem)">
+    <ItemGroup>
+      <_NetPrintsFrameworkInfoItem Include="$(TargetFramework)" LangVersion="$(LangVersion)" MaxSupportedLangVersion="$(MaxSupportedLangVersion)" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_NetPrintsCollectFrameworks">
+    <ItemGroup>
+      <_NetPrintsFrameworkName Include="$(TargetFrameworks)" Condition="'$(TargetFrameworks)' != ''" />
+      <_NetPrintsFrameworkName Include="$(TargetFramework)" Condition="'$(TargetFrameworks)' == ''" />
+    </ItemGroup>
+    <MSBuild Projects="$(MSBuildProjectFullPath)" Targets="_NetPrintsFrameworkInfo" Properties="TargetFramework=%(_NetPrintsFrameworkName.Identity)">
+      <Output TaskParameter="TargetOutputs" ItemName="_NetPrintsFramework" />
+    </MSBuild>
+  </Target>
+
   <!-- Written by its own target, ahead of NetPrintsGenerate, so the request file — and the extension
        assemblies' actual, glob-expanded paths (R1-12: implicit metadata batching on
        %(NetPrintsExtension.FullPath), only available inside a target, makes each Include a plain,
@@ -22,10 +40,11 @@
        Inputs treats as one literal, non-existent path) — can themselves be Inputs of that target
        (WriteOnlyWhenDifferent so RootNamespace/NetPrintsProfile changes from Directory.Build.props
        invalidate it even though no graph or extension file changed). -->
-  <Target Name="_NetPrintsWriteRequest" Condition="'@(NetPrintsGraph)' != ''">
+  <Target Name="_NetPrintsWriteRequest" Condition="'@(NetPrintsGraph)' != ''" DependsOnTargets="_NetPrintsCollectFrameworks">
     <ItemGroup>
       <_NetPrintsExtensionAssembly Include="%(NetPrintsExtension.FullPath)/**/*.dll" Condition="'@(NetPrintsExtension)' != ''" />
       <_NetPrintsRequestLine Include="project=$(MSBuildProjectFullPath)" />
+      <_NetPrintsRequestLine Include="@(_NetPrintsFramework->'framework=%(Identity)|%(LangVersion)|%(MaxSupportedLangVersion)')" />
       <_NetPrintsRequestLine Include="rootNamespace=$(RootNamespace)" />
       <_NetPrintsRequestLine Include="profile=$(NetPrintsProfile)" />
       <_NetPrintsRequestLine Include="@(NetPrintsExtension->'extension=%(FullPath)')" />

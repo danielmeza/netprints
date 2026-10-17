@@ -8,23 +8,19 @@ namespace NetPrints.Graph
     /// Node representing a C# <c>typeof</c> expression: outputs the runtime <see cref="Type"/> for its
     /// input type pin.
     /// </summary>
-    public class TypeOfNode : Node
+    [NodeKind(NodeKindIds.TypeOf)]
+    public sealed partial class TypeOfNode : Node
     {
-        /// <summary>
-        /// Output data pin for the Type value.
-        /// </summary>
-        public NodeOutputDataPin TypePin
-        {
-            get { return OutputDataPins[0]; }
-        }
-
         /// <summary>
         /// Input type pin for the Type value.
         /// </summary>
-        public NodeInputTypePin InputTypePin
-        {
-            get { return InputTypePins[0]; }
-        }
+        [Pin("Type")]
+        public partial NodeInputTypePin InputTypePin { get; }
+
+        /// <summary>
+        /// Output data pin for the Type value.
+        /// </summary>
+        public partial NodeOutputDataPin<Type> TypePin { get; }
 
         /// <summary>
         /// Adds this node to <paramref name="graph"/> and gives it its input type pin and its
@@ -34,8 +30,7 @@ namespace NetPrints.Graph
         public TypeOfNode(NodeGraph graph)
             : base(graph)
         {
-            AddInputTypePin("Type");
-            AddOutputDataPin("Type", TypeSpecifier.FromType<Type>());
+            DeclarePins();
         }
 
         /// <summary>
@@ -46,5 +41,8 @@ namespace NetPrints.Graph
         {
             return $"Type Of";
         }
+
+        /// <inheritdoc />
+        public override bool TitleIsFixed => true;
     }
 }

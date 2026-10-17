@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Notifications;
+using Avalonia.Threading;
 using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.Commands.CommandPalette;
@@ -13,8 +14,14 @@ using NetPrints.Editor.References;
 namespace NetPrints.Editor.Hosting.Avalonia;
 
 /// <summary>Modal Avalonia dialogs owned by the active window.</summary>
+[Singleton<IEditorDialogs>(Factory = "Create")]
 public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
 {
+    /// <summary>Creates the dialogs owned by the active window of <paramref name="windows"/>.</summary>
+    /// <param name="windows">Picks the window that owns the dialogs.</param>
+    /// <returns>The dialogs.</returns>
+    internal static EditorDialogs Create(WindowService windows) => new(() => windows.ActiveWindow);
+
     private const int MaxNotifications = 3;
     private const string SelectMethodTitle = "Select method";
     private const string SelectMethodLabel = "Select";
@@ -33,6 +40,7 @@ public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
             notificationManager.Show(new Notification(title, message, NotificationType.Information));
         }
     }
+
     private async Task<T?> ShowAsync<T>(Window dialog)
     {
         if (owner() is { } parent)
@@ -45,6 +53,14 @@ public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
         dialog.Closed += (_, _) => closed.TrySetResult(dialog is IDialogResult<T> result ? result.Result : default);
         dialog.Show();
         return await closed.Task;
+    }
+
+    /// <inheritdoc/>
+    public async Task ShowViewModelAsync(string title, object viewModel, CancellationToken cancellationToken)
+    {
+        var dialog = new ExtensionDialog(title, viewModel);
+        using CancellationTokenRegistration registration = cancellationToken.Register(() => Dispatcher.UIThread.Post(dialog.Close));
+        await ShowAsync<object>(dialog);
     }
 
     /// <inheritdoc/>

@@ -4,7 +4,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using NetPrints.Editor.Graph.GetSet;
-using NetPrints.Editor.Search;
+using NetPrints.Editor.NodeSearch;
 
 namespace NetPrints.Editor.UITests.Theming;
 

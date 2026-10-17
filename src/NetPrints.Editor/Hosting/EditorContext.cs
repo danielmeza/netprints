@@ -1,5 +1,6 @@
 using System.Reactive.Concurrency;
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NetPrints.Editor.Diagnostics;
 using NetPrints.Editor.Lifecycle;
@@ -39,7 +40,9 @@ namespace NetPrints.Editor.Hosting;
 /// <param name="WindowStateService">Restores and saves the main window's bounds, or <see langword="null"/> for none (tests that do not exercise it).</param>
 /// <param name="StateStore">The per-user state files the layout and the sessions are kept in, or <see langword="null"/> for none (tests that do not exercise them).</param>
 /// <param name="Locations">The parent folder New project and the samples use, or <see langword="null"/> for the user's documents folder with the state store (tests that do not exercise it).</param>
+/// <param name="Contributions">Places the editor contributions of the loaded extensions in the contribution groups, or <see langword="null"/> when the host does not show them (tests that do not exercise it).</param>
 /// <param name="Recent">The recent projects list that opening or creating a project updates, or <see langword="null"/> for none (tests that do not exercise it).</param>
+[Singleton<EditorContext>(Factory = "Create")]
 public sealed record EditorContext(
     IFilePickerService FilePicker,
     IEditorDialogs Dialogs,
@@ -62,4 +65,70 @@ public sealed record EditorContext(
     RecentProjects? Recent = null,
     WindowStateService? WindowStateService = null,
     IEditorStateStore? StateStore = null,
-    ProjectLocations? Locations = null);
+    ProjectLocations? Locations = null,
+    ExtensionContributionRecorder? Contributions = null)
+{
+    /// <summary>Creates the facade from the container; the optional members are the ones the host registered.</summary>
+    /// <param name="services">Resolves the optional members.</param>
+    /// <param name="filePicker">Opens native file/save pickers.</param>
+    /// <param name="dialogs">Shows modal dialogs.</param>
+    /// <param name="clipboard">Reads and writes the system clipboard.</param>
+    /// <param name="dispatcher">Posts and invokes work on the UI thread.</param>
+    /// <param name="reflection">Owns the reflection provider.</param>
+    /// <param name="windows">Opens, activates and closes windows.</param>
+    /// <param name="processes">Starts external processes.</param>
+    /// <param name="scheduler">Scheduler for time-based work.</param>
+    /// <param name="createMessenger">Creates a messenger for one editor scope.</param>
+    /// <param name="loggerFactory">Creates the loggers.</param>
+    /// <param name="projects">The project system.</param>
+    /// <param name="persistence">Loads, saves and adds class graphs.</param>
+    /// <param name="extensions">The extension host.</param>
+    /// <param name="hostChannel">The channel to the hosting application.</param>
+    /// <param name="settings">The settings store.</param>
+    /// <param name="codeAnalysis">Live analysis of the open project.</param>
+    /// <param name="runState">Follows the last compile and program.</param>
+    /// <returns>The facade.</returns>
+    internal static EditorContext Create(
+        IServiceProvider services,
+        IFilePickerService filePicker,
+        IEditorDialogs dialogs,
+        IClipboardService clipboard,
+        IUiDispatcher dispatcher,
+        IReflectionHost reflection,
+        IWindowService windows,
+        IProcessLauncher processes,
+        IScheduler scheduler,
+        Func<IMessenger> createMessenger,
+        ILoggerFactory loggerFactory,
+        IProjectSystem projects,
+        ProjectPersistence persistence,
+        IExtensionHost extensions,
+        IHostChannel hostChannel,
+        ISettingsStore settings,
+        ICodeAnalysisHost codeAnalysis,
+        RunStateTracker runState) =>
+        new(
+            filePicker,
+            dialogs,
+            clipboard,
+            dispatcher,
+            reflection,
+            windows,
+            processes,
+            scheduler,
+            createMessenger,
+            loggerFactory,
+            projects,
+            persistence,
+            extensions,
+            hostChannel,
+            settings,
+            codeAnalysis,
+            runState,
+            services.GetService<BackupOptions>(),
+            services.GetService<RecentProjects>(),
+            services.GetService<WindowStateService>(),
+            services.GetService<IEditorStateStore>(),
+            services.GetService<ProjectLocations>(),
+            services.GetService<ExtensionContributionRecorder>());
+}

@@ -46,11 +46,14 @@ public sealed class NodeDocumentConverterRegistry
     /// <exception cref="ArgumentException">Two converters share a <see cref="INodeDocumentConverter.Kind"/>
     /// or a <see cref="INodeDocumentConverter.NodeType"/>; or a converter's <c>Kind</c> neither contains
     /// <c>'/'</c> (an extension kind) nor is one of the known built-in kind names.</exception>
+    /// <param name="dataVersions">The current data version of each kind that declares one above 0; <see langword="null"/> when none does.</param>
     public NodeDocumentConverterRegistry(IReadOnlyList<INodeDocumentConverter> converters,
-        IReadOnlyList<IJsonTypeInfoResolver> extensionResolvers)
+        IReadOnlyList<IJsonTypeInfoResolver> extensionResolvers,
+        IReadOnlyDictionary<string, int>? dataVersions = null)
     {
         Converters = converters;
         ExtensionResolvers = extensionResolvers;
+        DataVersions = dataVersions ?? new Dictionary<string, int>();
 
         byKind = new Dictionary<string, INodeDocumentConverter>(StringComparer.Ordinal);
         byNodeType = new Dictionary<Type, INodeDocumentConverter>();
@@ -98,6 +101,18 @@ public sealed class NodeDocumentConverterRegistry
     /// load order.
     /// </summary>
     public IReadOnlyList<IJsonTypeInfoResolver> ExtensionResolvers { get; }
+
+    /// <summary>
+    /// The current data version of each node kind that declares one above 0 (research R18).
+    /// </summary>
+    public IReadOnlyDictionary<string, int> DataVersions { get; }
+
+    /// <summary>
+    /// Returns the data version nodes of <paramref name="kind"/> are written with.
+    /// </summary>
+    /// <param name="kind">The <c>$kind</c> value.</param>
+    /// <returns>The version, or 0 when the kind declares none.</returns>
+    public int DataVersionOf(string kind) => DataVersions.GetValueOrDefault(kind);
 
     /// <summary>
     /// Returns the converter registered for <paramref name="kind"/>.

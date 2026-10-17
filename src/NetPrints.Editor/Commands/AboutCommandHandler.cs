@@ -4,7 +4,7 @@ using NetPrints.Editor.Shell;
 namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>about</c> command: shows the editor version and the project links.</summary>
-public sealed class AboutCommandHandler : ICommandHandler
+public sealed class AboutCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => true;

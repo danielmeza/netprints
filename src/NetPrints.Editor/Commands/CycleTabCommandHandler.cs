@@ -5,7 +5,7 @@ namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>nextTab</c> and <c>previousTab</c> commands.</summary>
 /// <param name="step">1 for the next tab, -1 for the previous one.</param>
-public sealed class CycleTabCommandHandler(int step) : ICommandHandler
+public sealed class CycleTabCommandHandler(int step) : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => context.Shell.OpenDocuments.Count > 1;

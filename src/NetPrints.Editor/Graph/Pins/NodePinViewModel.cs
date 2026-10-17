@@ -81,6 +81,9 @@ public sealed partial class NodePinViewModel : ObservableObject, IDisposable
     /// <summary>Stable identity of the pin within its node for UI automation: "in:&lt;name&gt;" or "out:&lt;name&gt;".</summary>
     public string AutomationName => $"{(IsInput ? "in" : "out")}:{Pin.Name}";
 
+    /// <summary>Per-pin automation id: direction, kind and the pin's key (research R13), see <see cref="AutomationIds.ForPin"/>.</summary>
+    public string PinAutomationId => AutomationIds.ForPin(IsInput, Kind, Pin.Name);
+
     /// <summary>Exec pins are squares (PAR-43).</summary>
     public bool ShowRectangle => Kind == PinKind.Exec;
 
@@ -130,13 +133,11 @@ public sealed partial class NodePinViewModel : ObservableObject, IDisposable
     /// <summary>Whether the wrapped pin belongs to a <see cref="RerouteNode"/> (drawn without a label).</summary>
     public bool IsRerouteNodePin => Pin.Node is RerouteNode;
 
-    /// <summary>The wrapped pin's display string (<c>Pin.ToString()</c>).</summary>
-    public string DisplayName => Pin.ToString();
+    /// <summary>The wrapped pin's display string (<c>Pin.ToString()</c>) with its name translated through the resources (FR-027).</summary>
+    public string DisplayName => NodeTexts.PinLabel(Pin, Node.Graph.Context.Extensions.Current);
 
     /// <summary>Editable for method entry outputs and return node inputs (PAR-45).</summary>
-    public bool IsNameEditable =>
-        (Pin.Node is MethodEntryNode && Pin.Node.OutputDataPins.Contains(Pin))
-        || (Pin.Node is ReturnNode && Pin.Node.InputDataPins.Contains(Pin));
+    public bool IsNameEditable => Pin.Node is IPinNameEditor editor && editor.CanRenamePin(Pin);
 
     /// <summary>Whether to show the pin's name as a plain label (not a reroute node pin, not editable).</summary>
     public bool ShowLabel => !IsRerouteNodePin && !IsNameEditable;
@@ -285,12 +286,11 @@ public sealed partial class NodePinViewModel : ObservableObject, IDisposable
             }
 
             // Convert to the pin's type when it is a known runtime type; enums use their name.
-            Type? type = Type.GetType(typeSpecifier.Name);
-            if (value is not null && type is not null && !typeSpecifier.IsEnum)
+            if (value is not null && !typeSpecifier.IsEnum && PrimitiveKinds.TryGet(typeSpecifier.Name, out PrimitiveKind? kind))
             {
                 try
                 {
-                    p.UnconnectedValue = Convert.ChangeType(value, type, System.Globalization.CultureInfo.InvariantCulture);
+                    p.UnconnectedValue = kind.Convert(value);
                 }
                 catch (Exception ex) when (ex is InvalidCastException or FormatException or OverflowException)
                 {

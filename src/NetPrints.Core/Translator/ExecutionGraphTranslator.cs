@@ -86,6 +86,7 @@ namespace NetPrints.Translator
         // no single EntryNode, several EventEntryNodes may share one) can be translated through the
         // same context; TranslateSignature casts back to ExecutionGraph, the only case it applies to.
         private NodeGraph? graphField;
+
         private NodeGraph graph
         {
             get => graphField ?? throw new InvalidOperationException(
@@ -94,6 +95,7 @@ namespace NetPrints.Translator
         }
 
         private Random? randomField;
+
         private Random random
         {
             get => randomField ?? throw new InvalidOperationException(
@@ -155,7 +157,7 @@ namespace NetPrints.Translator
                 {
                     // The translator only ever runs on a fully type-resolved graph (GraphTypeInference
                     // already ran during deserialization), so PinType.Value is set here.
-                    return TranslatorUtil.ObjectToLiteral(pin.UnconnectedValue, (TypeSpecifier)ResolvedPinType(pin));
+                    return TranslatorUtil.ObjectToLiteral(pin.UnconnectedValue, (TypeSpecifier)ResolvedPinType(pin), ((IExecutionTranslationContext)this).Target);
                 }
                 else if (pin.UsesExplicitDefaultValue)
                 {
@@ -177,11 +179,6 @@ namespace NetPrints.Translator
         private IEnumerable<string> GetOrCreatePinNames(IEnumerable<NodeOutputDataPin> pins)
         {
             return pins.Select(pin => GetOrCreatePinName(pin)).ToList();
-        }
-
-        private IEnumerable<string?> GetPinIncomingValues(IEnumerable<NodeInputDataPin> pins)
-        {
-            return pins.Select(pin => GetPinIncomingValue(pin)).ToList();
         }
 
         /// <inheritdoc />
@@ -595,10 +592,10 @@ namespace NetPrints.Translator
             builder.AppendLine();
 
             // Start after the entry if necessary (id != 0)
-            NodeInputExecPin? initialOutgoingPin = entry.InitialExecutionPin.OutgoingPin;
+            NodeInputExecPin? initialOutgoingPin = entry.ExecPin.OutgoingPin;
             if (initialOutgoingPin != null && GetExecPinStateId(initialOutgoingPin) != 0)
             {
-                WriteGotoOutputPin(entry.InitialExecutionPin);
+                WriteGotoOutputPin(entry.ExecPin);
             }
 
             // Translate every exec node reachable from this entry

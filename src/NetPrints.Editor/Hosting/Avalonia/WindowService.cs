@@ -6,6 +6,8 @@ namespace NetPrints.Editor.Hosting.Avalonia;
 /// <summary>
 /// Holds the main window and picks the window that owns dialogs and pickers (the active one, so a floated Dock window owns its own), and closes the main window on request.
 /// </summary>
+[Singleton<WindowService>]
+[Singleton<IWindowService>]
 public sealed class WindowService : IWindowService
 {
     /// <summary>The main window (owner of dialogs and pickers when no other window is active).</summary>

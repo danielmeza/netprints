@@ -4,7 +4,7 @@ using NetPrints.Editor.Shell;
 namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>saveAll</c> command: saves every unsaved file of the open project.</summary>
-public sealed class SaveAllCommandHandler : ICommandHandler
+public sealed class SaveAllCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => context.Session is not null;

@@ -44,7 +44,7 @@ package: it also pulls in Animations, Draggable, Events and Responsive, which Ne
 The typical conversion replaces a handler with a behavior, and the decision moves into a view model (VM) command:
 ```xml
 <!-- Before: KeyDown="OnSearchKeyDown", and a handler that checks e.Key == Key.Enter and calls the VM. -->
-<!-- After (src/NetPrints.Editor/Search/NodeSearchView.axaml): -->
+<!-- After (src/NetPrints.Editor/NodeSearch/NodeSearchView.axaml): -->
 <TextBox Text="{Binding SearchText}">
   <Interaction.Behaviors>
     <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding SelectFirstCommand}" />

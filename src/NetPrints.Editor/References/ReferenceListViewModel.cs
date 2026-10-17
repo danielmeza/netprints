@@ -67,7 +67,7 @@ public sealed partial class ReferenceListViewModel : ObservableObject, IDisposab
         }
         catch (Exception ex)
         {
-            await context.Dialogs.ShowErrorAsync("Failed to add assembly", $"Failed to add assembly at {path}:\n\n{ex}");
+            await context.Dialogs.ShowErrorAsync("Failed to add assembly", TextFormat.Of(Strings.Message_FailedToAddAssembly, path, ex));
         }
     }
 
@@ -90,7 +90,7 @@ public sealed partial class ReferenceListViewModel : ObservableObject, IDisposab
         }
         catch (Exception ex)
         {
-            await context.Dialogs.ShowErrorAsync("Failed to add sources", $"Failed to add sources at {path}:\n\n{ex}");
+            await context.Dialogs.ShowErrorAsync("Failed to add sources", TextFormat.Of(Strings.Message_FailedToAddSources, path, ex));
         }
     }
 

@@ -1,18 +1,14 @@
-using System.Reactive.Concurrency;
 using System.Reflection;
-using Avalonia.Controls;
-using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NetPrints.Editor.Contributions;
-using NetPrints.Editor.Diagnostics;
 using NetPrints.Editor.Hosting.Avalonia;
 using NetPrints.Editor.Lifecycle;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.State;
+using NetPrints.Extensibility.Loading;
+using NetPrints.Extensibility.Settings;
 using NetPrints.Projects;
-using NetPrints.Serialization;
-using NetPrints.Serialization.Mapping;
-using NetPrints.Serialization.Stores;
 using NetPrints.Workspace;
 
 namespace NetPrints.Editor.Hosting;
@@ -27,21 +23,19 @@ public sealed class EditorComposition : IDisposable
     /// <param name="host">Process-wide services created once by the host (desktop, headless tests).</param>
     public EditorComposition(EditorHostServices host)
     {
-        var windows = new WindowService();
         EditorDataPaths paths = EditorDataPaths.Resolve();
         var fileSystem = new RealEditorFileSystem();
         new StateMigration(paths, fileSystem, new RealStateFolderMover(), host.LoggerFactory.CreateLogger<StateMigration>()).Run();
         var stateStore = new JsonEditorStateStore(paths, fileSystem, host.LoggerFactory.CreateLogger<JsonEditorStateStore>());
-        services = new EditorServices(host, windows,
-            new EditorDialogs(() => windows.ActiveWindow),
-            new StorageFilePickerService(() => windows.ActiveWindow),
-            new ProcessLauncher(),
-            new BackupOptions(paths, fileSystem, TimeProvider.System, BackupService.ResolveDelay(Environment.GetEnvironmentVariable)),
-            new RecentProjects(stateStore, fileSystem, TimeProvider.System),
-            new WindowStateService(stateStore),
-            stateStore,
-            ProjectLocations.Resolve(stateStore, Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+        services = new EditorServices(host, collection =>
+        {
+            collection.AddSingleton(new BackupOptions(paths, fileSystem, TimeProvider.System, BackupService.ResolveDelay(Environment.GetEnvironmentVariable)));
+            collection.AddSingleton(new RecentProjects(stateStore, fileSystem, TimeProvider.System));
+            collection.AddSingleton(new WindowStateService(stateStore));
+            collection.AddSingleton<IEditorStateStore>(stateStore);
+            collection.AddSingleton(ProjectLocations.Resolve(stateStore, Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)));
+        });
     }
 
     /// <summary>The composed host services.</summary>
@@ -116,68 +110,39 @@ internal sealed class EditorServices : IDisposable
     private static readonly string NetPrintsSdkVersion = EditorSdkVersion.Resolve(typeof(EditorServices).Assembly);
 
     private readonly string? hostChannelError;
-    private readonly PersistenceBinding persistenceBinding;
-    private readonly ICodeAnalysisHost codeAnalysis;
-    private readonly RunStateTracker runState;
+    private readonly ServiceProvider provider;
     private ShellHost? shellHost;
 
+    /// <summary>
+    /// The options the editor's MSBuild project system runs with: the properties the loaded extensions ask for and the editor's SDK
+    /// version. Loading a project must not write generated files (FR-085), so generation on load is off.
+    /// </summary>
+    /// <param name="extensions">The extension host whose loaded extensions name the properties to evaluate.</param>
+    /// <returns>The options.</returns>
+    internal static ProjectSystemOptions CreateProjectSystemOptions(IExtensionHost extensions) =>
+        new(new ExtensionProjectProperties(extensions), NetPrintsSdkVersion, GenerateOnLoad: false);
+
     /// <param name="host">Process-wide services created once by the host (desktop, headless tests).</param>
-    /// <param name="windows">The window service, already constructed by the caller so it can hand the same
-    /// instance to <paramref name="dialogs"/>/<paramref name="filePicker"/>'s active-window accessor.</param>
-    /// <param name="dialogs">Shows modal dialogs (errors, references): Avalonia's in production, a test double in the headless UI tests.</param>
-    /// <param name="filePicker">Opens native file/save pickers: Avalonia's in production, a test double in the headless UI tests.</param>
-    /// <param name="processes">Starts external processes: the real launcher in production, a test double in the headless UI tests.</param>
-    /// <param name="backups">Where the open project's unsaved files are backed up; <see langword="null"/> (the headless tests) for no backups and no clean-up of the user's data folder.</param>
-    /// <param name="recent">The recent projects list; <see langword="null"/> (the headless tests) to keep none.</param>
-    /// <param name="windowState">Restores and saves the main window's bounds; <see langword="null"/> (the headless tests) to leave the window alone.</param>
-    /// <param name="stateStore">Keeps the dock layout and each project's session; <see langword="null"/> (the headless tests) to save and restore neither.</param>
-    /// <param name="locations">The parent folder New project and the samples use; <see langword="null"/> (the headless tests) for the user's documents folder.</param>
-    public EditorServices(EditorHostServices host, WindowService windows, IEditorDialogs dialogs, IFilePickerService filePicker, IProcessLauncher processes, BackupOptions? backups = null, RecentProjects? recent = null, WindowStateService? windowState = null, IEditorStateStore? stateStore = null, ProjectLocations? locations = null)
+    /// <param name="configure">Adds what the caller provides on top of the generated registrations: the host-only services in production
+    /// (backups, recent projects, window state, state store, project locations), the test doubles in the headless UI tests (<c>Replace</c>).</param>
+    public EditorServices(EditorHostServices host, Action<IServiceCollection>? configure = null)
     {
         hostChannelError = host.HostChannelError;
-        var dispatcher = new AvaloniaUiDispatcher();
-        Windows = windows;
+        var collection = new ServiceCollection();
+        collection.AddEditorHost(host);
+        configure?.Invoke(collection);
+        provider = collection.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
 
-        IProjectSystem projects = host.MsBuildAvailable
-            ? new MsBuildProjectSystem(new ProjectSystemOptions(new ExtensionProjectProperties(host.Extensions), NetPrintsSdkVersion), new ProcessRunner(),
-                host.LoggerFactory.CreateLogger<MsBuildProjectSystem>())
-            : new NoSdkProjectSystem();
-
-        (DocumentFormatRegistry formats, IDocumentMapper mapper) = PersistenceBinding.CreateSerializers(host.Extensions.Current, host.LoggerFactory);
-        var persistence = new ProjectPersistence(projects, formats, mapper,
-            (directory, watch) => new FileSystemDocumentStore(directory, DefaultScheduler.Instance, host.LoggerFactory.CreateLogger<FileSystemDocumentStore>(), watch),
-            host.LoggerFactory.CreateLogger<ProjectPersistence>());
-        persistenceBinding = PersistenceBinding.Bind(persistence, host.Extensions, host.LoggerFactory);
-
-        var reflection = new ReflectionHost(dispatcher, host.Extensions, host.LoggerFactory.CreateLogger<ReflectionHost>());
-        codeAnalysis = new CodeAnalysisHost(reflection, host.Extensions, DefaultScheduler.Instance, dispatcher, host.LoggerFactory.CreateLogger<CodeAnalysisHost>());
-
-        runState = new RunStateTracker(processes);
-
-        Context = new EditorContext(
-            filePicker,
-            dialogs,
-            new AvaloniaClipboardService(() => Windows.ActiveWindow),
-            dispatcher,
-            reflection,
-            Windows,
-            processes,
-            DefaultScheduler.Instance,
-            () => new WeakReferenceMessenger(),
-            host.LoggerFactory,
-            projects,
-            persistence,
-            host.Extensions,
-            host.HostChannel,
-            host.Settings,
-            codeAnalysis,
-            runState,
-            backups,
-            recent,
-            windowState,
-            stateStore,
-            locations);
+        // The composition validates the settings sections the editor owns: a failure is logged and the section keeps its defaults.
+        host.Settings.Get(NetPrintsSettings.Descriptor);
+        host.Settings.Get(EditorSettings.Descriptor);
+        Context = provider.GetRequiredService<EditorContext>();
+        Windows = provider.GetRequiredService<WindowService>();
+        provider.GetRequiredService<PersistenceBinding>();
     }
+
+    /// <summary>The container the editor was composed in.</summary>
+    public IServiceProvider Services => provider;
 
     /// <summary>The composed host services.</summary>
     public EditorContext Context { get; }
@@ -246,10 +211,15 @@ internal sealed class EditorServices : IDisposable
     /// Creates the shell window: the registry, <see cref="ShellViewModel"/>, the docking adapter and the project flows
     /// that open, create and close projects.
     /// </summary>
+    /// <exception cref="InvalidOperationException">The shell window was already created.</exception>
     public ShellWindow CreateShellWindow()
     {
-        shellHost?.Dispose();
-        shellHost = ShellHost.Create(Context);
+        if (shellHost is not null)
+        {
+            throw new InvalidOperationException("The shell window was already created.");
+        }
+
+        shellHost = provider.GetRequiredService<ShellHost>();
         Windows.MainWindow = shellHost.Window;
         return shellHost.Window;
     }
@@ -259,13 +229,7 @@ internal sealed class EditorServices : IDisposable
     /// <see cref="PersistenceBinding.Bind"/>), disposes the shell, if created, and the
     /// code analysis host (editor-services.md §6: "disposed with the main window").
     /// </summary>
-    public void Dispose()
-    {
-        shellHost?.Dispose();
-        persistenceBinding.Dispose();
-        codeAnalysis.Dispose();
-        runState.Dispose();
-    }
+    public void Dispose() => provider.Dispose();
 }
 
 /// <summary>

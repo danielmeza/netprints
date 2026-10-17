@@ -7,7 +7,7 @@ using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Editor.Tests.Shell;
 using NetPrints.Projects;
 using NetPrints.Serialization;
-using DocumentId = NetPrints.Editor.Shell.DocumentId;
+using DocumentId = NetPrints.Extensibility.Editor.DocumentId;
 
 namespace NetPrints.Editor.Tests.Commands;
 

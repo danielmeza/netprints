@@ -9,15 +9,13 @@ namespace NetPrints.Graph
     /// <summary>
     /// Represents a node which returns from a method.
     /// </summary>
-    public class ReturnNode : Node
+    [NodeKind(NodeKindIds.Return)]
+    public sealed partial class ReturnNode : Node, IPinListEditor, IPinNameEditor
     {
         /// <summary>
         /// Execution pin that returns from the method when executed.
         /// </summary>
-        public NodeInputExecPin ReturnPin
-        {
-            get { return InputExecPins[0]; }
-        }
+        public partial NodeInputExecPin ExecPin { get; }
 
         /// <summary>
         /// Same as the base <see cref="Node.MethodGraph"/>, but non-nullable: the constructor only
@@ -35,7 +33,7 @@ namespace NetPrints.Graph
         public ReturnNode(MethodGraph graph)
             : base(graph)
         {
-            AddInputExecPin("Exec");
+            DeclarePins();
 
             SetupSecondaryNodeEvents();
         }
@@ -146,8 +144,8 @@ namespace NetPrints.Graph
 
             if (InputDataPins.Count > 0)
             {
-                NodeInputDataPin idpToRemove = InputDataPins.Last();
-                NodeInputTypePin itpToRemove = InputTypePins.Last();
+                NodeInputDataPin idpToRemove = InputDataPins[^1];
+                NodeInputTypePin itpToRemove = InputTypePins[^1];
 
                 GraphUtil.DisconnectInputDataPin(idpToRemove);
                 GraphUtil.DisconnectInputTypePin(itpToRemove);
@@ -180,6 +178,9 @@ namespace NetPrints.Graph
             return "Return";
         }
 
+        /// <inheritdoc />
+        public override bool TitleIsFixed => true;
+
         /// <summary>
         /// For a return-value pin (an input data pin of this node), returns <c>"Output&lt;i&gt;"</c>
         /// (<paramref name="pin"/>'s position among <see cref="Node.InputDataPins"/>), so a user
@@ -201,5 +202,35 @@ namespace NetPrints.Graph
 
             return base.GetPinKeyName(pin);
         }
+
+        /// <inheritdoc />
+        bool IPinListEditor.ShowsPinButtons => this == methodGraph.MainReturnNode;
+
+        /// <inheritdoc />
+        string IPinListEditor.AddPinLabel => "Add method return value";
+
+        /// <inheritdoc />
+        string IPinListEditor.RemovePinLabel => "Remove method return value";
+
+        /// <inheritdoc />
+        bool IPinListEditor.CanRemovePin => InputDataPins.Count > 0;
+
+        /// <inheritdoc />
+        bool IPinListEditor.ChangesMethodSignature => true;
+
+        /// <inheritdoc />
+        IReadOnlyList<int>? IPinListEditor.SlotsAfterAdd => null;
+
+        /// <inheritdoc />
+        IReadOnlyList<int>? IPinListEditor.SlotsAfterRemove => null;
+
+        /// <inheritdoc />
+        void IPinListEditor.AddPin() => AddReturnType();
+
+        /// <inheritdoc />
+        void IPinListEditor.RemovePin() => RemoveReturnType();
+
+        /// <inheritdoc />
+        bool IPinNameEditor.CanRenamePin(NodePin pin) => pin is NodeInputDataPin dataPin && InputDataPins.Contains(dataPin);
     }
 }

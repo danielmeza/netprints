@@ -82,17 +82,17 @@ public class UndoRedoStackTests
         var writeInt = new MethodSpecifier("WriteLine", [new MethodParameter("value", TypeSpecifier.FromType<int>(), MethodParameterPassType.Default, false, null)],
             [], MethodModifiers.Static, MemberVisibility.Public, TypeSpecifier.FromType(typeof(Console)), []);
         var call = new CallMethodNode(method, writeString);
-        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, call.InputExecPins[0]);
+        GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, call.InputExecPins[0]);
 
         stack.Do(EditorCommands.ChangeOverload(call, writeInt));
         var replaced = method.Nodes.OfType<CallMethodNode>().Single();
         Assert.Equal(writeInt, replaced.MethodSpecifier);
-        Assert.Same(replaced.InputExecPins[0], method.EntryNode.InitialExecutionPin.OutgoingPin);
+        Assert.Same(replaced.InputExecPins[0], method.EntryNode.ExecPin.OutgoingPin);
 
         stack.Undo();
         var restored = method.Nodes.OfType<CallMethodNode>().Single();
         Assert.Equal(writeString, restored.MethodSpecifier);
-        Assert.Same(restored.InputExecPins[0], method.EntryNode.InitialExecutionPin.OutgoingPin);
+        Assert.Same(restored.InputExecPins[0], method.EntryNode.ExecPin.OutgoingPin);
     }
 
     [Fact]
@@ -162,13 +162,13 @@ public class UndoRedoStackTests
         var writeInt = WriteLine(TypeSpecifier.FromType<int>());
         var writeNothing = WriteLine();
         var call = new CallMethodNode(method, writeString);
-        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, call.InputExecPins[0]);
+        GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, call.InputExecPins[0]);
         var stack = new UndoRedoStack();
 
         CallMethodNode Current()
         {
             var node = Assert.Single(method.Nodes.OfType<CallMethodNode>());
-            Assert.Same(node.InputExecPins[0], method.EntryNode.InitialExecutionPin.OutgoingPin);
+            Assert.Same(node.InputExecPins[0], method.EntryNode.ExecPin.OutgoingPin);
             return node;
         }
 

@@ -23,6 +23,7 @@ public sealed record RecoveryResult(IReadOnlyList<ClassGraph> Restored, IReadOnl
 /// deletes the backups of the other offered files. A backup of a class the project has no file for (never saved) is offered too
 /// and restored as a new, unsaved class.
 /// </summary>
+[SessionScoped<RecoveryService>]
 public sealed class RecoveryService
 {
     private readonly BackupStore store;

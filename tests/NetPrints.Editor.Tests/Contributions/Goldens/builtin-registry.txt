@@ -1,0 +1,87 @@
+command netprints.command.newProject | Ctrl+Shift+N | Global | File/project/0/ | -
+command netprints.command.openProject | Ctrl+O | Global | File/project/1/ | -
+command netprints.command.openFolder |  | Global | File/project/2/ | -
+command netprints.command.closeProject |  | Global | File/project/3/ | -
+command netprints.command.newClass |  | Global | File/class/0/ | -
+command netprints.command.addExistingClass |  | Global | File/class/1/ | -
+command netprints.command.save | Ctrl+S | Global | File/save/0/ | 1
+command netprints.command.saveAll | Ctrl+Shift+S | Global | File/save/1/ | -
+command netprints.command.projectSettings |  | Global | File/project-settings/0/ | -
+command netprints.command.references |  | Global | File/project-settings/1/ | 7
+command netprints.command.exit |  | Global | File/exit/0/ | -
+command netprints.command.undo | Ctrl+Z | Global | Edit/history/0/ | 4
+command netprints.command.redo | Ctrl+Y, Ctrl+Shift+Z | Global | Edit/history/1/ | 5
+command netprints.command.delete | Delete | Graph, ProjectTree, VariablesPanel | Edit/selection/0/ | -
+command netprints.command.rename | F2 | Graph, ProjectTree, VariablesPanel | Edit/selection/1/ | -
+command netprints.command.selectAll | Ctrl+A | Graph | Edit/selection/2/ | -
+command netprints.command.cancel | Escape | Graph | - | -
+command netprints.command.nodeSearch | Ctrl+Space | Graph | Edit/nodes/0/ | -
+command netprints.command.classSettings |  | Global | Edit/class/0/ | 6
+command netprints.command.addMethod |  | Global | Edit/class/1/ | -
+command netprints.command.addConstructor |  | Global | Edit/class/2/ | -
+command netprints.command.addVariable |  | Global | Edit/class/3/ | -
+command netprints.command.addEventGraph |  | Global | Edit/class/4/ | -
+command netprints.command.overrideMethod |  | Global | Edit/class/5/ | -
+command netprints.command.frameSelection | F | Graph | View/viewport/0/ | -
+command netprints.command.fitAll | Home, Shift+F | Graph | View/viewport/1/ | -
+command netprints.command.showPanel.projectTree |  | Global | View/panels/0/ | -
+command netprints.command.showPanel.inspector |  | Global | View/panels/1/ | -
+command netprints.command.showPanel.variables |  | Global | View/panels/2/ | -
+command netprints.command.showPanel.errors |  | Global | View/panels/3/ | -
+command netprints.command.showPanel.output |  | Global | View/panels/4/ | -
+command netprints.command.showPanel.csharp |  | Global | View/panels/5/ | -
+command netprints.command.floatDocument |  | Global | View/layout/0/ | -
+command netprints.command.dockDocument |  | Global | View/layout/1/ | -
+command netprints.command.resetLayout |  | Global | View/layout/2/ | -
+command netprints.command.theme.dark |  | Global | View/theme/0/Theme | -
+command netprints.command.theme.light |  | Global | View/theme/1/Theme | -
+command netprints.command.theme.system |  | Global | View/theme/2/Theme | -
+command netprints.command.commandPalette | Ctrl+Shift+P | Global | View/find/0/ | -
+command netprints.command.goToAnything | Ctrl+P | Global | Go/find/0/ | -
+command netprints.command.navigateBack | Alt+Left | Global | Go/history/0/ | -
+command netprints.command.navigateForward | Alt+Right | Global | Go/history/1/ | -
+command netprints.command.nextTab | Ctrl+Tab | Global | Go/tabs/0/ | -
+command netprints.command.previousTab | Ctrl+Shift+Tab | Global | Go/tabs/1/ | -
+command netprints.command.closeTab | Ctrl+W | Global | Go/tabs/2/ | -
+command netprints.command.goToSource |  | Graph | Go/connection/0/ | -
+command netprints.command.goToTarget |  | Graph | Go/connection/1/ | -
+command netprints.command.compile | F7, Ctrl+Shift+B | Global | Build/build/0/ | 2
+command netprints.command.run | F5 | Global | Build/run/0/ | 3
+command netprints.command.stop | Shift+F5 | Global | Build/run/1/ | 3
+command netprints.command.keyboardShortcuts |  | Global | Help/help/0/ | -
+command netprints.command.startPage |  | Global | Help/help/1/ | -
+command netprints.command.help.openLogsFolder |  | Global | Help/help/2/ | -
+command netprints.command.about |  | Global | Help/about/0/ | -
+command netprints.command.openGraph | Enter | ProjectTree | - | -
+panel netprints.panel.projectTree | Left | 0
+panel netprints.panel.inspector | Right | 0
+panel netprints.panel.variables | RightLower | 1
+panel netprints.panel.errors | Bottom | 0
+panel netprints.panel.output | Bottom | 1
+panel netprints.panel.csharp | Bottom | 2
+tile netprints.tile.recent | 0
+tile netprints.tile.open | 1
+tile netprints.tile.new | 2
+tile netprints.tile.samples | 3
+tile netprints.tile.learn | 4
+tile netprints.tile.whatsNew | 5
+template netprints.template.console | netprints.default
+template netprints.template.library | netprints.default
+menu netprints.menu.connection.goToSource | Connection | netprints.command.goToSource | connection | 0
+menu netprints.menu.connection.goToTarget | Connection | netprints.command.goToTarget | connection | 1
+menu netprints.menu.tree.class.openGraph | TreeClass | netprints.command.openGraph | open | 0
+menu netprints.menu.tree.class.rename | TreeClass | netprints.command.rename | edit | 1
+menu netprints.menu.tree.class.addMethod | TreeClass | netprints.command.addMethod | add | 2
+menu netprints.menu.tree.class.addConstructor | TreeClass | netprints.command.addConstructor | add | 3
+menu netprints.menu.tree.class.addVariable | TreeClass | netprints.command.addVariable | add | 4
+menu netprints.menu.tree.class.addEventGraph | TreeClass | netprints.command.addEventGraph | add | 5
+menu netprints.menu.tree.class.overrideMethod | TreeClass | netprints.command.overrideMethod | add | 6
+menu netprints.menu.tree.class.classSettings | TreeClass | netprints.command.classSettings | class | 7
+menu netprints.menu.tree.class.delete | TreeClass | netprints.command.delete | edit | 8
+menu netprints.menu.tree.member.openGraph | TreeMember | netprints.command.openGraph | open | 0
+menu netprints.menu.tree.member.rename | TreeMember | netprints.command.rename | edit | 1
+menu netprints.menu.tree.member.delete | TreeMember | netprints.command.delete | edit | 2
+menu netprints.menu.tree.eventGraph.openGraph | TreeEventGraph | netprints.command.openGraph | open | 0
+menu netprints.menu.tree.eventGraph.rename | TreeEventGraph | netprints.command.rename | edit | 1
+menu netprints.menu.tree.eventGraph.delete | TreeEventGraph | netprints.command.delete | edit | 2
+tooltip ConnectionTooltipProvider | 0

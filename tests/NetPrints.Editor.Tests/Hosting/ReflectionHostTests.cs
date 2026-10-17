@@ -72,7 +72,7 @@ public class ReflectionHostTests
         ClassGraph cls = NewClass(fullName);
         cls.Visibility = MemberVisibility.Public;
         var method = new MethodGraph("Run") { Visibility = MemberVisibility.Public };
-        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, method.MainReturnNode.ReturnPin);
+        GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, method.MainReturnNode.ExecPin);
         cls.Methods.Add(method);
         return cls;
     }
@@ -84,7 +84,7 @@ public class ReflectionHostTests
         ClassGraph cls = NewClass(fullName);
         var method = new MethodGraph("Run") { Visibility = MemberVisibility.Public };
         var ifElse = new IfElseNode(method);
-        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, ifElse.ExecutionPin);
+        GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, ifElse.ExecPin);
         cls.Methods.Add(method);
         return cls;
     }

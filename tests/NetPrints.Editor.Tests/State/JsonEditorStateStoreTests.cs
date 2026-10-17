@@ -173,15 +173,25 @@ public sealed class JsonEditorStateStoreTests
     private sealed class UnreadableFileSystem(InMemoryEditorFileSystem inner) : IEditorFileSystem
     {
         public bool FileExists(string path) => inner.FileExists(path);
+
         public bool DirectoryExists(string path) => inner.DirectoryExists(path);
+
         public void CreateDirectory(string path) => inner.CreateDirectory(path);
+
         public void WriteAllBytes(string path, byte[] bytes) => inner.WriteAllBytes(path, bytes);
+
         public byte[] ReadAllBytes(string path) => throw new UnauthorizedAccessException(path);
+
         public void Move(string source, string destination) => inner.Move(source, destination);
+
         public void DeleteFile(string path) => inner.DeleteFile(path);
+
         public void DeleteDirectory(string path) => inner.DeleteDirectory(path);
+
         public IEnumerable<string> EnumerateDirectories(string path) => inner.EnumerateDirectories(path);
+
         public IEnumerable<string> EnumerateFiles(string path) => inner.EnumerateFiles(path);
+
         public DateTime GetLastWriteTimeUtc(string path) => inner.GetLastWriteTimeUtc(path);
     }
 }

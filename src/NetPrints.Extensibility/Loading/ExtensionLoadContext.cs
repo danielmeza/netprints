@@ -1,4 +1,6 @@
 using System.Reflection;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using System.Runtime.Loader;
 
 namespace NetPrints.Extensibility.Loading;
@@ -10,6 +12,9 @@ namespace NetPrints.Extensibility.Loading;
 /// </summary>
 internal sealed class ExtensionLoadContext : AssemblyLoadContext
 {
+    private const string HostProvider = "the host";
+    private const string DependencyProvider = "its dependency";
+
     private readonly AssemblyDependencyResolver resolver;
     private readonly IReadOnlyList<ExtensionLoadContext> dependencies;
     private readonly HashSet<string> hostProvided = HostAssemblies.Snapshot();
@@ -58,17 +63,51 @@ internal sealed class ExtensionLoadContext : AssemblyLoadContext
         return null;
     }
 
-    /// <summary>The version of the copy a dependency provides for <paramref name="name"/>, or <see langword="null"/> when none does.</summary>
+    /// <summary>The version of the copy the host or a dependency provides for <paramref name="name"/>, or <see langword="null"/> when neither does.</summary>
     /// <param name="name">The referenced assembly.</param>
-    /// <returns>The version the extension would get.</returns>
-    public Version? FindDependencyVersion(AssemblyName name)
+    /// <returns>The version the extension would get and who provides it ("the host" or "its dependency"), or <see langword="null"/>.</returns>
+    public (Version Version, string Provider)? FindProvided(AssemblyName name)
     {
-        if (name.Name is null || IsHostProvided(name.Name))
+        if (name.Name is null)
         {
             return null;
         }
 
-        return FindDependencyOwner(name)?.LoadOwned(name)?.GetName().Version;
+        if (IsHostProvided(name.Name))
+        {
+            Assembly? hostCopy = Default.Assemblies.FirstOrDefault(assembly => string.Equals(assembly.GetName().Name, name.Name, StringComparison.Ordinal));
+            return hostCopy?.GetName().Version is { } hostVersion ? (hostVersion, HostProvider) : null;
+        }
+
+        return FindDependencyOwner(name)?.LoadOwned(name)?.GetName().Version is { } version ? (version, DependencyProvider) : null;
+    }
+
+    /// <summary>The assemblies that the private copy of <paramref name="name"/> in this extension's folder references.</summary>
+    /// <param name="name">The assembly to look up in the extension's own folder.</param>
+    /// <returns>Its references, or an empty list when the extension does not ship it or it cannot be read.</returns>
+    public IReadOnlyList<AssemblyName> ReadPrivateReferences(AssemblyName name)
+    {
+        string? path = resolver.ResolveAssemblyToPath(name);
+        if (path is null)
+        {
+            return [];
+        }
+
+        try
+        {
+            using FileStream stream = File.OpenRead(path);
+            using var peReader = new PEReader(stream);
+            MetadataReader metadata = peReader.GetMetadataReader();
+            return [.. metadata.AssemblyReferences.Select(handle =>
+            {
+                AssemblyReference reference = metadata.GetAssemblyReference(handle);
+                return new AssemblyName { Name = metadata.GetString(reference.Name), Version = reference.Version };
+            })];
+        }
+        catch (Exception ex) when (ex is IOException or BadImageFormatException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            return [];
+        }
     }
 
     protected override Assembly? Load(AssemblyName assemblyName)

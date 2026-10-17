@@ -332,7 +332,7 @@ public sealed partial class ProjectTreePanelViewModel : ObservableObject, IShell
         List<CommandEntryViewModel> wanted = [];
         if (context is { } attached && MenuTargetOf(item.Kind) is { } target)
         {
-            foreach (CommandDescriptor command in attached.Commands.ContextMenuCommands(target))
+            foreach (CommandDescriptor command in attached.Commands.ContextMenuCommands(target, attached.Commands.CreateContext(CommandScope.ProjectTree)))
             {
                 if (attached.Commands.CanRun(command, CommandScope.ProjectTree))
                 {

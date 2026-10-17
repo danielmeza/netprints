@@ -1,7 +1,7 @@
 using NetPrints.Core;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
-using NetPrints.Editor.Search;
+using NetPrints.Editor.NodeSearch;
 using NetPrints.Editor.Tests.Graph;
 using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Extensibility.Nodes;
@@ -30,7 +30,7 @@ public sealed class NodeCreationTableTests(IReflectionHost sharedReflection)
 
     private static NodeKindDescriptor Descriptor(string kind) => BuiltInNodeLibrary.Instance.NodeKinds.Single(k => k.Kind == kind);
 
-    private async Task<SuggestionItem> OpenAsync(NodeGraphViewModel view, string text, NodePin? pin = null, GraphPoint? position = null)
+    private async Task<SuggestionRowViewModel> OpenAsync(NodeGraphViewModel view, string text, NodePin? pin = null, GraphPoint? position = null)
     {
         await view.OpenSearchAsync(position ?? new GraphPoint(30, 40), pin, Token);
         return view.Search.AllSuggestions.First(item => item.Text == text);
@@ -43,7 +43,7 @@ public sealed class NodeCreationTableTests(IReflectionHost sharedReflection)
         NodeKindDescriptor descriptor = Descriptor(kind);
         Editor.Dialogs.TypeAnswer = ListOfInt;
         HashSet<Node> before = [.. Method.Nodes];
-        SuggestionItem item = await OpenAsync(Graph, descriptor.Suggestions[0].DisplayName);
+        SuggestionRowViewModel item = await OpenAsync(Graph, descriptor.Suggestions[0].DisplayName.Text);
 
         await Graph.Search.SelectCommand.ExecuteAsync(item);
 
@@ -63,7 +63,7 @@ public sealed class NodeCreationTableTests(IReflectionHost sharedReflection)
     {
         Editor.Dialogs.TypeAnswer = null;
         int nodes = Method.Nodes.Count;
-        SuggestionItem item = await OpenAsync(Graph, Descriptor(kind).Suggestions[0].DisplayName);
+        SuggestionRowViewModel item = await OpenAsync(Graph, Descriptor(kind).Suggestions[0].DisplayName.Text);
 
         await Graph.Search.SelectCommand.ExecuteAsync(item);
 
@@ -78,7 +78,7 @@ public sealed class NodeCreationTableTests(IReflectionHost sharedReflection)
         var upper = new CallMethodNode(Method, FindMethod(typeof(string), "ToUpperInvariant"));
         ClassContext.UndoRedo.Clear();
         Editor.Dialogs.MethodAnswer = _ => null;
-        SuggestionItem item = await OpenAsync(Graph, "Make Delegate For A Method Of String", upper.ReturnValuePins[0]);
+        SuggestionRowViewModel item = await OpenAsync(Graph, "Make Delegate For A Method Of String", upper.ReturnValuePins[0]);
 
         await Graph.Search.SelectCommand.ExecuteAsync(item);
 
@@ -92,7 +92,7 @@ public sealed class NodeCreationTableTests(IReflectionHost sharedReflection)
     {
         var upper = new CallMethodNode(Method, FindMethod(typeof(string), "ToUpperInvariant"));
         Editor.Dialogs.MethodAnswer = methods => methods.First(method => method.Name == "ToUpperInvariant");
-        SuggestionItem item = await OpenAsync(Graph, "Make Delegate For A Method Of String", upper.ReturnValuePins[0]);
+        SuggestionRowViewModel item = await OpenAsync(Graph, "Make Delegate For A Method Of String", upper.ReturnValuePins[0]);
 
         await Graph.Search.SelectCommand.ExecuteAsync(item);
 
@@ -134,7 +134,7 @@ public sealed class NodeCreationTableTests(IReflectionHost sharedReflection)
     public async Task AVariableOpensTheChooserAndGetCreatesAGetterAtThePosition()
     {
         await Graph.OpenSearchAsync(new GraphPoint(42, 24), null, Token);
-        SuggestionItem empty = Graph.Search.AllSuggestions.First(item => item.Value is VariableSpecifier { Name: "Empty" });
+        SuggestionRowViewModel empty = Graph.Search.AllSuggestions.First(item => item.Entry is VariableEntry { Variable.Name: "Empty" });
 
         await Graph.Search.SelectCommand.ExecuteAsync(empty);
         Graph.GetSetChooser.GetCommand.Execute(null);
@@ -144,7 +144,7 @@ public sealed class NodeCreationTableTests(IReflectionHost sharedReflection)
         Assert.Equal("Add node", ClassContext.UndoRedo.UndoName);
     }
 
-    private SuggestionItem VariableItem(string name) => Graph.Search.AllSuggestions.First(item => item.Value is VariableSpecifier variable && variable.Name == name);
+    private SuggestionRowViewModel VariableItem(string name) => Graph.Search.AllSuggestions.First(item => item.Entry is VariableEntry variable && variable.Variable.Name == name);
 
     [Fact(Timeout = 60000)]
     public async Task AGetOnlyVariablePickedFromAnOutputPinCreatesAConnectedGetter()
@@ -193,8 +193,8 @@ public sealed class NodeCreationTableTests(IReflectionHost sharedReflection)
     [Fact(Timeout = 60000)]
     public async Task AnExecOutputIsConnectedToTheNewNodesExecInput()
     {
-        NodeOutputExecPin entry = Method.EntryNode.InitialExecutionPin;
-        SuggestionItem ifElse = await OpenAsync(Graph, "If Else", entry);
+        NodeOutputExecPin entry = Method.EntryNode.ExecPin;
+        SuggestionRowViewModel ifElse = await OpenAsync(Graph, "If Else", entry);
 
         await Graph.Search.SelectCommand.ExecuteAsync(ifElse);
 
@@ -205,7 +205,7 @@ public sealed class NodeCreationTableTests(IReflectionHost sharedReflection)
     public async Task AnInputDataPinIsConnectedToTheNewNodesResult()
     {
         var write = new CallMethodNode(Method, ConsoleWriteLine(StringType));
-        SuggestionItem readLine = await OpenAsync(Graph, "System.Console ReadLine () : System.String", write.ArgumentPins[0]);
+        SuggestionRowViewModel readLine = await OpenAsync(Graph, "System.Console ReadLine () : System.String", write.ArgumentPins[0]);
 
         await Graph.Search.SelectCommand.ExecuteAsync(readLine);
 
@@ -217,7 +217,7 @@ public sealed class NodeCreationTableTests(IReflectionHost sharedReflection)
     public async Task AnOutputDataPinIsConnectedToTheNewNodesArgument()
     {
         var upper = new CallMethodNode(Method, FindMethod(typeof(string), "ToUpperInvariant"));
-        SuggestionItem write = await OpenAsync(Graph, "System.Console WriteLine (value: System.String)", upper.ReturnValuePins[0]);
+        SuggestionRowViewModel write = await OpenAsync(Graph, "System.Console WriteLine (value: System.String)", upper.ReturnValuePins[0]);
 
         await Graph.Search.SelectCommand.ExecuteAsync(write);
 
@@ -228,7 +228,7 @@ public sealed class NodeCreationTableTests(IReflectionHost sharedReflection)
     [Fact(Timeout = 60000)]
     public async Task ANegativePositionIsClampedToTheCanvas()
     {
-        SuggestionItem ifElse = await OpenAsync(Graph, "If Else", position: new GraphPoint(-50, -20));
+        SuggestionRowViewModel ifElse = await OpenAsync(Graph, "If Else", position: new GraphPoint(-50, -20));
 
         await Graph.Search.SelectCommand.ExecuteAsync(ifElse);
 
@@ -239,7 +239,7 @@ public sealed class NodeCreationTableTests(IReflectionHost sharedReflection)
     [Fact(Timeout = 60000)]
     public async Task UndoAndRedoRemoveAndRestoreTheCreatedNodeAndItsConnection()
     {
-        NodeOutputExecPin entry = Method.EntryNode.InitialExecutionPin;
+        NodeOutputExecPin entry = Method.EntryNode.ExecPin;
         NodeInputExecPin? previous = entry.OutgoingPin;
         await Graph.Search.SelectCommand.ExecuteAsync(await OpenAsync(Graph, "If Else", entry));
         IfElseNode node = Method.Nodes.OfType<IfElseNode>().Single();

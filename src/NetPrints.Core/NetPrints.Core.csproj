@@ -5,6 +5,7 @@
     <AssemblyName>NetPrints.Core</AssemblyName>
     <IsPackable>true</IsPackable>
     <EnablePackageValidation>true</EnablePackageValidation>
+    <PackageValidationBaselineVersion>$(NetPrintsPackageBaselineVersion)</PackageValidationBaselineVersion>
     <Description>The NetPrints graph model and C# translator: classes, methods and node graphs that NetPrints turns into readable C#. NetPrints continues the original NetPrints by Robin Kahlow (https://github.com/RobinKa/netprints).</Description>
   </PropertyGroup>
   <ItemGroup>
@@ -13,6 +14,29 @@
   </ItemGroup>
   <ItemGroup>
     <NetPrintsExperimentalOptIn Include="NPXE0003" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- ADR-0024: the authoring analyzers run on Core itself and ship with it, so they never skew from the attributes. -->
+    <ProjectReference Include="..\NetPrints.Authoring\NetPrints.Authoring.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\NetPrints.Authoring.CodeFixes\NetPrints.Authoring.CodeFixes.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <None Include="..\NetPrints.Authoring\bin\$(Configuration)\netstandard2.0\NetPrints.Authoring.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="..\NetPrints.Authoring.CodeFixes\bin\$(Configuration)\netstandard2.0\NetPrints.Authoring.CodeFixes.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="buildTransitive\NetPrints.Core.props" Pack="true" PackagePath="buildTransitive" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Graph\NodeStrings.resx">
+      <Generator>MSBuild:Compile</Generator>
+      <StronglyTypedFileName>$(IntermediateOutputPath)NodeStrings.g.cs</StronglyTypedFileName>
+      <StronglyTypedLanguage>CSharp</StronglyTypedLanguage>
+      <StronglyTypedNamespace>NetPrints.Graph</StronglyTypedNamespace>
+      <StronglyTypedClassName>NodeStrings</StronglyTypedClassName>
+      <ManifestResourceName>NetPrints.Graph.NodeStrings</ManifestResourceName>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <AdditionalFiles Include="Graph\NodeStrings.resx" />
+    <AdditionalFiles Include="NodePins.Shipped.txt" />
+    <AdditionalFiles Include="NodePins.Unshipped.txt" />
   </ItemGroup>
   <ItemGroup>
     <!-- The document mapper sets Node.Id and member ids (internal set) from a loaded document. -->

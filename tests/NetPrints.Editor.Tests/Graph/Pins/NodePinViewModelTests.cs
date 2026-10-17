@@ -72,7 +72,8 @@ public class NodePinViewModelTests(TestEditor editor) : GraphTestBase(editor)
         Assert.True(enumType.IsEnum);
         var enumPin = VmOf(new CallMethodNode(Method, ConsoleWriteLine(enumType))).InputDataPins.Single();
         Assert.True(enumPin.ShowEnumValue);
-        Assert.Contains("Monday", enumPin.PossibleEnumNames!.ToList());
+        Assert.NotNull(enumPin.PossibleEnumNames);
+        Assert.Contains("Monday", enumPin.PossibleEnumNames.ToList());
         enumPin.UnconnectedEnumName = "Monday";
         Assert.Equal("Monday", ((NodeInputDataPin)enumPin.Pin).UnconnectedValue);
 
@@ -157,11 +158,11 @@ public class NodePinViewModelTests(TestEditor editor) : GraphTestBase(editor)
         var reroute = Method.Nodes.OfType<RerouteNode>().Single();
         Assert.Equal(140, reroute.PositionX);
         Assert.Equal(28, reroute.PositionY);
-        Assert.Same(reroute.InputExecPins[0], Method.EntryNode.InitialExecutionPin.OutgoingPin);
-        Assert.Same(Method.MainReturnNode.ReturnPin, reroute.OutputExecPins[0].OutgoingPin);
+        Assert.Same(reroute.InputExecPins[0], Method.EntryNode.ExecPin.OutgoingPin);
+        Assert.Same(Method.MainReturnNode.ExecPin, reroute.OutputExecPins[0].OutgoingPin);
 
         VmOf(reroute).InputExecPins.Single().DisconnectAll();
-        Assert.Null(Method.EntryNode.InitialExecutionPin.OutgoingPin);
+        Assert.Null(Method.EntryNode.ExecPin.OutgoingPin);
         Assert.False(entryExec.IsConnected);
         Assert.True(returnExec.IsConnected);
     }

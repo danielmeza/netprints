@@ -36,6 +36,51 @@ public class ExtensionManifestTests
         Assert.Empty(manifest.DependsOn);
     }
 
+    [Fact]
+    public void ThemesAreAcceptedFromApi04()
+    {
+        var manifest = Parse("""{ "id": "a", "name": "A", "version": "1", "assembly": "a.dll", "netprintsApi": "0.4", "themes": ["themes/one.nptheme.json", "two.nptheme.json"] }""");
+
+        Assert.Equal(["themes/one.nptheme.json", "two.nptheme.json"], manifest.Themes);
+        Assert.Empty(manifest.UnknownFields);
+    }
+
+    [Fact]
+    public void ThemesAreEmptyWhenOmitted()
+    {
+        var manifest = Parse("""{ "id": "a", "name": "A", "version": "1", "assembly": "a.dll", "netprintsApi": "0.4" }""");
+
+        Assert.Empty(manifest.Themes);
+    }
+
+    [Theory]
+    [InlineData("0.3")]
+    [InlineData("0.0")]
+    public void ThemesWithAnOlderApiAreNpx001(string api)
+    {
+        var exception = Assert.Throws<ExtensionManifestException>(
+            () => Parse($$"""{ "id": "a", "name": "A", "version": "1", "assembly": "a.dll", "netprintsApi": "{{api}}", "themes": ["a.nptheme.json"] }"""));
+
+        Assert.Equal("NPX001", exception.Code);
+        Assert.Contains("themes", exception.Message, System.StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("""{ "id": "a", "name": "A", "version": "1", "assembly": "a.dll", "netprintsApi": "0.4", "themes": "a.nptheme.json" }""")]
+    [InlineData("""{ "id": "a", "name": "A", "version": "1", "assembly": "a.dll", "netprintsApi": "0.4", "themes": [1] }""")]
+    public void ThemesThatAreNotStringArraysAreNpx001(string json)
+    {
+        Assert.Equal("NPX001", Assert.Throws<ExtensionManifestException>(() => Parse(json)).Code);
+    }
+
+    [Fact]
+    public void UnknownFieldsAreIgnoredAndListed()
+    {
+        var manifest = Parse("""{ "id": "a", "name": "A", "version": "1", "assembly": "a.dll", "netprintsApi": "0.4", "future": 1, "other": {} }""");
+
+        Assert.Equal(["future", "other"], manifest.UnknownFields);
+    }
+
     [Theory]
     [InlineData("not json")]
     [InlineData("[]")]

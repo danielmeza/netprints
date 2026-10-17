@@ -139,8 +139,8 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
     /// <summary>The wrapped node's name.</summary>
     public string Name => Node.Name;
 
-    /// <summary>The wrapped node's display string (<c>Node.ToString()</c>).</summary>
-    public string Label => Node.ToString();
+    /// <summary>The header text: the node's display string (<c>Node.ToString()</c>), or the resource of its kind when the node's title is fixed (FR-027).</summary>
+    public string Label => NodeTexts.Title(Node, Graph.Context.Extensions.Current);
 
     /// <summary>Whether the wrapped node is a <see cref="RerouteNode"/> (drawn without a body).</summary>
     public bool IsRerouteNode => Node is RerouteNode;
@@ -318,35 +318,18 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
     // +/- pin buttons (PAR-42)
 
     /// <summary>
-    /// Whether to show the left +/- pin buttons: a <see cref="MakeArrayNode"/>, <see cref="MethodEntryNode"/>,
-    /// <see cref="ClassReturnNode"/>, or the graph's main <see cref="ReturnNode"/>.
+    /// Whether to show the left +/- pin buttons: the node plays the <see cref="IPinListEditor"/> role and asks for them.
     /// </summary>
-    public bool ShowLeftPinButtons =>
-        Node is MakeArrayNode or MethodEntryNode or ClassReturnNode
-        || (Node is ReturnNode && Node == Node.MethodGraph?.MainReturnNode);
+    public bool ShowLeftPinButtons => Node is IPinListEditor { ShowsPinButtons: true };
 
     /// <summary>Whether to show the right +/- pin buttons: a <see cref="MethodEntryNode"/> (generic parameters).</summary>
     public bool ShowRightPinButtons => Node is MethodEntryNode;
 
     /// <summary>Tooltip for the left "+" button, describing what it adds for this node type, or "" if <see cref="ShowLeftPinButtons"/> is <see langword="false"/>.</summary>
-    public string LeftPlusToolTip => Node switch
-    {
-        MakeArrayNode => "Add array element",
-        MethodEntryNode => "Add method parameter",
-        ReturnNode => "Add method return value",
-        ClassReturnNode => "Add interface",
-        _ => "",
-    };
+    public string LeftPlusToolTip => Node is IPinListEditor { ShowsPinButtons: true } editor ? editor.AddPinLabel : "";
 
     /// <summary>Tooltip for the left "-" button, describing what it removes for this node type, or "" if <see cref="ShowLeftPinButtons"/> is <see langword="false"/>.</summary>
-    public string LeftMinusToolTip => Node switch
-    {
-        MakeArrayNode => "Remove array element",
-        MethodEntryNode => "Remove method parameter",
-        ReturnNode => "Remove method return value",
-        ClassReturnNode => "Remove interface",
-        _ => "",
-    };
+    public string LeftMinusToolTip => Node is IPinListEditor { ShowsPinButtons: true } editor ? editor.RemovePinLabel : "";
 
     /// <summary>Tooltip for the right "+" button, or "" if <see cref="ShowRightPinButtons"/> is <see langword="false"/>.</summary>
     public string RightPlusToolTip => Node is MethodEntryNode ? "Add method generic type parameter" : "";
@@ -359,40 +342,36 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void LeftPinsPlus()
     {
-        switch (Node)
+        if (Node is not IPinListEditor editor)
         {
-            case MakeArrayNode makeArrayNode:
-                EditPins(LeftPlusToolTip, makeArrayNode.AddElementPin);
-                break;
-            case MethodEntryNode entryNode:
-                Graph.EditMethodSignature(LeftPlusToolTip, entryNode.AddArgument, [.. Enumerable.Range(0, entryNode.OutputDataPins.Count), -1]);
-                break;
-            case ReturnNode returnNode:
-                Graph.EditMethodSignature(LeftPlusToolTip, returnNode.AddReturnType);
-                break;
-            case ClassReturnNode classReturnNode:
-                EditPins(LeftPlusToolTip, classReturnNode.AddInterfacePin);
-                break;
+            return;
+        }
+
+        if (editor.ChangesMethodSignature)
+        {
+            Graph.EditMethodSignature(editor.AddPinLabel, editor.AddPin, editor.SlotsAfterAdd);
+        }
+        else
+        {
+            EditPins(editor.AddPinLabel, editor.AddPin);
         }
     }
 
     [RelayCommand]
     private void LeftPinsMinus()
     {
-        switch (Node)
+        if (Node is not IPinListEditor { CanRemovePin: true } editor)
         {
-            case MakeArrayNode { InputDataPins.Count: > 0 } makeArrayNode:
-                EditPins(LeftMinusToolTip, () => makeArrayNode.RemoveElementPin());
-                break;
-            case MethodEntryNode { OutputDataPins.Count: > 0 } entryNode:
-                Graph.EditMethodSignature(LeftMinusToolTip, entryNode.RemoveArgument, [.. Enumerable.Range(0, entryNode.OutputDataPins.Count - 1)]);
-                break;
-            case ReturnNode { InputDataPins.Count: > 0 } returnNode:
-                Graph.EditMethodSignature(LeftMinusToolTip, returnNode.RemoveReturnType);
-                break;
-            case ClassReturnNode classReturnNode when classReturnNode.InterfacePins.Any():
-                EditPins(LeftMinusToolTip, classReturnNode.RemoveInterfacePin);
-                break;
+            return;
+        }
+
+        if (editor.ChangesMethodSignature)
+        {
+            Graph.EditMethodSignature(editor.RemovePinLabel, editor.RemovePin, editor.SlotsAfterRemove);
+        }
+        else
+        {
+            EditPins(editor.RemovePinLabel, editor.RemovePin);
         }
     }
 

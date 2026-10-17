@@ -42,4 +42,10 @@ public sealed record ClassDocument(
     [property: JsonPropertyOrder(8)] IReadOnlyList<MethodDocument>? Methods,
     [property: JsonPropertyOrder(9)] IReadOnlyList<ConstructorDocument>? Constructors,
     [property: JsonPropertyOrder(10)] IReadOnlyList<EventGraphDocument>? EventGraphs,
-    [property: JsonPropertyOrder(11)] SortedDictionary<string, SortedDictionary<string, int[]>>? Layout);
+    [property: JsonPropertyOrder(11)] SortedDictionary<string, SortedDictionary<string, int[]>>? Layout)
+{
+    /// <summary>Gets the members this build does not know, kept as opaque values and written after the known ones.</summary>
+    [JsonExtensionData]
+    [JsonInclude]
+    public UnknownMembers? ExtensionData;
+}

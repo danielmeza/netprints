@@ -7,6 +7,7 @@ namespace NetPrints.Editor.Hosting;
 /// compile flow (<see cref="BuildStarted"/>, <see cref="BuildFinished"/>), keeping the tail of its
 /// output, so a slow run can be told apart from lost output (issue #11). Safe to use from any thread.
 /// </summary>
+[Singleton<RunStateTracker>]
 public sealed class RunStateTracker : IDisposable
 {
     /// <summary>How many lines of each stream are kept.</summary>
@@ -65,6 +66,14 @@ public sealed class RunStateTracker : IDisposable
         {
             PhaseChanged?.Invoke(this, EventArgs.Empty);
         }
+    }
+
+    /// <summary>Shows a line in the Output panel without touching the state of the run (an extension writes through this).</summary>
+    /// <param name="text">The line, without its line ending.</param>
+    public void WriteLine(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        LineAppended?.Invoke(this, new RunOutputLine(ProcessStream.Output, text));
     }
 
     /// <summary>The current state.</summary>

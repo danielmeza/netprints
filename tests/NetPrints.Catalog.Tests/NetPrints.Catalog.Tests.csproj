@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\NetPrints.Catalog\NetPrints.Catalog.csproj" />
+    <ProjectReference Include="..\NetPrints.Testing\NetPrints.Testing.csproj" />
     <!-- Aliased: the shared engine sources compiled into Annotations would clash with NetPrints.Catalog's own types. -->
     <ProjectReference Include="..\..\src\NetPrints.Annotations\NetPrints.Annotations.csproj" Aliases="Annotations" />
   </ItemGroup>

@@ -17,12 +17,19 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The C# target fixtures (T049): each test copies one to a temp folder, since the repository's props would set LangVersion. -->
+    <None Include="../Fixtures/CSharpTarget/**" LinkBase="Fixtures/CSharpTarget" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\NetPrints.Cli\NetPrints.Cli.csproj" />
     <ProjectReference Include="..\NetPrints.Testing\NetPrints.Testing.csproj" />
     <!-- Built first, never referenced: migrate tests load it from its own output folder. -->
     <ProjectReference Include="..\NetPrints.TestExtension\NetPrints.TestExtension.csproj" ReferenceOutputAssembly="false" />
     <!-- Built first, never referenced: tests load the fx.catalog extension from its own output folder. -->
     <ProjectReference Include="..\Fixtures\Extensions\Fx.Catalog\Fx.Catalog.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: tests load the fx.editor extension, which registers editor contributions, from its own output folder. -->
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.Editor\Fx.Editor.csproj" ReferenceOutputAssembly="false" />
     <!-- Built first, never referenced: the catalog tests catalog it, and CT-T12 packs it. -->
     <ProjectReference Include="..\Fixtures\Catalog\CatalogFixtureLib\CatalogFixtureLib.csproj" ReferenceOutputAssembly="false" />
     <!-- Built first, never referenced: the dependency-resolution tests catalog it with and without its dependency at hand. -->

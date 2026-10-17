@@ -180,7 +180,7 @@ public sealed class SingleKindLibrary(string id, params NodeKindDescriptor[] kin
 /// <summary>Builders for manifests, temp folders and in-process options.</summary>
 public static class ExtensionTestSupport
 {
-    public static ExtensionManifest Manifest(string id, string api = "1.0", params string[] dependsOn) =>
+    public static ExtensionManifest Manifest(string id, string api = "0.4", params string[] dependsOn) =>
         new(id, id, "1.0.0", id + ".dll", api, dependsOn);
 
     public static NodeKindDescriptor PingKind(string kind, GraphKinds allowedIn = GraphKinds.Method) =>
@@ -189,7 +189,7 @@ public static class ExtensionTestSupport
     public static NodeKindDescriptor PongKind(string kind, GraphKinds allowedIn = GraphKinds.Method) =>
         new(kind, typeof(PongNode), new PongConverter(kind), new PingTranslator(), allowedIn, []);
 
-    public static (ExtensionManifest, INetPrintsExtension) InProcess(string id, Action<IExtensionBuilder> register, string api = "1.0", params string[] dependsOn) =>
+    public static (ExtensionManifest, INetPrintsExtension) InProcess(string id, Action<IExtensionBuilder> register, string api = "0.4", params string[] dependsOn) =>
         (Manifest(id, api, dependsOn), new DelegateExtension(register));
 
     public static ExtensionLoaderOptions Options(
@@ -216,7 +216,7 @@ public static class ExtensionTestSupport
         return path;
     }
 
-    public static string ManifestJson(string id, string assembly = "missing.dll", string api = "1.0", params string[] dependsOn) =>
+    public static string ManifestJson(string id, string assembly = "missing.dll", string api = "0.4", params string[] dependsOn) =>
         $$"""{ "id": "{{id}}", "name": "{{id}}", "version": "1.0.0", "assembly": "{{assembly}}", "netprintsApi": "{{api}}", "dependsOn": [{{string.Join(", ", dependsOn.Select(d => $"\"{d}\""))}}] }""";
 
     public static ExtensionLoadResult.Failed SingleFailure(ExtensionRegistry registry, string id) =>

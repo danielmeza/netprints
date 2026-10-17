@@ -41,7 +41,7 @@ public sealed class StartPageViewModelTests : IDisposable
     }
 
     private static ShellViewModel NewShell(IContributionRegistry registry) =>
-        new(registry, new StartPageServices(), new FakeTimeProvider(), new InlineDispatcher());
+        new(registry, PanelFactoryContext.Detached, new FakeTimeProvider(), new InlineDispatcher());
 
     private static ContributionRegistry BuiltInRegistry()
     {
@@ -50,9 +50,9 @@ public sealed class StartPageViewModelTests : IDisposable
         return registry;
     }
 
-    private static StartPageServices ServicesFor(IProjectActions actions, RecentProjects? recent) =>
-        new StartPageServices().Add(actions).Add(recent ?? new RecentProjects(
-            new JsonEditorStateStore(new EditorDataPaths("/none"), new InMemoryEditorFileSystem(), NullLogger.Instance), new InMemoryEditorFileSystem(), TimeProvider.System));
+    private static StartPageContext ServicesFor(IProjectActions actions, RecentProjects? recent, IEditorStateStore? store = null) =>
+        new(actions, PanelFactoryContext.Detached, recent ?? new RecentProjects(
+            new JsonEditorStateStore(new EditorDataPaths("/none"), new InMemoryEditorFileSystem(), NullLogger.Instance), new InMemoryEditorFileSystem(), TimeProvider.System), store);
 
     [Fact]
     public void TheBuiltInTilesAreRegisteredInOrder()
@@ -138,7 +138,7 @@ public sealed class StartPageViewModelTests : IDisposable
     public void WhatsNewStartsExpandedUntilThisVersionsNotesWereShownOnce()
     {
         var store = new JsonEditorStateStore(new EditorDataPaths("/state-root"), fs, NullLogger.Instance);
-        StartPageServices services = ServicesFor(actions, null).Add<IEditorStateStore>(store);
+        StartPageContext services = ServicesFor(actions, null, store);
 
         using (var first = new StartPageViewModel(NewShell(BuiltInRegistry()), services))
         {
@@ -168,7 +168,7 @@ public sealed class StartPageViewModelTests : IDisposable
     {
         var store = new JsonEditorStateStore(new EditorDataPaths("/state-root"), fs, NullLogger.Instance);
         store.SaveStart(new StartState(StateFile.CurrentVersion, "0.0.1-old"));
-        StartPageServices services = ServicesFor(actions, null).Add<IEditorStateStore>(store);
+        StartPageContext services = ServicesFor(actions, null, store);
 
         using var page = new StartPageViewModel(NewShell(BuiltInRegistry()), services);
 

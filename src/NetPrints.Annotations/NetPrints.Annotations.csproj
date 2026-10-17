@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <Compile Include="..\NetPrints.Catalog\Model\**\*.cs;..\NetPrints.Catalog\Engine\**\*.cs;..\NetPrints.Catalog\Json\CanonicalCatalogWriter.cs;..\NetPrints.Catalog\Emit\**\*.cs" Link="Shared\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Shared\Roslyn\**\*.cs" Link="Shared\Roslyn\%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

@@ -82,11 +82,12 @@ internal sealed class GitInstallCommand(IAnsiConsole console, CliEnvironment env
             return ExitCodes.Failed;
         }
 
-        var wanted = new List<KeyValuePair<string, string>> { new(TextconvKey, $"{settings.Command} show --textconv") };
+        string command = ForShell(settings.Command);
+        var wanted = new List<KeyValuePair<string, string>> { new(TextconvKey, $"{command} show --textconv") };
         if (settings.Merge)
         {
             wanted.Add(new(MergeNameKey, MergeName));
-            wanted.Add(new(MergeDriverKey, $"{settings.Command} merge %O %A %B --marker-size %L --path %P"));
+            wanted.Add(new(MergeDriverKey, $"{command} merge %O %A %B --marker-size %L --path %P"));
         }
 
         foreach ((string key, string value) in wanted)
@@ -117,6 +118,15 @@ internal sealed class GitInstallCommand(IAnsiConsole console, CliEnvironment env
         await File.WriteAllBytesAsync(attributesPath, attributes.WithLine(settings.Merge), cancellationToken).ConfigureAwait(false);
         await WriteAsync($"installed: {attributesPath}").ConfigureAwait(false);
         return ExitCodes.Success;
+    }
+
+    // Git runs the stored command through sh. A command that names an existing file is a path: sh would split it at spaces and
+    // drop the backslashes of a Windows path, so it is written with forward slashes inside single quotes. Anything else is a command line
+    // the user wrote for sh and is kept as given.
+    private static string ForShell(string command)
+    {
+        string trimmed = command.Trim();
+        return File.Exists(trimmed) ? "'" + trimmed.Replace('\\', '/').Replace("'", "'\\''", StringComparison.Ordinal) + "'" : command;
     }
 
     private async Task<int> UninstallAsync(GitConfig config, string attributesPath, CancellationToken cancellationToken)

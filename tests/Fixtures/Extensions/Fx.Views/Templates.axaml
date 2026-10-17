@@ -1,0 +1,7 @@
+<DataTemplates xmlns="https://github.com/avaloniaui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+               xmlns:sys="using:System">
+  <DataTemplate DataType="{x:Type sys:Version}">
+    <TextBlock Text="fx.views" />
+  </DataTemplate>
+</DataTemplates>

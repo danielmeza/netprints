@@ -43,8 +43,8 @@ namespace NetPrints.Tests.Translator
             var setter = new VariableSetterNode(method, local.ToSpecifier());
             LiteralNode literal = LiteralNode.WithValue(method, 5);
             GraphUtil.ConnectDataPins(literal.ValuePin, setter.NewValuePin);
-            GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, setter.InputExecPins[0]);
-            GraphUtil.ConnectExecPins(setter.OutputExecPins[0], method.ReturnNodes.First().ReturnPin);
+            GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, setter.InputExecPins[0]);
+            GraphUtil.ConnectExecPins(setter.OutputExecPins[0], method.ReturnNodes.First().ExecPin);
 
             var translator = new ExecutionGraphTranslator(TranslationEnvironment.BuiltIn);
             string code = translator.Translate(method, true, []);
@@ -66,8 +66,8 @@ namespace NetPrints.Tests.Translator
             LiteralNode value = LiteralNode.WithValue(method, 5);
             GraphUtil.ConnectDataPins(index.ValuePin, setter.IndexPin ?? throw new System.InvalidOperationException("No index pin."));
             GraphUtil.ConnectDataPins(value.ValuePin, setter.NewValuePin);
-            GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, setter.InputExecPins[0]);
-            GraphUtil.ConnectExecPins(setter.OutputExecPins[0], method.ReturnNodes.First().ReturnPin);
+            GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, setter.InputExecPins[0]);
+            GraphUtil.ConnectExecPins(setter.OutputExecPins[0], method.ReturnNodes.First().ExecPin);
 
             var translator = new ExecutionGraphTranslator(TranslationEnvironment.BuiltIn);
             string code = translator.Translate(method, true, []);

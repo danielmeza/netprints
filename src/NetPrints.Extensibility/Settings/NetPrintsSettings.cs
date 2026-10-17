@@ -17,17 +17,25 @@ public sealed record NetPrintsSettings
     /// <summary>
     /// Directories searched for extensions; each immediate subfolder holding a manifest is loaded.
     /// </summary>
+    [NonBlankItems]
     public IReadOnlyList<string> ExtensionPaths { get; init; } = [];
 
     /// <summary>
     /// Full <c>.csproj</c> paths whose <c>NetPrintsExtension</c> items the user allowed.
     /// </summary>
+    [NonBlankItems]
     public IReadOnlyList<string> TrustedProjects { get; init; } = [];
 
     /// <summary>
     /// Whether to enable UI animations (disable for accessibility/Reduced Motion).
     /// </summary>
     public bool EnableAnimations { get; init; } = true;
+
+    /// <summary>
+    /// The UI language as a culture name such as <c>es-MX</c>; empty means the operating system's culture. A change applies after a restart.
+    /// </summary>
+    [CultureName]
+    public string Language { get; init; } = "";
 
     /// <summary>
     /// The default: no extension paths and no trusted projects, animations enabled.
@@ -39,7 +47,13 @@ public sealed record NetPrintsSettings
     /// </summary>
     [Experimental(ExperimentalApiIds.Settings, UrlFormat = ExperimentalApiIds.UrlFormat)]
     public static ExtensionSettingsDescriptor<NetPrintsSettings> Descriptor { get; } =
-        new(SectionId, NetPrintsSettingsJsonContext.Default.NetPrintsSettings, Empty);
+        new(SectionId, NetPrintsSettingsJsonContext.Default.NetPrintsSettings, Empty)
+        {
+            Validator = Validate,
+        };
+
+    private static string[] Validate(NetPrintsSettings value)
+        => [.. new NetPrintsSettingsValidator().Validate(null, value).Failures ?? []];
 }
 
 /// <summary>

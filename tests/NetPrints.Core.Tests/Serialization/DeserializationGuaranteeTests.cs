@@ -244,7 +244,9 @@ namespace NetPrints.Tests.Serialization
         private sealed class LateInferNodeConverter : INodeDocumentConverter
         {
             public string Kind => "test/lateInfer";
+
             public Type NodeType => typeof(LateInferNode);
+
             public Type DocumentType => typeof(LateInferNodeDocument);
 
             public NodeDocument ToDocument(Node node, NodeMappingContext context) => throw new NotSupportedException();

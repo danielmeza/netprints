@@ -58,6 +58,22 @@ public sealed class ProjectCheckTests : IDisposable
         Assert.Contains("(graph ", text, StringComparison.Ordinal);
     }
 
+    // US11 scenario 5 (FR-085): the project load of --check-project writes no generated file.
+    [Fact(Timeout = 120_000)]
+    public async Task CheckProjectLoadsTheProjectWithoutWritingAGeneratedFile()
+    {
+        string csprojPath = GeneratedFileTree.CreateStaleSample();
+        cleanup.Add(csprojPath);
+        string directory = Path.GetDirectoryName(csprojPath) ?? throw new InvalidOperationException("The sample has no directory.");
+        Dictionary<string, string> before = GeneratedFileTree.Read(directory);
+        Assert.NotEmpty(before);
+        var projects = new MsBuildProjectSystem(ProjectCheck.CreateProjectSystemOptions(), new ProcessRunner(), NullLogger<MsBuildProjectSystem>.Instance);
+
+        await projects.LoadAsync(csprojPath, TestContext.Current.CancellationToken);
+
+        Assert.Equal(before, GeneratedFileTree.Read(directory));
+    }
+
     [Fact]
     public async Task CheckProjectWithNoPathReturnsBadArguments()
     {

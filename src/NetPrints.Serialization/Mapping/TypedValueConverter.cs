@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Globalization;
+using NetPrints.Core;
 using NetPrints.Serialization.Documents;
 
 namespace NetPrints.Serialization.Mapping;
@@ -36,21 +37,8 @@ public static class TypedValueConverter
 
         string formatted = value switch
         {
-            bool b => b ? "true" : "false",
-            byte v => v.ToString(CultureInfo.InvariantCulture),
-            sbyte v => v.ToString(CultureInfo.InvariantCulture),
-            short v => v.ToString(CultureInfo.InvariantCulture),
-            ushort v => v.ToString(CultureInfo.InvariantCulture),
-            int v => v.ToString(CultureInfo.InvariantCulture),
-            uint v => v.ToString(CultureInfo.InvariantCulture),
-            long v => v.ToString(CultureInfo.InvariantCulture),
-            ulong v => v.ToString(CultureInfo.InvariantCulture),
-            float v => v.ToString("R", CultureInfo.InvariantCulture),
-            double v => v.ToString("R", CultureInfo.InvariantCulture),
-            decimal v => v.ToString(CultureInfo.InvariantCulture),
-            char v => v.ToString(),
-            string v => v,
             Enum v => v.ToString(),
+            _ when PrimitiveKinds.TryGet(typeName, out PrimitiveKind? kind) => kind.Format(value),
             _ => throw new DocumentFormatException($"Unsupported value type '{typeName}' in {where}"),
         };
 
@@ -78,39 +66,14 @@ public static class TypedValueConverter
 
         try
         {
-            return value.Type switch
-            {
-                "System.Boolean" => bool.Parse(text),
-                "System.Byte" => byte.Parse(text, CultureInfo.InvariantCulture),
-                "System.SByte" => sbyte.Parse(text, CultureInfo.InvariantCulture),
-                "System.Int16" => short.Parse(text, CultureInfo.InvariantCulture),
-                "System.UInt16" => ushort.Parse(text, CultureInfo.InvariantCulture),
-                "System.Int32" => int.Parse(text, CultureInfo.InvariantCulture),
-                "System.UInt32" => uint.Parse(text, CultureInfo.InvariantCulture),
-                "System.Int64" => long.Parse(text, CultureInfo.InvariantCulture),
-                "System.UInt64" => ulong.Parse(text, CultureInfo.InvariantCulture),
-                "System.Single" => float.Parse(text, CultureInfo.InvariantCulture),
-                "System.Double" => double.Parse(text, CultureInfo.InvariantCulture),
-                "System.Decimal" => decimal.Parse(text, CultureInfo.InvariantCulture),
-                "System.Char" => ParseChar(text),
-                "System.String" => text,
-                _ => ParseEnum(value.Type, text),
-            };
+            return PrimitiveKinds.TryGet(value.Type, out PrimitiveKind? kind)
+                ? kind.Parse(text)
+                : ParseEnum(value.Type, text);
         }
         catch (Exception ex) when (ex is FormatException or OverflowException)
         {
             throw new DocumentFormatException($"Value '{text}' is not a valid '{value.Type}' literal.", inner: ex);
         }
-    }
-
-    private static char ParseChar(string text)
-    {
-        if (text.Length != 1)
-        {
-            throw new FormatException($"'{text}' is not a single character.");
-        }
-
-        return text[0];
     }
 
     private static object ParseEnum(string typeName, string text)

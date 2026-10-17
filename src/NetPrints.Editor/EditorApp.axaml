@@ -3,94 +3,10 @@
              xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              xmlns:semi="https://irihi.tech/semi"
              xmlns:u-semi="using:Ursa.Themes.Semi"
-             xmlns:ed="clr-namespace:NetPrints.Editor"
-             xmlns:docking="clr-namespace:NetPrints.Editor.Shell.Docking"
-             xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
-             xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
-             xmlns:ednav="clr-namespace:NetPrints.Editor.Navigation"
-             xmlns:shell="clr-namespace:NetPrints.Editor.Shell"
-             xmlns:edstart="clr-namespace:NetPrints.Editor.StartPage"
-             xmlns:edinspectors="clr-namespace:NetPrints.Editor.Inspectors"
-             xmlns:edcode="clr-namespace:NetPrints.Editor.CodeView"
-             xmlns:ederrorlist="clr-namespace:NetPrints.Editor.ErrorList"
-             xmlns:edoutput="clr-namespace:NetPrints.Editor.Output"
-             xmlns:edtree="clr-namespace:NetPrints.Editor.ProjectTree"
-             xmlns:edvariables="clr-namespace:NetPrints.Editor.Variables"
              x:Class="NetPrints.Editor.EditorApp"
              Name="NetPrints"
              RequestedThemeVariant="Dark">
-  <!-- Floating dock windows resolve their content through the application's templates, not the DockControl's (ADR-0018 check 3). -->
-  <Application.DataTemplates>
-    <DataTemplate DataType="docking:ShellDocument" x:DataType="docking:ShellDocument">
-      <ContentControl Classes="shellHost" Content="{Binding Context}">
-        <ContentControl.Styles>
-          <Style Selector="ContentControl.shellHost">
-            <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
-          </Style>
-        </ContentControl.Styles>
-      </ContentControl>
-    </DataTemplate>
-    <DataTemplate DataType="docking:ShellTool" x:DataType="docking:ShellTool">
-      <ContentControl Classes="shellHost" Content="{Binding Context}">
-        <ContentControl.Styles>
-          <Style Selector="ContentControl.shellHost">
-            <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
-          </Style>
-        </ContentControl.Styles>
-      </ContentControl>
-    </DataTemplate>
-    <DataTemplate DataType="shell:GraphDocumentViewModel" x:DataType="shell:GraphDocumentViewModel">
-      <Grid>
-        <Interaction.Behaviors>
-          <edbehaviors:ScopedCommandKeysBehavior Scope="Graph" Invoker="{Binding Invoker}" />
-          <edbehaviors:CommandKeyBindingsBehavior Invoker="{Binding Invoker}" />
-          <edbehaviors:GraphViewportBehavior Document="{Binding}" />
-        </Interaction.Behaviors>
-        <edgraph:GraphEditorView DataContext="{Binding Graph}" />
-        <ItemsControl Classes="breadcrumbBar" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Breadcrumbs}" AutomationProperties.Name="Breadcrumbs"
-                      ItemsSource="{Binding Breadcrumbs.Segments}">
-          <ItemsControl.ItemsPanel>
-            <ItemsPanelTemplate>
-              <StackPanel Orientation="Horizontal" />
-            </ItemsPanelTemplate>
-          </ItemsControl.ItemsPanel>
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="ednav:BreadcrumbSegmentViewModel">
-              <StackPanel Orientation="Horizontal">
-                <Button Classes="breadcrumb" Content="{Binding Name}" Command="{Binding RevealCommand}"
-                        AutomationProperties.AutomationId="{x:Static ed:AutomationIds.BreadcrumbSegment}" AutomationProperties.Name="{Binding Name}" />
-                <TextBlock Classes="breadcrumbSeparator" Text="›" IsVisible="{Binding !IsLast}" AutomationProperties.AccessibilityView="Raw" />
-              </StackPanel>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </Grid>
-    </DataTemplate>
-    <DataTemplate DataType="shell:ProjectSettingsDocumentViewModel" x:DataType="shell:ProjectSettingsDocumentViewModel">
-      <shell:ProjectSettingsView />
-    </DataTemplate>
-    <DataTemplate DataType="edstart:StartPageViewModel" x:DataType="edstart:StartPageViewModel">
-      <edstart:StartPageView />
-    </DataTemplate>
-    <DataTemplate DataType="edtree:ProjectTreePanelViewModel" x:DataType="edtree:ProjectTreePanelViewModel">
-      <edtree:ProjectTreePanelView />
-    </DataTemplate>
-    <DataTemplate DataType="edinspectors:InspectorPanelViewModel" x:DataType="edinspectors:InspectorPanelViewModel">
-      <edinspectors:InspectorPanelView />
-    </DataTemplate>
-    <DataTemplate DataType="edvariables:ShellVariablesPanelViewModel" x:DataType="edvariables:ShellVariablesPanelViewModel">
-      <edvariables:VariablesPanelView />
-    </DataTemplate>
-    <DataTemplate DataType="ederrorlist:ErrorsPanelViewModel" x:DataType="ederrorlist:ErrorsPanelViewModel">
-      <ederrorlist:ErrorsPanelView />
-    </DataTemplate>
-    <DataTemplate DataType="edoutput:OutputPanelViewModel" x:DataType="edoutput:OutputPanelViewModel">
-      <edoutput:OutputPanelView />
-    </DataTemplate>
-    <DataTemplate DataType="edcode:CSharpPanelViewModel" x:DataType="edcode:CSharpPanelViewModel">
-      <edcode:CSharpPanelView />
-    </DataTemplate>
-  </Application.DataTemplates>
+  <!-- The built-in view templates are added through the editor facet (BuiltInViews.axaml, ViewResourceLoader). -->
   <Application.Styles>
     <FluentTheme />
     <semi:SemiTheme Locale="en-US" />
