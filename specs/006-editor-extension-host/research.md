@@ -335,8 +335,10 @@ ADR-0031, ADR-0033 to ADR-0040.
   | NPXE0018 | Package reference edits (`AddPackageReference`, `SetPackageVersion`, `RemovePackageReference` on `ProjectEdit`; R33) | H |
 
   Stable from 0.4.0: the typed pins and pin attributes (`[NodeKind]`, `[NodeBase]`, `[Pin]`, `[PinType]`),
-  `PinRole`, `CSharpLanguageVersion`, the minimal `CSharpTarget`, `LocalizedText`, `GraphPoint`, the manifest's
-  `themes` field and the existing stable surface. NPXE0001–NPXE0004 keep their meaning.
+  `PinRole`, `CSharpLanguageVersion`, the minimal `CSharpTarget` with `CSharpTarget.Resolve`, `CSharpFrameworkInput` and
+  `CSharpTargetResolution` (a pure function over project-system data, no extension implements it), `INodeHintSource` and
+  `NodeHint` (two read methods and a record, implemented by the catalog-backed providers), `LocalizedText`, `GraphPoint`,
+  the manifest's `themes` field and the existing stable surface. NPXE0001–NPXE0004 keep their meaning.
 - **Rationale**: one id per surface an author opts into, so a settings-only extension does not opt into editor
   contributions; ADR-0040 asked for separate ids for pages and custom views.
 - **Alternatives rejected**: one P3 id for everything (an opt-in would mean nothing); stable descriptors (they are the

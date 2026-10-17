@@ -265,8 +265,8 @@ disappear in a minor release.
 | `NPXE0013` | Node-data migrations: `INodeDataMigration`, `NodeKindDescriptor.DataVersion`, `IExtensionBuilder.AddDocumentMigration`. |
 
 Stable since 0.4.0, with no opt-in: the typed pins and the pin attributes (`[NodeKind]`, `[NodeBase]`, `[Pin]`,
-`[PinType]`), `PinRole`, `CSharpLanguageVersion`, the minimal `CSharpTarget`, `LocalizedText`, `GraphPoint`,
-`Node.TitleIsFixed` and the surface that already shipped. Ids for the surfaces that land later in the 0.4.0 work
+`[PinType]`), `PinRole`, `CSharpLanguageVersion`, the minimal `CSharpTarget` with `CSharpTarget.Resolve`, `CSharpFrameworkInput` and
+`CSharpTargetResolution`, `INodeHintSource` and `NodeHint`, `LocalizedText`, `GraphPoint`, `Node.TitleIsFixed` and the surface that already shipped. Ids for the surfaces that land later in the 0.4.0 work
 (inspector sections, graph rules, translation context additions, node kinds by convention and package reference edits) are
 added to this table when their API ships. From the publish gate of 0.4.0 a public shape changes only under an `NPXE` id or
 with a recorded `*REMOVED*` entry in the API files.

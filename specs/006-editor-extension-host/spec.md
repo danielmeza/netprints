@@ -842,8 +842,8 @@ preset lists while the extension is loaded.
 - **FR-070**: Each project MUST have one `CSharpTarget` computed from the evaluated `LangVersion`,
   `MaxSupportedLangVersion` and target frameworks, carried by the project snapshot and reached through `Project` and
   `IProjectSession`; generated code MUST depend on its language version only (ADR-0038).
-- **FR-071**: `latest`, `preview` and `default` MUST resolve to the smaller of the framework's maximum and the editor
-  compiler's maximum, with an info hint to pin `<LangVersion>`; a multi-targeted project MUST use the minimum version and
+- **FR-071**: `latest`, `preview` and `default` MUST resolve to the smaller of the framework's maximum and the newest
+  version NetPrints knows (`CSharpLanguageVersion.MaxKnown`), with an info hint to pin `<LangVersion>`; a multi-targeted project MUST use the minimum version and
   the common capabilities; a version newer than the framework's default is allowed with an info message.
 - **FR-072**: The language version MUST travel in the generate request, so the editor, `netprints regen` and the SDK's
   generate target write identical bytes for the same project.
