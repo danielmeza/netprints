@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Runtime.Loader;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -51,55 +52,126 @@ internal static class ExtensionServiceProviders
             }
         }
 
-        accepted.AddSingleton(loggerFactory);
-        accepted.AddSingleton(TimeProvider.System);
-        accepted.AddSingleton(typeof(ILogger<>), typeof(ExtensionLogger<>));
-        foreach (ExtensionSettingsDescriptor section in sections)
+        foreach (Type export in HostExports.AllowedServiceTypes)
         {
-            accepted.AddSingleton(
-                typeof(IOptionsMonitor<>).MakeGenericType(section.ValueType),
-                _ => Activator.CreateInstance(typeof(SettingsOptionsMonitor<>).MakeGenericType(section.ValueType), section, settingsStore)
-                    ?? throw new InvalidOperationException("The options monitor could not be created."));
+            AddExport(accepted, export, ownAssembly, sections, settingsStore, loggerFactory);
         }
 
-        return accepted.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        try
+        {
+            return accepted.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        }
+        catch (AggregateException ex)
+        {
+            throw new ExtensionServicesException($"the service registrations are not resolvable: {string.Join(" ", ex.InnerExceptions.Select(inner => inner.Message))}", ex);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new ExtensionServicesException($"the service registrations are not resolvable: {ex.Message}", ex);
+        }
+    }
+
+    [RequiresUnreferencedCode(DynamicLoading.Reason)]
+    private static void AddExport(
+        IServiceCollection accepted,
+        Type export,
+        Assembly ownAssembly,
+        IReadOnlyList<ExtensionSettingsDescriptor> sections,
+        ISettingsStore? settingsStore,
+        ILoggerFactory loggerFactory)
+    {
+        if (export == typeof(ILoggerFactory))
+        {
+            accepted.AddSingleton(loggerFactory);
+        }
+        else if (export == typeof(TimeProvider))
+        {
+            accepted.AddSingleton(TimeProvider.System);
+        }
+        else if (export == typeof(ILogger<>))
+        {
+            foreach (Type own in OwnTypes(ownAssembly))
+            {
+                accepted.AddSingleton(typeof(ILogger<>).MakeGenericType(own), typeof(ExtensionLogger<>).MakeGenericType(own));
+            }
+        }
+        else if (export == typeof(IOptionsMonitor<>))
+        {
+            foreach (ExtensionSettingsDescriptor section in sections)
+            {
+                accepted.AddSingleton(
+                    typeof(IOptionsMonitor<>).MakeGenericType(section.ValueType),
+                    _ => Activator.CreateInstance(typeof(SettingsOptionsMonitor<>).MakeGenericType(section.ValueType), section, settingsStore)
+                        ?? throw new InvalidOperationException("The options monitor could not be created."));
+            }
+        }
+        else
+        {
+            throw new NotSupportedException($"The host export {export} has no provider registration.");
+        }
+    }
+
+    private static IEnumerable<Type> OwnTypes(Assembly ownAssembly)
+    {
+        Type?[] types;
+        try
+        {
+            types = ownAssembly.GetTypes();
+        }
+        catch (ReflectionTypeLoadException ex)
+        {
+            types = ex.Types;
+        }
+
+        return types.OfType<Type>().Where(type => !type.IsGenericTypeDefinition && !type.IsByRefLike && !type.IsPointer && !type.IsByRef);
     }
 
     private static string? Violation(Type serviceType, Assembly ownAssembly)
     {
         if (Array.IndexOf(ReplacedExports, serviceType) >= 0
-            || (serviceType.IsGenericTypeDefinition && Array.IndexOf(ReplacedOpenExports, serviceType) >= 0))
+            || (serviceType.IsGenericType && Array.IndexOf(ReplacedOpenExports, serviceType.GetGenericTypeDefinition()) >= 0))
         {
             return "it replaces a host export.";
         }
 
         if (serviceType.IsGenericType && !serviceType.IsGenericTypeDefinition
             && Array.IndexOf(OptionsSeams, serviceType.GetGenericTypeDefinition()) >= 0
-            && serviceType.GetGenericArguments().Any(argument => !IsOwn(argument, ownAssembly)))
+            && serviceType.GetGenericArguments().Any(argument => !IsAllowed(argument, ownAssembly)))
         {
             return "it configures options the extension does not own.";
         }
 
-        return IsHostType(serviceType, ownAssembly) ? "it is a closed generic over a host type, or a host type itself." : null;
+        return IsAllowed(serviceType, ownAssembly) ? null : "only the extension's own types, and generics over them, can be registered.";
     }
 
-    private static bool IsHostType(Type type, Assembly ownAssembly)
+    private static bool IsAllowed(Type type, Assembly ownAssembly)
     {
-        if (type.IsGenericParameter || type.IsGenericTypeDefinition)
+        if (IsOwn(type, ownAssembly))
         {
-            return false;
+            return true;
         }
 
         if (type.HasElementType)
         {
-            return type.GetElementType() is { } element && IsHostType(element, ownAssembly);
+            return type.GetElementType() is { } element && IsAllowed(element, ownAssembly);
         }
 
-        bool host = !IsOwn(type, ownAssembly) && (type.Assembly.GetName().Name?.StartsWith(HostAssemblyPrefix, StringComparison.Ordinal) ?? false);
-        return host || (type.IsGenericType && type.GetGenericArguments().Any(argument => IsHostType(argument, ownAssembly)));
+        return type.IsGenericType
+            && !type.IsGenericTypeDefinition
+            && !(type.Assembly.GetName().Name?.StartsWith(HostAssemblyPrefix, StringComparison.Ordinal) ?? false)
+            && type.GetGenericArguments().All(argument => IsAllowed(argument, ownAssembly));
     }
 
-    private static bool IsOwn(Type type, Assembly ownAssembly) => type.Assembly == ownAssembly;
+    private static bool IsOwn(Type type, Assembly ownAssembly)
+    {
+        if (type.Assembly == ownAssembly)
+        {
+            return true;
+        }
+
+        AssemblyLoadContext? context = AssemblyLoadContext.GetLoadContext(ownAssembly);
+        return context is not null && context != AssemblyLoadContext.Default && AssemblyLoadContext.GetLoadContext(type.Assembly) == context;
+    }
 }
 
 /// <summary>An <see cref="ILogger{TCategoryName}"/> over the host's factory, so an extension asks for the logger of its own types.</summary>

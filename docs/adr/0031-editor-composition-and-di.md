@@ -64,6 +64,9 @@ earlier plan of a hand-written composition root with no container, which was the
    - Disposal order: sessions first, then the provider, then the load context's `Unload()`. Each extension's
      disposal is wrapped so one throwing `Dispose` does not stop the rest, including host services (MS.DI aborts the
      remaining disposals otherwise).
+   - Amended (batch C-F5): the disposal order is sessions, then the contributed objects, then the provider. A
+     contribution is created from the provider's services and may use them in its own `Dispose`, so the provider
+     outlives it; the extension still disposes in one pass in which a throwing `Dispose` stops nothing.
    - Startup validation runs on every provider build, the extensions' providers included. At .NET 11 this moves to
      `IAsyncStartupValidator` (`IStartupValidator` becomes obsolete, SYSLIB0066).
    - The conformance kit (ADR-0010) runs a capture and leak test per extension: an extension that subscribes to a

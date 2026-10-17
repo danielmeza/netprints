@@ -59,6 +59,15 @@ internal sealed class RegistryBuilder(ILogger logger, ILoggerFactory loggerFacto
     [RequiresUnreferencedCode(DynamicLoading.Reason)]
     public void Commit(ExtensionManifest manifest, ExtensionContributions contributions)
     {
+        var serviceRejections = new List<(string Contribution, string Reason)>();
+        ServiceProvider extensionServices = ExtensionServiceProviders.Build(
+            contributions.Services,
+            contributions.OwnAssembly,
+            [.. contributions.Settings.Where(descriptor => descriptor.ExtensionId == manifest.Id).DistinctBy(descriptor => descriptor.ExtensionId, StringComparer.Ordinal)],
+            settingsStore,
+            loggerFactory,
+            (contribution, reason) => serviceRejections.Add((contribution, reason)));
+
         foreach (INodeLibrary library in contributions.NodeLibraries)
         {
             owned.Add(library);
@@ -139,13 +148,11 @@ internal sealed class RegistryBuilder(ILogger logger, ILoggerFactory loggerFacto
             }
         }
 
-        providers[manifest.Id] = ExtensionServiceProviders.Build(
-            contributions.Services,
-            contributions.OwnAssembly,
-            [.. settings.Where(descriptor => descriptor.ExtensionId == manifest.Id)],
-            settingsStore,
-            loggerFactory,
-            (contribution, reason) => Reject(manifest, ExtensionDiagnosticCodes.ContributionRejected, contribution, reason));
+        providers[manifest.Id] = extensionServices;
+        foreach ((string contribution, string reason) in serviceRejections)
+        {
+            Reject(manifest, ExtensionDiagnosticCodes.ContributionRejected, contribution, reason);
+        }
 
         foreach (CatalogProfile profile in contributions.CatalogProfiles)
         {

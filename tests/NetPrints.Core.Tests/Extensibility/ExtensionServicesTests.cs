@@ -26,6 +26,11 @@ public sealed class Greeter : IGreeter
 
 public sealed class OtherService;
 
+public sealed class NeedsOther(OtherService other)
+{
+    public OtherService Other { get; } = other;
+}
+
 public class DisposeProbe(List<string> log, string name, bool throws) : IDisposable
 {
     public void Dispose()
@@ -102,6 +107,50 @@ public class ExtensionServicesTests
         Assert.Null(services.GetService<IList<NodeGraph>>());
         Assert.Null(services.GetService<IConfigureOptions<NodeGraph>>());
         Assert.NotNull(services.GetService<IConfigureOptions<SampleSettings>>());
+    }
+
+    [Fact]
+    public async Task AnExtensionGetsLoggersOnlyForItsOwnTypes()
+    {
+        var extension = InProcess("test.ext", builder => builder.Services.AddSingleton<IGreeter, Greeter>());
+
+        await using ExtensionRegistry registry = Load(Options([BuiltInExtension.InProcessEntry, extension]));
+        IServiceProvider services = registry.ServicesOf("test.ext");
+
+        Assert.NotNull(services.GetService<ILogger<Greeter>>());
+        Assert.Null(services.GetService<ILogger<NodeGraph>>());
+        Assert.Null(services.GetService<ILogger<ExtensionRegistry>>());
+    }
+
+    [Fact]
+    public async Task ARegistrationOfATypeThatIsNotTheExtensionsOwnIsRejected()
+    {
+        var extension = InProcess("test.ext", builder =>
+        {
+            builder.Services.AddSingleton<IGreeter, Greeter>();
+            builder.Services.AddSingleton<System.Net.Http.HttpClient>();
+            builder.Services.AddSingleton<IList<IGreeter>>(new List<IGreeter>());
+        });
+
+        await using ExtensionRegistry registry = Load(Options([BuiltInExtension.InProcessEntry, extension]));
+        IServiceProvider services = registry.ServicesOf("test.ext");
+
+        Assert.Single(registry.Issues, issue => issue.ExtensionId == "test.ext" && issue.Code == ExtensionDiagnosticCodes.ContributionRejected);
+        Assert.Null(services.GetService<System.Net.Http.HttpClient>());
+        Assert.NotNull(services.GetService<IList<IGreeter>>());
+        Assert.NotNull(services.GetService<IGreeter>());
+    }
+
+    [Fact]
+    public async Task ARegistrationWithAMissingDependencyFailsTheExtensionAtLoad()
+    {
+        var extension = InProcess("test.ext", builder => builder.Services.AddSingleton<NeedsOther>());
+
+        await using ExtensionRegistry registry = Load(Options([BuiltInExtension.InProcessEntry, extension]));
+
+        ExtensionLoadResult.Failed failed = Assert.IsType<ExtensionLoadResult.Failed>(Assert.Single(registry.Results, result => result is ExtensionLoadResult.Failed));
+        Assert.Equal(ExtensionDiagnosticCodes.RegisterFailed, failed.Code);
+        Assert.Contains("OtherService", failed.Reason, StringComparison.Ordinal);
     }
 
     [Fact]

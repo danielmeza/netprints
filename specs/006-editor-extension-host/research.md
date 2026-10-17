@@ -307,8 +307,12 @@ ADR-0031, ADR-0033 to ADR-0040.
   `ILogger<T>` for the extension's own types, `TimeProvider`, and `IOptionsMonitor<T>` for the extension's own settings
   sections; host singletons are bridged as instances. Session services reach an extension through a per-extension
   scoped accessor on `IProjectSession`. The seam filter rejects closed generics over host types and any
-  `IConfigureOptions`, `IPostConfigureOptions` or `IValidateOptions` for host options. Disposal order: sessions, then
-  the provider, each extension wrapped so one throwing `Dispose` does not stop the rest. A test pins the allow-list.
+  `IConfigureOptions`, `IPostConfigureOptions` or `IValidateOptions` for host options. The filter is an allow-list: a service type is
+  accepted when it is the extension's own, or a generic outside the host assemblies over accepted types. The provider
+  is built with `ValidateOnBuild`, and a registration that cannot resolve fails the extension at load (NPX005).
+  `ILogger<T>` is registered only for the extension's own types. Disposal order: sessions, then the contributed
+  objects (they may use the provider's services in `Dispose`), then the provider, each wrapped so one throwing
+  `Dispose` does not stop the rest. The provider is built from `HostExports.AllowedServiceTypes`, which a test pins.
 - **Rationale**: ADR-0031 decisions 3–5; FR-024.
 - **Alternatives rejected**: one shared provider (extensions would see each other's registrations).
 

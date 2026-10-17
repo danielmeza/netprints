@@ -315,7 +315,15 @@ public sealed class ExtensionLoader
         }
 
         contributions = builder.Seal();
-        registryBuilder.Commit(manifest, contributions);
+        try
+        {
+            registryBuilder.Commit(manifest, contributions);
+        }
+        catch (ExtensionServicesException ex)
+        {
+            return Fail(candidate, ExtensionDiagnosticCodes.RegisterFailed, ex.Message, ex);
+        }
+
         builder.BufferedEditor.ReplayTo(options.EditorContributions?.Invoke(manifest) ?? NullEditorContributions.Instance);
         return new ExtensionLoadResult.Loaded(manifest.Id, candidate.ManifestPath, manifest);
     }
