@@ -1,5 +1,7 @@
 ## Unreleased
 
+**Breaking (API):** the texts of the editor contributions are `LocalizedText` instead of `string`: `DialogDescriptor.Title`, `DashboardTileDescriptor.Title`, `ProjectTemplateDescriptor.DisplayName` and `Description`, and `NodeSuggestion.DisplayName`. A string converts implicitly, so callers compile; code that reads these properties as strings uses `.Text`. A plain string takes the convention key (`Dialog.<id>.Title`, `Tile.<id>.Title`, `Template.<id>.Name`, `Template.<id>.Description`); a suggestion given as a plain string is its own key, and `new LocalizedText(key, text)` separates the two. `NetPrints.Extensibility` and `NetPrints.Extensibility.Abstractions` have no published baseline, so package validation records no suppression.
+
 **Breaking (API):** the pin properties of eight built-in nodes are named after their stored pin key. Saved graphs and generated code are unchanged. There are no `[Obsolete]` shims; rename the calls:
 
 - `IfElseNode.ExecutionPin`, `ForLoopNode.ExecutionPin`: `ExecPin`

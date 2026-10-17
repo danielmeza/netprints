@@ -79,7 +79,7 @@ internal sealed record TypeEntry(string Category, TypeSpecifier Type)
 /// <param name="Category">Category of the entry.</param>
 /// <param name="Suggestion">The suggestion of the node kind.</param>
 internal sealed record NodeKindEntry(string Category, NodeSuggestion Suggestion)
-    : EditorSearchEntry(Category, Suggestion.DisplayName, Suggestion.IconKey ?? IconIds.CategoryNone)
+    : EditorSearchEntry(Category, Suggestion.DisplayName.Text, Suggestion.IconKey ?? IconIds.CategoryNone)
 {
     /// <inheritdoc/>
     protected override Task<Node?> CreateInEditorAsync(NodeCreationContext context, GraphPoint position, NodePin? pin)

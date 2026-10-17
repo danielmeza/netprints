@@ -21,6 +21,8 @@ public sealed class NodeDisplayTextTests(IReflectionHost sharedReflection)
 {
     private const string FxCategory = "Fx Rows";
     private const string SuggestionName = "Say Hello";
+    private const string KeyedCategory = "Fx Keyed";
+    private const string KeyedSuggestionKey = "Fx.Keyed.SayHello";
     private static readonly CultureInfo German = new("de");
 
     private static readonly Dictionary<string, string> GermanStrings = new()
@@ -31,6 +33,7 @@ public sealed class NodeDisplayTextTests(IReflectionHost sharedReflection)
         ["Category.netprints"] = "NetPrints (de)",
         ["Category.fx-rows"] = "Fx Zeilen",
         [SuggestionName] = "Sag Hallo",
+        [KeyedSuggestionKey] = "Sag Hallo (Schluessel)",
     };
 
     private static ExtensionHost FxHost()
@@ -127,6 +130,16 @@ public sealed class NodeDisplayTextTests(IReflectionHost sharedReflection)
     }
 
     [Fact]
+    public void ASuggestionWithItsOwnKeyIsTranslatedByThatKeyNotByItsText()
+    {
+        List<SuggestionRowViewModel> german = InCulture(German, () => Graph.Search.BuildItems(null));
+        List<SuggestionRowViewModel> neutral = Graph.Search.BuildItems(null);
+
+        Assert.Equal("Sag Hallo (Schluessel)", Assert.Single(german, row => row is { IsHeader: false, Category: KeyedCategory }).Text);
+        Assert.Equal(SuggestionName, Assert.Single(neutral, row => row is { IsHeader: false, Category: KeyedCategory }).Text);
+    }
+
+    [Fact]
     public void TheNeutralCultureShowsTheSuggestionNameAndTheCategoryAsWritten()
     {
         List<SuggestionRowViewModel> rows = Graph.Search.BuildItems(null);
@@ -149,7 +162,10 @@ public sealed class NodeDisplayTextTests(IReflectionHost sharedReflection)
         public string Id => "fx.rows";
 
         public IEnumerable<NodeSearchEntry> Suggest(NodeSearchContext context) =>
-            [new NodeKindEntry(FxCategory, new NodeSuggestion(FxCategory, SuggestionName, null, graph => new TypeNode(graph, TypeSpecifier.FromType<int>())))];
+            [
+                new NodeKindEntry(FxCategory, new NodeSuggestion(FxCategory, SuggestionName, null, graph => new TypeNode(graph, TypeSpecifier.FromType<int>()))),
+                new NodeKindEntry(KeyedCategory, new NodeSuggestion(KeyedCategory, new LocalizedText(KeyedSuggestionKey, SuggestionName), null, graph => new TypeNode(graph, TypeSpecifier.FromType<int>()))),
+            ];
     }
 
     private sealed class GermanResources : ResourceManager

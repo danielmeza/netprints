@@ -79,7 +79,7 @@ public sealed class ContributionTests : IAsyncLifetime
         IEnumerable<string> OfferedIn(NodeGraph graph) => registry.NodeKinds
             .Where(k => (k.AllowedIn & NodeGraphKinds.Of(graph)) != GraphKinds.None)
             .SelectMany(k => k.Suggestions)
-            .Select(s => s.DisplayName);
+            .Select(s => s.DisplayName.Text);
 
         Assert.Contains("Log", OfferedIn(method));
         Assert.Contains("Log", OfferedIn(new ConstructorGraph { Class = cls }));

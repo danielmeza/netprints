@@ -43,7 +43,7 @@ public sealed class NodeCreationTableTests(IReflectionHost sharedReflection)
         NodeKindDescriptor descriptor = Descriptor(kind);
         Editor.Dialogs.TypeAnswer = ListOfInt;
         HashSet<Node> before = [.. Method.Nodes];
-        SuggestionRowViewModel item = await OpenAsync(Graph, descriptor.Suggestions[0].DisplayName);
+        SuggestionRowViewModel item = await OpenAsync(Graph, descriptor.Suggestions[0].DisplayName.Text);
 
         await Graph.Search.SelectCommand.ExecuteAsync(item);
 
@@ -63,7 +63,7 @@ public sealed class NodeCreationTableTests(IReflectionHost sharedReflection)
     {
         Editor.Dialogs.TypeAnswer = null;
         int nodes = Method.Nodes.Count;
-        SuggestionRowViewModel item = await OpenAsync(Graph, Descriptor(kind).Suggestions[0].DisplayName);
+        SuggestionRowViewModel item = await OpenAsync(Graph, Descriptor(kind).Suggestions[0].DisplayName.Text);
 
         await Graph.Search.SelectCommand.ExecuteAsync(item);
 

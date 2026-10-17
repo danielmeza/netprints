@@ -53,7 +53,7 @@ internal sealed class EditorDialogService(IEditorDialogs dialogs, IContributionR
             ?? throw new ArgumentException($"No dialog is registered with the id '{dialogId}'.", nameof(dialogId));
         IDialogContext dialogContext = context?.Invoke() ?? throw new InvalidOperationException("This dialog service was built without a context.");
         object viewModel = dialog.CreateViewModel(dialogContext);
-        await dialogs.ShowViewModelAsync(dialog.Title, viewModel, cancellationToken).ConfigureAwait(true);
+        await dialogs.ShowViewModelAsync(dialog.DisplayTitle, viewModel, cancellationToken).ConfigureAwait(true);
         return viewModel;
     }
 

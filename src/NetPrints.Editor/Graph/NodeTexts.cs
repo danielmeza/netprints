@@ -62,14 +62,11 @@ internal static class NodeTexts
     }
 
     /// <summary>Gets the text a node suggestion's row shows.</summary>
-    /// <param name="displayName">The suggestion's display name, which is also the key of its translation.</param>
+    /// <param name="displayName">The suggestion's display name; its key is the resource that translates it.</param>
     /// <param name="registry">The registry whose strings apply; <see langword="null"/> for the built-in strings alone.</param>
-    /// <returns>The resource named <paramref name="displayName"/>, or the display name when none has the key.</returns>
-    public static string Suggestion(string displayName, ExtensionRegistry? registry)
-    {
-        ArgumentNullException.ThrowIfNull(displayName);
-        return Resolve(displayName, displayName, registry);
-    }
+    /// <returns>The resource named by the key of <paramref name="displayName"/>, or its default text when none has the key.</returns>
+    public static string Suggestion(LocalizedText displayName, ExtensionRegistry? registry) =>
+        displayName.Resolve(ResourcesOf(registry), CultureInfo.CurrentUICulture);
 
     private static string? KindOf(Node node, ExtensionRegistry? registry) =>
         registry?.NodeConverters.FindByNodeType(node.GetType())?.Kind;

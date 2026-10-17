@@ -100,7 +100,7 @@ public class BuiltInNodeLibraryTests
         INodeLibrary library = BuiltInNodeLibrary.Instance;
 
         string[] For(GraphKinds graphKind) =>
-            [.. library.NodeKinds.Where(k => k.AllowedIn.HasFlag(graphKind)).SelectMany(k => k.Suggestions).Select(s => s.DisplayName)];
+            [.. library.NodeKinds.Where(k => k.AllowedIn.HasFlag(graphKind)).SelectMany(k => k.Suggestions).Select(s => s.DisplayName.Text)];
 
         Assert.Equal(MethodSuggestions, For(GraphKinds.Method));
         Assert.Equal(ConstructorSuggestions, For(GraphKinds.Constructor));

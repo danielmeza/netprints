@@ -52,7 +52,7 @@ public sealed class SuggestionRowViewModel
     /// <param name="registry">The registry whose strings translate the name of a node kind's suggestion; <see langword="null"/> for the built-in strings alone.</param>
     /// <returns>A suggestion row for the entry.</returns>
     internal static SuggestionRowViewModel Create(NodeSearchEntry entry, ExtensionRegistry? registry = null) =>
-        new(entry.Category, entry, entry is NodeKindEntry ? NodeTexts.Suggestion(entry.Text, registry) : entry.Text, entry.IconKey, isHeader: false);
+        new(entry.Category, entry, entry is NodeKindEntry kindEntry ? NodeTexts.Suggestion(kindEntry.Suggestion.DisplayName, registry) : entry.Text, entry.IconKey, isHeader: false);
 
     /// <summary>Whether every search term occurs in <see cref="SearchText"/> (case-insensitive).</summary>
     public bool Matches(IReadOnlyList<string> terms)

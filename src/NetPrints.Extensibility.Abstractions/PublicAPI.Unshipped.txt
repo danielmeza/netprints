@@ -89,13 +89,13 @@ NetPrints.Extensibility.Nodes.NodeSuggestion.Category.get -> string!
 NetPrints.Extensibility.Nodes.NodeSuggestion.Category.init -> void
 NetPrints.Extensibility.Nodes.NodeSuggestion.Create.get -> System.Func<NetPrints.Core.NodeGraph!, NetPrints.Graph.Node!>!
 NetPrints.Extensibility.Nodes.NodeSuggestion.Create.init -> void
-NetPrints.Extensibility.Nodes.NodeSuggestion.Deconstruct(out string! Category, out string! DisplayName, out string? IconKey, out System.Func<NetPrints.Core.NodeGraph!, NetPrints.Graph.Node!>! Create) -> void
-NetPrints.Extensibility.Nodes.NodeSuggestion.DisplayName.get -> string!
+NetPrints.Extensibility.Nodes.NodeSuggestion.Deconstruct(out string! Category, out NetPrints.Core.LocalizedText DisplayName, out string? IconKey, out System.Func<NetPrints.Core.NodeGraph!, NetPrints.Graph.Node!>! Create) -> void
+NetPrints.Extensibility.Nodes.NodeSuggestion.DisplayName.get -> NetPrints.Core.LocalizedText
 NetPrints.Extensibility.Nodes.NodeSuggestion.DisplayName.init -> void
 NetPrints.Extensibility.Nodes.NodeSuggestion.Equals(NetPrints.Extensibility.Nodes.NodeSuggestion? other) -> bool
 NetPrints.Extensibility.Nodes.NodeSuggestion.IconKey.get -> string?
 NetPrints.Extensibility.Nodes.NodeSuggestion.IconKey.init -> void
-NetPrints.Extensibility.Nodes.NodeSuggestion.NodeSuggestion(string! Category, string! DisplayName, string? IconKey, System.Func<NetPrints.Core.NodeGraph!, NetPrints.Graph.Node!>! Create) -> void
+NetPrints.Extensibility.Nodes.NodeSuggestion.NodeSuggestion(string! Category, NetPrints.Core.LocalizedText DisplayName, string? IconKey, System.Func<NetPrints.Core.NodeGraph!, NetPrints.Graph.Node!>! Create) -> void
 [NPXE0001]NetPrints.Extensibility.Hosting.HostMessage
 [NPXE0001]NetPrints.Extensibility.Hosting.HostMessage.<Clone>$() -> NetPrints.Extensibility.Hosting.HostMessage!
 [NPXE0001]NetPrints.Extensibility.Hosting.HostMessage.Deconstruct(out string! Type, out System.Text.Json.JsonElement Payload) -> void
@@ -547,14 +547,14 @@ NetPrints.Extensibility.Editor.CommandKeyId.Z = 25 -> NetPrints.Extensibility.Ed
 [NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.<Clone>$() -> NetPrints.Extensibility.Editor.DashboardTileDescriptor!
 [NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.CreateViewModel.get -> System.Func<NetPrints.Extensibility.Editor.IStartPageContext!, object!>!
 [NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.CreateViewModel.init -> void
-[NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.DashboardTileDescriptor(string! Id, string! Title, int Order, System.Func<NetPrints.Extensibility.Editor.IStartPageContext!, object!>! CreateViewModel) -> void
-[NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.Deconstruct(out string! Id, out string! Title, out int Order, out System.Func<NetPrints.Extensibility.Editor.IStartPageContext!, object!>! CreateViewModel) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.DashboardTileDescriptor(string! Id, NetPrints.Core.LocalizedText Title, int Order, System.Func<NetPrints.Extensibility.Editor.IStartPageContext!, object!>! CreateViewModel) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.Deconstruct(out string! Id, out NetPrints.Core.LocalizedText Title, out int Order, out System.Func<NetPrints.Extensibility.Editor.IStartPageContext!, object!>! CreateViewModel) -> void
 [NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.Equals(NetPrints.Extensibility.Editor.DashboardTileDescriptor? other) -> bool
 [NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.Id.get -> string!
 [NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.Id.init -> void
 [NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.Order.get -> int
 [NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.Order.init -> void
-[NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.Title.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.Title.get -> NetPrints.Core.LocalizedText
 [NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.Title.init -> void
 [NPXE0005]NetPrints.Extensibility.Editor.DocumentId
 [NPXE0005]NetPrints.Extensibility.Editor.DocumentId.ClassPath.get -> string?
@@ -666,12 +666,12 @@ NetPrints.Extensibility.Editor.CommandKeyId.Z = 25 -> NetPrints.Extensibility.Ed
 [NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.<Clone>$() -> NetPrints.Extensibility.Editor.DialogDescriptor!
 [NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.CreateViewModel.get -> System.Func<NetPrints.Extensibility.Editor.IDialogContext!, object!>!
 [NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.CreateViewModel.init -> void
-[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.Deconstruct(out string! Id, out string! Title, out System.Func<NetPrints.Extensibility.Editor.IDialogContext!, object!>! CreateViewModel) -> void
-[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.DialogDescriptor(string! Id, string! Title, System.Func<NetPrints.Extensibility.Editor.IDialogContext!, object!>! CreateViewModel) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.Deconstruct(out string! Id, out NetPrints.Core.LocalizedText Title, out System.Func<NetPrints.Extensibility.Editor.IDialogContext!, object!>! CreateViewModel) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.DialogDescriptor(string! Id, NetPrints.Core.LocalizedText Title, System.Func<NetPrints.Extensibility.Editor.IDialogContext!, object!>! CreateViewModel) -> void
 [NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.Equals(NetPrints.Extensibility.Editor.DialogDescriptor? other) -> bool
 [NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.Id.get -> string!
 [NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.Id.init -> void
-[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.Title.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.Title.get -> NetPrints.Core.LocalizedText
 [NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.Title.init -> void
 [NPXE0005]NetPrints.Extensibility.Editor.IDialogService.ShowDialogAsync(string! dialogId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<object!>!
 [NPXE0005]NetPrints.Extensibility.Editor.IEditorContributions.AddDialog(NetPrints.Extensibility.Editor.DialogDescriptor! dialog) -> NetPrints.Extensibility.Editor.IEditorContributions!
@@ -757,7 +757,11 @@ NetPrints.Extensibility.Editor.CommandKeyId.Z = 25 -> NetPrints.Extensibility.Ed
 [NPXE0005]static NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.operator !=(NetPrints.Extensibility.Editor.ContextMenuItemDescriptor? left, NetPrints.Extensibility.Editor.ContextMenuItemDescriptor? right) -> bool
 [NPXE0005]static NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.operator ==(NetPrints.Extensibility.Editor.ContextMenuItemDescriptor? left, NetPrints.Extensibility.Editor.ContextMenuItemDescriptor? right) -> bool
 [NPXE0005]static NetPrints.Extensibility.Editor.ConventionKeys.CommandLabelKey(string! commandId) -> string!
+[NPXE0005]static NetPrints.Extensibility.Editor.ConventionKeys.DialogTitleKey(string! dialogId) -> string!
 [NPXE0005]static NetPrints.Extensibility.Editor.ConventionKeys.MenuKey(string! menuId) -> string!
+[NPXE0005]static NetPrints.Extensibility.Editor.ConventionKeys.TemplateDescriptionKey(string! templateId) -> string!
+[NPXE0005]static NetPrints.Extensibility.Editor.ConventionKeys.TemplateNameKey(string! templateId) -> string!
+[NPXE0005]static NetPrints.Extensibility.Editor.ConventionKeys.TileTitleKey(string! tileId) -> string!
 [NPXE0005]static NetPrints.Extensibility.Editor.ConventionKeys.PanelTitleKey(string! panelId) -> string!
 [NPXE0005]static NetPrints.Extensibility.Editor.DashboardTileDescriptor.operator !=(NetPrints.Extensibility.Editor.DashboardTileDescriptor? left, NetPrints.Extensibility.Editor.DashboardTileDescriptor? right) -> bool
 [NPXE0005]static NetPrints.Extensibility.Editor.DashboardTileDescriptor.operator ==(NetPrints.Extensibility.Editor.DashboardTileDescriptor? left, NetPrints.Extensibility.Editor.DashboardTileDescriptor? right) -> bool
@@ -864,10 +868,10 @@ NetPrints.Extensibility.Editor.ProjectOutputType.Library = 1 -> NetPrints.Extens
 [NPXE0012]NetPrints.Extensibility.IExtensionBuilder.AddProjectTemplate(NetPrints.Extensibility.Editor.ProjectTemplateDescriptor! template) -> NetPrints.Extensibility.IExtensionBuilder!
 [NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor
 [NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.<Clone>$() -> NetPrints.Extensibility.Editor.ProjectTemplateDescriptor!
-[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Deconstruct(out string! Id, out string! DisplayName, out string! Description, out string! ProfileId, out NetPrints.Extensibility.Editor.ProjectOutputType OutputType, out string? IconId, out System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Editor.TemplateFile!>? Files) -> void
-[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Description.get -> string!
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Deconstruct(out string! Id, out NetPrints.Core.LocalizedText DisplayName, out NetPrints.Core.LocalizedText Description, out string! ProfileId, out NetPrints.Extensibility.Editor.ProjectOutputType OutputType, out string? IconId, out System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Editor.TemplateFile!>? Files) -> void
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Description.get -> NetPrints.Core.LocalizedText
 [NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Description.init -> void
-[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.DisplayName.get -> string!
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.DisplayName.get -> NetPrints.Core.LocalizedText
 [NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.DisplayName.init -> void
 [NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Equals(NetPrints.Extensibility.Editor.ProjectTemplateDescriptor? other) -> bool
 [NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Files.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Editor.TemplateFile!>?
@@ -880,7 +884,7 @@ NetPrints.Extensibility.Editor.ProjectOutputType.Library = 1 -> NetPrints.Extens
 [NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.OutputType.init -> void
 [NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.ProfileId.get -> string!
 [NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.ProfileId.init -> void
-[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.ProjectTemplateDescriptor(string! Id, string! DisplayName, string! Description, string! ProfileId, NetPrints.Extensibility.Editor.ProjectOutputType OutputType, string? IconId = null, System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Editor.TemplateFile!>? Files = null) -> void
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.ProjectTemplateDescriptor(string! Id, NetPrints.Core.LocalizedText DisplayName, NetPrints.Core.LocalizedText Description, string! ProfileId, NetPrints.Extensibility.Editor.ProjectOutputType OutputType, string? IconId = null, System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Editor.TemplateFile!>? Files = null) -> void
 [NPXE0012]NetPrints.Extensibility.Editor.TemplateFile
 [NPXE0012]NetPrints.Extensibility.Editor.TemplateFile.<Clone>$() -> NetPrints.Extensibility.Editor.TemplateFile!
 [NPXE0012]NetPrints.Extensibility.Editor.TemplateFile.Content.get -> string!

@@ -206,7 +206,7 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
     {
         ArgumentNullException.ThrowIfNull(tile);
         ThrowIfFrozen();
-        if (TryAccept(tile.Id, !IsBlank(tile.Title) && tile.CreateViewModel is not null, "a title and a view model factory", tiles.Select(t => t.Id)))
+        if (TryAccept(tile.Id, !IsBlank(tile.Title.Text) && tile.CreateViewModel is not null, "a title and a view model factory", tiles.Select(t => t.Id)))
         {
             tiles.Add(tile);
         }
@@ -232,7 +232,7 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
     {
         ArgumentNullException.ThrowIfNull(dialog);
         ThrowIfFrozen();
-        if (TryAccept(dialog.Id, !IsBlank(dialog.Title) && dialog.CreateViewModel is not null, "a title and a view model factory", dialogs.Select(d => d.Id)))
+        if (TryAccept(dialog.Id, !IsBlank(dialog.Title.Text) && dialog.CreateViewModel is not null, "a title and a view model factory", dialogs.Select(d => d.Id)))
         {
             dialogs.Add(dialog);
         }
@@ -256,7 +256,7 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
     {
         ArgumentNullException.ThrowIfNull(template);
         ThrowIfFrozen();
-        if (TryAccept(template.Id, !IsBlank(template.DisplayName) && !IsBlank(template.ProfileId), "a display name and a profile id", templates.Select(t => t.Id)))
+        if (TryAccept(template.Id, !IsBlank(template.DisplayName.Text) && !IsBlank(template.ProfileId), "a display name and a profile id", templates.Select(t => t.Id)))
         {
             templates.Add(template);
         }

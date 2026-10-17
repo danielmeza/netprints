@@ -216,4 +216,34 @@
   <data name="Command.netprints.command.openGraph.Label" xml:space="preserve">
     <value>Open</value>
   </data>
+  <data name="Tile.netprints.tile.recent.Title" xml:space="preserve">
+    <value>Recent projects</value>
+  </data>
+  <data name="Tile.netprints.tile.open.Title" xml:space="preserve">
+    <value>Open folder or project</value>
+  </data>
+  <data name="Tile.netprints.tile.new.Title" xml:space="preserve">
+    <value>New project</value>
+  </data>
+  <data name="Tile.netprints.tile.samples.Title" xml:space="preserve">
+    <value>Samples</value>
+  </data>
+  <data name="Tile.netprints.tile.learn.Title" xml:space="preserve">
+    <value>Learn</value>
+  </data>
+  <data name="Tile.netprints.tile.whatsNew.Title" xml:space="preserve">
+    <value>What's new</value>
+  </data>
+  <data name="Template.netprints.template.console.Name" xml:space="preserve">
+    <value>Console app</value>
+  </data>
+  <data name="Template.netprints.template.console.Description" xml:space="preserve">
+    <value>A program with an entry point: a Program class with an empty Main method.</value>
+  </data>
+  <data name="Template.netprints.template.library.Name" xml:space="preserve">
+    <value>Class library</value>
+  </data>
+  <data name="Template.netprints.template.library.Description" xml:space="preserve">
+    <value>A library with no entry point and no classes yet.</value>
+  </data>
 </root>

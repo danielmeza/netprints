@@ -153,7 +153,10 @@ Each carries the extension's `IServiceProvider` and the part of the session or s
 sees an editor view model, and a factory creates its view model from its own services.
 
 Labels are `LocalizedText`. When you give no key, the key comes from the id (`Command.<id>.Label`, `Panel.<id>.Title`,
-`Menu.<path>`), so a translation file can replace any label.
+`Dialog.<id>.Title`, `Tile.<id>.Title`, `Template.<id>.Name`, `Template.<id>.Description`, `Menu.<path>`), so a translation
+file can replace any label. A node suggestion's `DisplayName` is a `LocalizedText` too: give it an explicit key
+(`new LocalizedText("Node.myKind.Print", "Print")`) so that two suggestions with the same text translate separately; a plain
+string is its own key.
 
 ### Icons
 

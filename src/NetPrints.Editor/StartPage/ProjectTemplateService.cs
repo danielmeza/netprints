@@ -104,7 +104,7 @@ internal sealed class ProjectTemplateService(
         }
 
         IProjectProfile profile = findProfile(template.ProfileId)
-            ?? throw new InvalidOperationException($"The template '{template.DisplayName}' needs the project profile '{template.ProfileId}', which no loaded extension provides.");
+            ?? throw new InvalidOperationException($"The template '{template.DisplayNameText}' needs the project profile '{template.ProfileId}', which no loaded extension provides.");
 
         string directory = Path.GetFullPath(folder);
         bool createdFolder = !Directory.Exists(directory);
