@@ -161,8 +161,8 @@ NetPrints.Extensibility.Settings.NetPrintsSettings.Language.init -> void
 [NPXE0005]NetPrints.Extensibility.Loading.ExtensionLoaderOptions.EditorContributions.init -> void
 [NPXE0008]NetPrints.Extensibility.Loading.ExtensionRegistry.OpenSession(string! extensionId) -> Microsoft.Extensions.DependencyInjection.IServiceScope!
 [NPXE0008]NetPrints.Extensibility.Loading.ExtensionRegistry.ServicesOf(string! extensionId) -> System.IServiceProvider!
-[NPXE0008]NetPrints.Extensibility.Loading.ExtensionLoaderOptions.SettingsStore.get -> NetPrints.Extensibility.Settings.ISettingsStore?
-[NPXE0008]NetPrints.Extensibility.Loading.ExtensionLoaderOptions.SettingsStore.init -> void
+[NPXE0002]NetPrints.Extensibility.Loading.ExtensionLoaderOptions.SettingsStore.get -> NetPrints.Extensibility.Settings.ISettingsStore?
+[NPXE0002]NetPrints.Extensibility.Loading.ExtensionLoaderOptions.SettingsStore.init -> void
 [NPXE0008]NetPrints.Extensibility.Loading.HostExports
 [NPXE0008]static NetPrints.Extensibility.Loading.HostExports.AllowedServiceTypes.get -> System.Collections.Generic.IReadOnlyList<System.Type!>!
 NetPrints.Extensibility.Settings.SettingsSchema

@@ -69,14 +69,14 @@ NetPrints.Extensibility.Nodes.NodeKindDescriptor.AllowedIn.get -> NetPrints.Exte
 NetPrints.Extensibility.Nodes.NodeKindDescriptor.AllowedIn.init -> void
 NetPrints.Extensibility.Nodes.NodeKindDescriptor.Converter.get -> NetPrints.Serialization.Mapping.INodeDocumentConverter!
 NetPrints.Extensibility.Nodes.NodeKindDescriptor.Converter.init -> void
-NetPrints.Extensibility.Nodes.NodeKindDescriptor.Deconstruct(out string! Kind, out System.Type! NodeType, out NetPrints.Serialization.Mapping.INodeDocumentConverter! Converter, out NetPrints.Translator.INodeTranslator! Translator, out NetPrints.Extensibility.Nodes.GraphKinds AllowedIn, out System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Nodes.NodeSuggestion!>! Suggestions, out int DataVersion) -> void
+NetPrints.Extensibility.Nodes.NodeKindDescriptor.Deconstruct(out string! Kind, out System.Type! NodeType, out NetPrints.Serialization.Mapping.INodeDocumentConverter! Converter, out NetPrints.Translator.INodeTranslator! Translator, out NetPrints.Extensibility.Nodes.GraphKinds AllowedIn, out System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Nodes.NodeSuggestion!>! Suggestions) -> void
 [NPXE0013]NetPrints.Extensibility.Nodes.NodeKindDescriptor.DataVersion.get -> int
 [NPXE0013]NetPrints.Extensibility.Nodes.NodeKindDescriptor.DataVersion.init -> void
 [NPXE0013]NetPrints.Extensibility.IExtensionBuilder.AddDocumentMigration(NetPrints.Serialization.Migrations.INodeDataMigration! migration) -> NetPrints.Extensibility.IExtensionBuilder!
 NetPrints.Extensibility.Nodes.NodeKindDescriptor.Equals(NetPrints.Extensibility.Nodes.NodeKindDescriptor? other) -> bool
 NetPrints.Extensibility.Nodes.NodeKindDescriptor.Kind.get -> string!
 NetPrints.Extensibility.Nodes.NodeKindDescriptor.Kind.init -> void
-NetPrints.Extensibility.Nodes.NodeKindDescriptor.NodeKindDescriptor(string! Kind, System.Type! NodeType, NetPrints.Serialization.Mapping.INodeDocumentConverter! Converter, NetPrints.Translator.INodeTranslator! Translator, NetPrints.Extensibility.Nodes.GraphKinds AllowedIn, System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Nodes.NodeSuggestion!>! Suggestions, int DataVersion = 0) -> void
+NetPrints.Extensibility.Nodes.NodeKindDescriptor.NodeKindDescriptor(string! Kind, System.Type! NodeType, NetPrints.Serialization.Mapping.INodeDocumentConverter! Converter, NetPrints.Translator.INodeTranslator! Translator, NetPrints.Extensibility.Nodes.GraphKinds AllowedIn, System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Nodes.NodeSuggestion!>! Suggestions) -> void
 NetPrints.Extensibility.Nodes.NodeKindDescriptor.NodeType.get -> System.Type!
 NetPrints.Extensibility.Nodes.NodeKindDescriptor.NodeType.init -> void
 NetPrints.Extensibility.Nodes.NodeKindDescriptor.Suggestions.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Nodes.NodeSuggestion!>!

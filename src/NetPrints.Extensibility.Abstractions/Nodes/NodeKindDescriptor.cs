@@ -18,14 +18,18 @@ namespace NetPrints.Extensibility.Nodes;
 /// <param name="Translator">Translates the node to C#.</param>
 /// <param name="AllowedIn">The graph kinds the node may be added to.</param>
 /// <param name="Suggestions">The node-search entries; empty for kinds created by other means.</param>
-/// <param name="DataVersion">The version of the data the converter writes (<c>NPXE0013</c>). When above 0 the serializer writes it as the node's
-/// <c>kindVersion</c> and the migrations of the kind upgrade older nodes on load; 0, the default, writes nothing.</param>
 public sealed record NodeKindDescriptor(
     string Kind,
     Type NodeType,
     INodeDocumentConverter Converter,
     INodeTranslator Translator,
     GraphKinds AllowedIn,
-    IReadOnlyList<NodeSuggestion> Suggestions,
-    [property: Experimental(ExperimentalApiIds.NodeDataMigrations, UrlFormat = ExperimentalApiIds.UrlFormat)]
-    int DataVersion = 0);
+    IReadOnlyList<NodeSuggestion> Suggestions)
+{
+    /// <summary>
+    /// Gets the version of the data the converter writes (<c>NPXE0013</c>). When above 0 the serializer writes it as the node's
+    /// <c>kindVersion</c> and the migrations of the kind upgrade older nodes on load; 0, the default, writes nothing.
+    /// </summary>
+    [Experimental(ExperimentalApiIds.NodeDataMigrations, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    public int DataVersion { get; init; }
+}

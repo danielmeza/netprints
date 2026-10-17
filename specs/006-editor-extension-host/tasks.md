@@ -616,7 +616,7 @@ SC-005 rechecked (research R4).
   unit). Test first: an `Fx` page registered with `AddSettingsPage` reaches the registry; the schema transform reads
   `[RequiresRestart]`, `[SettingPath(PathKind.File|Folder)]`, `[Description]` and a choices provider id into
   `x-netprints-restart`, `x-netprints-path`, `description` and `x-netprints-choices`. Then `SettingsPageDescriptor`
-  (NPXE0009; `CreateViewModel` under NPXE0010), the attributes and `AddSettingsPage`. The Settings document is T089.
+  (NPXE0005, `CreateViewModel` included; ADR-0040 amendment 1), the attributes (NPXE0009) and `AddSettingsPage`. The Settings document is T089.
 - [x] T069 [US3] The manifest's `themes` field (FR-029, contracts/extension-api.md §9, data-model §1; 1 unit; T145
   consumes it, FR-115). Test first: manifest tests: `themes` is accepted from `netprintsApi` 0.4; with an older `netprintsApi` it is NPX001;
   unknown manifest fields are ignored with an info message. Then the manifest model and its validation.

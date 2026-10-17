@@ -252,17 +252,18 @@ disappear in a minor release.
 | Id | Covers |
 | --- | --- |
 | `NPXE0001` | The host channel: `IHostChannel`, `IHostChannelFactory`, `HostMessage`, `NullHostChannel`, `InMemoryHostChannel`, `IExtensionBuilder.AddHostChannel`, `ExtensionRegistry.HostChannels`, `ExtensionRegistry.FindHostChannel`. |
-| `NPXE0002` | Extension settings: `ExtensionSettingsDescriptor` and `ExtensionSettingsDescriptor<T>`, `ISettingsStore`, `JsonFileSettingsStore`, `NetPrintsSettings.Descriptor`, `IExtensionBuilder.AddSettings`, `ExtensionRegistry.Settings`. |
+| `NPXE0002` | Extension settings: `ExtensionSettingsDescriptor` and `ExtensionSettingsDescriptor<T>`, `ISettingsStore`, `JsonFileSettingsStore`, `NetPrintsSettings.Descriptor`, `IExtensionBuilder.AddSettings`, `ExtensionRegistry.Settings`, `ExtensionLoaderOptions.SettingsStore`. |
 | `NPXE0003` | Class and member emitters: `IClassEmitter`, `IMemberEmitter`, `IExtensionBuilder.AddClassEmitter`, `IExtensionBuilder.AddMemberEmitter`, the emitter lists of `ExtensionRegistry` and `TranslationEnvironment` (including its constructor). |
 | `NPXE0004` | The catalog engine and its profiles (see [Type catalogs](catalogs.md)). |
-| `NPXE0005` | Editor contributions: the typed contexts (`ICommandContext`, `IPanelContext`, `IStartPageContext`, `IStatusBarContext`, `ISettingsPageContext`, `IDialogContext`), `IProjectSession`, `IGraphEditor`, `IEditorShell`, `IDialogService`, `IEditorOutput`, `IEditorUndo`, `ICommandHandler`, `CommandScope`, `CommandSelection`. |
+| `NPXE0005` | Editor contributions: the typed contexts (`ICommandContext`, `IPanelContext`, `IStartPageContext`, `IStatusBarContext`, `ISettingsPageContext`, `IDialogContext`), `IProjectSession`, `IGraphEditor`, `IEditorShell`, `IDialogService`, `IEditorOutput`, `IEditorUndo`, `ICommandHandler`, `CommandScope`, `CommandSelection`, the facet `IExtensionBuilder.Editor` and `IEditorContributions`, the descriptors (`CommandDescriptor`, `PanelDescriptor`, `DashboardTileDescriptor`, `ContextMenuItemDescriptor`, `StatusBarItemDescriptor`, `DialogDescriptor`, `SettingsPageDescriptor`), `ITooltipProvider`, `IGoToProvider`, `ConventionKeys`, `DocumentId`, `NavigationTarget`, `ExtensionLoaderOptions.EditorContributions`. |
 | `NPXE0006` | Node search providers: `INodeSuggestionProvider`, `NodeSearchContext`, `NodeSearchEntry`, `INodeCreationContext`, `IExtensionBuilder.AddSuggestionProvider`, `ExtensionRegistry.SuggestionProviders`. |
 | `NPXE0007` | C# features and requirements: `CSharpFeature`, `CSharpFeatureId`, `Availability`, `NodeSearchEntry.Requires`. |
 | `NPXE0008` | Extension services: `IExtensionBuilder.Services`, `HostExports`, `ExtensionRegistry.ServicesOf`, `ExtensionRegistry.OpenSession`. |
-| `NPXE0009` | Settings metadata: `PathKind`, `[RequiresRestart]`, `[SettingPath]`, `[SettingChoices]`. The settings page descriptor is part of `NPXE0005`. |
+| `NPXE0009` | Settings metadata: `PathKind`, `[RequiresRestart]`, `[SettingPath]`, `[SettingChoices]`. The settings page descriptor, its custom view model factory and `AddSettingsPage` are part of `NPXE0005`. |
+| `NPXE0010` | Retired: never allocated and never reused. |
 | `NPXE0011` | Extension string resources: `IExtensionBuilder.AddStringResources`, `ExtensionRegistry.StringResources`. |
 | `NPXE0012` | Project templates with files: `TemplateFile`, `ProjectTemplateDescriptor`, `IExtensionBuilder.AddProjectTemplate`, `ExtensionRegistry.ProjectTemplates`. |
-| `NPXE0013` | Node-data migrations: `INodeDataMigration`, `NodeKindDescriptor.DataVersion`, `IExtensionBuilder.AddDocumentMigration`. |
+| `NPXE0013` | Node-data migrations: `INodeDataMigration`, `NodeKindDescriptor.DataVersion`, `IExtensionBuilder.AddDocumentMigration`, `ExtensionRegistry.NodeMigrator`, `NodeDataMigrator`, the three-argument `JsonDocumentFormat` constructor. |
 
 Stable since 0.4.0, with no opt-in: the typed pins and the pin attributes (`[NodeKind]`, `[NodeBase]`, `[Pin]`,
 `[PinType]`), `PinRole`, `CSharpLanguageVersion`, the minimal `CSharpTarget` with `CSharpTarget.Resolve`, `CSharpFrameworkInput` and

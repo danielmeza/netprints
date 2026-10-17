@@ -283,7 +283,7 @@ ADR-0031, ADR-0033 to ADR-0040.
     all its contributions through the same facet as the in-process `netprints.editor` extension; its DataTemplates
     move to `BuiltInViews.axaml`, added with `AddViewResources`.
   - **Kinds on the facet**: commands, panels, dashboard tiles, context-menu items (with `AppliesTo`), tooltip
-    providers, go-to providers, status-bar items (C-15), settings pages (NPXE0009, custom views NPXE0010), dialogs
+    providers, go-to providers, status-bar items (C-15), settings pages (NPXE0005, custom views included; ADR-0040 amendment 1), dialogs
     (R4: a registered dialog view model shown by id through `IDialogService`), view resources and icon ids (N8:
     `Icon.<extension id>.<name>`; an unknown id draws the fallback glyph and records an issue), and in the tail (G)
     inspector sections and value editors (NPXE0014). Model-side kinds stay flat on the builder because the CLI uses
@@ -323,8 +323,8 @@ ADR-0031, ADR-0033 to ADR-0040.
   | NPXE0006 | Node search providers (SUG4) | C1 |
   | NPXE0007 | C# features and requirements: `CSharpFeature`, `CSharpFeatureId`, `Requires`, `Availability` | C1 |
   | NPXE0008 | Extension services and host exports | C2 |
-  | NPXE0009 | Settings page contributions and settings metadata attributes | C2 |
-  | NPXE0010 | Custom settings page views | C2 |
+  | NPXE0009 | Settings metadata attributes (`PathKind`, `[RequiresRestart]`, `[SettingPath]`, `[SettingChoices]`); the page descriptor and custom views are NPXE0005 (ADR-0040 amendment 1) | C2 |
+  | NPXE0010 | Retired, never allocated and never reused (was: custom settings page views) | C2 |
   | NPXE0011 | Extension string resources (`AddStringResources`) | C1 |
   | NPXE0012 | Project templates with files | C2 |
   | NPXE0013 | Extension node-data migrations | C2 |
@@ -339,8 +339,9 @@ ADR-0031, ADR-0033 to ADR-0040.
   `CSharpTargetResolution` (a pure function over project-system data, no extension implements it), `INodeHintSource` and
   `NodeHint` (two read methods and a record, implemented by the catalog-backed providers), `LocalizedText`, `GraphPoint`,
   the manifest's `themes` field and the existing stable surface. NPXE0001–NPXE0004 keep their meaning.
-- **Rationale**: one id per surface an author opts into, so a settings-only extension does not opt into editor
-  contributions; ADR-0040 asked for separate ids for pages and custom views.
+- **Rationale**: one id per surface an author opts into. Settings pages and custom views are part of the editor facet and
+  share NPXE0005 with it, because a symbol must carry the id of every experimental type it mentions (AP-T02); a settings-only
+  extension opts into NPXE0005 for its pages and NPXE0009 for the metadata attributes (ADR-0040 amendment 1).
 - **Alternatives rejected**: one P3 id for everything (an opt-in would mean nothing); stable descriptors (they are the
   newest and least proven API).
 

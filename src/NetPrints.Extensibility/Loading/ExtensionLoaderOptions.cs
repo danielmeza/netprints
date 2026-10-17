@@ -30,7 +30,7 @@ public sealed record ExtensionLoaderOptions(
     /// Gets the store behind the <c>IOptionsMonitor&lt;T&gt;</c> of an extension's own settings section (<see cref="HostExports"/>);
     /// <see langword="null"/> makes the monitors return the sections' defaults.
     /// </summary>
-    [Experimental(ExperimentalApiIds.ExtensionServices, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    [Experimental(ExperimentalApiIds.Settings, UrlFormat = ExperimentalApiIds.UrlFormat)]
     public ISettingsStore? SettingsStore { get; init; }
 
     /// <summary>

@@ -494,7 +494,8 @@ NetPrints.Serialization.Json.JsonDocumentFormat
 NetPrints.Serialization.Json.JsonDocumentFormat.CanWrite.get -> bool
 NetPrints.Serialization.Json.JsonDocumentFormat.ClassExtensions.get -> System.Collections.Generic.IReadOnlyList<string!>!
 NetPrints.Serialization.Json.JsonDocumentFormat.Id.get -> string!
-NetPrints.Serialization.Json.JsonDocumentFormat.JsonDocumentFormat(NetPrints.Serialization.Json.NetPrintsJsonOptions! options, NetPrints.Serialization.Migrations.DocumentMigrator! migrator, NetPrints.Serialization.Migrations.NodeDataMigrator? nodeMigrator = null) -> void
+NetPrints.Serialization.Json.JsonDocumentFormat.JsonDocumentFormat(NetPrints.Serialization.Json.NetPrintsJsonOptions! options, NetPrints.Serialization.Migrations.DocumentMigrator! migrator) -> void
+[NPXE0013]NetPrints.Serialization.Json.JsonDocumentFormat.JsonDocumentFormat(NetPrints.Serialization.Json.NetPrintsJsonOptions! options, NetPrints.Serialization.Migrations.DocumentMigrator! migrator, NetPrints.Serialization.Migrations.NodeDataMigrator? nodeMigrator) -> void
 NetPrints.Serialization.Json.JsonDocumentFormat.ReadClassAsync(System.IO.Stream! input, NetPrints.Serialization.DocumentId id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<NetPrints.Serialization.Documents.ClassDocument!>
 NetPrints.Serialization.Json.JsonDocumentFormat.WriteClassAsync(NetPrints.Serialization.Documents.ClassDocument! document, System.IO.Stream! output, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
 NetPrints.Serialization.Json.NetPrintsJsonOptions
@@ -530,10 +531,10 @@ NetPrints.Serialization.Documents.NodeDocument.KindVersion.init -> void
 [NPXE0013]NetPrints.Serialization.Migrations.INodeDataMigration.FromVersion.get -> int
 [NPXE0013]NetPrints.Serialization.Migrations.INodeDataMigration.Migrate(System.Text.Json.Nodes.JsonObject! node) -> void
 [NPXE0013]NetPrints.Serialization.Migrations.INodeDataMigration.NodeKind.get -> string!
-NetPrints.Serialization.Migrations.NodeDataMigrator
-const NetPrints.Serialization.Migrations.NodeDataMigrator.KindVersionMember = "kindVersion" -> string!
-NetPrints.Serialization.Migrations.NodeDataMigrator.NodeDataMigrator(System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Migrations.INodeDataMigration!>! migrations, System.Collections.Generic.IReadOnlyDictionary<string!, int>! dataVersions) -> void
-NetPrints.Serialization.Migrations.NodeDataMigrator.Upgrade(System.Text.Json.Nodes.JsonObject! document) -> System.Text.Json.Nodes.JsonObject!
+[NPXE0013]NetPrints.Serialization.Migrations.NodeDataMigrator
+[NPXE0013]const NetPrints.Serialization.Migrations.NodeDataMigrator.KindVersionMember = "kindVersion" -> string!
+[NPXE0013]NetPrints.Serialization.Migrations.NodeDataMigrator.NodeDataMigrator(System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Migrations.INodeDataMigration!>! migrations, System.Collections.Generic.IReadOnlyDictionary<string!, int>! dataVersions) -> void
+[NPXE0013]NetPrints.Serialization.Migrations.NodeDataMigrator.Upgrade(System.Text.Json.Nodes.JsonObject! document) -> System.Text.Json.Nodes.JsonObject!
 NetPrints.Serialization.Mapping.NodeMappingContext
 NetPrints.Serialization.Mapping.NodeMappingContext.Class.get -> NetPrints.Core.ClassGraph!
 NetPrints.Serialization.Mapping.NodeMappingContext.FromRef(NetPrints.Serialization.Documents.ConstructorRef! constructor) -> NetPrints.Core.ConstructorSpecifier!

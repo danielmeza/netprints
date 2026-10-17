@@ -77,7 +77,7 @@ public interface IEditorContributions
 
     IEditorContributions AddDialog(DialogDescriptor dialog);
 
-    [Experimental(ExperimentalApiIds.SettingsPages)]
+    // NPXE0005 with the rest of the facet (ADR-0040 amendment 1); NPXE0009 marks only the settings metadata attributes.
     IEditorContributions AddSettingsPage(SettingsPageDescriptor page);
 
     /// <summary>An avares URI of a resource dictionary holding this extension's DataTemplates and Icon.&lt;id&gt; geometries.</summary>
@@ -183,7 +183,7 @@ public sealed record StatusBarItemDescriptor(string Id, StatusBarAlignment Align
 public sealed record SettingsPageDescriptor(string Id, LocalizedText Title, string? SectionKey, int Order)
 {
     /// <summary>A custom page view model; null means the page is generated from the section's schema.</summary>
-    [Experimental(ExperimentalApiIds.CustomSettingsPages)]
+    // Under the descriptor's NPXE0005; NPXE0010 is retired (ADR-0040 amendment 1).
     public Func<ISettingsPageContext, object>? CreateViewModel { get; init; }
 
     public string? ParentPageId { get; init; }   // extension pages sit under "netprints.settings.extensions"

@@ -92,9 +92,10 @@ namespace NetPrints.Tests.Architecture
         [Fact]
         public void EveryPublicSymbolThatMentionsAnExperimentalTypeIsExperimentalWithTheSameId()
         {
-            Assembly[] assemblies = [typeof(ExperimentalApiIds).Assembly, typeof(IExtensionBuilder).Assembly, typeof(CatalogDocument).Assembly];
+            Assembly[] assemblies = [.. PackableLibraries().Select(Assembly.Load)];
             var offenders = new List<string>();
 
+            Assert.True(assemblies.Length >= 6, "the packable libraries were not found");
             foreach (Type type in assemblies.SelectMany(assembly => assembly.GetExportedTypes()))
             {
                 string? typeId = EffectiveId(type);
@@ -108,6 +109,68 @@ namespace NetPrints.Tests.Architecture
             }
 
             Assert.True(offenders.Count == 0, string.Join(Environment.NewLine, offenders));
+        }
+
+        [Fact]
+        public void TheGuideAccountsForEveryIdUpToTheLastOne()
+        {
+            string[] defined = [.. typeof(ExperimentalApiIds).GetFields(BindingFlags.Public | BindingFlags.Static)
+                .Where(field => field.Name != nameof(ExperimentalApiIds.UrlFormat))
+                .Select(field => (string)(field.GetRawConstantValue() ?? string.Empty))];
+            int last = defined.Max(id => int.Parse(id[4..], System.Globalization.CultureInfo.InvariantCulture));
+            string guide = File.ReadAllText(Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "docs", "guide", "extensions.md"));
+            var offenders = new List<string>();
+
+            for (int number = 1; number <= last; number++)
+            {
+                string id = $"NPXE{number:D4}";
+                string? row = guide.Split('\n').FirstOrDefault(line => line.StartsWith($"| `{id}` |", StringComparison.Ordinal));
+                if (row is null)
+                {
+                    offenders.Add($"{id} has no row in the guide's id table");
+                }
+                else if (!defined.Contains(id) && !row.Contains("Retired", StringComparison.Ordinal))
+                {
+                    offenders.Add($"{id} is not defined in ExperimentalApiIds and its guide row does not say Retired");
+                }
+            }
+
+            Assert.True(offenders.Count == 0, string.Join(Environment.NewLine, offenders));
+        }
+
+        [Fact]
+        public void AStablePositionalParameterNeverFeedsAnExperimentalProperty()
+        {
+            var offenders = new List<string>();
+
+            foreach (Type type in PackableLibraries().Select(Assembly.Load).SelectMany(assembly => assembly.GetExportedTypes()).Where(type => EffectiveId(type) is null))
+            {
+                IEnumerable<ConstructorInfo> constructors = type.GetConstructors().Where(constructor => ExperimentalIdOf(constructor) is null);
+                foreach (ConstructorInfo constructor in constructors)
+                {
+                    foreach (ParameterInfo parameter in constructor.GetParameters())
+                    {
+                        PropertyInfo? property = type.GetProperty(parameter.Name ?? string.Empty, BindingFlags.Public | BindingFlags.Instance);
+                        if (property is not null && ExperimentalIdOf(property) is { } id)
+                        {
+                            offenders.Add($"{type.FullName} constructor parameter {parameter.Name} feeds the {id} property of the same name");
+                        }
+                    }
+                }
+            }
+
+            Assert.True(offenders.Count == 0, string.Join(Environment.NewLine, offenders));
+        }
+
+        private static IEnumerable<string> PackableLibraries()
+        {
+            string source = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "src");
+            return Directory.EnumerateDirectories(source)
+                .Where(directory => File.Exists(Path.Combine(directory, "PublicAPI.Shipped.txt")))
+                .Select(directory => Path.Combine(directory, Path.GetFileName(directory) + ".csproj"))
+                .Where(project => File.Exists(project) && File.ReadAllText(project).Contains("<IsPackable>true</IsPackable>", StringComparison.Ordinal))
+                .Select(Path.GetFileNameWithoutExtension)
+                .OfType<string>();
         }
 
         private static void CheckSymbol(string symbol, string? id, IEnumerable<string> mentioned, List<string> offenders)

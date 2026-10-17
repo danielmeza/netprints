@@ -1239,3 +1239,24 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - Full suite (Release, `dotnet test --solution NetPrints.slnx`): 4831 total, 4798 passed, 33 skipped, 0 failed; build 0 warnings; `dotnet format
   NetPrints.slnx --verify-no-changes` clean.
 - Deferred: the allocation half of M2 stays as before (bytes per node, +10%).
+
+## Batch C-F3 (T078, part 3: CD-3, CD-4, CD-5, CD-18, CD-25)
+
+- CD-3: `ExperimentalApiTests.EveryPublicSymbolThatMentionsAnExperimentalTypeIsExperimentalWithTheSameId` now scans every library that has a `PublicAPI.Shipped.txt`
+  and `<IsPackable>true</IsPackable>` (found on disk, six assemblies, not a list). Red on the wider scan (assertion):
+  `NetPrints.Serialization.Migrations.NodeDataMigrator..ctor mentions NPXE0013 but carries no [Experimental]` and
+  `NetPrints.Extensibility.Loading.ExtensionLoaderOptions.SettingsStore mentions NPXE0002 but carries NPXE0008`. Fixed, not allow-listed: `NodeDataMigrator` is `NPXE0013`;
+  `JsonDocumentFormat` keeps the two-argument constructor stable and the three-argument one is `NPXE0013`; `SettingsStore` is `NPXE0002`. Green after.
+- CD-4: new `AStablePositionalParameterNeverFeedsAnExperimentalProperty`. Red: `NodeKindDescriptor constructor parameter DataVersion feeds the NPXE0013 property of the same name`.
+  `DataVersion` is now an init-only `[Experimental(NPXE0013)]` property (default 0); the six-parameter constructor and `Deconstruct` carry no experimental value.
+  Existing `with { DataVersion = 1 }` callers compile unchanged.
+- CD-5: settled by amendment, not by moving the code. Settings pages, `AddSettingsPage` and `CreateViewModel` stay `NPXE0005`; `NPXE0009` marks the settings metadata only;
+  `NPXE0010` is retired and never reused. ADR-0040 amendment 1, research R16, contracts/extension-api.md, the plan (C2) and T068 now say so, and the guide's table has the
+  `NPXE0010` row. New `TheGuideAccountsForEveryIdUpToTheLastOne`. Red (row removed, restored after): `NPXE0010 has no row in the guide's id table`.
+- CD-18: `ExtensionApiVersionTests` rows carry a `Shipped` flag; new `AShippedVersionHasNoUnshippedEntries` (a shipped last row needs empty Unshipped files, an older row must be shipped).
+  Red with the 0.4 row marked shipped, hash unchanged and the version unchanged: `0.4 is shipped; add a row for the next ExtensionApi.Version before changing the API (1109 unshipped entries)`;
+  restored to not shipped (0.4 has not been released). Rehashing a shipped row to follow an API change now fails because the change sits in the Unshipped files.
+- CD-25: the guide's `NPXE0005`, `NPXE0002` and `NPXE0013` rows list the missing symbols. `ExperimentalOptInTests` gained probes for `NPXE0009`, `NPXE0012` and two for
+  `NPXE0013` (`INodeDataMigration`, `NodeKindDescriptor.DataVersion`); they pass at once because the marks already existed, so they pin the existing behaviour (no red).
+- API files: the Abstractions, Serialization and Extensibility `PublicAPI.Unshipped.txt` follow the changes; the recorded 0.4 hash was refreshed to the new files (`d78d636b...a576`).
+- Full suite (Debug, `dotnet test --solution NetPrints.slnx`): 4842 total, 4809 passed, 33 skipped, 0 failed; `dotnet format NetPrints.slnx --verify-no-changes` clean.

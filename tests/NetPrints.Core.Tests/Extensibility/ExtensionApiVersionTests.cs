@@ -21,10 +21,14 @@ public class ExtensionApiVersionTests
         "src/NetPrints.Extensibility/PublicAPI.Unshipped.txt",
     ];
 
-    /// <summary>One row per API version, oldest first. Changing the API files means a new hash in the last row, or a new row with the new <see cref="ExtensionApi.Version"/>.</summary>
-    private static readonly (string Version, string Hash)[] Recorded =
+    /// <summary>
+    /// One row per API version, oldest first. While the last row is not shipped, changing the API files means a new hash in it. Once a version
+    /// ships, its row is marked shipped and its API files carry no unshipped entries: a later change needs a new row with the new
+    /// <see cref="ExtensionApi.Version"/>, and rehashing the shipped row fails.
+    /// </summary>
+    private static readonly (string Version, string Hash, bool Shipped)[] Recorded =
     [
-        ("0.4", "0a90c47c4c9b7f8e912d2a7ac4567b6b82912a91252d7d8acfda7c587f56d628"),
+        ("0.4", "d78d636be7cbf359ffc3fbf3c0fd59949a12b1e24761cba7b2221109eba3a576", false),
     ];
 
     private static string CurrentHash()
@@ -49,6 +53,24 @@ public class ExtensionApiVersionTests
     public void TheApiFilesMatchTheHashRecordedForTheVersion()
     {
         Assert.Equal(Recorded[^1].Hash, CurrentHash());
+    }
+
+    [Fact]
+    public void AShippedVersionHasNoUnshippedEntries()
+    {
+        string root = SampleProjectFactory.FindRepositoryRoot();
+        string[] unshipped = [.. ApiFiles.Where(file => file.EndsWith("Unshipped.txt", StringComparison.Ordinal))];
+        List<string> entries =
+        [
+            .. unshipped.SelectMany(file => File.ReadLines(Path.Combine(root, file)))
+                .Where(line => !string.IsNullOrWhiteSpace(line) && !line.StartsWith('#')),
+        ];
+
+        Assert.All(Recorded[..^1], row => Assert.True(row.Shipped, $"{row.Version} is followed by a newer version, so it must be marked shipped"));
+        if (Recorded[^1].Shipped)
+        {
+            Assert.True(entries.Count == 0, $"{Recorded[^1].Version} is shipped; add a row for the next ExtensionApi.Version before changing the API ({entries.Count} unshipped entries)");
+        }
     }
 
     [Fact]

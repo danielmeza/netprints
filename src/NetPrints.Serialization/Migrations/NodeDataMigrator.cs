@@ -1,8 +1,10 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.Json.Nodes;
+using NetPrints.Core;
 
 namespace NetPrints.Serialization.Migrations;
 
@@ -10,6 +12,7 @@ namespace NetPrints.Serialization.Migrations;
 /// Upgrades the node objects of a document whose kind declares a data version: the migrations of the kind run in
 /// <see cref="INodeDataMigration.FromVersion"/> order from the stored <c>kindVersion</c> (absent is 0) up to the current one (research R18).
 /// </summary>
+[Experimental(ExperimentalApiIds.NodeDataMigrations, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public sealed class NodeDataMigrator
 {
     /// <summary>The name of the member that stores a node's data version.</summary>

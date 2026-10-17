@@ -60,3 +60,17 @@ used for settings.
 - Extensions keep NPXE0002 for sections; the page contribution kind and the custom page view get their own experimental
   ids, assigned in the P3 plan.
 - A future hot reload of settings from disk, or a settings sync, plugs into the store's change notification.
+
+## Amendment 1: the experimental ids of pages and custom views (P3, review C-F3)
+
+The Consequences above left the ids to the P3 plan, and the plan and research R16 assigned `NPXE0009` to the page
+contribution and `NPXE0010` to the custom page view. The implementation differs, and this amendment makes the record match it:
+
+- The settings page descriptor (`SettingsPageDescriptor`), `IEditorContributions.AddSettingsPage` and the custom page view
+  model factory `SettingsPageDescriptor.CreateViewModel` are part of the editor contributions and carry `NPXE0005`. The architecture
+  test `ExperimentalApiTests` requires a symbol to carry the id of every experimental type it mentions, and the descriptor
+  mentions the facet and its contexts, all `NPXE0005`; a member under a different id would break that rule.
+- `NPXE0009` marks the settings metadata only: `PathKind`, `[RequiresRestart]`, `[SettingPath]` and `[SettingChoices]`.
+- `NPXE0010` was never allocated. It is retired and is not reused, so that no id changes meaning between releases.
+- A settings-only extension therefore opts into `NPXE0005` for pages and `NPXE0009` for the metadata attributes. Splitting
+  custom views from pages later means a new id above `NPXE0018`.

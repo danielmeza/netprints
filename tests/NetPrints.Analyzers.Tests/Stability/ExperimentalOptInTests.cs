@@ -30,6 +30,10 @@ public class ExperimentalOptInTests
         { "NPXE0006", "public sealed class Fx { public NetPrints.Extensibility.Nodes.INodeSuggestionProvider? Provider; }" },
         { "NPXE0007", "public sealed class Fx { public NetPrints.Extensibility.Nodes.CSharpFeature? Feature; }" },
         { "NPXE0008", "public sealed class Fx { public int Count(NetPrints.Extensibility.IExtensionBuilder builder) => builder.Services.Count; }" },
+        { "NPXE0009", "public sealed class Fx { [NetPrints.Extensibility.Settings.RequiresRestart] public int Value { get; set; } }" },
+        { "NPXE0012", "public sealed class Fx { public NetPrints.Extensibility.Editor.TemplateFile? File; }" },
+        { "NPXE0013", "public sealed class Fx { public NetPrints.Serialization.Migrations.INodeDataMigration? Migration; }" },
+        { "NPXE0013", "public sealed class Fx { public int Version(NetPrints.Extensibility.Nodes.NodeKindDescriptor kind) => kind.DataVersion; }" },
         { "NPXE0011", "public sealed class Fx { public void Add(NetPrints.Extensibility.IExtensionBuilder builder, ResourceManager resources) => builder.AddStringResources(resources); }" },
     };
 
