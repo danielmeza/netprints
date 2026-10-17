@@ -24,6 +24,16 @@
 
 **Breaking (API):** `CanSetPure` follows pin roles. A node can be made pure exactly when an output data pin has the `Result` or `OutParam` role, so the per-class overrides of `CallMethodNode`, `ConstructorNode`, `TernaryNode` and `ExplicitCastNode` are gone. `CallMethodNode.ReturnValuePins` lists the `Result` pins only.
 
+**Breaking (extensions):** the extension API version is 0.4. An `extension.json` with `"netprintsApi": "1.0"`, the value the 0.2.0 guide published, no longer loads: the host accepts the same major and a minor up to its own, and reports NPX002. Set `netprintsApi` to `"0.4"` and rebuild against the new packages.
+
+**Breaking (generated code):** for a project whose C# target is 13 or newer, the escape character in a generated string or char literal is written `\e` instead of `\u001b`. The output of a project on an older target, and every golden without an escape character, is unchanged.
+
+**Added:** three packages, `NetPrints.Serialization`, `NetPrints.Extensibility.Abstractions` and `NetPrints.Extensibility`, with the extension API. The stable part of the API is tracked in `PublicAPI.Shipped.txt`; what is not yet stable is marked `[Experimental]` with an `NPXE` id. `NetPrints.Core` carries the same API tracking and the author analyzers: NPA020 to NPA024 (icon ids, gestures, contribution ids, duplicate commands and menu slots) and NPA040 to NPA042 (resource keys of node kinds); `docs/guide/diagnostics.md` lists their severities.
+
+**Added:** a node of an extension kind may carry `kindVersion` in the graph file, the version of the data its kind wrote it with; a registered migration upgrades older data when the graph opens, and an older editor keeps the node untouched.
+
+**Added:** `netprints.language` in the `netprints` settings section chooses the editor language (a culture name; empty follows the operating system).
+
 **Added:** the status bar shows the error and warning counts, the number of selected nodes and the zoom level of the open graph. Their texts, with one form for a single item and one for several, are in the resx.
 
 **Added:** a call to a method with `out` or `ref` parameters has an output pin for each of them (keyed `out.data.<parameterName>`) that carries the value after the call, and a void method with an `out` parameter can be made pure. Saved graphs do not change. Node capabilities (`IPinListEditor`, `IOverloadableNode`, `IPinNameEditor`) are role interfaces the editor asks for.
