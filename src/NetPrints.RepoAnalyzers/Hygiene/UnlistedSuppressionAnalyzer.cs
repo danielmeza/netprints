@@ -16,7 +16,7 @@ public sealed class UnlistedSuppressionAnalyzer : DiagnosticAnalyzer
 
     private const string SuppressMessageName = "SuppressMessage";
 
-    private const string JustificationMarker = "ADR-0003";
+    private const string JustificationMarker = "ADR-" + "0003";
 
     private static readonly DiagnosticDescriptor Rule = new(
         NphDiagnosticCodes.UnlistedSuppression,

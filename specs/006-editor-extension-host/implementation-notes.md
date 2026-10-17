@@ -589,7 +589,7 @@ T073, local evidence at the C2e head (Release). From here a public shape changes
   NPXE0010 was never allocated.
 - Package validation: `dotnet pack NetPrints.slnx -c Release` passes for all six libraries; Core, Reflection and Catalog compare with 0.2.0.
 - `NetPrints.TestExtension` builds from the packed packages alone: `scripts/verify-packages.sh` step 5 (local run at `0.4.0-local.20261017010000`, all checks passed).
-  CI run id of the `packages` job: to be filled in when the C2e push is green.
+  CI at 70c75b75, including the `packages` job: CI run 38993704432, CLI (Windows) 38993704463, Release 38993704427, Docs 38993704425; all green.
 
 ## NuGet spike
 
