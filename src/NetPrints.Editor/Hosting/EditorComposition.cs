@@ -136,6 +136,7 @@ internal sealed class EditorServices : IDisposable
         // The composition validates the settings sections the editor owns: a failure is logged and the section keeps its defaults.
         host.Settings.Get(NetPrintsSettings.Descriptor);
         host.Settings.Get(EditorSettings.Descriptor);
+        host.Settings.Get(RunSettings.Descriptor);
         Context = provider.GetRequiredService<EditorContext>();
         Windows = provider.GetRequiredService<WindowService>();
         provider.GetRequiredService<PersistenceBinding>();

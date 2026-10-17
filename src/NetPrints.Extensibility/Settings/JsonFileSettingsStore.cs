@@ -7,6 +7,7 @@ using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NetPrints.Core;
+using NetPrints.Extensibility.Loading;
 using NetPrints.Projects;
 
 namespace NetPrints.Extensibility.Settings;
@@ -22,6 +23,7 @@ public sealed class JsonFileSettingsStore : ISettingsStore, ISettingsChangeSourc
     private const string FileSection = "$file";
     private const string NetPrintsKey = NetPrintsSettings.SectionId;
     private const string ExtensionsKey = "extensions";
+    private const string BuiltInPrefix = NetPrintsKey + ".";
     private const string SchemaVersionKey = "schemaVersion";
     private const int SchemaVersion = 1;
     private const string NullSectionReason = "the section is null";
@@ -50,6 +52,7 @@ public sealed class JsonFileSettingsStore : ISettingsStore, ISettingsChangeSourc
     private readonly SemaphoreSlim writeGate = new(1, 1);
     private readonly Lock stateLock = new();
     private readonly List<Subscription> listeners = [];
+    private readonly List<SettingsSectionIssue> issues = [];
     private readonly Lazy<State> initial;
     private State? state;
 
@@ -76,6 +79,20 @@ public sealed class JsonFileSettingsStore : ISettingsStore, ISettingsChangeSourc
     /// <returns>The full path.</returns>
     public static string DefaultFilePath() =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "NetPrints", "settings.json");
+
+    /// <summary>
+    /// Gets the sections that failed validation and were replaced by their defaults, one entry per section, in the order they were read.
+    /// </summary>
+    public IReadOnlyList<SettingsSectionIssue> Issues
+    {
+        get
+        {
+            lock (stateLock)
+            {
+                return [.. issues];
+            }
+        }
+    }
 
     /// <inheritdoc/>
     public T Get<T>(ExtensionSettingsDescriptor<T> descriptor)
@@ -156,9 +173,9 @@ public sealed class JsonFileSettingsStore : ISettingsStore, ISettingsChangeSourc
 
     private static void SetSection(JsonObject root, string id, JsonNode? section)
     {
-        if (id == NetPrintsKey)
+        if (IsHostSection(id))
         {
-            root[NetPrintsKey] = section;
+            root[id] = section;
             return;
         }
 
@@ -208,8 +225,20 @@ public sealed class JsonFileSettingsStore : ISettingsStore, ISettingsChangeSourc
         return stream.ToArray();
     }
 
+    private static bool IsHostSection(string id) => id is NetPrintsKey or RunSettings.SectionId;
+
+    private static bool IsBuiltInSection(string id) =>
+        IsHostSection(id) || id.StartsWith(BuiltInPrefix, StringComparison.Ordinal);
+
     private static JsonNode? FindSection(JsonObject root, string id) =>
-        id == NetPrintsKey ? root[NetPrintsKey] : (root[ExtensionsKey] as JsonObject)?[id];
+        IsHostSection(id) ? root[id] : (root[ExtensionsKey] as JsonObject)?[id];
+
+    private void Report(string sectionId, string reason, Exception? exception)
+    {
+        string? code = IsBuiltInSection(sectionId) ? null : ExtensionDiagnosticCodes.SettingsInvalid;
+        issues.Add(new SettingsSectionIssue(sectionId, code, reason));
+        Log.SettingsSectionInvalid(logger, exception, sectionId, filePath, code is null ? reason : $"{code}: {reason}");
+    }
 
     private T Read<T>(JsonObject root, ExtensionSettingsDescriptor<T> descriptor)
     {
@@ -224,7 +253,7 @@ public sealed class JsonFileSettingsStore : ISettingsStore, ISettingsChangeSourc
             T? value = section.Deserialize(descriptor.TypeInfo);
             if (value is null)
             {
-                Log.SettingsSectionInvalid(logger, null, descriptor.ExtensionId, filePath, NullSectionReason);
+                Report(descriptor.ExtensionId, NullSectionReason, null);
                 return descriptor.Default;
             }
 
@@ -234,11 +263,11 @@ public sealed class JsonFileSettingsStore : ISettingsStore, ISettingsChangeSourc
                 return value;
             }
 
-            Log.SettingsSectionInvalid(logger, null, descriptor.ExtensionId, filePath, string.Join("; ", failures));
+            Report(descriptor.ExtensionId, string.Join("; ", failures), null);
         }
         catch (Exception ex) when (ex is JsonException or NotSupportedException or InvalidOperationException)
         {
-            Log.SettingsSectionInvalid(logger, ex, descriptor.ExtensionId, filePath, ex.Message);
+            Report(descriptor.ExtensionId, ex.Message, ex);
         }
 
         return descriptor.Default;

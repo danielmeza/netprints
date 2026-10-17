@@ -235,6 +235,36 @@ public class JsonFileSettingsStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task AnInvalidExtensionSectionUsesItsDefaultsAndShowsNpx014Once()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(FilePath) ?? directory);
+        await File.WriteAllTextAsync(
+            FilePath,
+            """{ "netprints": { "extensionPaths": [""] }, "extensions": { "test.checked": { "name": "x", "count": 99 }, "test.other": { "name": "ok", "count": 3 } } }""",
+            TestContext.Current.CancellationToken);
+        JsonFileSettingsStore store = NewStore();
+
+        Assert.Equal(Checked.Default, store.Get(Checked));
+        Assert.Equal(Checked.Default, store.Get(Checked));
+        Assert.Empty(store.Get(NetPrintsSettings.Descriptor).ExtensionPaths);
+        Assert.Equal(new SampleSettings("ok", 3), store.Get(Other));
+
+        Assert.Equal(2, store.Issues.Count);
+        SettingsSectionIssue extension = Assert.Single(store.Issues, issue => issue.SectionId == "test.checked");
+        Assert.Equal(ExtensionDiagnosticCodes.SettingsInvalid, extension.Code);
+        Assert.Contains("count", extension.Reason, StringComparison.Ordinal);
+        Assert.Null(Assert.Single(store.Issues, issue => issue.SectionId == "netprints").Code);
+        Assert.Single(logs.Entries, entry => entry.Message.Contains("NPX014", StringComparison.Ordinal));
+        Assert.Equal(2, logs.Entries.Count);
+    }
+
+    private static readonly ExtensionSettingsDescriptor<SampleSettings> Checked =
+        new("test.checked", SampleSettingsContext.Default.SampleSettings, new SampleSettings("checked-default", 1))
+        {
+            Validator = value => value.Count > 10 ? ["count must be at most 10"] : [],
+        };
+
+    [Fact]
     public async Task AnUnparseableFileIsCopiedOnceBeforeTheNextWrite()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(FilePath) ?? directory);

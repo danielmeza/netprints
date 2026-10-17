@@ -11,9 +11,35 @@ public sealed record EditorSettings
     /// <summary>The id of the section.</summary>
     public const string SectionId = "netprints.editor";
 
+    /// <summary>The id of the choices provider that lists the presets of the Dark variant.</summary>
+    public const string DarkPresetChoices = "netprints.presets.dark";
+
+    /// <summary>The id of the choices provider that lists the presets of the Light variant.</summary>
+    public const string LightPresetChoices = "netprints.presets.light";
+
+    private const string PresetIdPattern = "^[a-z0-9]+([._-][a-z0-9]+)*$";
+
+    /// <summary>The id of the Dark variant's default preset.</summary>
+    public const string DefaultDarkPreset = "netprints.dark";
+
+    /// <summary>The id of the Light variant's default preset.</summary>
+    public const string DefaultLightPreset = "netprints.light";
+
     /// <summary>Gets the theme the editor starts in and View › Theme switches.</summary>
     [EnumDataType(typeof(EditorTheme))]
     public EditorTheme Theme { get; init; } = EditorTheme.Dark;
+
+    /// <summary>Gets the id of the preset the Dark variant uses.</summary>
+    [MinLength(1)]
+    [RegularExpression(PresetIdPattern)]
+    [SettingChoices(DarkPresetChoices)]
+    public string DarkPreset { get; init; } = DefaultDarkPreset;
+
+    /// <summary>Gets the id of the preset the Light variant uses.</summary>
+    [MinLength(1)]
+    [RegularExpression(PresetIdPattern)]
+    [SettingChoices(LightPresetChoices)]
+    public string LightPreset { get; init; } = DefaultLightPreset;
 
     /// <summary>Gets the descriptor that reads and writes the section through the settings store.</summary>
     public static ExtensionSettingsDescriptor<EditorSettings> Descriptor { get; } =

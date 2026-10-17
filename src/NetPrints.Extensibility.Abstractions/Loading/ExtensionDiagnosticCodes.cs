@@ -43,4 +43,7 @@ public static class ExtensionDiagnosticCodes
 
     /// <summary>A contributed id does not start with the manifest id of the extension that contributed it.</summary>
     public const string IdPrefix = "NPX013";
+
+    /// <summary>An extension's settings section failed validation; the section uses its defaults for the session and the file keeps what the user wrote.</summary>
+    public const string SettingsInvalid = "NPX014";
 }

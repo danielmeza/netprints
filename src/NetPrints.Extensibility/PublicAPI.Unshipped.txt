@@ -173,3 +173,35 @@ const NetPrints.Extensibility.Settings.SettingsSchema.ChoicesKeyword = "x-netpri
 const NetPrints.Extensibility.Settings.SettingsSchema.PathKeyword = "x-netprints-path" -> string!
 const NetPrints.Extensibility.Settings.SettingsSchema.RestartKeyword = "x-netprints-restart" -> string!
 static NetPrints.Extensibility.Settings.SettingsSchema.Export(System.Text.Json.Serialization.Metadata.JsonTypeInfo! typeInfo) -> System.Text.Json.Nodes.JsonNode!
+const NetPrints.Extensibility.Settings.RunSettings.SectionId = "run" -> string!
+NetPrints.Extensibility.Settings.RunSettings.<Clone>$() -> NetPrints.Extensibility.Settings.RunSettings!
+NetPrints.Extensibility.Settings.RunSettings.Equals(NetPrints.Extensibility.Settings.RunSettings? other) -> bool
+NetPrints.Extensibility.Settings.RunSettings
+NetPrints.Extensibility.Settings.RunSettings.LinuxTerminal.get -> string!
+NetPrints.Extensibility.Settings.RunSettings.LinuxTerminal.init -> void
+NetPrints.Extensibility.Settings.RunSettings.RunSettings() -> void
+NetPrints.Extensibility.Settings.RunSettings.StopTimeoutSeconds.get -> int
+NetPrints.Extensibility.Settings.RunSettings.StopTimeoutSeconds.init -> void
+[NPXE0002]NetPrints.Extensibility.Settings.JsonFileSettingsStore.Issues.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Settings.SettingsSectionIssue!>!
+[NPXE0002]NetPrints.Extensibility.Settings.SettingsSectionIssue.<Clone>$() -> NetPrints.Extensibility.Settings.SettingsSectionIssue!
+[NPXE0002]NetPrints.Extensibility.Settings.SettingsSectionIssue.Code.get -> string?
+[NPXE0002]NetPrints.Extensibility.Settings.SettingsSectionIssue.Code.init -> void
+[NPXE0002]NetPrints.Extensibility.Settings.SettingsSectionIssue.Deconstruct(out string! SectionId, out string? Code, out string! Reason) -> void
+[NPXE0002]NetPrints.Extensibility.Settings.SettingsSectionIssue.Equals(NetPrints.Extensibility.Settings.SettingsSectionIssue? other) -> bool
+[NPXE0002]NetPrints.Extensibility.Settings.SettingsSectionIssue
+[NPXE0002]NetPrints.Extensibility.Settings.SettingsSectionIssue.Reason.get -> string!
+[NPXE0002]NetPrints.Extensibility.Settings.SettingsSectionIssue.Reason.init -> void
+[NPXE0002]NetPrints.Extensibility.Settings.SettingsSectionIssue.SectionId.get -> string!
+[NPXE0002]NetPrints.Extensibility.Settings.SettingsSectionIssue.SectionId.init -> void
+[NPXE0002]NetPrints.Extensibility.Settings.SettingsSectionIssue.SettingsSectionIssue(string! SectionId, string? Code, string! Reason) -> void
+[NPXE0002]override NetPrints.Extensibility.Settings.SettingsSectionIssue.Equals(object? obj) -> bool
+[NPXE0002]override NetPrints.Extensibility.Settings.SettingsSectionIssue.GetHashCode() -> int
+[NPXE0002]override NetPrints.Extensibility.Settings.SettingsSectionIssue.ToString() -> string!
+[NPXE0002]static NetPrints.Extensibility.Settings.RunSettings.Descriptor.get -> NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<NetPrints.Extensibility.Settings.RunSettings!>!
+[NPXE0002]static NetPrints.Extensibility.Settings.SettingsSectionIssue.operator !=(NetPrints.Extensibility.Settings.SettingsSectionIssue? left, NetPrints.Extensibility.Settings.SettingsSectionIssue? right) -> bool
+[NPXE0002]static NetPrints.Extensibility.Settings.SettingsSectionIssue.operator ==(NetPrints.Extensibility.Settings.SettingsSectionIssue? left, NetPrints.Extensibility.Settings.SettingsSectionIssue? right) -> bool
+override NetPrints.Extensibility.Settings.RunSettings.Equals(object? obj) -> bool
+override NetPrints.Extensibility.Settings.RunSettings.GetHashCode() -> int
+override NetPrints.Extensibility.Settings.RunSettings.ToString() -> string!
+static NetPrints.Extensibility.Settings.RunSettings.operator !=(NetPrints.Extensibility.Settings.RunSettings? left, NetPrints.Extensibility.Settings.RunSettings? right) -> bool
+static NetPrints.Extensibility.Settings.RunSettings.operator ==(NetPrints.Extensibility.Settings.RunSettings? left, NetPrints.Extensibility.Settings.RunSettings? right) -> bool
