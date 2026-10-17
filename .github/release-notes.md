@@ -24,6 +24,8 @@
 
 **Breaking (API):** `CanSetPure` follows pin roles. A node can be made pure exactly when an output data pin has the `Result` or `OutParam` role, so the per-class overrides of `CallMethodNode`, `ConstructorNode`, `TernaryNode` and `ExplicitCastNode` are gone. `CallMethodNode.ReturnValuePins` lists the `Result` pins only.
 
+**Added:** the status bar shows the error and warning counts, the number of selected nodes and the zoom level of the open graph. Their texts, with one form for a single item and one for several, are in the resx.
+
 **Added:** a call to a method with `out` or `ref` parameters has an output pin for each of them (keyed `out.data.<parameterName>`) that carries the value after the call, and a void method with an `out` parameter can be made pure. Saved graphs do not change. Node capabilities (`IPinListEditor`, `IOverloadableNode`, `IPinNameEditor`) are role interfaces the editor asks for.
 
 ## Downloads

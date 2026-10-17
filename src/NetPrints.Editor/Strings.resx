@@ -243,6 +243,24 @@
   <data name="Message.ProjectSaved" xml:space="preserve">
     <value>Project saved ({0} files)</value>
   </data>
+  <data name="Status.ErrorsOne" xml:space="preserve">
+    <value>{0} error</value>
+  </data>
+  <data name="Status.ErrorsOther" xml:space="preserve">
+    <value>{0} errors</value>
+  </data>
+  <data name="Status.WarningsOne" xml:space="preserve">
+    <value>{0} warning</value>
+  </data>
+  <data name="Status.WarningsOther" xml:space="preserve">
+    <value>{0} warnings</value>
+  </data>
+  <data name="Status.Selected" xml:space="preserve">
+    <value>{0} selected</value>
+  </data>
+  <data name="Status.Zoom" xml:space="preserve">
+    <value>{0}%</value>
+  </data>
   <data name="Status.LoadingProject" xml:space="preserve">
     <value>Loading project {0}</value>
   </data>
