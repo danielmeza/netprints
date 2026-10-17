@@ -108,6 +108,9 @@ ADR-0031, ADR-0033 to ADR-0040.
   - The composition calls the options validators itself at start (no generic host), on every provider build
     including the extensions'.
   - SC-005 is checked at Checkpoints C1 and C: M1 and M2 at most 10% over their R5-0 baselines, in the perf job.
+    Amended (batch C-F2c, ADR-0031 amendment 1): the perf job rebuilds R5-0 on the same runner and `eng/perf/ab.sh`
+    compares the two trees run in alternation (time without GC pauses, and allocated bytes, each at most 10% over),
+    instead of a recorded baseline.
 - **Rationale**: ADR-0031 is decided; the gates are its own.
 - **Alternatives rejected**: everything in one batch (no gate could stop a bad step); a generic host (a second
   lifetime model for one validator call).

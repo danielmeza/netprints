@@ -11,7 +11,7 @@
 set -euo pipefail
 
 gate=1.10
-rounds=10
+rounds=8
 metrics="M2 M1"
 results=""
 

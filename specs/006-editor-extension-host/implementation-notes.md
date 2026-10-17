@@ -212,6 +212,9 @@ and is marked "default pending owner" in tasks.md.
   JIT's lower tier), CI shows 41 to 76 ms for M2 across heads that did not touch its path, so they cannot carry a 10% gate.
 - Gate ratios (Batch C-F2b): local (Ryzen 9 7950X3D) M2 0.954, M1 4.75; CI Xeon Platinum 8573C M2 1.08, M1 5.55; CI EPYC 7763 M2 1.90, M1 3.22. The CI figures were measured at
   heads shown locally equal to R5-0 on the M2 path (within 1%, 8 interleaved runs); see the Batch C-F2b entry.
+- Superseded as a gate (Batch C-F2c, ADR-0031 amendment 1): the numbers above stay as history. The M1 and M2 time gates no longer compare with a recorded figure; the perf job
+  rebuilds R5-0 on the same runner (`eng/perf/prepare-r5-0.sh`, `eng/perf/r5-0.patch`) and `eng/perf/ab.sh` compares the two trees run in alternation, time without GC pauses and
+  allocated bytes, each at head / base <= 1.10.
 
 ## M5 spike
 
@@ -1344,3 +1347,36 @@ T076, Checkpoint C2, gate items measured on this head (Release).
   none added: `Assert.NotNull(x)` on its own line, then the member (this xunit `Assert.NotNull` returns void, so the flow analysis carries the non-null state); `?? throw new InvalidOperationException`
   for `Process.Start`, `TestOutputHelper`, `Application.Current`, the headless `EditorApp` and the wait result; `ArgumentException` for `Path.GetDirectoryName`; `UiElement.Number` for the
   automation numbers; `UiWait.ForAsync` keeps the accepted value in an array instead of `default!`.
+
+## Batch C-F2c (T078, part 2c: CD-1, same-runner A/B against R5-0)
+
+- Why: the calibrated ratio did not hold across runner CPUs (M2 for the same code: local 0.95 to 0.98, Xeon Platinum 8573C 1.04 to 1.10, EPYC 7763 1.90, EPYC 9V74 2.54 in job
+  117346128293), and at 250ed2fd M1 failed at +25.4% on yet another model (EPYC 9V45, job 117351326444). Decision (ADR-0031 amendment 1): compare the head with R5-0 built and
+  run on the same runner, interleaved, at head / base <= 1.10. No fallback was needed.
+- Method: `eng/perf/prepare-r5-0.sh DIR` adds a worktree at d7ddde50, applies `eng/perf/r5-0.patch` (the M1 and M2 tests of R5-0 call the harness; rebuilt from the C-F2b port) and
+  copies the head's `tests/NetPrints.Testing/PerformanceGate.cs`, then builds the two test projects. `eng/perf/ab.sh BASE HEAD` runs 8 rounds; each round runs M2 and M1 once per tree,
+  one fresh test process per run (the test executable with `-method`), the base first in odd rounds. A run warms up (at least 1 s and three samples within 10%), then times 9 (M2) or 21
+  (M1) samples and reports the fastest; a tree's figure is the median of its 8 runs. `PerformanceGate` keeps only this (the per-CPU table, the calibration and the in-test verdict
+  are gone); outside the script the two tests print their first-use numbers and judge no time.
+- GC (found on the first runner run): job 117354922356 (730a3ddd, EPYC 9V74, 4 cores) read M2 0.955 but M1 1.339, every round alike (head 108 to 124 ms, R5-0 85 to 93 ms), while
+  locally they agreed (0.996). With a full collection forced before each sample, a sample pays zero or one collection: R5-0 allocates 16.40 MB per start, the head 17.28 MB, and a 16 MB
+  gen0 budget sits between them. Locally `DOTNET_GCgen0size=0x1000000` reproduces it (R5-0 68 to 70 ms, head 89 to 91 ms; with 0x400000 the head is faster); pinning to 4 CPUs or to
+  SMT pairs did not. A sample now leaves its GC pauses out of its time (`GC.GetTotalPauseDuration`) and records the bytes the process allocated; `ab.sh` gates time and bytes, each
+  at 1.10 (a41b0c51). With the 16 MB budget locally: time 1.043, bytes 1.053. Choosing the statistic: the median of each run's median sample would have failed one of the first 15
+  local runs (M2 1.210, R5-0 against head); each run's fastest sample did not.
+- Equal trees, locally (Ryzen 9 7950X3D, 8 rounds, the driver's own verdict): head against itself, 10 runs, 0 failed: M1 time 0.953 to 1.057 (mean 0.991, sd 0.036), M2 time 0.974
+  to 1.064 (mean 1.007, sd 0.027), bytes 0.995 to 1.003. Three more under a load average of 42 to 49 from other processes: 0 failed, M1 0.966 to 1.040, M2 1.003 to 1.025. R5-0 against
+  head, 5 runs, 0 failed: M2 time 0.947 to 1.073, M1 time 1.008 to 1.058, M1 bytes 1.049 to 1.051, M2 bytes 1.000. So 18 runs, 0 false fails; 1.10 is about three standard
+  deviations above the equal-tree mean.
+- Red (local, 8 rounds against R5-0, uncommitted busy waits first in the constructor, under the load above): M2 +14 ms in `NodeGraphViewModel` 1.728 FAIL (R5-0 19.21 ms, head 33.19
+  ms); M2 +2 ms 1.123 FAIL; M1 +66 ms in `ShellViewModel` 1.792 FAIL; M1 +10 ms 1.129 FAIL; M1 with 2 MB more allocated per start: bytes 1.172 FAIL, time 1.027 PASS. Each run exited 1.
+- CI: job 117359521544 (a41b0c51, AMD EPYC 7763, 4 cores): M2 time 0.988, bytes 1.000; M1 time 1.066, bytes 1.051 (the head's 24 ms GC pause per start left out, R5-0 none); PASS.
+  Runs on the runner agree within about 2% per tree (M1: R5-0 107.6 to 112.4 ms, head 114.5 to 118.2 ms). The job took 13.2 min: build 2.3, strict budgets 0.8, R5-0 build 0.7,
+  A/B 9.0. Its timeout is 30 min.
+- Guards: `CiWorkflowTests.ThePerformanceJobComparesTheHeadWithR5ZeroOnTheSameRunner` (red before the workflow change: `The perf job does not build R5-0 with
+  eng/perf/prepare-r5-0.sh.`; green after); `PerformanceGateTests` pin the sample (bytes counted, a collection inside a sample left out of its time), the steady state and the
+  record line the script reads.
+- Docs: ADR-0031 amendment 1 (the R5-0 gates are ADR-0031's; ADR-0037 is about run profiles and has no performance rule), research R4, the R5-0 baselines section,
+  `docs/contributing/testing.md` and the spec 005 CI contract row.
+- Full suite (Release, `dotnet test --solution NetPrints.slnx`): 4883 total, 4850 passed, 33 skipped, 0 failed; build 0 warnings; `dotnet format NetPrints.slnx --verify-no-changes` clean;
+  `eng/trim-warnings.sh` 9.
