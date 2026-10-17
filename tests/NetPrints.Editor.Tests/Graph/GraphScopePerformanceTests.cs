@@ -16,7 +16,8 @@ namespace NetPrints.Editor.Tests.Graph;
 /// M2 baseline (research R4 step 1, SC-005): building the view models of a generated method graph of 1000 nodes
 /// and about 4000 pins. Time and allocated bytes go to the test output, with the number of calls the graph makes
 /// into its class editor services (the messenger and the project classes accessor), counted per pin by counting
-/// fakes. The numbers pin today's hand-wired behaviour; the composition step C1 compares against them.
+/// fakes. Under <c>eng/perf/ab.sh</c> (<see cref="PerformanceGate.OutputVariable"/> set) the test also records its
+/// steady state, which the script compares with R5-0's on the same machine (the SC-005 time gate).
 /// </summary>
 public sealed class GraphScopePerformanceTests(TestEditor editor)
 {
@@ -24,10 +25,7 @@ public sealed class GraphScopePerformanceTests(TestEditor editor)
     private const int Runs = 5;
     private const double BaselineBytesPerNode = 35_080;
     private const double AllocationTolerance = 1.10;
-
-    private static readonly double BaselineRatio = PerformanceGate.Baseline(
-        local: 0.954,
-        ciByCpu: new Dictionary<string, double> { ["XEON(R) PLATINUM 8573C"] = 1.08, ["EPYC 7763"] = 1.90 });
+    private const int SteadySamples = 9;
 
     [Fact(Timeout = 300_000)]
     [Trait("Category", "Performance")]
@@ -75,14 +73,11 @@ public sealed class GraphScopePerformanceTests(TestEditor editor)
         Assert.True(medianBytes / nodes <= BaselineBytesPerNode * AllocationTolerance,
             $"A node allocates {medianBytes / nodes:F0} bytes; the gate is {BaselineBytesPerNode * AllocationTolerance:F0} (R5-0 baseline {BaselineBytesPerNode} plus 10%).");
 
-        double calibration = await PerformanceGate.CalibrateAsync();
-        double steady = await PerformanceGate.SteadyMedianAsync(() => ValueTask.FromResult(TimeOneBuild()), BaselineRatio * PerformanceGate.Tolerance * calibration);
-        calibration = Math.Min(calibration, await PerformanceGate.CalibrateAsync());
-        GateVerdict verdict = PerformanceGate.Judge("M2 steady-state median", steady, calibration, BaselineRatio);
-        output.WriteLine(verdict.Message);
-        if (PerformanceGate.Strict)
+        if (PerformanceGate.OutputPath is { } path)
         {
-            Assert.True(verdict.Passed, verdict.Message);
+            SteadyState steady = await PerformanceGate.MeasureAsync(() => ValueTask.FromResult(TimeOneBuild()), SteadySamples);
+            output.WriteLine(steady.Describe("M2"));
+            PerformanceGate.Record(path, "M2", steady);
         }
     }
 

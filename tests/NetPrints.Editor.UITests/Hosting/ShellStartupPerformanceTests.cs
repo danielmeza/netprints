@@ -17,15 +17,13 @@ namespace NetPrints.Editor.UITests.Hosting;
 /// shell. One run builds the composition and the shell host (<c>ShellApp.Start</c>), and the shell view model is ready
 /// when the call returns. The first run in the process also pays the one-time JIT and Avalonia setup, so it is
 /// reported apart; the median of the later runs is the baseline. Time and allocated bytes go to the test output.
-/// The numbers pin today's hand-wired behaviour and carry no budget; the composition step C1 compares against them.
+/// Under <c>eng/perf/ab.sh</c> (<see cref="PerformanceGate.OutputVariable"/> set) the test also records its steady
+/// state, which the script compares with R5-0's on the same machine (the SC-005 time gate).
 /// </summary>
 public class ShellStartupPerformanceTests
 {
     private const int Runs = 6;
-
-    private static readonly double BaselineRatio = PerformanceGate.Baseline(
-        local: 4.75,
-        ciByCpu: new Dictionary<string, double> { ["XEON(R) PLATINUM 8573C"] = 5.55, ["EPYC 7763"] = 3.22 });
+    private const int SteadySamples = 21;
 
     private const int CompositionBudgetMilliseconds = 150;
 
@@ -61,14 +59,11 @@ public class ShellStartupPerformanceTests
         output.WriteLine(string.Create(CultureInfo.InvariantCulture,
             $"M1 median of the warm runs: {Median(times):F1} ms, {Median(bytes):F0} bytes"));
 
-        double calibration = await PerformanceGate.CalibrateAsync();
-        double steady = await PerformanceGate.SteadyMedianAsync(TimeOneStartAsync, BaselineRatio * PerformanceGate.Tolerance * calibration);
-        calibration = Math.Min(calibration, await PerformanceGate.CalibrateAsync());
-        GateVerdict verdict = PerformanceGate.Judge("M1 steady-state median", steady, calibration, BaselineRatio);
-        output.WriteLine(verdict.Message);
-        if (PerformanceGate.Strict)
+        if (PerformanceGate.OutputPath is { } path)
         {
-            Assert.True(verdict.Passed, verdict.Message);
+            SteadyState steady = await PerformanceGate.MeasureAsync(TimeOneStartAsync, SteadySamples);
+            output.WriteLine(steady.Describe("M1"));
+            PerformanceGate.Record(path, "M1", steady);
         }
     }
 

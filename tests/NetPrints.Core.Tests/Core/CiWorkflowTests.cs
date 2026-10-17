@@ -214,6 +214,20 @@ namespace NetPrints.Tests.Core
             Assert.Equal("1", Text(Get(strictStep, "env", "NETPRINTS_PERF_STRICT")));
         }
 
+        // SC-005 (M1, M2): the head is judged against R5-0 built and run on the same runner, in the same job.
+        [Fact]
+        public void ThePerformanceJobComparesTheHeadWithR5ZeroOnTheSameRunner()
+        {
+            List<object?> steps = Items(Get(Get(Jobs(), "perf"), "steps"));
+            int prepare = steps.FindIndex(step => Text(Get(step, "run")).Contains("eng/perf/prepare-r5-0.sh", StringComparison.Ordinal));
+            int compare = steps.FindIndex(step => Text(Get(step, "run")).Contains("eng/perf/ab.sh", StringComparison.Ordinal));
+
+            Assert.True(prepare >= 0, "The perf job does not build R5-0 with eng/perf/prepare-r5-0.sh.");
+            Assert.True(compare > prepare, "The perf job does not run eng/perf/ab.sh after building R5-0.");
+            Assert.Equal("${{ !cancelled() }}", Text(Get(steps[prepare], "if")));
+            Assert.Equal("${{ !cancelled() }}", Text(Get(steps[compare], "if")));
+        }
+
         [Fact]
         public void NoBlockingJobRunsTheStrictBudgets()
         {

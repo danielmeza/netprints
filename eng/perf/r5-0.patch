@@ -1,0 +1,95 @@
+diff --git a/tests/NetPrints.Editor.Tests/Graph/GraphScopePerformanceTests.cs b/tests/NetPrints.Editor.Tests/Graph/GraphScopePerformanceTests.cs
+index 32fed7f7..2b1f96bc 100644
+--- a/tests/NetPrints.Editor.Tests/Graph/GraphScopePerformanceTests.cs
++++ b/tests/NetPrints.Editor.Tests/Graph/GraphScopePerformanceTests.cs
+@@ -8,6 +8,7 @@ using NetPrints.Editor.Hosting;
+ using NetPrints.Editor.Tests.Hosting;
+ using NetPrints.Editor.UndoRedo;
+ using NetPrints.Graph;
++using NetPrints.Testing;
+
+ namespace NetPrints.Editor.Tests.Graph;
+
+@@ -21,10 +22,11 @@ public sealed class GraphScopePerformanceTests(TestEditor editor)
+ {
+     private const int NodeCount = 1000;
+     private const int Runs = 5;
++    private const int SteadySamples = 9;
+
+     [Fact(Timeout = 300_000)]
+     [Trait("Category", "Performance")]
+-    public void BuildingALargeGraphIsMeasured()
++    public async Task BuildingALargeGraphIsMeasured()
+     {
+         var output = TestContext.Current.TestOutputHelper
+             ?? throw new InvalidOperationException($"{nameof(TestContext)} has no {nameof(TestContext.Current.TestOutputHelper)}.");
+@@ -63,6 +65,25 @@ public sealed class GraphScopePerformanceTests(TestEditor editor)
+
+         Assert.Equal(NodeCount + 2, nodes);
+         Assert.InRange(pins, NodeCount * 3, NodeCount * 6);
++
++        if (PerformanceGate.OutputPath is { } path)
++        {
++            SteadyState steady = await PerformanceGate.MeasureAsync(() => ValueTask.FromResult(TimeOneBuild()), SteadySamples);
++            output.WriteLine(steady.Describe("M2"));
++            PerformanceGate.Record(path, "M2", steady);
++        }
++    }
++
++    private double TimeOneBuild()
++    {
++        MethodGraph method = BuildGraph();
++        var counting = new CountingServices(editor.Context);
++        GC.Collect();
++        GC.WaitForPendingFinalizers();
++        var stopwatch = Stopwatch.StartNew();
++        _ = new NodeGraphViewModel(method, counting.Services);
++        stopwatch.Stop();
++        return stopwatch.Elapsed.TotalMilliseconds;
+     }
+
+     private static MethodGraph BuildGraph()
+diff --git a/tests/NetPrints.Editor.UITests/Hosting/ShellStartupPerformanceTests.cs b/tests/NetPrints.Editor.UITests/Hosting/ShellStartupPerformanceTests.cs
+index 2a34d3d7..39810cb7 100644
+--- a/tests/NetPrints.Editor.UITests/Hosting/ShellStartupPerformanceTests.cs
++++ b/tests/NetPrints.Editor.UITests/Hosting/ShellStartupPerformanceTests.cs
+@@ -2,6 +2,7 @@ using System.Diagnostics;
+ using System.Globalization;
+ using Avalonia.Headless.XUnit;
+ using NetPrints.Editor.UITests.Shell;
++using NetPrints.Testing;
+
+ namespace NetPrints.Editor.UITests.Hosting;
+
+@@ -15,6 +16,7 @@ namespace NetPrints.Editor.UITests.Hosting;
+ public class ShellStartupPerformanceTests
+ {
+     private const int Runs = 6;
++    private const int SteadySamples = 21;
+
+     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+     [Trait("Category", "Performance")]
+@@ -47,6 +49,23 @@ public class ShellStartupPerformanceTests
+
+         output.WriteLine(string.Create(CultureInfo.InvariantCulture,
+             $"M1 median of the warm runs: {Median(times):F1} ms, {Median(bytes):F0} bytes"));
++
++        if (PerformanceGate.OutputPath is { } path)
++        {
++            SteadyState steady = await PerformanceGate.MeasureAsync(TimeOneStartAsync, SteadySamples);
++            output.WriteLine(steady.Describe("M1"));
++            PerformanceGate.Record(path, "M1", steady);
++        }
++    }
++
++    private static async ValueTask<double> TimeOneStartAsync()
++    {
++        GC.Collect();
++        GC.WaitForPendingFinalizers();
++        var stopwatch = Stopwatch.StartNew();
++        await using ShellApp app = ShellApp.Start();
++        stopwatch.Stop();
++        return stopwatch.Elapsed.TotalMilliseconds;
+     }
+
+     private static double Median(List<double> values)

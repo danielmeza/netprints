@@ -1,153 +1,53 @@
 using System.Diagnostics;
 using System.Globalization;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace NetPrints.Testing
 {
     /// <summary>
-    /// The SC-005 time gate (M1, M2): a measurement is compared with its R5-0 baseline at 10%. A shared runner's speed
-    /// varies by tens of percent between runs and a process spends its first runs in the JIT's lower tiers, so the
-    /// gate compares a steady-state median, divided by a fixed workload measured in the same process (the calibration),
-    /// with the same ratio at the baseline commit. The gate is judged only when <see cref="Strict"/> is set (the
-    /// non-blocking perf job); every other run records the numbers.
+    /// The in-process half of the SC-005 time gate (M1, M2). The gate is a same-machine A/B comparison with R5-0:
+    /// <c>eng/perf/ab.sh</c> runs a measured test of the head and of R5-0 in alternation, each run in a fresh process with
+    /// <see cref="OutputVariable"/> naming a file. The test then measures its steady state with <see cref="MeasureAsync"/>
+    /// and appends it with <see cref="Record"/>; the script compares the two trees. Without the variable the tests only
+    /// print their first-use numbers. Both trees run this same file (the script copies it into R5-0).
     /// </summary>
     public static class PerformanceGate
     {
-        /// <summary>The allowed growth over the baseline: 10%.</summary>
-        public const double Tolerance = 1.10;
-
-        /// <summary>Set to <c>1</c> by the perf job.</summary>
-        public const string StrictVariable = "NETPRINTS_PERF_STRICT";
+        /// <summary>The variable that names the file a measured test appends its steady state to; set by <c>eng/perf/ab.sh</c>.</summary>
+        public const string OutputVariable = "NETPRINTS_PERF_AB_OUTPUT";
 
         private static readonly TimeSpan WarmUpMinimum = TimeSpan.FromSeconds(1);
         private static readonly TimeSpan WarmUpMaximum = TimeSpan.FromSeconds(6);
         private const int WarmUpAgreeing = 3;
         private const double WarmUpAgreement = 1.10;
-        private const int Samples = 9;
-        private const int CalibrationSamples = 15;
-        private const int Attempts = 3;
 
-        /// <summary>Whether the gate is judged in this run.</summary>
-        public static bool Strict => Environment.GetEnvironmentVariable(StrictVariable) == "1";
+        /// <summary>The file named by <see cref="OutputVariable"/>, or <see langword="null"/> when the run is not an A/B run.</summary>
+        public static string? OutputPath => Environment.GetEnvironmentVariable(OutputVariable) is { Length: > 0 } path ? path : null;
 
-        /// <summary>Whether this run is on a GitHub Actions runner.</summary>
-        public static bool OnCi => Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true";
-
-        /// <summary>Picks the baseline ratio of this machine: on CI the one recorded for this runner's CPU model, elsewhere the local one.</summary>
-        /// <param name="local">The ratio measured on the development machine.</param>
-        /// <param name="ciByCpu">The ratios measured on the CI runner, keyed by a part of the CPU model.</param>
-        /// <returns>The ratio to compare with.</returns>
-        public static double Baseline(double local, IReadOnlyDictionary<string, double> ciByCpu) => Baseline(local, ciByCpu, OnCi, CpuModel);
-
-        /// <summary>
-        /// Picks the entry of <paramref name="ciByCpu"/> whose key is part of <paramref name="cpuModel"/> when <paramref name="onCi"/> is set,
-        /// or the highest entry (the widest recorded) for a CPU model that has none; <paramref name="local"/> when it is not set.
-        /// </summary>
-        /// <param name="local">The ratio measured on the development machine.</param>
-        /// <param name="ciByCpu">The ratios measured on the CI runner, keyed by a part of the CPU model.</param>
-        /// <param name="onCi">Whether the run is on the CI runner.</param>
-        /// <param name="cpuModel">The CPU model of the machine.</param>
-        /// <returns>The ratio to compare with.</returns>
-        public static double Baseline(double local, IReadOnlyDictionary<string, double> ciByCpu, bool onCi, string cpuModel)
-        {
-            if (!onCi)
-            {
-                return local;
-            }
-
-            foreach ((string key, double ratio) in ciByCpu)
-            {
-                if (cpuModel.Contains(key, StringComparison.OrdinalIgnoreCase))
-                {
-                    return ratio;
-                }
-            }
-
-            return ciByCpu.Values.Max();
-        }
-
-        /// <summary>The CPU model of this machine (the first <c>model name</c> of <c>/proc/cpuinfo</c> on Linux), or the architecture and core count.</summary>
-        public static string CpuModel { get; } = ReadCpuModel();
-
-        /// <summary>The median of the values.</summary>
+        /// <summary>The median of the values (the upper middle one for an even count).</summary>
+        /// <param name="values">At least one value.</param>
+        /// <returns>The median.</returns>
         public static double Median(IReadOnlyList<double> values)
         {
             double[] sorted = [.. values.Order()];
             return sorted[sorted.Length / 2];
         }
 
-        /// <summary>The time of the fixed calibration workload on this machine, in milliseconds, once warm.</summary>
-        public static async ValueTask<double> CalibrateAsync()
-        {
-            await WarmUpAsync(() => new ValueTask<double>(Task.Run(CalibrationRun)));
-            double fastest = double.PositiveInfinity;
-            for (int run = 0; run < CalibrationSamples; run++)
-            {
-                fastest = Math.Min(fastest, await Task.Run(CalibrationRun));
-            }
-
-            return fastest;
-        }
-
         /// <summary>
-        /// Runs <paramref name="timeOnce"/> (one measured run, in milliseconds) until the last runs agree, then returns
-        /// the median of nine more. When that median is over <paramref name="limitMilliseconds"/> the nine are measured
-        /// again, up to three times, and the lowest median is returned: noise only adds time, a regression stays.
+        /// Runs <paramref name="timeOnce"/> (one measured run, in milliseconds) for at least a second and until three runs
+        /// in a row agree within 10% (at most six seconds), then measures <paramref name="samples"/> more.
         /// </summary>
-        public static async ValueTask<double> SteadyMedianAsync(Func<ValueTask<double>> timeOnce, double limitMilliseconds)
+        /// <param name="timeOnce">One measured run; returns its time in milliseconds.</param>
+        /// <param name="samples">The number of measured runs after the warm-up, at least one.</param>
+        /// <returns>The fastest and the median of the samples.</returns>
+        public static async ValueTask<SteadyState> MeasureAsync(Func<ValueTask<double>> timeOnce, int samples)
         {
-            await WarmUpAsync(timeOnce);
-            double best = double.PositiveInfinity;
-            for (int attempt = 1; attempt <= Attempts && (attempt == 1 || best > limitMilliseconds); attempt++)
-            {
-                var samples = new List<double>(Samples);
-                for (int sample = 0; sample < Samples; sample++)
-                {
-                    samples.Add(await timeOnce());
-                }
-
-                best = Math.Min(best, Median(samples));
-            }
-
-            return best;
-        }
-
-        /// <summary>Compares a measurement with the baseline ratio at <see cref="Tolerance"/>.</summary>
-        public static GateVerdict Judge(string metric, double measuredMilliseconds, double calibrationMilliseconds, double baselineRatio)
-        {
-            double ratio = measuredMilliseconds / calibrationMilliseconds;
-            double limit = baselineRatio * Tolerance;
-            bool passed = ratio <= limit;
-            string message = string.Create(CultureInfo.InvariantCulture,
-                $"{metric}: {measuredMilliseconds:F1} ms against a calibration of {calibrationMilliseconds:F1} ms is a ratio of {ratio:F3}; the baseline is {baselineRatio:F3}, the gate {limit:F3} (+10%), {ratio / baselineRatio - 1:+0.0%;-0.0%} over the baseline; cpu {CpuModel}.");
-            return new GateVerdict(passed, message);
-        }
-
-        private static string ReadCpuModel()
-        {
-            const string CpuInfo = "/proc/cpuinfo";
-            const string ModelKey = "model name";
-            if (File.Exists(CpuInfo))
-            {
-                foreach (string line in File.ReadLines(CpuInfo))
-                {
-                    if (line.StartsWith(ModelKey, StringComparison.Ordinal) && line.IndexOf(':', StringComparison.Ordinal) is var colon and >= 0)
-                    {
-                        return line[(colon + 1)..].Trim();
-                    }
-                }
-            }
-
-            return string.Create(CultureInfo.InvariantCulture, $"{RuntimeInformation.OSArchitecture} x{Environment.ProcessorCount}");
-        }
-
-        private static async ValueTask WarmUpAsync(Func<ValueTask<double>> timeOnce)
-        {
+            ArgumentOutOfRangeException.ThrowIfLessThan(samples, 1);
             var recent = new Queue<double>();
             var elapsed = Stopwatch.StartNew();
+            int warmUpRuns = 0;
             while (elapsed.Elapsed < WarmUpMaximum)
             {
+                warmUpRuns++;
                 recent.Enqueue(await timeOnce());
                 if (recent.Count > WarmUpAgreeing)
                 {
@@ -156,41 +56,45 @@ namespace NetPrints.Testing
 
                 if (elapsed.Elapsed >= WarmUpMinimum && recent.Count == WarmUpAgreeing && recent.Max() <= recent.Min() * WarmUpAgreement)
                 {
-                    return;
+                    break;
                 }
             }
-        }
 
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-        private static double CalibrationRun()
-        {
-            var stopwatch = Stopwatch.StartNew();
-            int sum = 0;
-            for (int outer = 0; outer < 6000; outer++)
+            TimeSpan warmUp = elapsed.Elapsed;
+            var measured = new List<double>(samples);
+            for (int sample = 0; sample < samples; sample++)
             {
-                var keys = new List<string>(64);
-                var map = new Dictionary<string, int>(64);
-                for (int inner = 0; inner < 64; inner++)
-                {
-                    string key = string.Create(CultureInfo.InvariantCulture, $"k{outer}-{inner}");
-                    keys.Add(key);
-                    map[key] = inner;
-                }
-
-                foreach (string key in keys)
-                {
-                    sum += map[key];
-                }
+                measured.Add(await timeOnce());
             }
 
-            stopwatch.Stop();
-            GC.KeepAlive(sum);
-            return stopwatch.Elapsed.TotalMilliseconds;
+            return new SteadyState(measured.Min(), Median(measured), measured.Count, warmUpRuns, warmUp.TotalSeconds, elapsed.Elapsed.TotalSeconds);
         }
+
+        /// <summary>
+        /// Appends <paramref name="state"/> to <paramref name="path"/> as one line: the metric, the fastest, the median, the count,
+        /// the warm-up runs, the warm-up seconds and the total seconds.
+        /// </summary>
+        /// <param name="path">The file named by <see cref="OutputVariable"/>.</param>
+        /// <param name="metric">The metric id, <c>M1</c> or <c>M2</c>; the script reads the lines that start with it.</param>
+        /// <param name="state">The measurement.</param>
+        public static void Record(string path, string metric, SteadyState state) =>
+            File.AppendAllText(path, string.Create(CultureInfo.InvariantCulture,
+                $"{metric} {state.Fastest:F3} {state.Median:F3} {state.Count} {state.WarmUpRuns} {state.WarmUpSeconds:F2} {state.TotalSeconds:F2}{Environment.NewLine}"));
     }
 
-    /// <summary>The outcome of <see cref="PerformanceGate.Judge"/>.</summary>
-    /// <param name="Passed">Whether the measurement is within the gate.</param>
-    /// <param name="Message">The numbers, for the test output and the failure.</param>
-    public sealed record GateVerdict(bool Passed, string Message);
+    /// <summary>A steady-state measurement of <see cref="PerformanceGate.MeasureAsync"/>.</summary>
+    /// <param name="Fastest">The fastest sample, in milliseconds.</param>
+    /// <param name="Median">The median sample, in milliseconds.</param>
+    /// <param name="Count">The number of samples.</param>
+    /// <param name="WarmUpRuns">The runs before the samples.</param>
+    /// <param name="WarmUpSeconds">The time of the warm-up.</param>
+    /// <param name="TotalSeconds">The time of the warm-up and the samples.</param>
+    public sealed record SteadyState(double Fastest, double Median, int Count, int WarmUpRuns, double WarmUpSeconds, double TotalSeconds)
+    {
+        /// <summary>The numbers, for the test output.</summary>
+        /// <param name="metric">The metric id.</param>
+        /// <returns>One line.</returns>
+        public string Describe(string metric) => string.Create(CultureInfo.InvariantCulture,
+            $"{metric} steady state: fastest {Fastest:F1} ms, median {Median:F1} ms of {Count} runs, after {WarmUpRuns} warm-up runs in {WarmUpSeconds:F1} s; {TotalSeconds:F1} s in all.");
+    }
 }
