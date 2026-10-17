@@ -30,6 +30,7 @@ namespace NetPrints.Editor.Hosting;
 /// the disposal next to the <c>new</c> expression instead of flagging a disposed constructor
 /// parameter (IDISP007); headless tests that own those instances themselves pass a no-op.
 /// </param>
+/// <param name="Contributions">The recorder whose <see cref="ExtensionContributionRecorder.Factory"/> the host gave <paramref name="Extensions"/>, or <see langword="null"/> when the host shows no extension contributions.</param>
 public sealed record EditorHostServices(
     ILoggerFactory LoggerFactory,
     IExtensionHost Extensions,
@@ -37,7 +38,8 @@ public sealed record EditorHostServices(
     IHostChannel HostChannel,
     string? HostChannelError,
     bool MsBuildAvailable,
-    Func<ValueTask> DisposeOwnedResources) : IAsyncDisposable
+    Func<ValueTask> DisposeOwnedResources,
+    ExtensionContributionRecorder? Contributions = null) : IAsyncDisposable
 {
     /// <summary>
     /// Disposes the extensions and the host channel this instance owns, via <see cref="DisposeOwnedResources"/>.

@@ -32,6 +32,9 @@ public static class ExtensionDiagnosticCodes
     /// <summary>A contribution names an id that nothing registered, such as an icon id without a geometry in any view resources; a fallback is used.</summary>
     public const string UnknownReference = "NPX010";
 
+    /// <summary>A project's extension shadows a per-user copy of the same id for the session; informational, and the message names both versions.</summary>
+    public const string Shadowed = "NPX012";
+
     /// <summary>A contributed id does not start with the manifest id of the extension that contributed it.</summary>
     public const string IdPrefix = "NPX013";
 }

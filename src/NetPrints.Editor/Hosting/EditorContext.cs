@@ -40,6 +40,7 @@ namespace NetPrints.Editor.Hosting;
 /// <param name="WindowStateService">Restores and saves the main window's bounds, or <see langword="null"/> for none (tests that do not exercise it).</param>
 /// <param name="StateStore">The per-user state files the layout and the sessions are kept in, or <see langword="null"/> for none (tests that do not exercise them).</param>
 /// <param name="Locations">The parent folder New project and the samples use, or <see langword="null"/> for the user's documents folder with the state store (tests that do not exercise it).</param>
+/// <param name="Contributions">Places the editor contributions of the loaded extensions in the contribution groups, or <see langword="null"/> when the host does not show them (tests that do not exercise it).</param>
 /// <param name="Recent">The recent projects list that opening or creating a project updates, or <see langword="null"/> for none (tests that do not exercise it).</param>
 [Singleton<EditorContext>(Factory = "Create")]
 public sealed record EditorContext(
@@ -64,7 +65,8 @@ public sealed record EditorContext(
     RecentProjects? Recent = null,
     WindowStateService? WindowStateService = null,
     IEditorStateStore? StateStore = null,
-    ProjectLocations? Locations = null)
+    ProjectLocations? Locations = null,
+    ExtensionContributionRecorder? Contributions = null)
 {
     /// <summary>Creates the facade from the container; the optional members are the ones the host registered.</summary>
     /// <param name="services">Resolves the optional members.</param>
@@ -127,5 +129,6 @@ public sealed record EditorContext(
             services.GetService<RecentProjects>(),
             services.GetService<WindowStateService>(),
             services.GetService<IEditorStateStore>(),
-            services.GetService<ProjectLocations>());
+            services.GetService<ProjectLocations>(),
+            services.GetService<ExtensionContributionRecorder>());
 }

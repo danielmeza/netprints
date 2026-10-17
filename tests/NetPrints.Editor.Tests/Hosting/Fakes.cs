@@ -500,7 +500,7 @@ public sealed class TestEditor : IAsyncDisposable
     {
     }
 
-    private TestEditor(IReflectionHost reflection, ExtensionHost extensions, IHostChannel hostChannel)
+    private TestEditor(IReflectionHost reflection, ExtensionHost extensions, IHostChannel hostChannel, ExtensionContributionRecorder? recorder = null)
     {
         ArgumentNullException.ThrowIfNull(reflection);
         Reflection = reflection;
@@ -511,17 +511,17 @@ public sealed class TestEditor : IAsyncDisposable
 
         Context = new EditorContext(FilePicker, Dialogs, Clipboard, Dispatcher, Reflection, Windows, Processes,
             Scheduler, () => new StrongReferenceMessenger(), NullLoggerFactory.Instance, Projects, Persistence,
-            Extensions, hostChannel, Settings, CodeAnalysis, new RunStateTracker(Processes), Locations: Locations);
+            Extensions, hostChannel, Settings, CodeAnalysis, new RunStateTracker(Processes), Locations: Locations, Contributions: recorder);
     }
 
     /// <summary>
     /// Creates an editor whose reflection host is built over the editor's own extension host, so a project's extensions
     /// (catalogs, translators) reach it; <paramref name="hostChannel"/> defaults to the null channel.
     /// </summary>
-    public static TestEditor Create(Func<IExtensionHost, IReflectionHost> createReflection, ExtensionHost? extensions = null, IHostChannel? hostChannel = null)
+    public static TestEditor Create(Func<IExtensionHost, IReflectionHost> createReflection, ExtensionHost? extensions = null, IHostChannel? hostChannel = null, ExtensionContributionRecorder? recorder = null)
     {
         ExtensionHost host = extensions ?? TestExtensions.CreateBuiltIn();
-        return new TestEditor(createReflection(host), host, hostChannel ?? NullHostChannel.Instance);
+        return new TestEditor(createReflection(host), host, hostChannel ?? NullHostChannel.Instance, recorder);
     }
 
     /// <summary>A real reflection host over <paramref name="extensions"/> that publishes inline.</summary>
@@ -616,6 +616,13 @@ public static class TestExtensionFolder
     /// <summary>A real extension host with the built-in extension and the test extension loaded from its output folder.</summary>
     public static ExtensionHost CreateHost() =>
         new(ExtensionLoaderOptions.BuiltInOnly with { ExtensionFolders = [Folder] }, NullLoggerFactory.Instance);
+
+    /// <summary>The output folder of a fixture extension project under <c>tests/Fixtures/Extensions</c>.</summary>
+    /// <param name="project">The project folder name, for example <c>Fx.Editor</c>.</param>
+    /// <param name="extensionFolder">The folder under <c>extensions</c>, for example <c>fx.editor</c>.</param>
+    /// <returns>The folder holding the dll and the manifest.</returns>
+    public static string FixtureFolder(string project, string extensionFolder) =>
+        Path.Combine(FindRepositoryRoot(), "tests", "Fixtures", "Extensions", project, "bin", DetectConfiguration(), "extensions", extensionFolder);
 
     private static string FindRepositoryRoot()
     {

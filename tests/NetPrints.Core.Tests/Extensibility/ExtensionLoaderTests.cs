@@ -158,6 +158,23 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
+    public async Task AProjectCopyShadowsAUserCopyWithNpx012NamingBothVersions()
+    {
+        string project = Path.GetDirectoryName(WriteManifest(Path.Combine(root, "project", "dup"),
+            ManifestJson("test.dup").Replace("\"1.0.0\"", "\"2.0.0\"", StringComparison.Ordinal))) ?? root;
+        WriteManifest(Path.Combine(root, "user", "dup"), ManifestJson("test.dup").Replace("\"1.0.0\"", "\"0.9.0\"", StringComparison.Ordinal));
+
+        await using ExtensionRegistry registry = Load(Options(folders: [project], searchDirectories: [Path.Combine(root, "user")]));
+
+        var shadowed = Assert.Single(registry.Results.OfType<ExtensionLoadResult.Failed>(), r => r.Code == ExtensionDiagnosticCodes.Shadowed);
+        Assert.Equal("NPX012", shadowed.Code);
+        Assert.Equal("test.dup", shadowed.Id);
+        Assert.Contains("2.0.0", shadowed.Reason, StringComparison.Ordinal);
+        Assert.Contains("0.9.0", shadowed.Reason, StringComparison.Ordinal);
+        Assert.DoesNotContain(registry.Results.OfType<ExtensionLoadResult.Failed>(), r => r.Code == ExtensionDiagnosticCodes.DuplicateId);
+    }
+
+    [Fact]
     public async Task TheSameFolderListedTwiceIsLoadedOnce()
     {
         string folder = Path.GetDirectoryName(WriteManifest(Path.Combine(root, "x"), Sample("test.x"))) ?? root;

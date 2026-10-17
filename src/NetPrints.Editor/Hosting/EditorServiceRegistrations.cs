@@ -28,6 +28,11 @@ internal static class EditorServiceRegistrations
         services.AddSingleton(host.Extensions);
         services.AddSingleton(host.Settings);
         services.AddSingleton(host.HostChannel);
+        if (host.Contributions is { } contributions)
+        {
+            services.AddSingleton(contributions);
+        }
+
         services.AddSingleton<IScheduler>(DefaultScheduler.Instance);
         services.AddSingleton<Func<IMessenger>>(static () => new WeakReferenceMessenger());
         services.AddSingleton<IProjectSystem>(static provider => CreateProjectSystem(provider.GetRequiredService<EditorHostServices>(), provider.GetRequiredService<ILoggerFactory>()));

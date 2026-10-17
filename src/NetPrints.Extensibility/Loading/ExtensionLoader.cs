@@ -84,13 +84,13 @@ public sealed class ExtensionLoader
     private List<Candidate> Discover(List<ExtensionLoadResult.Failed> failures, CancellationToken cancellationToken)
     {
         var candidates = new List<Candidate>();
-        var seenIds = new HashSet<string>(StringComparer.Ordinal);
+        var seenIds = new Dictionary<string, (string Version, bool FromFolder)>(StringComparer.Ordinal);
         var seenPaths = new HashSet<string>(StringComparer.Ordinal);
 
         for (int index = 0; index < options.InProcess.Count; index++)
         {
             (ExtensionManifest manifest, INetPrintsExtension extension) = options.InProcess[index];
-            if (!seenIds.Add(manifest.Id))
+            if (!seenIds.TryAdd(manifest.Id, (manifest.Version, false)))
             {
                 failures.Add(Duplicate(manifest.Id, null));
                 continue;
@@ -158,9 +158,13 @@ public sealed class ExtensionLoader
                 Log.ManifestFieldsIgnored(logger, manifest.Id, string.Join(", ", manifest.UnknownFields));
             }
 
-            if (!seenIds.Add(manifest.Id))
+            if (!seenIds.TryAdd(manifest.Id, (manifest.Version, mustExist)))
             {
-                failures.Add(Duplicate(manifest.Id, fullPath));
+                (string firstVersion, bool firstFromFolder) = seenIds[manifest.Id];
+                failures.Add(firstFromFolder && !mustExist
+                    ? RecordFailure(manifest.Id, fullPath, ExtensionDiagnosticCodes.Shadowed,
+                        $"the project's copy (version {firstVersion}) serves this session; the copy in the user directories (version {manifest.Version}) adds nothing to it.", null)
+                    : Duplicate(manifest.Id, fullPath));
                 return;
             }
 

@@ -202,6 +202,7 @@ const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.RegisterFailed = 
 [NPXE0001]NetPrints.Extensibility.Hosting.InMemoryHostChannel.SendAsync(NetPrints.Extensibility.Hosting.HostMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
 [NPXE0001]NetPrints.Extensibility.Hosting.InMemoryHostChannel.DisposeAsync() -> System.Threading.Tasks.ValueTask
 const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.IdPrefix = "NPX013" -> string!
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.Shadowed = "NPX012" -> string!
 const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.UnknownReference = "NPX010" -> string!
 [NPXE0005]NetPrints.Extensibility.Editor.CommandScope
 [NPXE0005]NetPrints.Extensibility.Editor.CommandScope.Global = 0 -> NetPrints.Extensibility.Editor.CommandScope

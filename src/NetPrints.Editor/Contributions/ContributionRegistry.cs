@@ -20,6 +20,7 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
         var registry = new ContributionRegistry(logger);
         BuiltInContributions.Register(registry);
         GoToProviderContributions.Register(registry, () => services.GetService<ShellHost>()?.Shell.Session);
+        services.GetService<ExtensionContributionRecorder>()?.ApplyToAppGroup(registry);
         registry.Freeze();
         return registry;
     }

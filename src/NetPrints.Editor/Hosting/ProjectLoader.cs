@@ -38,6 +38,7 @@ internal sealed class ProjectLoader : IDisposable
     private ProjectSessionViewModel? session;
     private ProjectSessionScope? sessionScope;
     private IReadOnlyCollection<string>? discardOnReplace;
+    private string? contributionGroupKey;
 
     /// <summary>The extension folders currently loaded: restored when a load fails after the new project's extensions were swapped in.</summary>
     private IReadOnlyList<string> activeExtensionFolders = [];
@@ -361,7 +362,15 @@ internal sealed class ProjectLoader : IDisposable
     }
 
     /// <summary>Replaces the open project's session with none.</summary>
-    public Task CloseProjectAsync() => SetProjectAsync(null);
+    public async Task CloseProjectAsync()
+    {
+        await SetProjectAsync(null).ConfigureAwait(true);
+        if (activeExtensionFolders.Count > 0)
+        {
+            await context.Extensions.LoadForProjectAsync([], CancellationToken.None).ConfigureAwait(true);
+            activeExtensionFolders = [];
+        }
+    }
 
     /// <summary>
     /// Loads a project through <see cref="ProjectPersistence"/>. Only a <c>.csproj</c> is accepted: any other path (for
@@ -486,7 +495,8 @@ internal sealed class ProjectLoader : IDisposable
         {
             if (reportedExtensionFailures.Add((failed.Id, failed.ManifestPath, failed.Code)))
             {
-                diagnostics.Add(new CodeDiagnostic(CodeDiagnosticSeverity.Error, failed.Code,
+                CodeDiagnosticSeverity severity = failed.Code == ExtensionDiagnosticCodes.Shadowed ? CodeDiagnosticSeverity.Info : CodeDiagnosticSeverity.Error;
+                diagnostics.Add(new CodeDiagnostic(severity, failed.Code,
                     $"Extension '{failed.Id}' was not loaded: {failed.Reason}", null, null, null, failed.ManifestPath, null));
             }
         }
@@ -572,6 +582,24 @@ internal sealed class ProjectLoader : IDisposable
             .Any(trusted => string.Equals(trusted, projectFilePath, comparison));
     }
 
+    private void ReplaceContributionGroup(Project? project)
+    {
+        if (contributionGroupKey is { } previous)
+        {
+            shell.Registry.RemoveSessionGroup(previous);
+            contributionGroupKey = null;
+        }
+
+        if (project is not null && context.Contributions is { } recorder)
+        {
+            string key = project.Snapshot.ProjectFilePath;
+            IReadOnlyList<string> folders = activeExtensionFolders;
+            ExtensionRegistry loaded = context.Extensions.Current;
+            shell.Registry.AddSessionGroup(key, group => recorder.PopulateSessionGroup(group, loaded, folders));
+            contributionGroupKey = key;
+        }
+    }
+
     // Writes the backups still waiting (the session must stay alive until they are rendered), swaps the shell's session
     // (it closes the documents), then disposes the old one; reloads reflection (PAR-15).
     private async Task SetProjectAsync(Project? project, ProjectSessionScope? scope = null)
@@ -589,6 +617,7 @@ internal sealed class ProjectLoader : IDisposable
 
         shell.Session = session;
         previous?.Dispose();
+        ReplaceContributionGroup(project);
 
         if (project is null)
         {

@@ -176,6 +176,7 @@ Extension codes are also described in [Extensions](extensions.md).
 | NPX007 | error | The extension assembly is missing or could not be loaded. |
 | NPX008 | error | The host or a dependency provides an older version of an assembly than the extension, or a private library it ships, was built against. |
 | NPX010 | warning | A contribution names an id nothing registered; for an icon id, the editor draws the fallback glyph. |
+| NPX012 | info | A project's extension has the same id as one in the user extension directories; the project's copy serves the session and the message names both versions. |
 | NPX013 | warning | A contributed id (for now a node search provider's) does not start with the manifest id of the extension that contributed it; the contribution is dropped. |
 
 ## NPXE: experimental APIs
