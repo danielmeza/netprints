@@ -164,3 +164,9 @@ E7 now also counts `+=` event subscriptions and `AddHandler` calls (method group
 handler, not only `EventArgs` signatures and `On*` overrides. A lambda is keyed by its event (`SearchPopup.Opened`), a method group
 by its method. The grid sync in `GraphEditorView` became a `#Editor` binding; the seven newly found handlers (two in `EditorApp`,
 five in `GraphEditorView`) are listed with a reason, so the list is 23. It stays shrink-only for the handlers E7 already knew.
+
+## Amendment 4: E7 stays a test (2026-10-17)
+
+The hygiene tests that became NPH analyzers (ADR-0003) do not include the XAML rules. E7, like the other `XamlHygieneTests` rules,
+reads `.axaml` files with their code-behind, which a Roslyn analyzer does not see, so it stays a test with its shrink-only list. The
+`NullForgivingAllowlist` and `SuppressionAllowlist` named in the allowlist policy above are now rows of `HygieneLedger.txt`.

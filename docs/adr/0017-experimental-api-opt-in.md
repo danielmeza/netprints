@@ -30,7 +30,7 @@ authors, who must opt in themselves.
    - the only `<NoWarn>` is the `Directory.Build.targets` line;
    - every opt-in item is an id declared in `ExperimentalApiIds`, so unknown or stale ids fail and graduating an
      API forces its opt-ins out;
-   - no `#pragma warning disable` of any form: `NoUnlistedSuppressions` rejects every warning pragma, `NPXE*` included;
+   - no `#pragma warning disable` of any form: NPH004 rejects every warning pragma, `NPXE*` included;
    - no `.editorconfig` or globalconfig severity entries for `NPXE` ids.
 6. The probe test (AP-T02) is unchanged: an external compilation without the opt-in gets the error.
 7. ADR-0003's exception-ledger row points to this ADR.

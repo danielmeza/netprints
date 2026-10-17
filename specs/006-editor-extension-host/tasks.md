@@ -651,7 +651,7 @@ SC-005 rechecked (research R4).
 
 ### Batch C2f — model: sonnet — T074–T076 — 3 units
 
-- [ ] T074 [US1] NPH001–NPH006 (FR-031, SC-001, research S5, contracts/analyzer-diagnostics.md §4; 2 units). For each
+- [x] T074 [US1] NPH001–NPH006 (FR-031, SC-001, research S5, contracts/analyzer-diagnostics.md §4; 2 units). For each
   rule: a test first in `tests/NetPrints.Analyzers.Tests/Hygiene/`, red on the replaced test's planted violation and
   green on the repository; then the analyzer in `src/NetPrints.RepoAnalyzers/Hygiene/` at `error` in `src/`; then the
   replaced test leaves `tests/NetPrints.Core.Tests/Core/SourceHygieneTests*.cs` (NPH001–NPH005). One commit per rule,

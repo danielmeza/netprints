@@ -439,6 +439,28 @@ rewritten. A new hit of a rule that is not in this table is unrecorded and is fi
 | S3459 | 1 | `MakeArrayTypeNode.ElementTypePin`: a private partial property that only declares the pin; the pin generator supplies the getter, so the analyzer sees an unassigned auto-property. |
 | S3241, S3881, S3442, S3376, S3928, S2306, S2219, S1199, S1186, S927, S6618, S6607, S4487, MVVMTK0042, CA1868, CA1846 | 1 each | One-off style hints in pre-P1 or generated-pattern code (an `await` identifier mirroring a node kind, `ClassTranslationFailure` naming, an empty built-in translator, the `fileSystem` field of `BackupService`, which only its constructor reads); none points at a defect. |
 
+## Amendment: hygiene rules as analyzers (2026-10-17)
+
+The `SourceHygieneTests` checks that parsed every source file are now the NPH analyzers of `NetPrints.RepoAnalyzers`, at `error`
+in `.editorconfig`:
+
+| Code | Replaces | Scope |
+|---|---|---|
+| NPH001 | `NoNullForgivingOperator` | `src/`, `tests/` |
+| NPH002 | `NoTypeNameEndsInVM` | `src/`, `tests/` |
+| NPH003 | `NoRawDiagnosticCodeLiteralsOutsideTheirConstants` (literals and duplicates in one project) | `src/` |
+| NPH004 | `NoUnlistedSuppressions` | `src/`, `tests/` |
+| NPH005 | `UiBoundCodeNeverUsesConfigureAwaitFalse` (the scope is the files where `.editorconfig` sets `VSTHRD111` to `none`) | `src/` |
+| NPH006 | new: a string literal passed to a dialog title or message, or status text | `src/` |
+
+The suppression ledger and the allowlists became one additional file, `HygieneLedger.txt` at the repository root, one row per
+site (`CODE | path | detail`). It only shrinks. NPH004 reads the `[SuppressMessage]` rows (`member:rule`) and still requires the
+justification to name this ADR; NPH001 reads the test-only null-forgiving sites by line text; NPH006 reads the dialog literals
+that wait for the L2 localization batch. A code declared in two projects stays a test (`NoDiagnosticCodeIsDeclaredInTwoProjects`),
+because an analyzer sees one project. VSTHRD002 and VSTHRD103 in `tests/` stay at the `suggestion` severity of the policy table
+above: turning them to `error` in `tests/` reports at least 153 synchronous file calls (mostly `File.ReadAllText` and `WriteAllText`),
+which a follow-up batch fixes first.
+
 ## References
 
 - `docs/adr/0001-repo-layout.md`, `docs/adr/0002-designer-comments-scheduled-p3b.md` — format precedent.
