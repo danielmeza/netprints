@@ -47,6 +47,12 @@ public interface IEditorContributions
     /// <returns>This facet.</returns>
     IEditorContributions AddStatusBarItem(StatusBarItemDescriptor item);
 
+    /// <summary>Adds a project template to the New project flow (<c>NPXE0012</c>).</summary>
+    /// <param name="template">The template, with its files.</param>
+    /// <returns>This facet.</returns>
+    [Experimental(ExperimentalApiIds.ProjectTemplates, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    IEditorContributions AddProjectTemplate(ProjectTemplateDescriptor template);
+
     /// <summary>Adds a dialog that is shown by id through <see cref="IDialogService.ShowDialogAsync"/>.</summary>
     /// <param name="dialog">The dialog.</param>
     /// <returns>This facet.</returns>

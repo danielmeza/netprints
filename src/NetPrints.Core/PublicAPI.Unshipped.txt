@@ -23,6 +23,8 @@ const NetPrints.Core.ExperimentalApiIds.HostChannel = "NPXE0001" -> string!
 const NetPrints.Core.ExperimentalApiIds.Settings = "NPXE0002" -> string!
 const NetPrints.Core.ExperimentalApiIds.ExtensionServices = "NPXE0008" -> string!
 const NetPrints.Core.ExperimentalApiIds.StringResources = "NPXE0011" -> string!
+const NetPrints.Core.ExperimentalApiIds.ProjectTemplates = "NPXE0012" -> string!
+const NetPrints.Core.ExperimentalApiIds.NodeDataMigrations = "NPXE0013" -> string!
 const NetPrints.Core.ExperimentalApiIds.UrlFormat = "https://danielmeza.github.io/netprints/guide/extensions#api-stability" -> string!
 *REMOVED*NetPrints.Translator.TranslationEnvironment.ClassEmitters.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IClassEmitter!>!
 *REMOVED*NetPrints.Translator.TranslationEnvironment.ClassEmitters.init -> void

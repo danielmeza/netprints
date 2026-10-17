@@ -92,6 +92,8 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
 
         public IEditorContributions AddStatusBarItem(StatusBarItemDescriptor item) => Forward(() => registry.AddStatusBarItem(item));
 
+        public IEditorContributions AddProjectTemplate(ProjectTemplateDescriptor template) => Forward(() => registry.AddProjectTemplate(template));
+
         public IEditorContributions AddDialog(DialogDescriptor dialog) => Forward(() => registry.AddDialog(dialog));
 
         public IEditorContributions AddViewResources(string resourceUri) => Forward(() => registry.AddViewResources(owner, resourceUri));

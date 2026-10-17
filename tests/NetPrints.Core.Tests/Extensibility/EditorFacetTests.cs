@@ -43,11 +43,12 @@ public class EditorFacetTests
         var recorder = new RecordingFacet();
         var extension = InProcess("test.ext", builder => builder.Editor
             .AddStatusBarItem(new StatusBarItemDescriptor("test.ext.status.a", StatusBarAlignment.Right, 1, _ => new object()))
+            .AddProjectTemplate(new ProjectTemplateDescriptor("test.ext.template.a", "A", "A", "p", ProjectOutputType.Library))
             .AddDialog(new DialogDescriptor("test.ext.dialog.a", "A", _ => new object())));
 
         await using ExtensionRegistry registry = Load(Options([BuiltInExtension.InProcessEntry, extension]) with { EditorContributions = manifest => recorder.For(manifest.Id) });
 
-        Assert.Equal(["test.ext:status:test.ext.status.a", "test.ext:dialog:test.ext.dialog.a"], recorder.Calls);
+        Assert.Equal(["test.ext:status:test.ext.status.a", "test.ext:template:test.ext.template.a", "test.ext:dialog:test.ext.dialog.a"], recorder.Calls);
     }
 
     [Fact]
@@ -106,6 +107,8 @@ public class EditorFacetTests
             public IEditorContributions AddGoToProvider(IGoToProvider provider) => Record("goto");
 
             public IEditorContributions AddStatusBarItem(StatusBarItemDescriptor item) => Record("status:" + item.Id);
+
+            public IEditorContributions AddProjectTemplate(ProjectTemplateDescriptor template) => Record("template:" + template.Id);
 
             public IEditorContributions AddDialog(DialogDescriptor dialog) => Record("dialog:" + dialog.Id);
 

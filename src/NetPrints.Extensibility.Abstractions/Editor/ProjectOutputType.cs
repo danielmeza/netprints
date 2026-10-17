@@ -1,4 +1,4 @@
-namespace NetPrints.Editor.Contributions;
+namespace NetPrints.Extensibility.Editor;
 
 /// <summary>The kind of assembly a project template builds.</summary>
 public enum ProjectOutputType

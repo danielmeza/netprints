@@ -850,3 +850,48 @@ NetPrints.Extensibility.Editor.CommandKeyId.Z = 25 -> NetPrints.Extensibility.Ed
 [NPXE0005]virtual NetPrints.Extensibility.Editor.CommandKey.Glyph.get -> string!
 [NPXE0005]virtual NetPrints.Extensibility.Editor.CommandKey.IsFunctionKey.get -> bool
 [NPXE0005]virtual NetPrints.Extensibility.Editor.CommandKey.Text.get -> string!
+NetPrints.Extensibility.Editor.ProjectOutputType
+NetPrints.Extensibility.Editor.ProjectOutputType.Console = 0 -> NetPrints.Extensibility.Editor.ProjectOutputType
+NetPrints.Extensibility.Editor.ProjectOutputType.Library = 1 -> NetPrints.Extensibility.Editor.ProjectOutputType
+[NPXE0012]NetPrints.Extensibility.Editor.IEditorContributions.AddProjectTemplate(NetPrints.Extensibility.Editor.ProjectTemplateDescriptor! template) -> NetPrints.Extensibility.Editor.IEditorContributions!
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.<Clone>$() -> NetPrints.Extensibility.Editor.ProjectTemplateDescriptor!
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Deconstruct(out string! Id, out string! DisplayName, out string! Description, out string! ProfileId, out NetPrints.Extensibility.Editor.ProjectOutputType OutputType, out string? IconId, out System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Editor.TemplateFile!>? Files) -> void
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Description.get -> string!
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Description.init -> void
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.DisplayName.get -> string!
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.DisplayName.init -> void
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Equals(NetPrints.Extensibility.Editor.ProjectTemplateDescriptor? other) -> bool
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Files.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Editor.TemplateFile!>?
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Files.init -> void
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.IconId.get -> string?
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.IconId.init -> void
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Id.get -> string!
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Id.init -> void
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.OutputType.get -> NetPrints.Extensibility.Editor.ProjectOutputType
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.OutputType.init -> void
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.ProfileId.get -> string!
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.ProfileId.init -> void
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.ProjectTemplateDescriptor(string! Id, string! DisplayName, string! Description, string! ProfileId, NetPrints.Extensibility.Editor.ProjectOutputType OutputType, string? IconId = null, System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Editor.TemplateFile!>? Files = null) -> void
+[NPXE0012]NetPrints.Extensibility.Editor.TemplateFile
+[NPXE0012]NetPrints.Extensibility.Editor.TemplateFile.<Clone>$() -> NetPrints.Extensibility.Editor.TemplateFile!
+[NPXE0012]NetPrints.Extensibility.Editor.TemplateFile.Content.get -> string!
+[NPXE0012]NetPrints.Extensibility.Editor.TemplateFile.Content.init -> void
+[NPXE0012]NetPrints.Extensibility.Editor.TemplateFile.Deconstruct(out string! Path, out string! Content) -> void
+[NPXE0012]NetPrints.Extensibility.Editor.TemplateFile.Equals(NetPrints.Extensibility.Editor.TemplateFile? other) -> bool
+[NPXE0012]NetPrints.Extensibility.Editor.TemplateFile.Path.get -> string!
+[NPXE0012]NetPrints.Extensibility.Editor.TemplateFile.Path.init -> void
+[NPXE0012]NetPrints.Extensibility.Editor.TemplateFile.TemplateFile(string! Path, string! Content) -> void
+[NPXE0012]const NetPrints.Extensibility.Editor.TemplateFile.ProfileIdToken = "NetPrintsProfileId" -> string!
+[NPXE0012]const NetPrints.Extensibility.Editor.TemplateFile.RootNamespaceToken = "NetPrintsRootNamespace" -> string!
+[NPXE0012]const NetPrints.Extensibility.Editor.TemplateFile.SourceName = "NetPrintsProject" -> string!
+[NPXE0012]override NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Equals(object? obj) -> bool
+[NPXE0012]override NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.GetHashCode() -> int
+[NPXE0012]override NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.ToString() -> string!
+[NPXE0012]override NetPrints.Extensibility.Editor.TemplateFile.Equals(object? obj) -> bool
+[NPXE0012]override NetPrints.Extensibility.Editor.TemplateFile.GetHashCode() -> int
+[NPXE0012]override NetPrints.Extensibility.Editor.TemplateFile.ToString() -> string!
+[NPXE0012]static NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.operator !=(NetPrints.Extensibility.Editor.ProjectTemplateDescriptor? left, NetPrints.Extensibility.Editor.ProjectTemplateDescriptor? right) -> bool
+[NPXE0012]static NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.operator ==(NetPrints.Extensibility.Editor.ProjectTemplateDescriptor? left, NetPrints.Extensibility.Editor.ProjectTemplateDescriptor? right) -> bool
+[NPXE0012]static NetPrints.Extensibility.Editor.TemplateFile.operator !=(NetPrints.Extensibility.Editor.TemplateFile? left, NetPrints.Extensibility.Editor.TemplateFile? right) -> bool
+[NPXE0012]static NetPrints.Extensibility.Editor.TemplateFile.operator ==(NetPrints.Extensibility.Editor.TemplateFile? left, NetPrints.Extensibility.Editor.TemplateFile? right) -> bool

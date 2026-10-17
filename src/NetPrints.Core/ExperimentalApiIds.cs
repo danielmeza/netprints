@@ -33,6 +33,12 @@ public static class ExperimentalApiIds
     /// <summary>The extension string resources API: <c>IExtensionBuilder.AddStringResources</c> and the registry's <c>StringResources</c>.</summary>
     public const string StringResources = "NPXE0011";
 
+    /// <summary>The project template files API: <c>TemplateFile</c>, <c>ProjectTemplateDescriptor</c> and <c>IEditorContributions.AddProjectTemplate</c>.</summary>
+    public const string ProjectTemplates = "NPXE0012";
+
+    /// <summary>The node-data migration API: <c>INodeDataMigration</c>, <c>NodeKindDescriptor.DataVersion</c> and <c>IExtensionBuilder.AddDocumentMigration</c>.</summary>
+    public const string NodeDataMigrations = "NPXE0013";
+
     /// <summary>The guide section that explains the stability promise and how to opt in; the diagnostics link to it.</summary>
     public const string UrlFormat = "https://danielmeza.github.io/netprints/guide/extensions#api-stability";
 }

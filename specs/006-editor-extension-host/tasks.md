@@ -594,7 +594,7 @@ SC-005 rechecked (research R4).
 
 ### Batch C2c — model: sonnet — T066–T067 — 4 units
 
-- [ ] T066 [US3] Templates with files (FR-025, research R17, NPXE0012; 2 units). Test first:
+- [x] T066 [US3] Templates with files (FR-025, research R17, NPXE0012; 2 units). Test first:
   `tests/NetPrints.Editor.Tests/StartPage/ProjectTemplateFilesTests.cs`: `NetPrintsProject` is replaced in paths and
   text, and the `NetPrintsRootNamespace` and `NetPrintsProfileId` tokens by their symbols; an optional
   `Properties/launchSettings.json` is written like any file; the built-in Console and Library templates produce the same

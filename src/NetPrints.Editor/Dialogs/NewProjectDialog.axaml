@@ -2,7 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ed="clr-namespace:NetPrints.Editor"
         xmlns:edb="clr-namespace:NetPrints.Editor.Behaviors"
-        xmlns:edcontrib="clr-namespace:NetPrints.Editor.Contributions"
+        xmlns:edcontrib="clr-namespace:NetPrints.Extensibility.Editor;assembly=NetPrints.Extensibility.Abstractions"
         xmlns:eddialogs="clr-namespace:NetPrints.Editor.Dialogs"
         x:Class="NetPrints.Editor.Dialogs.NewProjectDialog"
         x:DataType="eddialogs:NewProjectDialogViewModel"

@@ -17,6 +17,8 @@
     <NetPrintsExperimentalOptIn Include="NPXE0003" />
     <NetPrintsExperimentalOptIn Include="NPXE0004" />
     <NetPrintsExperimentalOptIn Include="NPXE0011" />
+    <NetPrintsExperimentalOptIn Include="NPXE0012" />
+    <NetPrintsExperimentalOptIn Include="NPXE0013" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
