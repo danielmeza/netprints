@@ -206,6 +206,10 @@ and is marked "default pending owner" in tasks.md.
 - Perf-job medians with run ids: not available at this commit (the perf leg was red on the NPS002 build error at
   e22e7aa2). The first green perf run on this branch is the baseline for the +10% gates; the checkpoint report records
   it with its run id. The local numbers above are the stand-in.
+- Perf-job baseline (recorded in Batch C-F2): run 38899627936 (head d7ddde50, the first green perf run), from its `test-results-perf` TRX:
+  M1 cold 1341.2 ms, warm median 418.7 ms, 16,501,712 bytes; M2 median 51.9 ms, 36,037 bytes per node. The gate itself is the calibrated
+  steady-state ratio in the Batch C-F2 entry: those absolute figures are a first-use sample (the median of five lands on a run still in the
+  JIT's lower tier), CI shows 41 to 76 ms for M2 across heads that did not touch its path, so they cannot carry a 10% gate.
 
 ## M5 spike
 
@@ -799,8 +803,9 @@ T073, local evidence at the C2e head (Release). From here a public shape changes
   Cli.Tests 47 s, Catalog.Tests 52 s, Core.Tests 40 s, Analyzers.Tests 3 s). E2E (`NETPRINTS_E2E=1`, `--fail-skips on`, display start 200): 53 total, 52 passed,
   1 skipped (`GuideScreenshotTests`, not run for explicit filtering), 0 failed, 2 min 22 s. Solution build 0 warnings; `dotnet format --verify-no-changes` clean.
 - Checkpoint C1, gate items. SC-005: M1 local `ShellApp.Start` cold 816 ms (A3 baseline 756, C1e 818), warm median 182 ms (A3 213), 16.56 MB (A3 16.06 MB, +3.1%);
-  composition alone 0.2 ms warm (budget 150 ms). M2 as above. The perf job (PR #20 run 38973466744, job 117217142615, green at 18824b36) does not print M1 or
-  M2 numbers (no live output), so the +10% median comparison against R5-0 rests on the local figures; it passed its strict budgets. SC-010:
+  composition alone 0.2 ms warm (budget 150 ms). M2 as above. The perf job (PR #20 run 38973466744, job 117217142615, green at 18824b36) prints no
+  live output, but its `test-results-perf` TRX artifact carries the M1 and M2 numbers (run 38899627936 onwards; corrected in Batch C-F2, CD-1); the
+  +10% comparison here rested on the local figures, and the perf job passed its strict budgets. SC-010:
   `CSharpTargetWriterIdentityTests` 8 of 8 (editor path, `netprints regen`, `netprints build`, 6 fixtures). API shape review: T056 above. Longest CI job at
   18824b36: Desktop E2E (Linux, Xvfb) 13 min 34 s; longest test leg Editor UI 3/4, 8 min 57 s. Dock check: pin stays 12.1.0.6 (no release since v12.1.0.9 holds
   Dock#1191; not rechecked in this batch). Trim ratchet: `eng/trim-warnings.txt` is 11 (B6); not re-measured locally, the trim job at 18824b36 passed. Docs:
@@ -1198,3 +1203,39 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - CD-20: fixed in c410c739. ADR-0038 decision 2 and FR-071 name `MaxKnown`; decision 9 records the escape rule (CD-7); R16 and the
   guide's "API stability" list `CSharpTarget.Resolve`, `CSharpFrameworkInput`, `CSharpTargetResolution`, `INodeHintSource` and
   `NodeHint` as stable, so no PublicAPI change.
+
+## Batch C-F2 (T078, part 2: CD-1)
+
+- Format: 13de56f5 fixes the whitespace `dotnet format` flagged in `HygieneHarness.cs` (the Repository checks leg at 297524b4).
+- CD-1: gate added in 110f7b96; baseline recorded under "R5-0 baselines" (run 38899627936); the C1 note corrected (the perf TRX carries the numbers).
+- Trend from the `test-results-perf` TRX (M1 warm median / M2 median, as the tests reported them):
+
+  | Run | Head | M1 warm | M2 | M2 runs 1 to 5 (ms) |
+  |---|---|---|---|---|
+  | 38899627936 | d7ddde50 | 418.7 | 51.9 | 52.4, 59.9, 44.1, 41.6, 51.9 |
+  | 38948068721 | 6fb02d16 | 339.5 | 46.4 | 65.4, 72.9, 46.4, 24.6, 22.8 |
+  | 38973466744 | 18824b36 | 449.1 | 54.7 | 100.3, 162.8, 54.7, 51.0, 52.2 |
+  | 38977152765 | 7a426036 | 382.6 | 41.2 | 117.6, 69.0, 24.3, 20.4, 41.2 |
+  | 38993704432 | 70c75b75 | 471.7 | 76.4 | 91.6, 106.0, 76.4, 72.1, 55.0 |
+  | 38999385388 | cd32d8eb | 285.1 | 53.2 | 57.6, 73.4, 51.8, 53.2, 40.5 |
+
+- Cause: there is no commit range to blame. The newest green head (cd32d8eb, after C2e and C2f) reads M1 -32% and M2 +2.5% against the baseline
+  run, and 70c75b75 was one noisy sample. The recorded method takes the median of five (M2) or of five warm runs (M1) while the process is still
+  in the JIT's lower tiers: in Release at 297524b4, M2 runs are about 83, 43, 28, 15, 14 ms, and at d7ddde50 about 92, 44, 15, 14, 14 ms, so the
+  median is run 3 and lands before or after the tier-up depending on timing (the bytes per node flip between 36,037 and 35,080 with it). The
+  steady state is the same: M2 14.3 ms at d7ddde50 and 14.5 ms at 297524b4 (8 runs each, in the same harness), M1 70.2 ms and 64.1 ms (6 runs).
+  No product change was needed, and none was made.
+- Gate (110f7b96, `tests/NetPrints.Testing/PerformanceGate.cs`): warm up for at least 1 s and until three runs agree within 10%, take the median of
+  nine runs, repeat up to three times while it is over the limit and keep the lowest median (noise only adds time); divide by a calibration (the
+  fastest of 15 runs of a fixed allocation-and-hash workload, `AggressiveOptimization`, measured before and after, the lower kept) and compare with
+  the baseline ratio at x1.10. Judged only with `NETPRINTS_PERF_STRICT=1` (the perf job); other runs print the numbers. Baseline ratios, measured
+  with this harness on the baseline commit d7ddde50: M2 0.954 (8 runs 0.92 to 1.01), M1 4.75 (6 runs 4.56 to 5.23). Head: M2 0.956, M1 4.33.
+  The ratios come from one local machine; the first perf run after this batch shows whether CI agrees. Until then a CI failure is a calibration
+  question first. The perf job is non-blocking.
+- Red: with 14 ms of busy wait added to the `NodeGraphViewModel` constructor (about double, not committed), the old assertions and a non-strict run
+  pass (`M2 ... ratio 1.944 ... +103.8% over the baseline`, Total 1, Failed 0), and the strict run fails: `M2 steady-state median: 27.7 ms
+  against a calibration of 14.5 ms is a ratio of 1.916; the baseline is 0.954, the gate 1.049 (+10%), +100.8% over the baseline.` Without the
+  addition the strict run passes (M2 and M1). `PerformanceGateTests` 3 of 3 pin the verdict and the median.
+- Full suite (Release, `dotnet test --solution NetPrints.slnx`): 4831 total, 4798 passed, 33 skipped, 0 failed; build 0 warnings; `dotnet format
+  NetPrints.slnx --verify-no-changes` clean.
+- Deferred: the allocation half of M2 stays as before (bytes per node, +10%).
