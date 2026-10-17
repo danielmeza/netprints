@@ -761,18 +761,18 @@ tests. **Gate (plan)**: SC-004, SC-006, SC-007, SC-009.
 
 ### Batch D1d — model: sonnet — T086–T088 — 4 units
 
-- [ ] T086 [US5] The settings store (FR-043, SC-006, contracts/settings-and-keybindings.md §7; 1 unit). Test first:
+- [x] T086 [US5] The settings store (FR-043, SC-006, contracts/settings-and-keybindings.md §7; 1 unit). Test first:
   `tests/NetPrints.Core.Tests/Extensibility/JsonFileSettingsStoreTests.cs`: unknown sections and keys round-trip
   byte-identically (US5 scenario 6); invalid JSON starts with defaults, says so once and copies the file to
   `settings.json.unreadable-<yyyyMMddHHmmss>` once before the next write (edge case); a newer `schemaVersion` is
   preserved with one warning; a failed write reverts the in-memory value; a section change reaches its
   `IOptionsMonitor<T>`. Then `src/NetPrints.Extensibility/Settings/JsonFileSettingsStore.cs` and the monitor bridge.
-- [ ] T087 [US5] The settings schema (FR-040, research R6, S10; 2 units). Test first: a golden test of
+- [x] T087 [US5] The settings schema (FR-040, research R6, S10; 2 units). Test first: a golden test of
   `schemas/settings.v1.schema.json` that fails when a built-in section changes without the file; the DataAnnotations
   ranges and each `x-netprints-*` keyword appear in it; the existing `jsonschema` CI job validates it; a staleness test
   for the generated settings table in `docs/guide/editor/settings.md`. Then the exporter
   (`JsonSchemaExporter.GetJsonSchemaAsNode` with `TransformSchemaNode`), the canonical file and the table generator.
-- [ ] T088 [US5] The new built-in sections and NPX014 (FR-006, FR-044, contracts/settings-and-keybindings.md §5; 1
+- [x] T088 [US5] The new built-in sections and NPX014 (FR-006, FR-044, contracts/settings-and-keybindings.md §5; 1
   unit). Test first: the validators reject out-of-range values of `run.stopTimeoutSeconds` (1–600) and
   `run.linuxTerminal` and unknown preset ids in `darkPreset` and `lightPreset` with a message naming the key; an
   extension section that fails validation uses its defaults and shows NPX014. Then the `run` section, the preset keys

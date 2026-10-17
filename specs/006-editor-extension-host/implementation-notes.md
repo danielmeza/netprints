@@ -1513,3 +1513,29 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - **T175 red (assertions)**: `FactoryServiceProviderTests` failed 2 of 3 (`Assert.NotNull() Failure: Value is null` for the panel and the tile service) before the change. `ShellViewModel.ExtensionServicesOf(id, snapshot)` gives the
   provider of the extension that owns a contribution (null for built-ins and without a host); panel factories get a `ServicesContext` over the editor's context with it, tile factories a `StartPageContext.WithServices` copy.
   Another extension's factory resolves nothing of the first's services; built-ins keep the editor's context (`EmptyServiceProvider`).
+
+## Batch D1d (T086, T087, T088)
+
+- **D1c follow-ups (18d9934c)**: `THIRD-PARTY-NOTICES.md` now lists Avalonia.Fonts.Inter 12.1.4 and names Irihi.Ursa and Irihi.Ursa.Themes.Semi one by one. `BrandAssetTests.TheThirdPartyNoticesListThePinnedPackageVersions`
+  checks the five packages against `Directory.Packages.props`; red 2 of 5 (`Assert.Matches() Failure` for `Irihi.Ursa` and `Avalonia.Fonts.Inter`), green after the edit. The roadmap line about Dock#1191 now says it shipped in 12.1.0.10.
+- **T086 red (assertions)**: four of the six new `JsonFileSettingsStoreTests` failed against stubs (`OnSectionChanged` did nothing, no copy, `schemaVersion` always written as 1): the unreadable copy, the newer `schemaVersion`, the
+  subscriber notification and the `IOptionsMonitor<T>.OnChange` bridge. Two passed at once and pin existing behaviour (a valid file is never copied; a failed write leaves the old value because the state is replaced only after the
+  write). Green: an unparseable or non-object file is copied to `settings.json.unreadable-<yyyyMMddHHmmss>` (UTC, from an injected `TimeProvider`) before the first write, once; a `schemaVersion` above 1 logs 2014 once and is written
+  back unchanged; `ISettingsChangeSource.OnSectionChanged` (implemented by `JsonFileSettingsStore`) notifies after a persisted write, never for a failed one, outside the write gate; the options monitor of an extension section subscribes
+  through it. New log events 2014 to 2016. The API hash row of 0.4 changed (not shipped).
+- **Decision (copy only for unparseable content)**: a file that cannot be read for IO or permission reasons is not copied (the copy would fail too); only invalid JSON and a non-object root are.
+- **T088 red (assertions)**: 9 of the new `SettingsValidationTests` failed and `AnInvalidExtensionSectionUsesItsDefaultsAndShowsNpx014Once` failed against stubs with no ranges and no store support. Green after: `RunSettings`
+  (`run.stopTimeoutSeconds` 1 to 600, `run.linuxTerminal`), `EditorSettings.DarkPreset`/`LightPreset`, `JsonFileSettingsStore.Issues` and `ExtensionDiagnosticCodes.SettingsInvalid` (NPX014).
+- **Decision (run is a top-level section)**: `run` is stored at the top level of the file, as the contract shows, so the store knows two top-level sections (`netprints`, `run`); `keyboard` joins them in D2. `RunSettings` is not registered
+  through `AddSettings` because the built-in extension has one descriptor; the composition reads it so an invalid value logs before the window exists.
+- **Decision (linuxTerminal range)**: the spec gives no range, so a value is valid when it has no control character (including a newline) and at most 512 characters. Detection of the terminal binary is the run batch's concern.
+- **Decision (preset ids)**: the validator rejects an id that is empty or not lowercase letters, digits and `.`, `_`, `-` (`^[a-z0-9]+([._-][a-z0-9]+)*$`), naming the key. A well-formed id that no theme provides is NOT a validation failure: the
+  contract (FR-069) wants the variant's default with a log entry while the other appearance keys stay, which T096 does because only it knows the loaded themes. The keys carry `[SettingChoices("netprints.presets.dark|light")]`.
+- **Decision (NPX014 surface)**: a section other than `netprints`, `run` and ids starting with `netprints.` (the editor's own) that fails validation gets an entry in `JsonFileSettingsStore.Issues` with code NPX014 and the log message
+  starts with the code; built-in sections get an issue without a code. The Settings document (T089/T090) shows `Issues`.
+- **T087 red (assertions)**: `SettingsSchemaTests` (Core) `RangeWritesMinimumAndMaximum` and `LengthAndPatternAttributesWriteTheirKeywords` failed (`Actual: null`); in Editor.Tests 6 of 9 `Docs.SettingsSchemaTests` failed (missing golden,
+  stale table, no restart/path keywords, no descriptions). Green after `SettingsSchema` wrote `minimum`/`maximum`, `minLength`/`maxLength` and `pattern` from the DataAnnotations and used `TreatNullObliviousAsNonNullable`, the built-in
+  properties got `[Description]`, `[RequiresRestart]` and `[SettingPath]`, and the golden and table were written with `NETPRINTS_UPDATE_SNAPSHOTS=1` (same switch as the other goldens).
+- **T087 layout**: the generator is test code (`tests/NetPrints.Editor.Tests/Docs/SettingsSchemaFile.cs`, like `ShortcutGuide`); `schemas/settings.v1.schema.json` is checked by `eng/validate-schemas.sh` (metaschema, lint, and the tracked
+  `tests/Fixtures/Settings/example.settings.json`; run locally, 53 instances pass) and copied by `scripts/build-docs.sh`. `docs/guide/editor/settings.md` holds only the generated table between markers; T091 writes the rest.
+  Descriptions end without a period because the schema lint requires it. The `x-netprints-*` keywords appear in the file through restart (language, extensionPaths), path (extensionPaths, trustedProjects) and choices (presets).
