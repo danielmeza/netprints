@@ -62,7 +62,7 @@ public sealed class GraphCanvas(IUiDriver driver, AutomationQuery window)
     public async Task<(double X, double Y)> ViewportAsync(CancellationToken cancellationToken)
     {
         var e = await GetAsync(cancellationToken);
-        return (double.Parse(e[AutomationPropertyNames.ViewportX]!, CultureInfo.InvariantCulture), double.Parse(e[AutomationPropertyNames.ViewportY]!, CultureInfo.InvariantCulture));
+        return (Number(e, AutomationPropertyNames.ViewportX), Number(e, AutomationPropertyNames.ViewportY));
     }
 
     /// <summary>Converts a point on the canvas to graph coordinates.</summary>
@@ -83,8 +83,7 @@ public sealed class GraphCanvas(IUiDriver driver, AutomationQuery window)
     public async Task<(double X, double Y, double Zoom)> GridViewportAsync(CancellationToken cancellationToken)
     {
         var e = await Grid.GetAsync(cancellationToken);
-        return (double.Parse(e[AutomationPropertyNames.ViewportX]!, CultureInfo.InvariantCulture), double.Parse(e[AutomationPropertyNames.ViewportY]!, CultureInfo.InvariantCulture),
-            double.Parse(e[AutomationPropertyNames.ViewportZoom]!, CultureInfo.InvariantCulture));
+        return (Number(e, AutomationPropertyNames.ViewportX), Number(e, AutomationPropertyNames.ViewportY), Number(e, AutomationPropertyNames.ViewportZoom));
     }
 
     /// <summary>The grid's background, minor and major line colors, as #aarrggbb.</summary>

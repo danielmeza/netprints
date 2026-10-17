@@ -41,9 +41,19 @@ public static class UiWait
     public static async Task<T> ForAsync<T>(IUiDriver driver, Func<Task<T>> read, Func<T, bool> accept, string what,
         CancellationToken cancellationToken, TimeSpan? timeout = null)
     {
-        T value = default!;
-        await UntilAsync(driver, async () => accept(value = await read()), what, cancellationToken, timeout);
-        return value;
+        T[] accepted = [];
+        await UntilAsync(driver, async () =>
+        {
+            T current = await read();
+            if (!accept(current))
+            {
+                return false;
+            }
+
+            accepted = [current];
+            return true;
+        }, what, cancellationToken, timeout);
+        return accepted[0];
     }
 }
 

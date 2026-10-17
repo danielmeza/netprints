@@ -67,7 +67,8 @@ public sealed class ReflectionReloadTests : IDisposable
         await host.ReloadAsync(Project.FromSnapshot(TestSnapshots.WithRuntimeAssemblies("P", "N")), TestContext.Current.CancellationToken);
 
         Assert.Contains(nameof(NodePinViewModel.PossibleEnumNames), pinChanges);
-        Assert.Contains("Monday", pin.PossibleEnumNames!);
+        Assert.NotNull(pin.PossibleEnumNames);
+        Assert.Contains("Monday", pin.PossibleEnumNames);
         Assert.Contains(nameof(NodePinViewModel.ToolTip), pinChanges);
         Assert.Contains(nameof(node.ToolTip), nodeChanges);
     }

@@ -33,7 +33,7 @@ public class SearchPerformanceTests
     public async Task FirstSearchAfterProjectLoadIsWithinBudget()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
-        var output = TestContext.Current.TestOutputHelper!;
+        var output = TestContext.Current.TestOutputHelper ?? throw new InvalidOperationException("The test run has no output helper.");
         var host = new ReflectionHost(new InlineDispatcher(), TestExtensions.CreateBuiltIn(), NullLogger<ReflectionHost>.Instance);
 
         var load = Stopwatch.StartNew();

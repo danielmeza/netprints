@@ -43,14 +43,16 @@ public class MemberVariableViewModelTests : IDisposable
 
         variable.AddGetterCommand.Execute(null);
         Assert.True(variable.HasGetter);
-        var getter = variable.Getter!;
+        Assert.NotNull(variable.Getter);
+        var getter = variable.Getter;
         Assert.Equal("get_Variable", getter.Name);
         Assert.Same(getter.MainReturnNode.ExecPin, getter.EntryNode.ExecPin.OutgoingPin);
         Assert.NotNull(getter.MainReturnNode.InputTypePins[0].IncomingPin);
         Assert.Equal(560, getter.EntryNode.PositionX);
 
         variable.AddSetterCommand.Execute(null);
-        var setter = variable.Setter!;
+        Assert.NotNull(variable.Setter);
+        var setter = variable.Setter;
         Assert.Equal("set_Variable", setter.Name);
         Assert.NotNull(setter.EntryNode.InputTypePins[0].IncomingPin);
 
@@ -128,7 +130,8 @@ public class MemberVariableViewModelTests : IDisposable
 
         Assert.Equal("Renamed", variable.Variable.Name);
         Assert.Equal(VariableModifiers.Static | VariableModifiers.ReadOnly, variable.Variable.Modifiers);
-        Assert.Equal(MemberVisibility.Public, variable.Getter!.Visibility);
+        Assert.NotNull(variable.Getter);
+        Assert.Equal(MemberVisibility.Public, variable.Getter.Visibility);
         Assert.Contains(nameof(MemberVariableViewModel.Name), changed);
         Assert.Contains(nameof(MemberVariableViewModel.IsStatic), changed);
     }

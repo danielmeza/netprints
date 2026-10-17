@@ -114,7 +114,8 @@ public class GridRenderTests
         Assert.Equal((RegionColor(ThemeVariant.Dark), "#14ffffff", "#2effffff"), await graph.GridColorsAsync(Token));
         Assert.Equal(RegionColor(ThemeVariant.Dark), BackgroundOf(await graph.ScreenshotAsync(Token)));
 
-        Application.Current!.RequestedThemeVariant = ThemeVariant.Light;
+        var app = Application.Current ?? throw new InvalidOperationException("The headless application is not running.");
+        app.RequestedThemeVariant = ThemeVariant.Light;
         try
         {
             Assert.Equal((RegionColor(ThemeVariant.Light), "#14000000", "#2e000000"), await graph.GridColorsAsync(Token));
@@ -122,7 +123,7 @@ public class GridRenderTests
         }
         finally
         {
-            Application.Current.RequestedThemeVariant = ThemeVariant.Dark;
+            app.RequestedThemeVariant = ThemeVariant.Dark;
         }
     }
 

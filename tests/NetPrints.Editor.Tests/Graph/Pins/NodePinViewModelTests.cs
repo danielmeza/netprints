@@ -72,7 +72,8 @@ public class NodePinViewModelTests(TestEditor editor) : GraphTestBase(editor)
         Assert.True(enumType.IsEnum);
         var enumPin = VmOf(new CallMethodNode(Method, ConsoleWriteLine(enumType))).InputDataPins.Single();
         Assert.True(enumPin.ShowEnumValue);
-        Assert.Contains("Monday", enumPin.PossibleEnumNames!.ToList());
+        Assert.NotNull(enumPin.PossibleEnumNames);
+        Assert.Contains("Monday", enumPin.PossibleEnumNames.ToList());
         enumPin.UnconnectedEnumName = "Monday";
         Assert.Equal("Monday", ((NodeInputDataPin)enumPin.Pin).UnconnectedValue);
 

@@ -140,7 +140,8 @@ public class NodeGraphViewModelTests(TestEditor editor) : GraphTestBase(editor)
         graph.Drop(variable, new GraphPoint(112, 112));
         Assert.True(graph.GetSetChooser.IsOpen, "dropping a variable opens the Get/Set chooser (PAR-57)");
         Assert.Equal(new GraphPoint(112, 112), graph.GetSetChooser.Position);
-        Assert.Equal(variable.Name, graph.GetSetChooser.Variable!.Name);
+        Assert.NotNull(graph.GetSetChooser.Variable);
+        Assert.Equal(variable.Name, graph.GetSetChooser.Variable.Name);
     }
 
     // T103a: NodeGraphViewModel.Drop(MethodViewModel, GraphPoint)'s Graph.Class guard (added in T011/T012's nullable

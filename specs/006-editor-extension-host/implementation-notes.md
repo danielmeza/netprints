@@ -1329,3 +1329,18 @@ T076, Checkpoint C2, gate items measured on this head (Release).
   1.923; ... gate 1.049 ... +101.6% over the baseline`, failed; with `GITHUB_ACTIONS=true` (the CI path; at that commit the CI baseline was the single value 1.09): `ratio of 1.930 ... baseline is 1.090 ...
   +77.1%`, failed. The per-CPU selection is pinned by `TheBaselineComesFromTheMachineKindTheRunIsOn`. (A first attempt measured the unmodified binary because the busy wait did not compile under S108/S109; it read 1.053, +10.4%, which shows the local noise at the gate.)
 - Deferred: the allocation half of M2 is unchanged; more samples per CPU model come from later perf runs.
+
+## Batch C-F6 (T078, part 6: CD-12, CD-22, CD-21)
+
+- CD-12: `Npa022ShippedPropertyTests` reads the props file the NetPrints.Core package ships and feeds the analyzer the option names it exposes. Red (assertion): `The package ships no
+  src/NetPrints.Core/buildTransitive/NetPrints.Core.props, so MSBuild never passes the extension id to the compiler` (2 of 2 failed). Green: `buildTransitive/NetPrints.Core.props` declares
+  `CompilerVisibleProperty NetPrintsExtensionId`, is packed into `buildTransitive` (reaches an author who references Abstractions only), and `verify-packages.sh` step 2 checks the file. An extension
+  sets `<NetPrintsExtensionId>` in its project file. Not done: defaulting the property from the manifest.
+- CD-22: `CommandSelection.Nodes` is `IReadOnlyList<Node>` (model nodes) and the provider hands `vm.Node`. Red (assertions): `TheSelectionHandsExtensionsModelNodesNotOpaqueObjects` expected
+  `IReadOnlyList<Node>`, actual `IReadOnlyList<object>`; `ShellCommandContextProviderTests` expected the model node `If Else`, actual a `NodeViewModel`. `AbstractionsExposeNoEditorTypesTests` pins that no
+  public member of the Abstractions assembly uses a `NetPrints.Editor` type (green before and after: the leak was an `object` holding a view model, so only the type test is red). `GoToConnectionEnd`
+  maps the model node back to its view model. API files: `CommandSelection` constructor, `Deconstruct` and `Nodes.get` take `IReadOnlyList<NetPrints.Graph.Node!>`; the 0.4 hash row is updated and not shipped.
+- CD-21: the NPH001 section of `HygieneLedger.txt` is deleted. Red (build errors): NPH001 reported 19 sites in 11 test files (`error NPH001: Model the null instead of silencing it`). Green: all 19 fixed,
+  none added: `Assert.NotNull(x)` on its own line, then the member (this xunit `Assert.NotNull` returns void, so the flow analysis carries the non-null state); `?? throw new InvalidOperationException`
+  for `Process.Start`, `TestOutputHelper`, `Application.Current`, the headless `EditorApp` and the wait result; `ArgumentException` for `Path.GetDirectoryName`; `UiElement.Number` for the
+  automation numbers; `UiWait.ForAsync` keeps the accepted value in an array instead of `default!`.

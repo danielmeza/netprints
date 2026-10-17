@@ -45,7 +45,7 @@ public sealed class NodeObject(IUiDriver driver, AutomationQuery query) : UiElem
     public async Task<(double X, double Y)> LocationAsync(CancellationToken cancellationToken)
     {
         var e = await GetAsync(cancellationToken);
-        return (double.Parse(e[AutomationPropertyNames.LocationX]!, CultureInfo.InvariantCulture), double.Parse(e[AutomationPropertyNames.LocationY]!, CultureInfo.InvariantCulture));
+        return (Number(e, AutomationPropertyNames.LocationX), Number(e, AutomationPropertyNames.LocationY));
     }
 }
 

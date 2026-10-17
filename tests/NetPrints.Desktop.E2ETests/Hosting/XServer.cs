@@ -106,7 +106,7 @@ public sealed class XServer : IAsyncLifetime
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
             };
-            var process = Process.Start(info)!;
+            var process = Process.Start(info) ?? throw new InvalidOperationException("Cannot start Xvfb.");
             process.BeginErrorReadLine();
             process.BeginOutputReadLine();
 
@@ -142,7 +142,7 @@ public sealed class XServer : IAsyncLifetime
 
         var wm = new ProcessStartInfo("openbox") { UseShellExecute = false, RedirectStandardError = true, RedirectStandardOutput = true };
         Apply(wm.Environment);
-        windowManager = Process.Start(wm)!;
+        windowManager = Process.Start(wm) ?? throw new InvalidOperationException("Cannot start openbox.");
         windowManager.BeginErrorReadLine();
         windowManager.BeginOutputReadLine();
 
