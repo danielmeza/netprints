@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -16,7 +17,7 @@ namespace NetPrints.Extensibility.Settings;
 /// file atomically and keeps sections it does not know.
 /// </summary>
 [Experimental(ExperimentalApiIds.Settings, UrlFormat = ExperimentalApiIds.UrlFormat)]
-public sealed class JsonFileSettingsStore : ISettingsStore
+public sealed class JsonFileSettingsStore : ISettingsStore, ISettingsChangeSource
 {
     private const string FileSection = "$file";
     private const string NetPrintsKey = NetPrintsSettings.SectionId;
@@ -45,8 +46,10 @@ public sealed class JsonFileSettingsStore : ISettingsStore
 
     private readonly string filePath;
     private readonly ILogger<JsonFileSettingsStore> logger;
+    private readonly TimeProvider timeProvider;
     private readonly SemaphoreSlim writeGate = new(1, 1);
     private readonly Lock stateLock = new();
+    private readonly List<Subscription> listeners = [];
     private readonly Lazy<State> initial;
     private State? state;
 
@@ -55,12 +58,14 @@ public sealed class JsonFileSettingsStore : ISettingsStore
     /// </summary>
     /// <param name="filePath">The settings file; it and its folder need not exist.</param>
     /// <param name="logger">Logger for <c>SettingsSectionInvalid</c> (2006).</param>
-    public JsonFileSettingsStore(string filePath, ILogger<JsonFileSettingsStore> logger)
+    /// <param name="timeProvider">The clock behind the name of the <c>.unreadable-</c> copy; the system clock when <see langword="null"/>.</param>
+    public JsonFileSettingsStore(string filePath, ILogger<JsonFileSettingsStore> logger, TimeProvider? timeProvider = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         ArgumentNullException.ThrowIfNull(logger);
         this.filePath = filePath;
         this.logger = logger;
+        this.timeProvider = timeProvider ?? TimeProvider.System;
         initial = new Lazy<State>(Load, LazyThreadSafetyMode.ExecutionAndPublication);
     }
 
@@ -91,6 +96,20 @@ public sealed class JsonFileSettingsStore : ISettingsStore
     }
 
     /// <inheritdoc/>
+    public IDisposable OnSectionChanged(string sectionId, Action listener)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sectionId);
+        ArgumentNullException.ThrowIfNull(listener);
+        var subscription = new Subscription(this, sectionId, listener);
+        lock (stateLock)
+        {
+            listeners.Add(subscription);
+        }
+
+        return subscription;
+    }
+
+    /// <inheritdoc/>
     public async ValueTask SetAsync<T>(ExtensionSettingsDescriptor<T> descriptor, T value, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(descriptor);
@@ -108,7 +127,13 @@ public sealed class JsonFileSettingsStore : ISettingsStore
             JsonNode? section = JsonSerializer.SerializeToNode(value, descriptor.TypeInfo);
             JsonObject root = current.Root.DeepClone().AsObject();
             SetSection(root, descriptor.ExtensionId, section);
-            byte[] bytes = Render(root);
+            byte[] bytes = Render(root, current.SchemaVersion);
+
+            if (current.CopyPending)
+            {
+                CopyUnreadableFile();
+                current.CopyPending = false;
+            }
 
             await WriteAtomicAsync(bytes, cancellationToken).ConfigureAwait(false);
 
@@ -118,13 +143,15 @@ public sealed class JsonFileSettingsStore : ISettingsStore
             };
             lock (stateLock)
             {
-                state = new State(root, values);
+                state = new State(root, values, current.SchemaVersion, copyPending: false);
             }
         }
         finally
         {
             writeGate.Release();
         }
+
+        Notify(descriptor.ExtensionId);
     }
 
     private static void SetSection(JsonObject root, string id, JsonNode? section)
@@ -144,9 +171,9 @@ public sealed class JsonFileSettingsStore : ISettingsStore
         extensions[id] = section;
     }
 
-    private static byte[] Render(JsonObject root)
+    private static byte[] Render(JsonObject root, int schemaVersion)
     {
-        var ordered = new JsonObject { [SchemaVersionKey] = SchemaVersion };
+        var ordered = new JsonObject { [SchemaVersionKey] = schemaVersion };
         if (root[NetPrintsKey] is JsonNode netprints)
         {
             ordered[NetPrintsKey] = netprints.DeepClone();
@@ -222,27 +249,65 @@ public sealed class JsonFileSettingsStore : ISettingsStore
         var values = new ConcurrentDictionary<string, object?>(StringComparer.Ordinal);
         if (!File.Exists(filePath))
         {
-            return new State([], values);
+            return new State([], values, SchemaVersion, copyPending: false);
         }
 
+        bool copyPending = false;
         try
         {
             byte[] bytes = File.ReadAllBytes(filePath);
             if (JsonNode.Parse(bytes, documentOptions: DocumentOptions) is JsonObject root)
             {
-                return new State(root, values);
+                int found = root[SchemaVersionKey] is JsonValue value && value.TryGetValue(out int number) ? number : SchemaVersion;
+                if (found > SchemaVersion)
+                {
+                    Log.SettingsSchemaNewer(logger, filePath, found, SchemaVersion);
+                }
+
+                return new State(root, values, Math.Max(found, SchemaVersion), copyPending: false);
             }
 
             Log.SettingsSectionInvalid(logger, null, FileSection, filePath, NotAnObjectReason);
+            copyPending = true;
         }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
         {
             // R1-13: a locked or unreadable settings.json (not just malformed JSON) must not be cached
             // by the Lazy above as a permanent failure — every Get would then rethrow from editor startup.
             Log.SettingsSectionInvalid(logger, ex, FileSection, filePath, ex.Message);
+            copyPending = ex is JsonException;
         }
 
-        return new State([], values);
+        return new State([], values, SchemaVersion, copyPending);
+    }
+
+    private void CopyUnreadableFile()
+    {
+        string stamp = timeProvider.GetUtcNow().ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture);
+        string copyPath = $"{filePath}.unreadable-{stamp}";
+        File.Copy(filePath, copyPath, overwrite: true);
+        Log.SettingsFileCopied(logger, filePath, copyPath);
+    }
+
+    private void Notify(string sectionId)
+    {
+        Action[] targets;
+        lock (stateLock)
+        {
+            targets = [.. listeners.Where(entry => entry.SectionId == sectionId).Select(entry => entry.Listener)];
+        }
+
+        foreach (Action target in targets)
+        {
+            try
+            {
+                target();
+            }
+            catch (Exception ex)
+            {
+                Log.SettingsListenerFailed(logger, ex, sectionId);
+            }
+        }
     }
 
     private async Task WriteAtomicAsync(byte[] bytes, CancellationToken cancellationToken)
@@ -256,5 +321,29 @@ public sealed class JsonFileSettingsStore : ISettingsStore
         await ProjectFiles.WriteAtomicAsync(filePath, bytes, cancellationToken).ConfigureAwait(false);
     }
 
-    private sealed record State(JsonObject Root, ConcurrentDictionary<string, object?> Values);
+    private sealed class State(JsonObject root, ConcurrentDictionary<string, object?> values, int schemaVersion, bool copyPending)
+    {
+        public JsonObject Root { get; } = root;
+
+        public ConcurrentDictionary<string, object?> Values { get; } = values;
+
+        public int SchemaVersion { get; } = schemaVersion;
+
+        public bool CopyPending { get; set; } = copyPending;
+    }
+
+    private sealed class Subscription(JsonFileSettingsStore store, string sectionId, Action listener) : IDisposable
+    {
+        public string SectionId { get; } = sectionId;
+
+        public Action Listener { get; } = listener;
+
+        public void Dispose()
+        {
+            lock (store.stateLock)
+            {
+                store.listeners.Remove(this);
+            }
+        }
+    }
 }

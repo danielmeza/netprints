@@ -144,7 +144,10 @@ virtual NetPrints.Extensibility.Loading.ExtensionLoadResult.PrintMembers(System.
 [NPXE0001]NetPrints.Extensibility.Hosting.NullHostChannel.Messages.get -> System.IObservable<NetPrints.Extensibility.Hosting.HostMessage!>!
 [NPXE0001]NetPrints.Extensibility.Hosting.NullHostChannel.SendAsync(NetPrints.Extensibility.Hosting.HostMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
 [NPXE0001]NetPrints.Extensibility.Hosting.NullHostChannel.DisposeAsync() -> System.Threading.Tasks.ValueTask
-[NPXE0002]NetPrints.Extensibility.Settings.JsonFileSettingsStore.JsonFileSettingsStore(string! filePath, Microsoft.Extensions.Logging.ILogger<NetPrints.Extensibility.Settings.JsonFileSettingsStore!>! logger) -> void
+[NPXE0002]NetPrints.Extensibility.Settings.JsonFileSettingsStore.JsonFileSettingsStore(string! filePath, Microsoft.Extensions.Logging.ILogger<NetPrints.Extensibility.Settings.JsonFileSettingsStore!>! logger, System.TimeProvider? timeProvider = null) -> void
+[NPXE0002]NetPrints.Extensibility.Settings.JsonFileSettingsStore.OnSectionChanged(string! sectionId, System.Action! listener) -> System.IDisposable!
+[NPXE0002]NetPrints.Extensibility.Settings.ISettingsChangeSource
+[NPXE0002]NetPrints.Extensibility.Settings.ISettingsChangeSource.OnSectionChanged(string! sectionId, System.Action! listener) -> System.IDisposable!
 [NPXE0002]static NetPrints.Extensibility.Settings.JsonFileSettingsStore.DefaultFilePath() -> string!
 [NPXE0003]NetPrints.Extensibility.Loading.ExtensionRegistry.ClassEmitters.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IClassEmitter!>!
 [NPXE0003]NetPrints.Extensibility.Loading.ExtensionRegistry.MemberEmitters.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IMemberEmitter!>!

@@ -58,4 +58,16 @@ internal static partial class Log
     /// <summary>Logs 2013: a manifest has fields this host does not know; they are ignored.</summary>
     [LoggerMessage(EventId = 2013, Level = LogLevel.Information, Message = "Extension {Id} has manifest fields this host ignores: {Fields}")]
     public static partial void ManifestFieldsIgnored(ILogger logger, string id, string fields);
+
+    /// <summary>Logs 2014: the settings file has a newer schema version than this host writes; what is unknown is preserved.</summary>
+    [LoggerMessage(EventId = 2014, Level = LogLevel.Warning, Message = "Settings file {FilePath} has schemaVersion {Found}, newer than the supported {Supported}; unknown content is preserved")]
+    public static partial void SettingsSchemaNewer(ILogger logger, string filePath, int found, int supported);
+
+    /// <summary>Logs 2015: an unreadable settings file was copied aside before it was replaced.</summary>
+    [LoggerMessage(EventId = 2015, Level = LogLevel.Information, Message = "Unreadable settings file {FilePath} was copied to {CopyPath} before the next write")]
+    public static partial void SettingsFileCopied(ILogger logger, string filePath, string copyPath);
+
+    /// <summary>Logs 2016: a settings change listener threw; the change itself was persisted.</summary>
+    [LoggerMessage(EventId = 2016, Level = LogLevel.Warning, Message = "A listener of settings section {Section} failed")]
+    public static partial void SettingsListenerFailed(ILogger logger, Exception exception, string section);
 }

@@ -204,7 +204,13 @@ internal sealed class SettingsOptionsMonitor<T>(ExtensionSettingsDescriptor<T> s
 
     public T Get(string? name) => CurrentValue;
 
-    public IDisposable? OnChange(Action<T, string?> listener) => NoChanges.Instance;
+    public IDisposable? OnChange(Action<T, string?> listener)
+    {
+        ArgumentNullException.ThrowIfNull(listener);
+        return store is ISettingsChangeSource source
+            ? source.OnSectionChanged(section.ExtensionId, () => listener(CurrentValue, null))
+            : NoChanges.Instance;
+    }
 
     private sealed class NoChanges : IDisposable
     {
