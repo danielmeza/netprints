@@ -1061,3 +1061,51 @@ NPS, NPA003/NPA005/NPA011 and the STJ extension-data shapes.
 - AB-19 nit `src/NetPrints.Core/Graph/ForLoopNode.cs:9`: kind ids repeat the `BuiltInNodeKinds` literals (a test ties them).
   Fixed in c11763f8 (B-F2): `NodeKindIds` in Core, `[NodeKind]` uses it, `BuiltInNodeKinds` forwards it; a hygiene test rejects a
   literal (red on the assertion).
+
+## Batch C2f (T074-T076)
+
+Red/green. Every rule's tests were written against an analyzer stub that declares its descriptor and reports nothing, and failed on the
+`Assert.Equal` of the marked spans (`Actual: Expected[] []`), then went green with the analyzer. Red counts: NPH001 3 of 4, NPH002 2 of 3,
+NPH003 15 of 21, NPH004 6 of 7, NPH005 1 of 5, NPH006 4 of 6, NPA020 to NPA024 26 of 40 (the others assert acceptance). The tests that
+assert acceptance pass on the stub by design. Planted violations in a real build: a scratch file in `NetPrints.Extensibility` with a pragma,
+a `VM` type, `null!` and an `"NPT001"` literal failed the build with NPH004, NPH002, NPH001 and NPH003 (file removed).
+
+T074 (commits f09da9ec, f849359c, 28bc7bc3, 1b2f0a2c, 40070521, a149fc68, e878d378, af244931). One commit per rule, each removing the
+`SourceHygieneTests` code it replaces.
+- Decision: the allowlists and the ADR-0003 ledger are one additional file, `HygieneLedger.txt` at the repository root (`CODE | path | detail`,
+  path matched by suffix), added to every src and tests project. NPH001 and NPH002 run in `tests/` as well as `src/` because the replaced
+  tests did; the 19 test sites of `NullForgivingAllowlist` are NPH001 rows. NPH004 rows are `member:rule` and still require the ADR-0003
+  justification. NPH003 and NPH005 are `src/` only.
+- Deviation: the cross-project duplicate check of a code (`NPXE0004` in Core and Catalog) stays a test, `NoDiagnosticCodeIsDeclaredInTwoProjects`,
+  because an analyzer sees one project; NPH003 reports duplicates inside a project. The other `SourceHygieneTests` stay.
+- Deviation: NPH006 does not flag a literal given to a `LocalizedText` parameter (`CommandDescriptor.Label`): ADR-0027 derives the key from the
+  command id and the literal is its neutral default (40 built-in labels would otherwise be hits). The sinks are the `string` parameters of
+  `IDialogService`, `IEditorDialogs.Confirm` and `ShellViewModel.ShowStatus`, and `DialogDescriptor.Title`. 25 dialog titles and messages in
+  `src/NetPrints.Editor` are ledger rows that move to resources with the L2 localization batch.
+- Deviation, open: VSTHRD002 and VSTHRD103 to `error` in `tests/` was tried and reports at least 153 hits (synchronous `File.*` calls);
+  not applied, ADR-0003 says so.
+- ADR-0003 and ADR-0007 amended (E7 stays a test), AGENTS.md and ADR-0017 name the NPH rules, the guide has an NPH section.
+- The roadmap-code test `NoUserVisibleStringNamesARoadmapCode` failed on an `ADR-` literal in NPH004's message; the marker is built from two parts.
+
+T075 (1cb00da4). `ContributionLiteralsAnalyzer` (NPA020 to NPA022) and `ContributionDuplicatesAnalyzer` (NPA023, NPA024) in
+`NetPrints.Authoring`, matching the extension API types by name so the analyzer assembly needs no reference to them.
+- Decision: the registered built-in icon ids are the constants of `NetPrints.Editor.Icons.IconIds` when the compilation declares it; an
+  extension author's project has no such type, so only the pattern is checked there. The owner prefix is read from
+  `build_property.NetPrintsExtensionId` when a project makes that property compiler-visible; no shipped target does it yet.
+- Gestures: `CommandGesture.Parse` and `TryParse` literals are checked against a copy of the key grammar (`GestureText`); the scope rule
+  (single-key or Shift-only outside F1 to F24 in the Global scope) is checked for `new(modifiers, key)` and parsed gestures in `DefaultGestures`.
+- The Authoring analyzers now also run on `NetPrints.Editor` (analyzer reference added). They found a real bug: the six built-in panels still
+  passed the old Material kind names ("FileTree", "Tune") as `IconId`, so they drew the unknown glyph; they use `IconIds.Panel*` now.
+  The repository has 0 other hits.
+
+T076, Checkpoint C2, gate items measured on this head (Release).
+- Whole suite: 4826 tests, 4793 passed, 33 skipped, 0 failed (`dotnet test --solution`, `--ignore-exit-code 8`). E2E (`NETPRINTS_E2E=1`,
+  `--fail-skips on`): 53 tests, 52 passed, 1 skipped, 0 failed.
+- SC-001 (NPH): 0 hits in `src/` and `tests/` with the ledger as listed (19 NPH001, 3 NPH004, 25 NPH006 rows); each replaced test's red/green is above.
+- API checks and package validation, the XML docs (CS1591 stays an error in `src/`), `NetPrints.TestExtension` from the packed packages and the
+  `packages` job: unchanged by this batch (no public API change; PublicAPI hashes untouched) and green in CI at 70c75b75 (see T073). Trim baseline stays 9.
+- SC-005 in the perf job, the longest CI job (at 70c75b75: Desktop E2E 13 min 41 s, longest test leg Editor UI 2/4 and 3/4, 7 min 20 s) and the
+  Dock check (pin stays 12.1.0.6): read from CI at the final head of the review batch; not re-measured locally here.
+- Docs: ADR-0003 and ADR-0007 amended here; the extensions guide, ADR-0030, ADR-0020, ADR-0021, `releasing.md`, `graph-format.md` and
+  `docs/api/docfx.json` were done in C2a to C2e.
+- T076 stays unticked until CI is green at the head of this batch.
