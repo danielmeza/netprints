@@ -10,6 +10,7 @@ using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Lifecycle;
 using NetPrints.Editor.State;
+using NetPrints.Extensibility.Loading;
 using NetPrints.Editor.UndoRedo;
 using NetPrints.Generation;
 using NetPrints.Projects;
@@ -55,6 +56,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         this.classContexts = classContexts ?? ClassContextFactory.For(context);
         wasRunning = IsRunning;
         context.RunState.PhaseChanged += OnRunPhaseChanged;
+        context.Extensions.RegistryChanged += OnRegistryChanged;
         project.PropertyChanged += OnProjectPropertyChanged;
         project.Classes.CollectionChanged += OnClassesChanged;
         Unsaved = new UnsavedChangesTracker(this);
@@ -273,12 +275,23 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     public IServiceProvider ExtensionServices(string extensionId)
     {
         ArgumentNullException.ThrowIfNull(extensionId);
-        if (!extensionSessions.ContainsKey(extensionId))
+        lock (extensionSessions)
         {
-            extensionSessions[extensionId] = context.Extensions.Current.OpenSession(extensionId);
-        }
+            if (!extensionSessions.ContainsKey(extensionId))
+            {
+                extensionSessions[extensionId] = context.Extensions.Current.OpenSession(extensionId);
+            }
 
-        return extensionSessions[extensionId].ServiceProvider;
+            return extensionSessions[extensionId].ServiceProvider;
+        }
+    }
+
+    private void OnRegistryChanged(object? sender, ExtensionRegistry registry)
+    {
+        lock (extensionSessions)
+        {
+            extensionSessions.Clear();
+        }
     }
 
     /// <summary>Stops the running program and its child processes; does nothing when none runs.</summary>
@@ -288,6 +301,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         context.RunState.PhaseChanged -= OnRunPhaseChanged;
+        context.Extensions.RegistryChanged -= OnRegistryChanged;
         Project.PropertyChanged -= OnProjectPropertyChanged;
         Project.Classes.CollectionChanged -= OnClassesChanged;
         foreach (ClassContext classContext in contexts.Values)

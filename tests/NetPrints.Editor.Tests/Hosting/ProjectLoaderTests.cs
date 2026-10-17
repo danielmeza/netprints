@@ -3,6 +3,7 @@ using NetPrints.Editor.Hosting;
 using NetPrints.Editor.References;
 using NetPrints.Editor.Shell;
 using NetPrints.Extensibility.Loading;
+using NetPrints.Extensibility.Nodes;
 using NetPrints.Projects;
 
 namespace NetPrints.Editor.Tests.Hosting;
@@ -365,6 +366,36 @@ public sealed class ProjectLoaderTests : IDisposable
 
         Assert.Same(projectA, rig.Project);
         Assert.Contains(testEditor.Dialogs.Errors, e => e.Title == "Failed to load project");
+    }
+
+    private sealed class OtherServiceProbe;
+
+    [Fact]
+    public async Task AFailedSwitchLeavesTheOpenSessionsExtensionServicesUsable()
+    {
+        testEditor.Dialogs.TrustAnswer = true;
+        ProjectRig rig = NewRig();
+        CancellationToken ct = TestContext.Current.CancellationToken;
+
+        string pathA = Track(TestPaths.CopyHelloWorldSample());
+        ProjectSnapshot snapshotA = await testEditor.Projects.LoadAsync(pathA, ct);
+        testEditor.Projects.Seed(snapshotA with { ExtensionFolders = [Path.Combine(Path.GetDirectoryName(pathA) ?? pathA, "ExtA")] });
+        await rig.LoadProjectAsync(pathA);
+        ProjectSessionViewModel sessionA = Assert.IsType<ProjectSessionViewModel>(rig.Session);
+        Assert.NotNull(sessionA.ExtensionServices(BuiltInNodeLibrary.Id));
+
+        string pathB = Track(TestPaths.CopyHelloWorldSample());
+        ProjectSnapshot snapshotB = await testEditor.Projects.LoadAsync(pathB, ct);
+        testEditor.Projects.Seed(snapshotB with
+        {
+            ExtensionFolders = [Path.Combine(Path.GetDirectoryName(pathB) ?? pathB, "ExtB")],
+            GraphFiles = [Path.Combine(Path.GetDirectoryName(pathB) ?? pathB, "Missing.netpc.json")],
+        });
+
+        await rig.LoadProjectAsync(pathB);
+
+        Assert.Same(sessionA, rig.Session);
+        Assert.Null(sessionA.ExtensionServices(BuiltInNodeLibrary.Id).GetService(typeof(OtherServiceProbe)));
     }
 
     /// <summary>Delegates to a real <see cref="IExtensionHost"/>, except a chosen call number to

@@ -868,7 +868,7 @@ T073, local evidence at the C2e head (Release). From here a public shape changes
 - T063 editor side: `CommandContext.Owner` (set by `CommandInvoker` from `IContributionRegistry.OwnerOf`) selects the extension whose provider is
   `ICommandContext.Services`; `ProjectSessionViewModel.ExtensionServices(id)` opens one session scope per extension on first use and disposes them with the
   session, and `IProjectSession.Services` returns it. Known gap: a registry swap (`LoadForProjectAsync`) disposes the scopes of an open session without the
-  session knowing; sessions are created after the load today, so it does not occur yet. `Desktop` passes its `JsonFileSettingsStore` as `SettingsStore`.
+  session knowing; it does occur on the rollback of a failed project switch, and Batch C-F5 (CD-11) closes it: the session forgets its cached scopes on `RegistryChanged`. `Desktop` passes its `JsonFileSettingsStore` as `SettingsStore`.
 - Decision: the invoker now always copies the context (`with { Owner, Contributions }`), so `TypedContextTests` compares the session instead of the context.
 - T064: `DialogDescriptor(Id, Title, CreateViewModel(IDialogContext))`, `IEditorContributions.AddDialog`, and `IDialogService.ShowDialogAsync(id, token)` which
   returns the view model it showed (it holds the dialog's result, so no editor type leaks into the contract). `EditorDialogService` creates the view model with an
@@ -1278,3 +1278,18 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - CD-15: `Npa040Tests`. Red (assertion): `AMissingTitleKeyIsQuietWhenTheTitleIsBuiltFromTheNode`. NPA040 requires `Node.<kind>.Title` only when the class (or a base) overrides `TitleIsFixed`, because the editor
   shows the key only then (ADR-0027). The guide, the diagnostics table, the analyzer release file and the ADR agree. No `Fx` node test was added.
 - Full suite (Release): 4872 total; the only failures were the two `ContributionsAreUiFreeTests` (the converter was in the UI-free `Contributions` namespace), fixed by moving it to `Controls`; Editor.Tests 2043 and Core.Tests 1040 pass after; `dotnet format` clean.
+
+## Batch C-F5 (T078, part 5: CD-9, CD-10, CD-11, CD-27)
+
+- CD-9: `ExtensionServicesTests.AnExtensionGetsLoggersOnlyForItsOwnTypes`. Red (assertion): `Assert.Null() Failure: Value is not null, Actual: ExtensionLogger`1` for `ILogger<NodeGraph>`. `ExtensionServiceProviders.Build`
+  now registers each entry of `HostExports.AllowedServiceTypes` (an entry without a registration throws), and `ILogger<T>` is registered closed for the types of the extension's assembly only, so the
+  pinned list is what the provider serves. An extension registering `ILogger<T>` or `IOptionsMonitor<T>` itself is rejected as replacing a host export.
+- CD-10: `ARegistrationOfATypeThatIsNotTheExtensionsOwnIsRejected` and `ARegistrationWithAMissingDependencyFailsTheExtensionAtLoad`. Red (assertions): no NPX006 issue for `HttpClient` (collection empty), and no `Failed` result for a
+  registration whose dependency is missing (both results `Loaded`). Green: the seam filter is an allow-list (the extension's own types, and generics outside the host assemblies over allowed types); the provider is built with
+  `ValidateOnBuild` before anything of the extension is committed, and a failure is an NPX005 `Failed` result naming the missing service. ADR-0031 decision 5 and R15 are amended in place: the disposal order is
+  sessions, contributed objects, provider (a contribution may use provider services in `Dispose`), which is the behaviour that was already there.
+- CD-11: `ProjectLoaderTests.AFailedSwitchLeavesTheOpenSessionsExtensionServicesUsable`. Red (exception): `ObjectDisposedException` from the open session's extension services after a failed switch. `ProjectSessionViewModel` drops
+  its cached scopes on `RegistryChanged` (the old registry disposes them), so the next use opens one on the live registry. The C2b note is corrected.
+- CD-27: `CompositionResolveAllTests.EverySessionScopedRegistrationResolvesInAProjectSessionScope` now asserts `ProjectTemplateService` is not session-scoped. Red (assertion): `Assert.DoesNotContain() Failure: Filter matched in collection`.
+  The service holds no session state and New project has no project, so `ProjectLoader` creates it with `ProjectTemplateService.Create` and `ProjectSessionScope.Templates` is gone. ADR-0031 decision 4 and R4 step 4 are amended.
+- API files: no public API changed (the new exception and the changed types are internal).
