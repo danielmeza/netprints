@@ -85,7 +85,7 @@ internal sealed class ShellHost : IDisposable
             new EditorDialogService(context.Dialogs),
             new EditorOutput(context.RunState),
             EmptyServiceProvider.Instance);
-        var shell = new ShellViewModel(registry, panelContext, TimeProvider.System, context.Dispatcher);
+        var shell = new ShellViewModel(registry, panelContext, TimeProvider.System, context.Dispatcher, context);
         shell.WindowStateService = context.WindowStateService;
         var actions = new ShellProjectActions(context, shell);
         var startPageContext = new StartPageContext(actions, panelContext, context.Recent, context.StateStore, context.Clipboard, new ShellFolderLauncher());

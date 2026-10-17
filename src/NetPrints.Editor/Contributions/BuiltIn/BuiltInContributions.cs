@@ -24,6 +24,7 @@ public static class BuiltInContributions
         PanelContributions.Register(editor);
         StartPageContributions.Register(editor);
         TooltipContributions.Register(editor);
+        StatusBarContributions.Register(editor);
         editor.AddViewResources(BuiltInViewsUri);
     }
 

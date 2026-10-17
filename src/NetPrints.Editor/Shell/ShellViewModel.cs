@@ -30,7 +30,8 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
     /// <param name="panelContext">The context panel view models are created with.</param>
     /// <param name="timeProvider">The clock of the status message expiry.</param>
     /// <param name="dispatcher">Brings the status message expiry to the UI thread.</param>
-    public ShellViewModel(IContributionRegistry registry, IPanelContext panelContext, TimeProvider timeProvider, IUiDispatcher dispatcher)
+    /// <param name="host">The editor services the status bar items' contexts give their extensions; <see langword="null"/> for none.</param>
+    public ShellViewModel(IContributionRegistry registry, IPanelContext panelContext, TimeProvider timeProvider, IUiDispatcher dispatcher, EditorContext? host = null)
     {
         ArgumentNullException.ThrowIfNull(registry);
         ArgumentNullException.ThrowIfNull(panelContext);
@@ -44,6 +45,7 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
             .Select(panel => new PanelViewModel(panel, panel.CreateViewModel(panelContext)))];
         StatusBar = new StatusBarViewModel(timeProvider, dispatcher);
         StatusBar.PropertyChanged += OnStatusBarChanged;
+        StatusBar.Attach(registry.StatusBarItems, item => new ShellStatusBarContext(this, panelContext.Shell, host, registry.OwnerOf(item.Id)));
         Documents.CollectionChanged += (_, _) => OnPropertyChanged(nameof(Title));
     }
 
@@ -127,7 +129,13 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
     public void AttachCommands(CommandInvoker invoker)
     {
         ArgumentNullException.ThrowIfNull(invoker);
+        if (Commands is { } previous)
+        {
+            previous.CommandStatesChanged -= OnInvokerStatesChanged;
+        }
+
         Commands = invoker;
+        invoker.CommandStatesChanged += OnInvokerStatesChanged;
         MenuBar?.Dispose();
         CommandBar?.Dispose();
         MenuBar = new MenuBarViewModel(registry, invoker);
@@ -224,6 +232,11 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         foreach (IShellPanelContent content in panels.Select(panel => panel.Content).OfType<IShellPanelContent>())
         {
             content.Detach();
+        }
+
+        if (Commands is { } invoker)
+        {
+            invoker.CommandStatesChanged -= OnInvokerStatesChanged;
         }
 
         MenuBar?.Dispose();
@@ -326,10 +339,17 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         {
             OnPropertyChanged(nameof(CompileErrorCount));
             CommandBar?.RefreshBadge();
+            StatusBar.Refresh();
         }
     }
 
-    private void OnDocumentChanged(object? sender, PropertyChangedEventArgs e) => OnPropertyChanged(nameof(Title));
+    private void OnInvokerStatesChanged(object? sender, EventArgs e) => StatusBar.Refresh();
+
+    private void OnDocumentChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        OnPropertyChanged(nameof(Title));
+        StatusBar.Refresh();
+    }
 
     private void OnStatusBarChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -352,5 +372,9 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
     /// <summary>Tells the menus and bars that a state a command shows changed (the theme), so they ask their commands again.</summary>
     internal void NotifyCommandStatesChanged() => RaiseCommandStatesChanged();
 
-    private void RaiseCommandStatesChanged() => CommandStatesChanged?.Invoke(this, EventArgs.Empty);
+    private void RaiseCommandStatesChanged()
+    {
+        StatusBar.Refresh();
+        CommandStatesChanged?.Invoke(this, EventArgs.Empty);
+    }
 }

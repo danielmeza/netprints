@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Resources;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
@@ -50,6 +51,7 @@ internal sealed class RegistryBuilder(ILogger logger, ILoggerFactory loggerFacto
     private readonly List<object> owned = [];
     private readonly List<ExtensionContributionIssue> issues = [];
 
+    [RequiresUnreferencedCode(DynamicLoading.Reason)]
     public void Commit(ExtensionManifest manifest, ExtensionContributions contributions)
     {
         foreach (INodeLibrary library in contributions.NodeLibraries)

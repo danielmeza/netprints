@@ -1,5 +1,7 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Editor.Hosting;
+using NetPrints.Extensibility.Editor;
 
 namespace NetPrints.Editor.Shell;
 
@@ -28,6 +30,7 @@ public sealed partial class StatusBarViewModel(TimeProvider timeProvider, IUiDis
 
     private readonly Lock gate = new();
     private readonly List<BusyScope> busyScopes = [];
+    private readonly List<(StatusBarItemViewModel Item, IStatusBarContext Context)> attached = [];
     private ITimer? expiryTimer;
     private int version;
 
@@ -56,6 +59,69 @@ public sealed partial class StatusBarViewModel(TimeProvider timeProvider, IUiDis
         _ => "",
     };
 
+    /// <summary>Gets the segments on the left, after the message, in order; only those that apply.</summary>
+    public ObservableCollection<StatusBarItemViewModel> LeftItems { get; } = [];
+
+    /// <summary>Gets the segments on the right, in order; only those that apply.</summary>
+    public ObservableCollection<StatusBarItemViewModel> RightItems { get; } = [];
+
+    /// <summary>
+    /// Creates the view model of each item with its context and shows the items that apply. Replaces the items of an earlier call.
+    /// </summary>
+    /// <param name="items">The registered items.</param>
+    /// <param name="context">Creates the context an item is created and asked with.</param>
+    public void Attach(IReadOnlyList<StatusBarItemDescriptor> items, Func<StatusBarItemDescriptor, IStatusBarContext> context)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(context);
+        attached.Clear();
+        foreach (StatusBarItemDescriptor descriptor in items)
+        {
+            IStatusBarContext itemContext = context(descriptor);
+            attached.Add((new StatusBarItemViewModel(descriptor, descriptor.CreateViewModel(itemContext)), itemContext));
+        }
+
+        Refresh();
+    }
+
+    /// <summary>Asks every item again whether it applies, refreshes the segments that follow editor state and shows the ones that apply.</summary>
+    public void Refresh()
+    {
+        foreach ((StatusBarItemViewModel item, _) in attached)
+        {
+            (item.Content as IStatusSegment)?.Refresh();
+        }
+
+        Reconcile(LeftItems, StatusBarAlignment.Left);
+        Reconcile(RightItems, StatusBarAlignment.Right);
+    }
+
+    private void Reconcile(ObservableCollection<StatusBarItemViewModel> shown, StatusBarAlignment side)
+    {
+        List<StatusBarItemViewModel> wanted =
+        [
+            .. attached
+                .Where(entry => entry.Item.Alignment == side && (entry.Item.Descriptor.AppliesTo?.Invoke(entry.Context) ?? true))
+                .Select(entry => entry.Item)
+                .OrderBy(item => item.Order),
+        ];
+        for (int index = shown.Count - 1; index >= 0; index--)
+        {
+            if (!wanted.Contains(shown[index]))
+            {
+                shown.RemoveAt(index);
+            }
+        }
+
+        for (int index = 0; index < wanted.Count; index++)
+        {
+            if (index >= shown.Count || shown[index] != wanted[index])
+            {
+                shown.Insert(index, wanted[index]);
+            }
+        }
+    }
+
     /// <summary>Shows a message, replacing the current one and restarting its expiry.</summary>
     /// <param name="message">The text.</param>
     /// <param name="expiry">How long it stays, or null to keep it until replaced.</param>
@@ -78,6 +144,7 @@ public sealed partial class StatusBarViewModel(TimeProvider timeProvider, IUiDis
     {
         BuildState = state;
         UpdateBusy();
+        Refresh();
     }
 
     /// <summary>

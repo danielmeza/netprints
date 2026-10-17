@@ -835,6 +835,50 @@ consumers restore from `local-packages/` plus a scratch feed and build with `-p:
   moved) and 12 UITests (`ShellAdapterTests`, `DockLayoutRoundTripTests`: `ShellRig` composes no `ShellHost`, so the built-in templates were not
   added; it now applies the registry's view resources). Both classes re-run green (101 and 34 tests); the whole suite was not run again. No E2E run.
 
+## Batch C2b (T063-T065, plus the CI fix before it)
+
+- CI fix (6fcb2ca8): the trim ratchet had risen to 12 because `ViewResourceLoader` called `AvaloniaXamlLoader.Load(Uri)`. `BuiltInViews` is now a compiled
+  class (`x:Class`, `AvaloniaXamlLoader.Load(this)`), and the loader keeps a table of compiled resources by URI. Deviation: a URI that is not compiled
+  throws `NotSupportedException`; extension view resources by URI come with the dynamic groups of D1 (no extension declared one until now).
+- T063: `IExtensionBuilder.Services` (NPXE0008) is a `ServiceCollection` per extension. `RegistryBuilder.Commit` builds one `ServiceProvider` per extension
+  (`ExtensionServiceProviders`) from the filtered registrations plus `HostExports`: `ILoggerFactory`, `ILogger<T>` (an `ExtensionLogger<T>` over the factory),
+  `TimeProvider` and `IOptionsMonitor<T>` for the extension's own settings sections (value from `ExtensionLoaderOptions.SettingsStore`, the section default
+  without one; `OnChange` never fires). The seam filter removes, with an NPX006 issue and the extension still loaded: registrations of the exports,
+  `IConfigureOptions<>`, `IPostConfigureOptions<>` and `IValidateOptions<>` over a type the extension does not own, and any service type that is a
+  `NetPrints.*` type (or a closed generic over one) outside the extension's own assembly. Own = declared in the assembly of the extension type.
+  `ExtensionRegistry.ServicesOf(id)` gives the provider (an empty one for an unknown id) and `OpenSession(id)` a tracked scope. Disposal order: open sessions,
+  the owned contributions, then the providers, each item wrapped so one throwing `Dispose` is logged and the rest run (the contributions go before the
+  providers, because they may use services while disposing; research R15 says sessions then providers).
+- T063 editor side: `CommandContext.Owner` (set by `CommandInvoker` from `IContributionRegistry.OwnerOf`) selects the extension whose provider is
+  `ICommandContext.Services`; `ProjectSessionViewModel.ExtensionServices(id)` opens one session scope per extension on first use and disposes them with the
+  session, and `IProjectSession.Services` returns it. Known gap: a registry swap (`LoadForProjectAsync`) disposes the scopes of an open session without the
+  session knowing; sessions are created after the load today, so it does not occur yet. `Desktop` passes its `JsonFileSettingsStore` as `SettingsStore`.
+- Decision: the invoker now always copies the context (`with { Owner, Contributions }`), so `TypedContextTests` compares the session instead of the context.
+- T064: `DialogDescriptor(Id, Title, CreateViewModel(IDialogContext))`, `IEditorContributions.AddDialog`, and `IDialogService.ShowDialogAsync(id, token)` which
+  returns the view model it showed (it holds the dialog's result, so no editor type leaks into the contract). `EditorDialogService` creates the view model with an
+  `EditorContexts` and calls the new `IEditorDialogs.ShowViewModelAsync`, implemented by `ExtensionDialog` (a window whose content is the view model, found by
+  data template; `DialogCloseBehavior` closes it for an `IDialogCloseSource`). An unknown id throws `ArgumentException`.
+- T065: `StatusBarItemDescriptor(Id, Alignment, Order, CreateViewModel, AppliesTo)`, `StatusBarAlignment`, `AddStatusBarItem`. `StatusBarViewModel.Attach/Refresh` build
+  the items and keep `LeftItems` and `RightItems` (visible ones, by order); `ShellViewModel` attaches the registry's items with a `ShellStatusBarContext` and
+  refreshes on session, document, diagnostics and command-state pulses. The built-in segments (`StatusBarContributions`): errors, warnings and selection on the
+  left, build, run and zoom on the right. Errors, warnings, selection and zoom show only when non-empty (zoom when not 100%), run only while running, and
+  the build segment is always present with an empty text when idle (as the old `TextBlock`), so the idle bar looks as before (snapshot baselines unchanged).
+  The build segment is a `BuildStatusSegmentViewModel` so its template carries `ShellBuildState` through `x:Static` (E4 forbids a bound id). `SurfaceRig`
+  now applies the view resources, as the product does.
+- Trim ratchet: the new `IOptionsMonitor<T>` registration needs reflection over an unannotated `T`, so the loading chain (`ExtensionLoader.Load` and its helpers,
+  `RegistryBuilder.Commit`, `ExtensionServiceProviders.Build`, `ExtensionHost` constructor) is annotated `[RequiresUnreferencedCode]` with one reason constant.
+  That absorbed five existing IL2026/IL2062/IL2070 warnings: the count fell from 11 to 9 and `eng/trim-warnings.txt` says 9.
+- Red/green. T063: `ExtensionServicesTests` (Core.Tests, 5) and `ExtensionServicesWiringTests` (Editor.Tests) were written against stubs (`HostExports` empty, `ServicesOf`
+  an empty provider, `ExtensionServices` an empty provider): 4 of 5 and 2 of 2 failed on assertions or on a missing service, then went green. T064: stub
+  `ShowDialogAsync` returning a plain object: `ADialogRegisteredWithAddDialogIsShown...` failed on `Assert.Single` of the shown dialogs and the unknown-id test
+  on `Assert.Throws`, then green. T065: stub `Attach/Refresh` and no built-in registration: all 4 new `StatusBarViewModelTests` failed on assertions, then green.
+  The facet replay test for status items and dialogs (`EditorFacetTests`) was added with the code (it needed the types to compile).
+- Suite (Release, solution-wide, `--ignore-exit-code 8`): 4664 passed, 33 skipped, 4 failed at the first run (3 `XamlHygieneTests`: the Margin ratchet, E4 for a bound id,
+  and the tabular check that pointed at the moved build text; `RegistrySurfaceTests.TheStatusBarShowsTheMessageAndTheBuildState`: `SurfaceRig` did not apply the view
+  resources). After the fixes: Core.Tests 1010/1010, Editor.Tests 2002/2002, Cli.Tests 289, Catalog.Tests 350, Analyzers.Tests 188, and the UITests classes
+  `SnapshotTests`, `ScaledSnapshotTests`, `ThemeSettingTests`, `ShellAdapterTests`, `ContactSheetTests` and `RegistrySurfaceTests` green; the whole UITests project
+  (14 minutes) was not run again. No E2E run.
+
 ## Build-time budget (ADR-0024, S2a; B-F3)
 
 - `dotnet build NetPrints.slnx -c Release --no-incremental`, warm compile server, 6 runs at the end of B: 24.2, 19.1 and 12.2 s

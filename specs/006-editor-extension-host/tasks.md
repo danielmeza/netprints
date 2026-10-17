@@ -575,7 +575,7 @@ SC-005 rechecked (research R4).
 
 ### Batch C2b — model: sonnet — T063–T065 — 4 units
 
-- [ ] T063 [US3] Extension services and host exports (FR-024, research R15, contracts/extension-api.md §8; 2 units).
+- [x] T063 [US3] Extension services and host exports (FR-024, research R15, contracts/extension-api.md §8; 2 units).
   Test first: `tests/NetPrints.Core.Tests/Extensibility/ExtensionServicesTests.cs`: an `Fx` extension resolves its own
   registrations and only the allow-list (`ILoggerFactory`, `ILogger<T>` for its own types, `TimeProvider`,
   `IOptionsMonitor<T>` for its own sections — US3 scenario 4); closed generics over host types and
@@ -583,9 +583,9 @@ SC-005 rechecked (research R4).
   pinned; disposal runs sessions, then the provider, and one throwing `Dispose` does not stop the rest. Then
   `IExtensionBuilder.Services` (NPXE0008), `HostExports`, one provider per extension owned by `ExtensionRegistry`, and
   the per-extension accessor behind `IProjectSession.Services`.
-- [ ] T064 [US4] Dialogs (FR-021, research R14 R4; 1 unit). Test first: a dialog registered with `AddDialog` is shown by
+- [x] T064 [US4] Dialogs (FR-021, research R14 R4; 1 unit). Test first: a dialog registered with `AddDialog` is shown by
   id through `IDialogService` with its `IDialogContext`. Then `DialogDescriptor` and `AddDialog`.
-- [ ] T065 [US4] The status-bar kind and the built-in segments (FR-021; 1 unit; load `avalonia-xaml` and
+- [x] T065 [US4] The status-bar kind and the built-in segments (FR-021; 1 unit; load `avalonia-xaml` and
   `avalonia-styling`). Test first: `tests/NetPrints.Editor.Tests/Shell/StatusBarViewModelTests.cs`: the built-in
   segments (error and warning counts, build state, run state, zoom, selection count) come from status-bar items, left
   or right by order; an item whose `AppliesTo` is false is hidden. Then `StatusBarItemDescriptor`, `AddStatusBarItem`,

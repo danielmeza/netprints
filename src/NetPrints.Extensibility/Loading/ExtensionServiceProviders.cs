@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -28,6 +29,7 @@ internal static class ExtensionServiceProviders
     /// <param name="loggerFactory">The host's logger factory.</param>
     /// <param name="reject">Called for each removed registration with the service type text and the reason.</param>
     /// <returns>The provider.</returns>
+    [RequiresUnreferencedCode(DynamicLoading.Reason)]
     public static ServiceProvider Build(
         IServiceCollection services,
         Assembly ownAssembly,
@@ -120,6 +122,7 @@ internal sealed class ExtensionLogger<T>(ILoggerFactory factory) : ILogger<T>
 /// <typeparam name="T">The section's value type.</typeparam>
 /// <param name="section">The section.</param>
 /// <param name="store">The store, or <see langword="null"/>.</param>
+[RequiresUnreferencedCode(DynamicLoading.Reason)]
 internal sealed class SettingsOptionsMonitor<T>(ExtensionSettingsDescriptor<T> section, ISettingsStore? store) : IOptionsMonitor<T>
 {
     public T CurrentValue => store is null ? section.Default : store.Get(section);

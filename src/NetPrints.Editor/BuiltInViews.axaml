@@ -84,4 +84,10 @@
   <DataTemplate DataType="edcode:CSharpPanelViewModel" x:DataType="edcode:CSharpPanelViewModel">
     <edcode:CSharpPanelView />
   </DataTemplate>
+  <DataTemplate DataType="shell:BuildStatusSegmentViewModel" x:DataType="shell:BuildStatusSegmentViewModel">
+    <TextBlock Classes="tabular statusSegment" Text="{Binding Text}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellBuildState}" />
+  </DataTemplate>
+  <DataTemplate DataType="shell:StatusSegmentViewModel" x:DataType="shell:StatusSegmentViewModel">
+    <TextBlock Classes="tabular statusSegment" Text="{Binding Text}" />
+  </DataTemplate>
 </DataTemplates>

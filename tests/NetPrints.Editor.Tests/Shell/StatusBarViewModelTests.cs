@@ -1,6 +1,10 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
+using NetPrints.Editor.Contributions;
+using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Hosting;
+using NetPrints.Extensibility.Editor;
 
 namespace NetPrints.Editor.Tests.Shell;
 
@@ -162,5 +166,110 @@ public class StatusBarViewModelTests
 
         await stop.CancelAsync();
         await Task.WhenAll(workers);
+    }
+
+    [Fact]
+    public void TheBuiltInSegmentsAreStatusBarItemsOfTheEditorOnTheirSides()
+    {
+        ContributionRegistry registry = BuiltInRegistry();
+
+        Assert.Equal(
+            new Dictionary<string, StatusBarAlignment>
+            {
+                ["netprints.status.errors"] = StatusBarAlignment.Left,
+                ["netprints.status.warnings"] = StatusBarAlignment.Left,
+                ["netprints.status.selection"] = StatusBarAlignment.Left,
+                ["netprints.status.build"] = StatusBarAlignment.Right,
+                ["netprints.status.run"] = StatusBarAlignment.Right,
+                ["netprints.status.zoom"] = StatusBarAlignment.Right,
+            },
+            registry.StatusBarItems.ToDictionary(item => item.Id, item => item.Alignment));
+        Assert.All(registry.StatusBarItems, item => Assert.Equal(BuiltInContributions.OwnerId, registry.OwnerOf(item.Id)));
+    }
+
+    [Fact]
+    public void ABarShowsItsItemsOnTheLeftAndTheRightByOrder()
+    {
+        var bar = new StatusBarViewModel(time, new InlineDispatcher());
+        StatusBarItemDescriptor[] items =
+        [
+            Item("test.status.a", StatusBarAlignment.Right, 2),
+            Item("test.status.b", StatusBarAlignment.Right, 1),
+            Item("test.status.c", StatusBarAlignment.Left, 5),
+            Item("test.status.d", StatusBarAlignment.Left, 3),
+        ];
+
+        bar.Attach(items, _ => new StubContext());
+
+        Assert.Equal(["test.status.b", "test.status.a"], bar.RightItems.Select(item => item.Id));
+        Assert.Equal(["test.status.d", "test.status.c"], bar.LeftItems.Select(item => item.Id));
+    }
+
+    [Fact]
+    public void AnItemWhoseAppliesToIsFalseIsHiddenUntilItApplies()
+    {
+        var bar = new StatusBarViewModel(time, new InlineDispatcher());
+        bool applies = false;
+
+        bar.Attach([Item("test.status.a", StatusBarAlignment.Right, 0, _ => applies)], _ => new StubContext());
+
+        Assert.Empty(bar.RightItems);
+
+        applies = true;
+        bar.Refresh();
+
+        Assert.Equal("test.status.a", Assert.Single(bar.RightItems).Id);
+
+        applies = false;
+        bar.Refresh();
+
+        Assert.Empty(bar.RightItems);
+    }
+
+    [Fact]
+    public void TheBuildAndRunSegmentsFollowTheBuildState()
+    {
+        ContributionRegistry registry = BuiltInRegistry();
+        using var shell = new ShellViewModel(registry, PanelFactoryContext.Detached, time, new InlineDispatcher());
+        StatusBarViewModel bar = shell.StatusBar;
+
+        Assert.Equal("", SegmentText(bar, "netprints.status.build"));
+        Assert.Null(Find(bar, "netprints.status.run"));
+
+        bar.SetBuildState(BuildState.Building);
+        Assert.Equal("Building…", SegmentText(bar, "netprints.status.build"));
+        Assert.Null(Find(bar, "netprints.status.run"));
+
+        bar.SetBuildState(BuildState.Running);
+        Assert.Equal("", SegmentText(bar, "netprints.status.build"));
+        Assert.Equal("Running", SegmentText(bar, "netprints.status.run"));
+    }
+
+    private static ContributionRegistry BuiltInRegistry()
+    {
+        var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
+        BuiltInContributions.Register(registry);
+        registry.Freeze();
+        return registry;
+    }
+
+    private static StatusBarItemViewModel? Find(StatusBarViewModel bar, string id) =>
+        bar.LeftItems.Concat(bar.RightItems).FirstOrDefault(item => item.Id == id);
+
+    private static string? SegmentText(StatusBarViewModel bar, string id) =>
+        Assert.IsAssignableFrom<StatusSegmentViewModel>(Assert.IsType<StatusBarItemViewModel>(Find(bar, id)).Content).Text;
+
+    private static StatusBarItemDescriptor Item(string id, StatusBarAlignment alignment, int order, Func<IStatusBarContext, bool>? appliesTo = null) =>
+        new(id, alignment, order, _ => new object(), appliesTo);
+
+    private sealed class StubContext : IStatusBarContext
+    {
+        public IEditorShell Shell => PanelFactoryContext.Detached.Shell;
+
+        public IProjectSession? Session => null;
+
+        public IGraphEditor? ActiveGraph => null;
+
+        public IServiceProvider Services => EmptyServiceProvider.Instance;
     }
 }

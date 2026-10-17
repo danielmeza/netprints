@@ -491,7 +491,7 @@ namespace NetPrints.Tests.Core
         [Theory]
         [InlineData("src/NetPrints.Editor/ErrorList/ErrorListView.axaml", "{Binding Header}")]
         [InlineData("src/NetPrints.Editor/Shell/ShellWindow.axaml", "{Binding BadgeText}")]
-        [InlineData("src/NetPrints.Editor/Shell/ShellWindow.axaml", "{Binding StatusBar.BuildStateText}")]
+        [InlineData("src/NetPrints.Editor/BuiltInViews.axaml", "{Binding Text}")]
         public void CountsTakeTheTabularClass(string path, string textBinding)
         {
             XElement block = LoadAxaml(path).Document.Descendants()

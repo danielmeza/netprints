@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
 
@@ -41,6 +42,7 @@ public sealed class ExtensionLoader
     /// <param name="cancellationToken">Cancels the load between extensions.</param>
     /// <returns>The registry.</returns>
     /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was cancelled.</exception>
+    [RequiresUnreferencedCode(DynamicLoading.Reason)]
     public ExtensionRegistry Load(CancellationToken cancellationToken)
     {
         var failures = new List<ExtensionLoadResult.Failed>();
@@ -236,6 +238,7 @@ public sealed class ExtensionLoader
         return byGroup != 0 ? byGroup : string.CompareOrdinal(left.Manifest.Id, right.Manifest.Id);
     }
 
+    [RequiresUnreferencedCode(DynamicLoading.Reason)]
     private ExtensionLoadResult LoadOne(Candidate candidate, RegistryBuilder registryBuilder, Dictionary<string, ExtensionLoadContext> contexts)
     {
         ExtensionManifest manifest = candidate.Manifest;
@@ -313,6 +316,7 @@ public sealed class ExtensionLoader
         return new ExtensionLoadResult.Loaded(manifest.Id, candidate.ManifestPath, manifest);
     }
 
+    [RequiresUnreferencedCode(DynamicLoading.Reason)]
     private static string? OlderDependencyCopy(Assembly assembly, ExtensionLoadContext context)
     {
         string root = assembly.GetName().Name ?? string.Empty;
@@ -378,6 +382,7 @@ public sealed class ExtensionLoader
         }
     }
 
+    [RequiresUnreferencedCode(DynamicLoading.Reason)]
     private static bool IsExtensionType(Type type) =>
         type is { IsClass: true, IsAbstract: false, IsPublic: true }
         && typeof(INetPrintsExtension).IsAssignableFrom(type)
