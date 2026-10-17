@@ -53,7 +53,7 @@ after a restart.
 |---|---|
 | `Id` | `^[a-z0-9]+(\.[a-zA-Z0-9]+)+$`; built-ins use `netprints.<kind>.`; extensions use `<manifest id>.` (NPX013 otherwise) |
 | `Label` | `LocalizedText` (resource key plus default text); the default text shows when no translation exists |
-| `Owner` | set by the host: `netprints` for built-ins, the manifest id for extensions; never set by the descriptor |
+| `Owner` | set by the host: `netprints.editor` for built-ins, the manifest id for extensions; never set by the descriptor |
 | `AppliesTo` | optional `Func<TContext, bool>`; false hides the item (context menus, status-bar items) |
 
 ### Kinds

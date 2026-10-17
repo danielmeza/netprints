@@ -13,9 +13,9 @@ settling surface behind an NPXE id.
 | `NetPrints.Core` | model, translator, `CSharpLanguageVersion`, `CSharpTarget`, typed pins and pin attributes, `PinRole`, `GraphPoint`, `LocalizedText`, `ExperimentalApiIds`; `analyzers/dotnet/cs`: `NetPrints.Authoring`, `NetPrints.Authoring.CodeFixes` | — |
 | `NetPrints.Reflection`, `NetPrints.Catalog` | unchanged roles | Core |
 | `NetPrints.Serialization` | documents, mapping, migrations, the JSON format | Core |
-| `NetPrints.Extensibility.Abstractions` | contracts only: `INetPrintsExtension`, `IExtensionBuilder`, the manifest model, `ExtensionApi`, node library and search contracts, settings descriptors, host channel contracts, project templates, migrations, `NetPrints.Extensibility.Editor` (facet, descriptors, contexts) | Core (analyzers flow, research R12), Serialization, Reflection, Catalog, Logging.Abstractions, DependencyInjection.Abstractions |
+| `NetPrints.Extensibility.Abstractions` | contracts only: `INetPrintsExtension`, `IExtensionBuilder`, the manifest model, `ExtensionApi`, node library and search contracts, settings descriptors, host channel contracts and `InMemoryHostChannel` (ADR-0030 moved it here from Testing, so extensions build channel pairs in tests), project templates, migrations, `NetPrints.Extensibility.Editor` (facet, descriptors, contexts) | Core (analyzers flow, research R12), Serialization, Reflection, Catalog, Logging.Abstractions, DependencyInjection.Abstractions |
 | `NetPrints.Extensibility` | host only: loader, load contexts, `ExtensionHost`, `ExtensionRegistry`, `RegistryBuilder`, `BuiltInExtension`, `JsonFileSettingsStore` | Abstractions |
-| `NetPrints.Extensibility.Testing` | `ExtensionTest<TExtension>`, `ExtensionHarness`, the conformance suite, `InMemoryHostChannel` | Extensibility |
+| `NetPrints.Extensibility.Testing` | `ExtensionTest<TExtension>`, `ExtensionHarness`, the conformance suite | Extensibility |
 | `NetPrints.Extensibility.Testing.Xunit` | `ConformanceTests<TExtension>` | Testing, xunit.v3 |
 | `NetPrints.Templates` | `dotnet new` templates `netprints-console`, `netprints-library`, `netprints-extension` | — |
 
@@ -170,15 +170,9 @@ public sealed record CommandDescriptor(string Id, LocalizedText Label, ICommandH
     public int? CommandBarOrder { get; init; }
 }
 
-public sealed record ContextMenuItemDescriptor(string Id, ContextMenuTarget Target, string CommandId, string Group, int Order)
-{
-    public Func<ICommandContext, bool>? AppliesTo { get; init; }
-}
+public sealed record ContextMenuItemDescriptor(string Id, ContextMenuTarget Target, string CommandId, string Group, int Order, Func<ICommandContext, bool>? AppliesTo = null);
 
-public sealed record StatusBarItemDescriptor(string Id, StatusBarAlignment Alignment, int Order, Func<IStatusBarContext, object> CreateViewModel)
-{
-    public Func<IStatusBarContext, bool>? AppliesTo { get; init; }
-}
+public sealed record StatusBarItemDescriptor(string Id, StatusBarAlignment Alignment, int Order, Func<IStatusBarContext, object> CreateViewModel, Func<IStatusBarContext, bool>? AppliesTo = null);
 
 public sealed record SettingsPageDescriptor(string Id, LocalizedText Title, string? SectionKey, int Order)
 {
@@ -220,7 +214,8 @@ instead of `IServiceProvider`.
 ## 6. Experimental ids
 
 The table is in research R16 and in the extension guide's "API stability" section (FR-030). An extension opts in per
-id with `<NetPrintsExperimentalOptIn Include="NPXE00nn" />`; without it, the compiler reports the id (US3 scenario 5).
+id with `<NoWarn>$(NoWarn);NPXE00nn</NoWarn>` or a narrow `#pragma` (ADR-0017; only this repository uses the
+`NetPrintsExperimentalOptIn` item, which `Directory.Build.targets` turns into its one `NoWarn`); without it, the compiler reports the id (US3 scenario 5).
 
 ## 7. Lifecycle and failures
 

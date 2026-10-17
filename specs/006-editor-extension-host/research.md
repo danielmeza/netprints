@@ -260,7 +260,9 @@ ADR-0031, ADR-0033 to ADR-0040.
   - a public `LocalizedText` value (key plus default text) on every contribution descriptor label; the host resolves
     it through the owner's resources and falls back to the default text (FR-027);
   - neutral resx files `NetPrints.Core/Graph/NodeStrings.resx` and `NetPrints.Editor/Strings.resx` with the MSBuild
-    strongly typed generator (`PublicClass=true`), and `{x:Static}` in XAML;
+    strongly typed generator, and `{x:Static}` in XAML. The editor's class is public (`PublicClass=true`); Core's is
+    internal behind one public member, `CoreStrings.Resources`, because the public API tracker lists every generated
+    property of a public class (ADR-0027);
   - extension resources through `IExtensionBuilder.AddStringResources` (NPXE0011);
   - `netprints.language` (a string; empty = the OS culture) with restart to apply; Semi and Ursa `Locale` follow the
     app culture (ADR-0023 amendment);
@@ -360,7 +362,9 @@ ADR-0031, ADR-0033 to ADR-0040.
   names and contents, plus the symbols `RootNamespace` and `ProfileId`, written as the literal tokens
   `NetPrintsRootNamespace` and `NetPrintsProfileId`. The built-in `console` and `library` templates are file trees
   embedded in `NetPrints.Workspace` (the CLI and the editor both reference it); an optional
-  `Properties/launchSettings.json` is a template file like any other. `NetPrints.Templates` (a `dotnet new` template
+  `Properties/launchSettings.json` is a template file like any other. Deviation: the project file and `.gitattributes` still come from the project
+  system and the profile, so the console tree holds `Program.netpc.json` only and the library tree is empty; the
+  `dotnet new` package and `netprints new` add the project file themselves. `NetPrints.Templates` (a `dotnet new` template
   package) is built from the same trees: its project copies them and adds `.template.config/template.json` with the
   same `sourceName` and symbols, so the editor, `netprints new` and `dotnet new` cannot drift; a CLI test runs
   `dotnet new` in a temporary hive (`--debug:custom-hive`) and compares the trees byte for byte with `netprints new`.
