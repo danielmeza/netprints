@@ -103,6 +103,22 @@ namespace NetPrints.Tests.Core
             Assert.Empty(missing);
         }
 
+        [Theory]
+        [InlineData("Material.Icons.Avalonia")]
+        [InlineData("Semi.Avalonia")]
+        [InlineData("Irihi.Ursa")]
+        [InlineData("Irihi.Ursa.Themes.Semi")]
+        [InlineData("Avalonia.Fonts.Inter")]
+        public void TheThirdPartyNoticesListThePinnedPackageVersions(string package)
+        {
+            string props = File.ReadAllText(PathOf("Directory.Packages.props"));
+            string notices = File.ReadAllText(PathOf("THIRD-PARTY-NOTICES.md"));
+            string version = XDocument.Parse(props).Descendants("PackageVersion").Single(element => (string?)element.Attribute("Include") == package).Attribute("Version")?.Value
+                ?? throw new InvalidOperationException($"{package} has no version.");
+
+            Assert.Matches($@"{System.Text.RegularExpressions.Regex.Escape(package)}[ ,]+{System.Text.RegularExpressions.Regex.Escape(version)}\b", notices.Replace("\n", " ", StringComparison.Ordinal));
+        }
+
         [Fact]
         public void TheDesktopProjectCopiesTheNoticesToItsOutputAndPublishDirectories()
         {

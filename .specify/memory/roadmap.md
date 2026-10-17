@@ -248,9 +248,9 @@ review, which also reviews the NuGet packages); implementers push and return, an
   - Dock binding warnings at runtime (updated 2026-10-16):
     - the capability "Value is null" warnings: P3a works around wieslawsoltes/Dock#1157 by filling empty
       `DockCapabilityPolicy` and `DockCapabilityOverrides` objects in `src/NetPrints.Editor/Shell/Docking/ShellDockables.cs`
-      and `ShellDockFactory.cs`. The upstream fix, Dock#1191, merged on 2026-10-16, but the latest release
-      (12.1.0.9) does not include it. When a Dock release includes it, bump Dock from 12.1.0.6, drop the workaround, and
-      confirm that the capability "Value is null" warnings stay gone (the startup warnings test);
+      and `ShellDockFactory.cs`. The upstream fix, Dock#1191, merged on 2026-10-16 and shipped in Dock 12.1.0.10, which
+      P3 now pins (T085). Drop the workaround and confirm that the capability "Value is null" warnings stay gone (the
+      startup warnings test);
     - `ToolChromeControl` binds `IsPinned` through `ActiveDockable.OriginalOwner`, which is null ("Value is null"). Dock#1191
       does not cover it (Dock master still binds it at `ToolChromeControl.axaml:142`); an upstream issue awaits the owner's
       OK;
