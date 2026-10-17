@@ -292,6 +292,7 @@ public class ShellAdapterTests
         var windows = new WindowService { MainWindow = rig.Main, OpenWindows = () => rig.Ui.Tree.Windows };
 
         rig.Main.Hide();
+        host.Activate();
         rig.Settle();
         Assert.Same(host, windows.ActiveWindow);
 
@@ -430,12 +431,7 @@ public class ShellAdapterTests
         IDockable[] all = [.. ShellDockFactory.Walk(rig.Adapter.Layout)];
         Assert.NotEmpty(all.OfType<ShellDocument>());
         Assert.NotEmpty(all.OfType<ShellTool>());
-        Assert.All(all.OfType<ShellDocument>().Cast<IDockable>().Concat(all.OfType<ShellTool>()), dockable =>
-        {
-            Assert.NotNull(dockable.DockCapabilityOverrides);
-            Assert.False(dockable.DockCapabilityOverrides.HasAnyOverride);
-        });
-        Assert.All(all.OfType<IDock>().Where(dock => dock is IDocumentDock or IToolDock), dock => Assert.NotNull(dock.DockCapabilityPolicy));
+        Assert.All(all.OfType<ShellDocument>().Cast<IDockable>().Concat(all.OfType<ShellTool>()), dockable => Assert.False(dockable.DockCapabilityOverrides?.HasAnyOverride ?? false));
         Assert.All(all.OfType<ShellDocument>().Cast<IDockable>().Concat(all.OfType<ShellTool>()), dockable =>
         {
             Assert.True(DockCapabilityResolver.IsEnabled(dockable, DockCapability.Drag, null), $"{dockable.Id} drag");

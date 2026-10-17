@@ -43,6 +43,21 @@ public class HoverAndDropTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task HoveringTheExactMiddleOfACableAtTheFitZoomHitsItAndGivesItsTooltip()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await session.RunAsync("fitAll", Token);
+        var cable = session.Graph.Connection("MethodEntryNode.Exec->CallMethodNode.Exec");
+
+        await cable.HoverAsync(Token);
+
+        Assert.True((await cable.GetAsync(Token)).Has(":pointerover"));
+        string tip = await cable.ToolTipAsync(Token) ?? "";
+        Assert.Contains("MethodEntryNode.Exec", tip, StringComparison.Ordinal);
+        Assert.Contains("standard output stream", tip, StringComparison.Ordinal);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task HoveringAPinHighlightsIt()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);

@@ -92,16 +92,16 @@ internal sealed class ShellDockFactory : Factory
     internal static string NewRuntimeId() => "netprints.dock." + Guid.NewGuid().ToString("N");
 
     /// <inheritdoc/>
-    public override IDocumentDock CreateDocumentDock() => new DocumentDock { Id = NewRuntimeId(), DockCapabilityPolicy = new DockCapabilityPolicy(), DockCapabilityOverrides = new DockCapabilityOverrides() };
+    public override IDocumentDock CreateDocumentDock() => new DocumentDock { Id = NewRuntimeId() };
 
     /// <inheritdoc/>
-    public override IToolDock CreateToolDock() => new ToolDock { Id = NewRuntimeId(), DockCapabilityPolicy = new DockCapabilityPolicy(), DockCapabilityOverrides = new DockCapabilityOverrides() };
+    public override IToolDock CreateToolDock() => new ToolDock { Id = NewRuntimeId() };
 
     /// <inheritdoc/>
-    public override IProportionalDock CreateProportionalDock() => new ProportionalDock { Id = NewRuntimeId(), DockCapabilityPolicy = new DockCapabilityPolicy(), DockCapabilityOverrides = new DockCapabilityOverrides() };
+    public override IProportionalDock CreateProportionalDock() => new ProportionalDock { Id = NewRuntimeId() };
 
     /// <inheritdoc/>
-    public override IRootDock CreateRootDock() => new ShellRootDock { Id = NewRuntimeId(), DockCapabilityPolicy = new DockCapabilityPolicy(), DockCapabilityOverrides = new DockCapabilityOverrides() };
+    public override IRootDock CreateRootDock() => new ShellRootDock { Id = NewRuntimeId() };
 
     /// <inheritdoc/>
     public override IDockWindow? CreateWindowFrom(IDockable dockable, DockWindowOptions? options)
@@ -141,8 +141,6 @@ internal sealed class ShellDockFactory : Factory
         var right = new ProportionalDock
         {
             Id = RightColumnId,
-            DockCapabilityPolicy = new DockCapabilityPolicy(),
-            DockCapabilityOverrides = new DockCapabilityOverrides(),
             Proportion = RightProportion,
             Orientation = Orientation.Vertical,
             VisibleDockables = CreateList<IDockable>(rightUpper, new ProportionalDockSplitter { Id = RightSplitId }, rightLower),
@@ -151,8 +149,6 @@ internal sealed class ShellDockFactory : Factory
         var documents = new DocumentDock
         {
             Id = DocumentsId,
-            DockCapabilityPolicy = new DockCapabilityPolicy(),
-            DockCapabilityOverrides = new DockCapabilityOverrides(),
             Proportion = 1 - LeftProportion - RightProportion,
             CanCreateDocument = false,
             IsCollapsable = false,
@@ -161,8 +157,6 @@ internal sealed class ShellDockFactory : Factory
         var body = new ProportionalDock
         {
             Id = BodyId,
-            DockCapabilityPolicy = new DockCapabilityPolicy(),
-            DockCapabilityOverrides = new DockCapabilityOverrides(),
             Proportion = 1 - BottomProportion,
             Orientation = Orientation.Horizontal,
             VisibleDockables = CreateList<IDockable>(
@@ -171,16 +165,12 @@ internal sealed class ShellDockFactory : Factory
         var column = new ProportionalDock
         {
             Id = RootId + ".column",
-            DockCapabilityPolicy = new DockCapabilityPolicy(),
-            DockCapabilityOverrides = new DockCapabilityOverrides(),
             Orientation = Orientation.Vertical,
             VisibleDockables = CreateList<IDockable>(body, new ProportionalDockSplitter { Id = BodySplitterId }, bottom),
         };
         return new ShellRootDock
         {
             Id = RootId,
-            DockCapabilityPolicy = new DockCapabilityPolicy(),
-            DockCapabilityOverrides = new DockCapabilityOverrides(),
             VisibleDockables = CreateList<IDockable>(column),
             ActiveDockable = column,
             DefaultDockable = column,
@@ -261,8 +251,6 @@ internal sealed class ShellDockFactory : Factory
                 var right = new ProportionalDock
                 {
                     Id = RightColumnId,
-                    DockCapabilityPolicy = new DockCapabilityPolicy(),
-                    DockCapabilityOverrides = new DockCapabilityOverrides(),
                     Proportion = RightProportion,
                     Orientation = Orientation.Vertical,
                     VisibleDockables = CreateList<IDockable>(dock),
@@ -398,8 +386,6 @@ internal sealed class ShellDockFactory : Factory
         return new ToolDock
         {
             Id = id,
-            DockCapabilityPolicy = new DockCapabilityPolicy(),
-            DockCapabilityOverrides = new DockCapabilityOverrides(),
             Proportion = proportion,
             Alignment = alignment,
             VisibleDockables = CreateList<IDockable>(tools),
