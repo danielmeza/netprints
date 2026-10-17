@@ -42,79 +42,27 @@ namespace NetPrints.Tests.Core
         }
 
         /// <summary>
-        /// A stable <c>NPTnnn</c>/<c>NPDnnn</c>/<c>NPXnnn</c>/<c>NPWnnn</c> diagnostic code is declared
-        /// exactly once, as a named constant, and referenced everywhere else
-        /// (compilation-and-diagnostics.md §2): gates the smell found in
-        /// <c>TranslationDiagnosticCodes.cs</c>'s introduction, where the translator's <c>NPT</c> codes
-        /// were raw literals scattered across several files. Unlike the declaration itself, a raw
-        /// literal is not allowed even inside a declaring file: only the one line that declares a code
-        /// is exempt from the "no raw literal" check below.
+        /// A stable diagnostic code is declared once across <c>src/</c>. NPH003 covers the literals and the
+        /// duplicates inside one project; this covers a code declared in two projects, of which only
+        /// <c>NPXE0004</c> is allowed.
         /// </summary>
         [Fact]
-        public void NoRawDiagnosticCodeLiteralsOutsideTheirConstants()
+        public void NoDiagnosticCodeIsDeclaredInTwoProjects()
         {
             string src = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "src");
-            Regex codePattern = DiagnosticCodeLiteralPattern();
             Regex declarationPattern = DiagnosticCodeDeclarationPattern();
 
-            // Files that declare one or more of these codes as a named constant. NPW is split across
-            // ProjectSystemException (NPW001, NPW003) and ProjectMessage (the rest), same as NPD/NPX/NPT.
-            string[] declaringFiles =
-            [
-                Path.Combine("NetPrints.Core", "Translator", "TranslationDiagnosticCodes.cs"),
-                Path.Combine("NetPrints.Extensibility.Abstractions", "Loading", "ExtensionDiagnosticCodes.cs"),
-                Path.Combine("NetPrints.Serialization", "DocumentIssue.cs"),
-                Path.Combine("NetPrints.Generation", "GraphCodeGenerator.cs"),
-                Path.Combine("NetPrints.Core", "Projects", "ProjectSystemException.cs"),
-                Path.Combine("NetPrints.Core", "Projects", "ProjectMessage.cs"),
-                Path.Combine("NetPrints.Core", "ExperimentalApiIds.cs"),
-                Path.Combine("NetPrints.Catalog", "Engine", "CatalogDiagnosticCodes.cs"),
-                Path.Combine("NetPrints.Catalog", "Engine", "ExperimentalApis.cs"),
-            ];
-
-            string[] sourceFiles = [.. Directory.EnumerateFiles(src, "*.cs", SearchOption.AllDirectories)
-                .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-                    && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))];
-
             var declaredCodes = new List<(string Code, string File)>();
-            var offenders = new List<string>();
-
-            foreach (string path in sourceFiles)
+            foreach (string path in EnumerateSourceFiles(src, "*.cs"))
             {
                 string relativePath = Path.GetRelativePath(src, path);
-                bool isDeclaringFile = declaringFiles.Any(f => path.EndsWith(f, StringComparison.Ordinal));
-                bool foundRawLiteral = false;
-
-                foreach (string line in File.ReadAllLines(path))
+                foreach (Match declaration in declarationPattern.Matches(File.ReadAllText(path)))
                 {
-                    string trimmed = line.TrimStart();
-                    if (trimmed.StartsWith("///", StringComparison.Ordinal))
-                    {
-                        // XML doc prose (e.g. "for example \"NPT006\"") documents the format, not a duplicated literal.
-                        continue;
-                    }
-
-                    Match declaration = declarationPattern.Match(line);
-                    if (declaration.Success)
-                    {
-                        Assert.True(isDeclaringFile, $"{relativePath}: a diagnostic code constant must be declared in one of the designated files.");
-                        declaredCodes.Add((declaration.Groups["code"].Value, relativePath));
-                        continue;
-                    }
-
-                    if (codePattern.IsMatch(line))
-                    {
-                        foundRawLiteral = true;
-                    }
-                }
-
-                if (foundRawLiteral)
-                {
-                    offenders.Add(relativePath);
+                    declaredCodes.Add((declaration.Groups["code"].Value, relativePath));
                 }
             }
 
-            Assert.Empty(offenders);
+            Assert.NotEmpty(declaredCodes);
 
             IEnumerable<string> duplicates = declaredCodes.GroupBy(declaration => declaration.Code, StringComparer.Ordinal)
                 .Where(group => group.Count() > 1 && !IsAllowedDuplicate(group.Key, [.. group.Select(declaration => declaration.File)]))
@@ -137,10 +85,7 @@ namespace NetPrints.Tests.Core
             && files.Count == AllowedDuplicateFiles.Length
             && files.Select(file => file.Replace('\\', '/')).Order(StringComparer.Ordinal).SequenceEqual(AllowedDuplicateFiles.Order(StringComparer.Ordinal));
 
-        [GeneratedRegex(@"""(?:(?:NPT|NPD|NPX|NPW|NPC)\d{3,}|NPXE\d{4})""")]
-        private static partial Regex DiagnosticCodeLiteralPattern();
-
-        [GeneratedRegex(@"const string \w+ = ""(?<code>(?:NPT|NPD|NPX|NPW|NPC)\d{3,}|NPXE\d{4})""")]
+        [GeneratedRegex(@"const string \w+ = ""(?<code>(?:NP[TDXWCSAHIKR])\d{3,}|NPXE\d{4})""")]
         private static partial Regex DiagnosticCodeDeclarationPattern();
 
         /// <summary>

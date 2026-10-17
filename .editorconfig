@@ -720,6 +720,7 @@ dotnet_diagnostic.VSTHRD111.severity = none
 # NPS repository style rules (ADR-0024); the analyzers are referenced from src/ and tests/ only.
 [src/**.cs]
 dotnet_diagnostic.NPA040.severity = error
+dotnet_diagnostic.NPH003.severity = error
 
 [{src,tests}/**.cs]
 dotnet_diagnostic.NPS001.severity = error
