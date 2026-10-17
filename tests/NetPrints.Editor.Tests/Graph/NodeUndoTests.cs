@@ -29,7 +29,7 @@ public class NodeUndoTests : GraphTestBase
     private Task DeleteAsync(params Node[] nodes)
     {
         Graph.SelectNodes(nodes.Select(VmOf), deselectPrevious: true);
-        var context = new CommandContext(new FakeShell(), null, null, Graph, new CommandSelection([.. Graph.SelectedNodes]));
+        var context = new CommandContext(new FakeShell(), null, null, Graph, new CommandSelection([.. Graph.SelectedNodes.Select(vm => vm.Node)]));
         return new DeleteCommandHandler().ExecuteAsync(context, Token);
     }
 

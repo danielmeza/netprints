@@ -47,12 +47,12 @@ public sealed class GoToConnectionEndCommandHandler(ConnectionEnd end) : IEditor
             return connection;
         }
 
-        if (context.Parameter is not null || context.ActiveGraph is not { } graph || context.Selection.Nodes is not [NodeViewModel selected])
+        if (context.Parameter is not null || context.ActiveGraph is not { } graph || context.Selection.Nodes is not [{ } selected])
         {
             return null;
         }
 
-        ConnectionViewModel[] ends = [.. graph.Connections.Where(candidate => (end == ConnectionEnd.Source ? candidate.Target : candidate.Source).Node == selected)];
+        ConnectionViewModel[] ends = [.. graph.Connections.Where(candidate => (end == ConnectionEnd.Source ? candidate.Target : candidate.Source).Node.Node == selected)];
         return ends.Length == 1 ? ends[0] : null;
     }
 

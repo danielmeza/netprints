@@ -45,7 +45,7 @@ public sealed class ShellCommandContextProvider(ShellViewModel shell, IShell ser
     public CommandContext Create(object? parameter = null, CommandScope scope = CommandScope.Global)
     {
         NodeGraphViewModel? graph = ActiveGraph();
-        var selection = new CommandSelection(graph is null ? [] : [.. graph.SelectedNodes], shell.TreeSelection);
+        var selection = new CommandSelection(graph is null ? [] : [.. graph.SelectedNodes.Select(vm => vm.Node)], shell.TreeSelection);
         return new CommandContext(services, shell.Session, shell.ActiveDocument?.Id, graph, selection, parameter, scope, host);
     }
 

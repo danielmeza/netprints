@@ -130,7 +130,7 @@ public sealed class EditCommandsTests : SessionCommandTests
         var handler = new DeleteCommandHandler();
         CommandContext none = Shell.Context(graph: graph, scope: CommandScope.Graph);
         graph.SelectNodes([node], deselectPrevious: true);
-        CommandContext selected = Shell.Context(graph: graph, selection: new CommandSelection([node]), scope: CommandScope.Graph);
+        CommandContext selected = Shell.Context(graph: graph, selection: new CommandSelection([node.Node]), scope: CommandScope.Graph);
 
         Assert.False(handler.CanExecute(none));
         Assert.True(handler.CanExecute(selected));
@@ -179,7 +179,7 @@ public sealed class EditCommandsTests : SessionCommandTests
         NodeGraphViewModel graph = OpenGraph();
         NodeViewModel node = AddDeletableNode(graph);
         graph.SelectNodes([node], deselectPrevious: true);
-        CommandContext context = Shell.Context(session: session, graph: graph, selection: new CommandSelection([node], cls), scope: CommandScope.ProjectTree);
+        CommandContext context = Shell.Context(session: session, graph: graph, selection: new CommandSelection([node.Node], cls), scope: CommandScope.ProjectTree);
 
         await new DeleteCommandHandler().ExecuteAsync(context, Token);
 
@@ -310,7 +310,7 @@ public sealed class EditCommandsTests : SessionCommandTests
         graph.SelectNodes([node], deselectPrevious: true);
         List<GraphViewRequest> raised = [];
         graph.ViewRequested += (_, r) => raised.Add(r);
-        CommandContext context = Shell.Context(graph: graph, selection: new CommandSelection([node]));
+        CommandContext context = Shell.Context(graph: graph, selection: new CommandSelection([node.Node]));
         ICommandHandler handler = request switch
         {
             GraphViewRequest.NodeSearch => new NodeSearchCommandHandler(),

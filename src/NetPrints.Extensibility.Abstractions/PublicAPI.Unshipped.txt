@@ -210,10 +210,10 @@ const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.UnknownReference 
 [NPXE0005]NetPrints.Extensibility.Editor.CommandScope.VariablesPanel = 4 -> NetPrints.Extensibility.Editor.CommandScope
 [NPXE0005]NetPrints.Extensibility.Editor.CommandSelection
 [NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.<Clone>$() -> NetPrints.Extensibility.Editor.CommandSelection!
-[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.CommandSelection(System.Collections.Generic.IReadOnlyList<object!>! Nodes, object? TreeItem = null) -> void
-[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.Deconstruct(out System.Collections.Generic.IReadOnlyList<object!>! Nodes, out object? TreeItem) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.CommandSelection(System.Collections.Generic.IReadOnlyList<NetPrints.Graph.Node!>! Nodes, object? TreeItem = null) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.Deconstruct(out System.Collections.Generic.IReadOnlyList<NetPrints.Graph.Node!>! Nodes, out object? TreeItem) -> void
 [NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.Equals(NetPrints.Extensibility.Editor.CommandSelection? other) -> bool
-[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.Nodes.get -> System.Collections.Generic.IReadOnlyList<object!>!
+[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.Nodes.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Graph.Node!>!
 [NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.Nodes.init -> void
 [NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.TreeItem.get -> object?
 [NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.TreeItem.init -> void

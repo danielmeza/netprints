@@ -129,7 +129,7 @@ public class TargetPinSelfTests(TestEditor editor) : GraphTestBase(editor)
         ClassContext.UndoRedo.Clear();
 
         Graph.SelectNodes([VmOf(other)], deselectPrevious: true);
-        var context = new CommandContext(new FakeShell(), null, null, Graph, new CommandSelection([.. Graph.SelectedNodes]));
+        var context = new CommandContext(new FakeShell(), null, null, Graph, new CommandSelection([.. Graph.SelectedNodes.Select(vm => vm.Node)]));
         await new DeleteCommandHandler().ExecuteAsync(context, TestContext.Current.CancellationToken);
         Assert.Equal("self", target.SelfHint);
 

@@ -55,7 +55,7 @@ public sealed class ShellCommandContextProviderTests(TestEditor testEditor) : Gr
 
             Assert.Equal(MainId, active.ActiveDocument);
             Assert.Same(Graph, active.ActiveGraph);
-            Assert.Same(node, Assert.Single(active.Selection.Nodes));
+            Assert.Same(added, Assert.Single(active.Selection.Nodes));
         }
     }
 
