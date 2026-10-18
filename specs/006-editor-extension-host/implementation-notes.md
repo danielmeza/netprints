@@ -1540,6 +1540,35 @@ T076, Checkpoint C2, gate items measured on this head (Release).
   `tests/Fixtures/Settings/example.settings.json`; run locally, 53 instances pass) and copied by `scripts/build-docs.sh`. `docs/guide/editor/settings.md` holds only the generated table between markers; T091 writes the rest.
   Descriptions end without a period because the schema lint requires it. The `x-netprints-*` keywords appear in the file through restart (language, extensionPaths), path (extensionPaths, trustedProjects) and choices (presets).
 
+## Batch D1e (T089, T090, T091)
+
+- **Commits**: 3e76cdbe, 339a0588, 63cca0b6, plus the CI fix 4439d543.
+- **Settings document**: General, Appearance, Run and Extensions pages. Fields are generated from the exported schema, validated on Enter or focus loss and saved at once. Restart fields raise a "Restart to apply" bar, and search filters the pages.
+  `CommandKey.OemComma` gives Ctrl+,. `SetThemeAsync` no longer resets the presets.
+- **Decision (Keyboard page)**: left to T093.
+- **Decision (custom pages)**: custom `CreateViewModel` pages are not rendered yet.
+- **Decision (labels)**: the label is the property name in words, with no resource override.
+- **Decision (language)**: the language field is a text box.
+- **CI fix (4439d543)**: the invalid-value test now also waits for `field.HasError` to be false.
+
+## Batch D1f (T092, T093, T094)
+
+- **Commits**: 223e8059, e2c0a31d.
+- **Keyboard section**: `KeyboardSettings`, `KeyBindingOverride` and `KeyBindingResolver`; the effective gesture set is computed once in the registry snapshot.
+- **Keyboard shortcuts page**: filter by text and by recorded gesture; add, remove, reset one and reset all; a conflict question, refusal reasons and the Not-loaded list. `RecordGestureBehavior` sets `IsRecordingGestures`, which
+  suspends the global bindings while recording. The shortcuts sheet has an Edit shortcuts button.
+- **E2E**: `RebindShortcuts` mixes pointer and keys; keyboard navigation of the page is not built. `X11Driver` maps "," to comma.
+
+## Batch D1g (T095, T096, T097)
+
+- **Commits**: 74787fd4, 3d689ed5, 9e8aacfa.
+- **Themes**: `ThemeTokenCatalogue` (61 tokens) and `ContrastMath`; five embedded presets (netprints.dark, netprints.light, classic.dark, high-contrast.dark (Aquatic), high-contrast.light (Desert)). The overlay and `ThemeApplier` apply
+  theme changes with no restart. The Appearance page has preset drop-downs and a preview; event 1043 logs an unknown preset. `themes.md` carries a generated token list.
+- **Decision (ContrastCheck rounding)**: it rounds to 2 decimals, so the Classic card at 1.1497 passes the 1.15 gate. Flagged for T111.
+- **Decision (high contrast)**: one file per variant, with an optional `semiVariant`. In system mode the high-contrast tokens apply without the Semi variant.
+- **Decision (plain resources)**: sizes and fonts stay plain resources.
+- **Decision (aliases)**: there is no alias table yet.
+
 ## Batch D1-CP (T098, Checkpoint D1)
 
 - Suite (Release, solution-wide, `--ignore-exit-code 8`, at 9e8aacfa): 5231 total, 5195 passed, 36 skipped, 0 failed (UITests 16 min 07 s, Editor.Tests 2 min 19 s,
