@@ -14,6 +14,9 @@ public sealed class CommandInvoker(IContributionRegistry registry, ICommandConte
 {
     private EventHandler? commandsChanged;
 
+    /// <summary>Gets a value indicating whether the key bindings are suspended because the Keyboard shortcuts page records a chord.</summary>
+    public bool GesturesSuspended => registry.IsRecordingGestures;
+
     /// <summary>Gets the commands that have a gesture and are active in <paramref name="scope"/>.</summary>
     /// <param name="scope">The scope; <see cref="CommandScope.Global"/> returns only the shell-wide commands.</param>
     /// <returns>The commands, in registration order.</returns>

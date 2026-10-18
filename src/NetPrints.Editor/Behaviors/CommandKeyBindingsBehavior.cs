@@ -84,7 +84,7 @@ public sealed class CommandKeyBindingsBehavior : StyledElementBehavior<InputElem
         {
             foreach (KeyGesture gesture in CommandKeyGestures.Of(command))
             {
-                var binding = new KeyBinding { Gesture = gesture, Command = new RelayCommand(() => invoker.TryRun(command), () => command.Handler.CanExecute(invoker.CreateContext())) };
+                var binding = new KeyBinding { Gesture = gesture, Command = new RelayCommand(() => invoker.TryRun(command), () => !invoker.GesturesSuspended && command.Handler.CanExecute(invoker.CreateContext())) };
                 added.Add(binding);
                 element.KeyBindings.Add(binding);
             }

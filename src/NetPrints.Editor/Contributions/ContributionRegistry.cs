@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using NetPrints.Editor.Commands;
 using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Hosting;
+using NetPrints.Editor.State;
 
 namespace NetPrints.Editor.Contributions;
 
@@ -21,6 +22,11 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
         BuiltInContributions.Register(registry);
         GoToProviderContributions.Register(registry, () => services.GetService<ShellHost>()?.Shell.Session);
         services.GetService<ExtensionContributionRecorder>()?.ApplyToAppGroup(registry);
+        if (services.GetService<EditorHostServices>() is { } host)
+        {
+            registry.SetUserBindings(host.Settings.Get(KeyboardSettings.Descriptor));
+        }
+
         registry.Freeze();
         return registry;
     }
@@ -33,6 +39,7 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
     private readonly ContributionGuard guard = new(logger);
     private readonly HashSet<string> loggedReferences = new(StringComparer.Ordinal);
     private ContributionSnapshot? snapshot;
+    private KeyboardSettings userBindings = new();
     private bool published;
     private int batching;
     private string currentOwner = ContributionIds.Owner;
@@ -47,7 +54,7 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
         {
             if (snapshot is null)
             {
-                snapshot = new ContributionSnapshot(AllGroups());
+                snapshot = new ContributionSnapshot(AllGroups(), userBindings);
                 LogUnknownReferences(snapshot);
             }
 
@@ -141,6 +148,18 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
         }
 
         Publish(always: true);
+    }
+
+    /// <inheritdoc/>
+    public bool IsRecordingGestures { get; set; }
+
+    /// <summary>Sets the user's key bindings; the commands of the next snapshot carry the effective gestures and <see cref="Changed"/> is raised.</summary>
+    /// <param name="bindings">The <c>keyboard</c> section of the settings.</param>
+    public void SetUserBindings(KeyboardSettings bindings)
+    {
+        ArgumentNullException.ThrowIfNull(bindings);
+        userBindings = bindings;
+        Publish();
     }
 
     /// <inheritdoc/>

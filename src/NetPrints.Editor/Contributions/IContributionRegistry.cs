@@ -1,3 +1,5 @@
+using NetPrints.Editor.State;
+
 namespace NetPrints.Editor.Contributions;
 
 /// <summary>
@@ -32,4 +34,11 @@ public interface IContributionRegistry : IContributionSnapshot
 
     /// <summary>Ends the initial registration of the app group: adds the Show-panel command of every panel without one and publishes the first snapshot. Later additions are still accepted.</summary>
     void Freeze();
+
+    /// <summary>Gets or sets a value indicating whether a key chord is being recorded; while it is, no command runs from its gesture.</summary>
+    bool IsRecordingGestures { get; set; }
+
+    /// <summary>Sets the user's key bindings; the next snapshot carries the effective gestures and <see cref="Changed"/> is raised.</summary>
+    /// <param name="bindings">The <c>keyboard</c> section of the settings.</param>
+    void SetUserBindings(KeyboardSettings bindings);
 }

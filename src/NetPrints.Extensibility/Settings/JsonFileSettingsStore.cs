@@ -22,6 +22,7 @@ public sealed class JsonFileSettingsStore : ISettingsStore, ISettingsChangeSourc
 {
     private const string FileSection = "$file";
     private const string NetPrintsKey = NetPrintsSettings.SectionId;
+    private const string KeyboardKey = "keyboard";
     private const string ExtensionsKey = "extensions";
     private const string BuiltInPrefix = NetPrintsKey + ".";
     private const string SchemaVersionKey = "schemaVersion";
@@ -225,7 +226,7 @@ public sealed class JsonFileSettingsStore : ISettingsStore, ISettingsChangeSourc
         return stream.ToArray();
     }
 
-    private static bool IsHostSection(string id) => id is NetPrintsKey or RunSettings.SectionId;
+    private static bool IsHostSection(string id) => id is NetPrintsKey or RunSettings.SectionId or KeyboardKey;
 
     private static bool IsBuiltInSection(string id) =>
         IsHostSection(id) || id.StartsWith(BuiltInPrefix, StringComparison.Ordinal);

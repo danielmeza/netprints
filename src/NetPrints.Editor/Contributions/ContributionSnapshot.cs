@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using NetPrints.Editor.State;
 
 namespace NetPrints.Editor.Contributions;
 
@@ -8,9 +9,11 @@ public sealed class ContributionSnapshot : IContributionSnapshot
     private readonly ImmutableDictionary<string, string> owners;
     private readonly ImmutableDictionary<string, string> ownerNames;
 
-    internal ContributionSnapshot(IReadOnlyList<ContributionGroup> groups)
+    internal ContributionSnapshot(IReadOnlyList<ContributionGroup> groups, KeyboardSettings user)
     {
-        Commands = [.. groups.SelectMany(group => group.Commands)];
+        CommandDescriptor[] registered = [.. groups.SelectMany(group => group.Commands)];
+        KeyBindings = KeyBindingResolver.Resolve(registered, user);
+        Commands = [.. registered.Select(WithEffectiveGestures)];
         Panels = [.. groups.SelectMany(group => group.Panels)];
         DashboardTiles = [.. groups.SelectMany(group => group.Tiles)];
         StatusBarItems = [.. groups.SelectMany(group => group.StatusBarItems)];
@@ -28,8 +31,11 @@ public sealed class ContributionSnapshot : IContributionSnapshot
         ownerNames = Merge(groups.Select(group => group.OwnerNames));
     }
 
-    /// <inheritdoc/>
+    /// <summary>Gets the accepted commands, in registration order. <see cref="CommandDescriptor.DefaultGestures"/> holds the gestures in force (user overrides applied); <see cref="KeyBindings"/> keeps the registered defaults.</summary>
     public IReadOnlyList<CommandDescriptor> Commands { get; }
+
+    /// <summary>Gets the effective key bindings, computed once for this snapshot.</summary>
+    internal EffectiveKeyBindings KeyBindings { get; }
 
     /// <inheritdoc/>
     public IReadOnlyList<PanelDescriptor> Panels { get; }
@@ -84,6 +90,9 @@ public sealed class ContributionSnapshot : IContributionSnapshot
 
         return ownerNames.GetValueOrDefault(owner, owner);
     }
+
+    private CommandDescriptor WithEffectiveGestures(CommandDescriptor command) =>
+        KeyBindings.TryGet(command.Id, out CommandBindings bindings) && bindings.IsChanged ? command with { DefaultGestures = bindings.Effective } : command;
 
     private ImmutableArray<ContributionIssue> FindUnknownReferences(IReadOnlyList<ContributionGroup> groups)
     {
