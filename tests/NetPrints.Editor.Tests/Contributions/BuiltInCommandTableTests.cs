@@ -36,6 +36,7 @@ public class BuiltInCommandTableTests
         new("saveAll", "Save all", "File", "save", ["Ctrl+Shift+S"], Everywhere, null, typeof(SaveAllCommandHandler)),
         new("projectSettings", "Project settings", "File", "project-settings", [], Everywhere, null, typeof(ProjectSettingsCommandHandler)),
         new("references", "References…", "File", "project-settings", [], Everywhere, 7, typeof(ReferencesCommandHandler)),
+        new("openSettings", "Settings", "File", "settings", ["Ctrl+,"], Everywhere, null, typeof(OpenSettingsCommandHandler)),
         new("exit", "Exit", "File", "exit", [], Everywhere, null, typeof(ExitCommandHandler)),
         new("undo", "Undo", "Edit", "history", ["Ctrl+Z"], Everywhere, 4, typeof(UndoCommandHandler)),
         new("redo", "Redo", "Edit", "history", ["Ctrl+Y", "Ctrl+Shift+Z"], Everywhere, 5, typeof(RedoCommandHandler)),

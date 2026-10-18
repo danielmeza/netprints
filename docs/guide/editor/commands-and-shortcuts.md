@@ -72,6 +72,7 @@ two shortcuts lists both. A dash means the command has no shortcut; it is still 
 | File | Save all | Ctrl+Shift+S | Anywhere |
 | File | Project settings | – | Anywhere |
 | File | References… | – | Anywhere |
+| File | Settings | Ctrl+, | Anywhere |
 | File | Exit | – | Anywhere |
 | Edit | Undo | Ctrl+Z | Anywhere |
 | Edit | Redo | Ctrl+Y, Ctrl+Shift+Z | Anywhere |

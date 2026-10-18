@@ -868,6 +868,22 @@
     <Setter Property="HorizontalAlignment" Value="Stretch" />
   </Style>
 
+  <!-- Settings document: the restart bar, the indented extension pages and the field pages. -->
+  <Style Selector="Border.restartBar">
+    <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
+    <Setter Property="Padding" Value="8" />
+  </Style>
+  <Style Selector="TextBlock.settingsChildPage">
+    <Setter Property="Padding" Value="16,0,0,0" />
+  </Style>
+  <Style Selector="StackPanel.formContainer.settingsPage">
+    <Setter Property="Spacing" Value="16" />
+    <Setter Property="MaxWidth" Value="640" />
+  </Style>
+  <Style Selector="StackPanel.settingsField">
+    <Setter Property="Spacing" Value="4" />
+  </Style>
+
   <!-- Key hint next to a menu item. -->
   <Style Selector="TextBlock.menuShortcut">
     <Setter Property="Margin" Value="24,0,0,0" />

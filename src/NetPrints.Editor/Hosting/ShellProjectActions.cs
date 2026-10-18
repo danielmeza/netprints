@@ -238,7 +238,7 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
             actual = app.ActualThemeVariant;
         }
 
-        await context.Settings.SetAsync(EditorSettings.Descriptor, new EditorSettings { Theme = theme }, cancellationToken).ConfigureAwait(true);
+        await context.Settings.SetAsync(EditorSettings.Descriptor, context.Settings.Get(EditorSettings.Descriptor) with { Theme = theme }, cancellationToken).ConfigureAwait(true);
         shell.NotifyCommandStatesChanged();
         shell.ShowStatus(ThemeStatusText.For(theme, actual), ThemeStatusDuration);
     }

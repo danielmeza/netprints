@@ -29,7 +29,7 @@ internal static class GestureText
     private static readonly HashSet<string> NamedKeys = new(StringComparer.OrdinalIgnoreCase)
     {
         "Escape", "Esc", "Enter", "Return", "Delete", "Del", "Insert", "Ins", "Home", "End", "PageUp", "PgUp", "PageDown", "PgDn",
-        "Left", "Right", "Up", "Down", "Tab", "Space", "Back", "Backspace",
+        "Left", "Right", "Up", "Down", "Tab", "Space", "Back", "Backspace", ",", "Comma", "OemComma",
     };
 
     /// <summary>Parses a gesture such as <c>Ctrl+Shift+B</c>.</summary>

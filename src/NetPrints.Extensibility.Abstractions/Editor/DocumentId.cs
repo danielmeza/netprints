@@ -15,6 +15,9 @@ public enum DocumentKind
 
     /// <summary>The project settings document.</summary>
     ProjectSettings,
+
+    /// <summary>The Settings document: the user's settings pages.</summary>
+    Settings,
 }
 
 /// <summary>
@@ -29,6 +32,7 @@ public sealed record DocumentId
     private const string GraphPrefix = "graph:";
     private const string StartText = "start";
     private const string ProjectSettingsText = "project-settings";
+    private const string SettingsText = "settings";
 
     /// <summary>The prefix of the graph key of a method; the method's id follows.</summary>
     public const string MethodKeyPrefix = "method:";
@@ -65,6 +69,9 @@ public sealed record DocumentId
 
     /// <summary>Gets the project settings id.</summary>
     public static DocumentId ProjectSettings { get; } = new(DocumentKind.ProjectSettings, null, null);
+
+    /// <summary>Gets the id of the Settings document, <c>settings</c>.</summary>
+    public static DocumentId Settings { get; } = new(DocumentKind.Settings, null, null);
 
     /// <summary>Gets what the id identifies.</summary>
     public DocumentKind Kind { get; }
@@ -107,6 +114,9 @@ public sealed record DocumentId
             case ProjectSettingsText:
                 id = ProjectSettings;
                 return true;
+            case SettingsText:
+                id = Settings;
+                return true;
             case null:
                 return false;
         }
@@ -140,6 +150,7 @@ public sealed record DocumentId
     {
         DocumentKind.StartPage => StartText,
         DocumentKind.ProjectSettings => ProjectSettingsText,
+        DocumentKind.Settings => SettingsText,
         _ => $"{GraphPrefix}{ClassPath}#{GraphKey}",
     };
 

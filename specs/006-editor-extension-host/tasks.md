@@ -780,7 +780,7 @@ tests. **Gate (plan)**: SC-004, SC-006, SC-007, SC-009.
 
 ### Batch D1e — model: sonnet — T089–T091 — 4 units
 
-- [ ] T089 [US5] The Settings document and generated pages (FR-039–FR-042, research R20; 2 units; load `avalonia-xaml`,
+- [x] T089 [US5] The Settings document and generated pages (FR-039–FR-042, research R20; 2 units; load `avalonia-xaml`,
   `avalonia-behaviors` and `avalonia-styling`). Test first: headless
   `tests/NetPrints.Editor.UITests/Settings/SettingsDocumentTests.cs`: `openSettings` (Ctrl+,, File › Settings, the
   palette) opens one document `netprints.document.settings`, and reopening activates it (US5 scenario 1); the page
@@ -789,7 +789,7 @@ tests. **Gate (plan)**: SC-004, SC-006, SC-007, SC-009.
   one is saved at once (scenario 4); a restart field shows "Requires restart" and the bar with "Restart now" (scenario
   5). Then `src/NetPrints.Editor/Settings/` (document, generated page and field view models, views with theme tokens and
   resource strings).
-- [ ] T090 [US5] Built-in and extension pages (FR-039, FR-044, SC-006; 1 unit). Test first: every key of the settings
+- [x] T090 [US5] Built-in and extension pages (FR-039, FR-044, SC-006; 1 unit). Test first: every key of the settings
   schema is reachable from a page (SC-006); the `NetPrints.TestExtension` section gets a generated page under Extensions
   (US5 scenario 2); changed values survive a restart in an automated test (SC-006). Then the General, Run and
   Extensions pages (extension paths, trusted projects, the loaded extensions with version and source); Appearance's

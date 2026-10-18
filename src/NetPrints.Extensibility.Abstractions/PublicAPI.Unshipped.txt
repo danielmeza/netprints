@@ -945,3 +945,15 @@ NetPrints.Extensibility.Editor.ProjectOutputType.Library = 1 -> NetPrints.Extens
 [NPXE0009]NetPrints.Extensibility.Settings.SettingPathAttribute
 [NPXE0009]NetPrints.Extensibility.Settings.SettingPathAttribute.Kind.get -> NetPrints.Extensibility.Settings.PathKind
 [NPXE0009]NetPrints.Extensibility.Settings.SettingPathAttribute.SettingPathAttribute(NetPrints.Extensibility.Settings.PathKind kind) -> void
+NetPrints.Extensibility.Editor.CommandKeyId.OemComma = 75 -> NetPrints.Extensibility.Editor.CommandKeyId
+[NPXE0005]NetPrints.Extensibility.Editor.DocumentKind.Settings = 3 -> NetPrints.Extensibility.Editor.DocumentKind
+[NPXE0005]static NetPrints.Extensibility.Editor.DocumentId.Settings.get -> NetPrints.Extensibility.Editor.DocumentId!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.OemComma -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0002]abstract NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.SectionTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo!
+[NPXE0002]abstract NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ReadSection(NetPrints.Extensibility.Settings.ISettingsStore! store) -> System.Text.Json.Nodes.JsonObject!
+[NPXE0002]abstract NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ValidateSection(System.Text.Json.Nodes.JsonObject! section) -> System.Collections.Generic.IReadOnlyList<string!>!
+[NPXE0002]abstract NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.WriteSectionAsync(NetPrints.Extensibility.Settings.ISettingsStore! store, System.Text.Json.Nodes.JsonObject! section, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+[NPXE0002]override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.SectionTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo!
+[NPXE0002]override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.ReadSection(NetPrints.Extensibility.Settings.ISettingsStore! store) -> System.Text.Json.Nodes.JsonObject!
+[NPXE0002]override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.ValidateSection(System.Text.Json.Nodes.JsonObject! section) -> System.Collections.Generic.IReadOnlyList<string!>!
+[NPXE0002]override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.WriteSectionAsync(NetPrints.Extensibility.Settings.ISettingsStore! store, System.Text.Json.Nodes.JsonObject! section, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask

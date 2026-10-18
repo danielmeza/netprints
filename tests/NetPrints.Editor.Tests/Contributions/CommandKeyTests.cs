@@ -8,14 +8,28 @@ namespace NetPrints.Editor.Tests.Contributions;
 /// <summary>ADR-0034: <c>CommandKey</c> is a smart enum whose members carry their own behaviour, mapped one to one to the generated <c>CommandKeyId</c>.</summary>
 public class CommandKeyTests
 {
-    private const int KeyCount = 75;
+    private const int KeyCount = 76;
 
     public static TheoryData<string> Names() => [.. CommandKey.All.Select(key => key.ToString())];
 
     [Fact]
-    public void TheVocabularyHasTheSeventyFiveKeysOfTheGestureTable()
+    public void TheVocabularyHasTheSeventySixKeysOfTheGestureTable()
     {
         Assert.Equal(KeyCount, CommandKey.All.Count);
+    }
+
+    [Theory]
+    [InlineData(",")]
+    [InlineData("Comma")]
+    [InlineData("OemComma")]
+    public void TheCommaKeyIsWrittenAsACommaAndAcceptsItsNames(string text)
+    {
+        Assert.True(CommandKey.TryParse(text, null, out CommandKey? key));
+
+        Assert.Same(CommandKey.OemComma, key);
+        Assert.Equal(",", key.Text);
+        Assert.Equal("Ctrl+,", new CommandGesture(CommandModifiers.Ctrl, key).ToString());
+        Assert.Equal(new CommandGesture(CommandModifiers.Ctrl, key), CommandGesture.Parse("Ctrl+,", null));
     }
 
     [Fact]

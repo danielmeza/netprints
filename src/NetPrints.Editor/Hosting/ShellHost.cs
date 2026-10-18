@@ -7,6 +7,7 @@ using NetPrints.Editor.Graph;
 using NetPrints.Editor.Icons;
 using NetPrints.Editor.Inspectors;
 using NetPrints.Editor.Navigation;
+using NetPrints.Editor.Settings;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Shell.Docking;
 using NetPrints.Editor.StartPage;
@@ -94,7 +95,7 @@ internal sealed class ShellHost : IDisposable
         var actions = new ShellProjectActions(context, shell);
         var startPageContext = new StartPageContext(actions, panelContext, context.Recent, context.StateStore, context.Clipboard, new ShellFolderLauncher());
 
-        var adapter = new DockShellAdapter(shell, actions, id => OpenDocument(id, shell, context, startPageContext), context.LoggerFactory.CreateLogger<DockShellAdapter>());
+        var adapter = new DockShellAdapter(shell, actions, id => OpenDocument(id, shell, context, startPageContext, registry), context.LoggerFactory.CreateLogger<DockShellAdapter>());
         composed.Api = adapter;
         actions.Api = adapter;
         shell.Layout = adapter;
@@ -137,11 +138,21 @@ internal sealed class ShellHost : IDisposable
         }
     }
 
-    private static DocumentViewModel? OpenDocument(DocumentId id, ShellViewModel shell, EditorContext context, StartPageContext startPageContext)
+    private static DocumentViewModel? OpenDocument(DocumentId id, ShellViewModel shell, EditorContext context, StartPageContext startPageContext, IContributionSnapshot contributions)
     {
         if (id.Kind == DocumentKind.StartPage)
         {
             return new StartPageViewModel(shell, startPageContext);
+        }
+
+        if (id.Kind == DocumentKind.Settings)
+        {
+            return new SettingsDocumentViewModel(
+                context.Settings,
+                context.Extensions,
+                contributions.SettingsPages,
+                context.FilePicker,
+                cancellationToken => shell.Projects?.ExitAsync(cancellationToken) ?? Task.CompletedTask);
         }
 
         if (shell.Session is not { } session)

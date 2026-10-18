@@ -8,6 +8,7 @@ command netprints.command.save | Ctrl+S | Global | File/save/0/ | 1
 command netprints.command.saveAll | Ctrl+Shift+S | Global | File/save/1/ | -
 command netprints.command.projectSettings |  | Global | File/project-settings/0/ | -
 command netprints.command.references |  | Global | File/project-settings/1/ | 7
+command netprints.command.openSettings | Ctrl+, | Global | File/settings/0/ | -
 command netprints.command.exit |  | Global | File/exit/0/ | -
 command netprints.command.undo | Ctrl+Z | Global | Edit/history/0/ | 4
 command netprints.command.redo | Ctrl+Y, Ctrl+Shift+Z | Global | Edit/history/1/ | 5

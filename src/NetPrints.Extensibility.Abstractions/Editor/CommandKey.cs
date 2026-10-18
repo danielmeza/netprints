@@ -239,6 +239,9 @@ public abstract partial class CommandKey : ISpanParsable<CommandKey>, ISpanForma
     /// <summary>The Backspace key, written <c>Back</c> and also <c>Backspace</c>.</summary>
     public static readonly CommandKey Back = new BackKey();
 
+    /// <summary>The comma key, written <c>,</c> and also <c>Comma</c> and <c>OemComma</c>.</summary>
+    public static readonly CommandKey OemComma = new CommaKey();
+
     private static readonly FrozenDictionary<string, CommandKey> ByText = BuildLookup();
 
     private static readonly FrozenDictionary<string, CommandKey>.AlternateLookup<ReadOnlySpan<char>> BySpan = ByText.GetAlternateLookup<ReadOnlySpan<char>>();
@@ -420,5 +423,14 @@ public abstract partial class CommandKey : ISpanParsable<CommandKey>, ISpanForma
         public override CommandKeyId Id => CommandKeyId.Back;
 
         public override IReadOnlyList<string> Aliases { get; } = ["Backspace"];
+    }
+
+    private sealed class CommaKey : CommandKey
+    {
+        public override CommandKeyId Id => CommandKeyId.OemComma;
+
+        public override string Text => ",";
+
+        public override IReadOnlyList<string> Aliases { get; } = ["Comma", "OemComma"];
     }
 }

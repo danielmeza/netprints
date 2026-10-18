@@ -11,6 +11,7 @@ public static class FileContributions
     private const string ClassGroup = "class";
     private const string SaveGroup = "save";
     private const string ProjectSettingsGroup = "project-settings";
+    private const string SettingsGroup = "settings";
 
     /// <summary>Registers the File menu's commands.</summary>
     /// <param name="registry">The registry to add to.</param>
@@ -117,6 +118,16 @@ public static class FileContributions
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, ProjectSettingsGroup, 1),
             CommandBarOrder: 7));
+
+        registry.AddCommand(new CommandDescriptor(
+            ContributionIds.CommandPrefix + "openSettings",
+            "Settings",
+            new OpenSettingsCommandHandler(),
+            IconId: IconIds.ProjectSettings,
+            DefaultGestures: [new(CommandModifiers.Ctrl, CommandKey.OemComma)],
+            Scope: CommandScope.Global,
+            Menu: new MenuPlacement(MenuName, SettingsGroup, 0),
+            CommandBarOrder: null));
 
         registry.AddCommand(new CommandDescriptor(
             ContributionIds.CommandPrefix + "exit",

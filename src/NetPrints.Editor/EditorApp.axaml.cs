@@ -172,6 +172,17 @@ public partial class EditorApp : Application
             ApplyAnimationSetting(HostServices.Settings);
             ApplyThemeSetting(HostServices.Settings);
 
+            if (HostServices.Settings is ISettingsChangeSource changes)
+            {
+                IDisposable animations = changes.OnSectionChanged(NetPrintsSettings.SectionId, () => Avalonia.Threading.Dispatcher.UIThread.Post(() => ApplyAnimationSetting(HostServices.Settings)));
+                IDisposable theme = changes.OnSectionChanged(EditorSettings.SectionId, () => Avalonia.Threading.Dispatcher.UIThread.Post(() => ApplyThemeSetting(HostServices.Settings)));
+                desktop.Exit += (_, _) =>
+                {
+                    animations.Dispose();
+                    theme.Dispose();
+                };
+            }
+
             var composition = new EditorComposition(HostServices);
             var exceptionHandler = composition.InstallUnhandledExceptionHandler();
             desktop.Exit += (_, _) => exceptionHandler.Dispose();

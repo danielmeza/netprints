@@ -693,6 +693,39 @@ public static class AutomationIds
     /// </summary>
     public const string ProjectSettingsBinaryTypeChooser = "ProjectSettings.BinaryTypeChooser";
 
+    /// <summary>Automation id of an entry of the page list of the Settings document; its name is the page title.</summary>
+    public const string SettingsPageItem = "Settings.PageItem";
+
+    /// <summary>Automation id of the search box of the Settings document.</summary>
+    public const string SettingsSearch = "Settings.Search";
+
+    /// <summary>Automation id of the editor of a settings field; its name is the field's label.</summary>
+    public const string SettingsFieldInput = "Settings.FieldInput";
+
+    /// <summary>Automation id of the message under a settings field whose value was refused.</summary>
+    public const string SettingsFieldError = "Settings.FieldError";
+
+    /// <summary>Automation id of the "Requires restart" note of a settings field.</summary>
+    public const string SettingsRequiresRestart = "Settings.RequiresRestart";
+
+    /// <summary>Automation id of the "Restart to apply" bar of the Settings document.</summary>
+    public const string SettingsRestartBar = "Settings.RestartBar";
+
+    /// <summary>Automation id of the "Restart now" button of the restart bar.</summary>
+    public const string SettingsRestartNow = "Settings.RestartNow";
+
+    /// <summary>Automation id of the Browse button of a path field or path list.</summary>
+    public const string SettingsBrowse = "Settings.Browse";
+
+    /// <summary>Automation id of the text box that takes the next entry of a settings list.</summary>
+    public const string SettingsListNewItem = "Settings.ListNewItem";
+
+    /// <summary>Automation id of the Add button of a settings list.</summary>
+    public const string SettingsListAdd = "Settings.ListAdd";
+
+    /// <summary>Automation id of an entry of a settings list; its name is the entry's text.</summary>
+    public const string SettingsListItem = "Settings.ListItem";
+
     // Shell (contracts/shell.md section 6)
     /// <summary>Automation id of the shell window.</summary>
     public const string ShellWindow = "Shell.Window";

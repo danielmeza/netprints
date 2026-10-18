@@ -1,0 +1,170 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edsettings="clr-namespace:NetPrints.Editor.Settings"
+             x:Class="NetPrints.Editor.Settings.SettingsView"
+             x:DataType="edsettings:SettingsDocumentViewModel">
+  <!-- The Settings document (FR-039): a page list with search on the left, the fields of the selected page on the right. -->
+  <UserControl.DataTemplates>
+    <DataTemplate DataType="edsettings:LoadedExtensionsItemViewModel" x:DataType="edsettings:LoadedExtensionsItemViewModel">
+      <StackPanel Classes="settingsField" IsVisible="{Binding IsVisible}">
+        <TextBlock Classes="groupTitle" Text="{Binding Label}" />
+        <TextBlock Classes="secondary" Text="{Binding Description}" TextWrapping="Wrap" />
+        <ItemsControl ItemsSource="{Binding Rows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="edsettings:LoadedExtensionRow">
+              <Grid ColumnDefinitions="2*,Auto,3*" AutomationProperties.Name="{Binding Name}">
+                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="1" Classes="secondary" Text="{Binding Version}" />
+                <TextBlock Grid.Column="2" Classes="secondary" Text="{Binding Source}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Source}" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </DataTemplate>
+    <DataTemplate DataType="edsettings:SettingsFieldViewModel" x:DataType="edsettings:SettingsFieldViewModel">
+      <StackPanel Classes="settingsField" IsVisible="{Binding IsVisible}">
+        <TextBlock Classes="groupTitle" Text="{Binding Label}" />
+        <TextBlock Classes="secondary" Text="{Binding Description}" TextWrapping="Wrap"
+                   IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <ContentControl Content="{Binding}">
+          <ContentControl.DataTemplates>
+            <DataTemplate DataType="edsettings:ToggleFieldViewModel" x:DataType="edsettings:ToggleFieldViewModel">
+              <CheckBox IsChecked="{Binding IsOn, Mode=OneWay}" Command="{Binding ToggleCommand}"
+                        AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsFieldInput}"
+                        AutomationProperties.Name="{Binding Label}" />
+            </DataTemplate>
+            <DataTemplate DataType="edsettings:NumberFieldViewModel" x:DataType="edsettings:NumberFieldViewModel">
+              <TextBox Text="{Binding Text}"
+                       AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsFieldInput}"
+                       AutomationProperties.Name="{Binding Label}">
+                <Interaction.Behaviors>
+                  <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding CommitCommand}" />
+                  <EventTriggerBehavior EventName="LostFocus">
+                    <InvokeCommandAction Command="{Binding CommitCommand}" />
+                  </EventTriggerBehavior>
+                </Interaction.Behaviors>
+              </TextBox>
+            </DataTemplate>
+            <DataTemplate DataType="edsettings:ChoiceFieldViewModel" x:DataType="edsettings:ChoiceFieldViewModel">
+              <ComboBox x:Name="Chooser" ItemsSource="{Binding Choices}" SelectedItem="{Binding Selected, Mode=OneWay}"
+                        AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsFieldInput}"
+                        AutomationProperties.Name="{Binding Label}">
+                <Interaction.Behaviors>
+                  <EventTriggerBehavior EventName="SelectionChanged">
+                    <InvokeCommandAction Command="{Binding ChooseCommand}" CommandParameter="{Binding #Chooser.SelectedItem}" />
+                  </EventTriggerBehavior>
+                </Interaction.Behaviors>
+              </ComboBox>
+            </DataTemplate>
+            <DataTemplate DataType="edsettings:PathFieldViewModel" x:DataType="edsettings:PathFieldViewModel">
+              <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Browse…" Command="{Binding BrowseCommand}"
+                        AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsBrowse}" />
+                <TextBox Text="{Binding Text}"
+                         AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsFieldInput}"
+                         AutomationProperties.Name="{Binding Label}">
+                  <Interaction.Behaviors>
+                    <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding CommitCommand}" />
+                    <EventTriggerBehavior EventName="LostFocus">
+                      <InvokeCommandAction Command="{Binding CommitCommand}" />
+                    </EventTriggerBehavior>
+                  </Interaction.Behaviors>
+                </TextBox>
+              </DockPanel>
+            </DataTemplate>
+            <DataTemplate DataType="edsettings:TextFieldViewModel" x:DataType="edsettings:TextFieldViewModel">
+              <TextBox Text="{Binding Text}"
+                       AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsFieldInput}"
+                       AutomationProperties.Name="{Binding Label}">
+                <Interaction.Behaviors>
+                  <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding CommitCommand}" />
+                  <EventTriggerBehavior EventName="LostFocus">
+                    <InvokeCommandAction Command="{Binding CommitCommand}" />
+                  </EventTriggerBehavior>
+                </Interaction.Behaviors>
+              </TextBox>
+            </DataTemplate>
+            <DataTemplate DataType="edsettings:StringListFieldViewModel" x:DataType="edsettings:StringListFieldViewModel">
+              <StackPanel Classes="settingsField">
+                <ItemsControl ItemsSource="{Binding Items}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="edsettings:StringListItemViewModel">
+                      <Grid ColumnDefinitions="*,Auto,Auto,Auto"
+                            AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsListItem}"
+                            AutomationProperties.Name="{Binding Text}">
+                        <TextBlock Text="{Binding Text}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Text}" />
+                        <Button Grid.Column="1" Classes="icon" Content="↑" AutomationProperties.Name="Move up"
+                                Command="{Binding $parent[ItemsControl].((edsettings:StringListFieldViewModel)DataContext).MoveUpCommand}"
+                                CommandParameter="{Binding}" />
+                        <Button Grid.Column="2" Classes="icon" Content="↓" AutomationProperties.Name="Move down"
+                                Command="{Binding $parent[ItemsControl].((edsettings:StringListFieldViewModel)DataContext).MoveDownCommand}"
+                                CommandParameter="{Binding}" />
+                        <Button Grid.Column="3" Classes="icon" Content="✕" AutomationProperties.Name="Remove"
+                                Command="{Binding $parent[ItemsControl].((edsettings:StringListFieldViewModel)DataContext).RemoveCommand}"
+                                CommandParameter="{Binding}" />
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                  <TextBox Text="{Binding NewItem}" PlaceholderText="Add an entry"
+                           AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsListNewItem}"
+                           AutomationProperties.Name="{Binding Label}">
+                    <Interaction.Behaviors>
+                      <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding AddCommand}" />
+                    </Interaction.Behaviors>
+                  </TextBox>
+                  <Button Grid.Column="1" Content="Add" Command="{Binding AddCommand}"
+                          AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsListAdd}" />
+                  <Button Grid.Column="2" Content="Browse…" Command="{Binding BrowseCommand}" IsVisible="{Binding CanBrowse}"
+                          AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsBrowse}" />
+                </Grid>
+              </StackPanel>
+            </DataTemplate>
+          </ContentControl.DataTemplates>
+        </ContentControl>
+        <TextBlock Classes="fieldError" Text="{Binding Error}" IsVisible="{Binding HasError}"
+                   AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsFieldError}" />
+        <TextBlock Classes="secondary" Text="Requires restart" IsVisible="{Binding RequiresRestart}"
+                   AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsRequiresRestart}" />
+      </StackPanel>
+    </DataTemplate>
+  </UserControl.DataTemplates>
+  <DockPanel>
+    <Border DockPanel.Dock="Top" Classes="restartBar" IsVisible="{Binding RestartPending}"
+            AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsRestartBar}">
+      <DockPanel>
+        <Button DockPanel.Dock="Right" Content="Restart now" Command="{Binding RestartNowCommand}"
+                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsRestartNow}" />
+        <TextBlock Text="Restart to apply" VerticalAlignment="Center" />
+      </DockPanel>
+    </Border>
+    <Grid ColumnDefinitions="240,*">
+      <DockPanel>
+        <TextBox DockPanel.Dock="Top" Text="{Binding SearchText}" PlaceholderText="Search settings"
+                 AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsSearch}"
+                 AutomationProperties.Name="Search settings" />
+        <ListBox Classes="rows" ItemsSource="{Binding VisiblePages}" SelectedItem="{Binding SelectedPage}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="edsettings:SettingsPageViewModel">
+              <TextBlock Text="{Binding Title}" Classes.settingsChildPage="{Binding IsChild}"
+                         AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsPageItem}"
+                         AutomationProperties.Name="{Binding Title}" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+      <ScrollViewer Grid.Column="1">
+        <ItemsControl ItemsSource="{Binding SelectedPage.Items}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Classes="formContainer settingsPage" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+        </ItemsControl>
+      </ScrollViewer>
+    </Grid>
+  </DockPanel>
+</UserControl>
