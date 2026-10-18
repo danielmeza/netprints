@@ -13,7 +13,7 @@ The menu bar has six menus.
 
 | Menu | What is in it |
 |---|---|
-| **File** | New project, open, close, new class, save, save all, project settings, references, exit |
+| **File** | New project, open, close, new class, save, save all, project settings, settings, references, exit |
 | **Edit** | Undo, redo, delete, rename, select all, add node, class settings and the commands that add a method, a constructor, a variable, an event graph or an override |
 | **View** | Frame selection and fit all on the canvas, the panels, float and dock a tab, reset layout, the theme, the command palette |
 | **Go** | Go to anything, back and forward, switching and closing tabs, go to source and target |

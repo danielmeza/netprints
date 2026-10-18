@@ -794,7 +794,7 @@ tests. **Gate (plan)**: SC-004, SC-006, SC-007, SC-009.
   (US5 scenario 2); changed values survive a restart in an automated test (SC-006). Then the General, Run and
   Extensions pages (extension paths, trusted projects, the loaded extensions with version and source); Appearance's
   preset fields come in T096.
-- [ ] T091 [P] [US5] The settings guide (FR-116; 1 unit). Write `docs/guide/editor/settings.md`: the document, the pages,
+- [x] T091 [P] [US5] The settings guide (FR-116; 1 unit). Write `docs/guide/editor/settings.md`: the document, the pages,
   search, validation, restart, the generated table of T087, the unreadable-file behaviour and extension pages. Guide
   index.
 
