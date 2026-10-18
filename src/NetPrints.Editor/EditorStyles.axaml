@@ -31,7 +31,7 @@
       </ControlTheme>
       <ControlTheme x:Key="NetPrints.Connection" TargetType="nc:Connection" BasedOn="{StaticResource {x:Type nc:Connection}}">
         <Setter Property="Stroke" Value="{DynamicResource Pin.Generic}" />
-        <Setter Property="StrokeThickness" Value="4" />
+        <Setter Property="StrokeThickness" Value="{DynamicResource Wire.Thickness}" />
         <Setter Property="Opacity" Value="{DynamicResource Wire.Opacity}" />
         <Setter Property="StrokeLineCap" Value="Round" />
       </ControlTheme>
@@ -50,7 +50,6 @@
       <StreamGeometry x:Key="Pin.TypeShape.Diamond">M8,0 L16,8 L8,16 L0,8 Z</StreamGeometry>
       <StaticResource x:Key="Pin.TypeShape" ResourceKey="Pin.TypeShape.Diamond" />
       <x:Double x:Key="Pin.OutlineThickness">2</x:Double>
-      <x:Double x:Key="Wire.Opacity">0.78</x:Double>
       <!-- Start page recent row: a left-anchor icon tile (FR-110). -->
       <x:Double x:Key="StartPage.RecentTileSize">32</x:Double>      <!-- Type ramp, spacing scale and shared widths (FR-080, research R11); none of these vary by theme. -->
       <x:Double x:Key="Font.Caption">12</x:Double>
@@ -251,6 +250,14 @@
           <SolidColorBrush x:Key="Canvas.MarqueeFill">#334FC3F7</SolidColorBrush>
           <SolidColorBrush x:Key="Canvas.MarqueeBorder">#4FC3F7</SolidColorBrush>
           <SolidColorBrush x:Key="Canvas.WireSelected">#FFD54F</SolidColorBrush>
+          <x:Double x:Key="Wire.Opacity">0.78</x:Double>
+          <x:Double x:Key="Wire.Thickness">4</x:Double>
+          <SolidColorBrush x:Key="Inspector.CategoryHeaderBackground">#FF2A2A30</SolidColorBrush>
+          <SolidColorBrush x:Key="Inspector.CategoryHeaderForeground">#FFEEEEEE</SolidColorBrush>
+          <SolidColorBrush x:Key="Inspector.ModifiedMarker">#FFFFB74D</SolidColorBrush>
+          <SolidColorBrush x:Key="Inspector.EditorBackground">#FF1E1E22</SolidColorBrush>
+          <SolidColorBrush x:Key="Inspector.EditorBorder">#FF3C3C42</SolidColorBrush>
+          <x:Double x:Key="Inspector.RowSpacing">4</x:Double>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
           <Color x:Key="Canvas.Background">#FFFFFFFF</Color>
@@ -313,6 +320,14 @@
           <SolidColorBrush x:Key="Canvas.MarqueeFill">#330277BD</SolidColorBrush>
           <SolidColorBrush x:Key="Canvas.MarqueeBorder">#0277BD</SolidColorBrush>
           <SolidColorBrush x:Key="Canvas.WireSelected">#F57F17</SolidColorBrush>
+          <x:Double x:Key="Wire.Opacity">0.78</x:Double>
+          <x:Double x:Key="Wire.Thickness">4</x:Double>
+          <SolidColorBrush x:Key="Inspector.CategoryHeaderBackground">#FFE4E6EC</SolidColorBrush>
+          <SolidColorBrush x:Key="Inspector.CategoryHeaderForeground">#FF202020</SolidColorBrush>
+          <SolidColorBrush x:Key="Inspector.ModifiedMarker">#FFF57F17</SolidColorBrush>
+          <SolidColorBrush x:Key="Inspector.EditorBackground">#FFFFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="Inspector.EditorBorder">#FFD0D3DA</SolidColorBrush>
+          <x:Double x:Key="Inspector.RowSpacing">4</x:Double>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>

@@ -820,7 +820,7 @@ tests. **Gate (plan)**: SC-004, SC-006, SC-007, SC-009.
 
 ### Batch D1g — model: sonnet — T095–T098 — 4 units
 
-- [ ] T095 [US8] The token catalogue and the contrast math (FR-066, research R24; 1 unit; load `avalonia-styling`).
+- [x] T095 [US8] The token catalogue and the contrast math (FR-066, research R24; 1 unit; load `avalonia-styling`).
   Test first: every visual token the theme dictionaries and `EditorStyles.axaml` use is in the catalogue, including
   wire opacity and thickness per variant and the inspector tokens ADR-0036 needs; unit tests of the contrast math. Then
   `src/NetPrints.Editor/Theming/` (the catalogue and the contrast math move into product code; the existing theming
