@@ -16,7 +16,7 @@ public sealed partial class GuidePagesTests
         "event-graphs.md",
     ];
 
-    private static readonly string[] TextOnlyPages = ["settings.md"];
+    private static readonly string[] TextOnlyPages = ["settings.md", "themes.md"];
 
     private static string GuideFolder => Path.Combine(RepositoryPaths.Root(), "docs", "guide", "editor");
 

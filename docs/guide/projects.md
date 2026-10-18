@@ -95,7 +95,7 @@ The editor guides cover each part with screenshots: [the editor window](editor/s
 [the start page](editor/start-page.md), [saving and recovery](editor/saving-and-recovery.md),
 [commands and shortcuts](editor/commands-and-shortcuts.md), [navigation](editor/navigation.md) and
 [event graphs](editor/event-graphs.md). The [settings guide](editor/settings.md) describes the Settings document and every
-setting.
+setting, and the [themes guide](editor/themes.md) describes the presets, the contrast policy and the theme tokens.
 
 ## Running a project
 

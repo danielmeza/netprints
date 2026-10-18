@@ -20,7 +20,7 @@ right. Each field has a label, a help text and, when the setting needs a restart
 | Page | What is on it |
 |---|---|
 | General | `netprints.language` and `netprints.enableAnimations` |
-| Appearance | `netprints.editor.theme` and the Dark and Light presets |
+| Appearance | `netprints.editor.theme`, the Dark and Light presets and a preview of them (see [Themes](./themes.md)) |
 | Keyboard shortcuts | every command with its shortcuts; stored in the `keyboard` section (see [Commands and shortcuts](./commands-and-shortcuts.md)) |
 | Run | `run.stopTimeoutSeconds` and `run.linuxTerminal` |
 | Extensions | `netprints.extensionPaths`, `netprints.trustedProjects` and the list of loaded extensions with their version and the folder they came from |
