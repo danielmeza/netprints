@@ -129,7 +129,8 @@ public class SettingsDocumentTests
         Assert.Equal(5, app.Composition.Context.Settings.Get(RunSettings.Descriptor).StopTimeoutSeconds);
 
         await CommitAsync(app, box, "30");
-        await UiWait.UntilAsync(app.Driver, () => Task.FromResult(app.Composition.Context.Settings.Get(RunSettings.Descriptor).StopTimeoutSeconds == 30), "saved", Token);
+        SettingsFieldViewModel field = document.FindField("run.stopTimeoutSeconds");
+        await UiWait.UntilAsync(app.Driver, () => Task.FromResult(!field.HasError && app.Composition.Context.Settings.Get(RunSettings.Descriptor).StopTimeoutSeconds == 30), "saved", Token);
         HeadlessDriver.Pump();
 
         Assert.Empty(Visible(app, AutomationIds.SettingsFieldError));
