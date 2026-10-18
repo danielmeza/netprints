@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "high-contrast.light",
+  "label": "High contrast",
+  "base": "light",
+  "semiVariant": "Desert",
+  "tokens": {
+    "Canvas.Background": "#FFFFFFFF",
+    "Node.CardBackground": "#FFEBEBEB",
+    "Node.Border": "#FF000000",
+    "Focus.Ring": "#FF0000AA",
+    "Tab.SelectedAccent": "#FF0000AA",
+    "Tab.StripBorder": "#FF000000",
+    "Canvas.SelectionBorder": "#FF0000AA",
+    "Canvas.MarqueeBorder": "#FF0000AA",
+    "GraphGrid.MinorColor": "#33000000",
+    "GraphGrid.MajorColor": "#66000000",
+    "State.Hover": "#33000000",
+    "Row.Separator": "#66000000",
+    "Inspector.EditorBorder": "#FF000000",
+    "Wire.Opacity": "1",
+    "Wire.Thickness": "5"
+  }
+}

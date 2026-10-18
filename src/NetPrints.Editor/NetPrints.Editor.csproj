@@ -86,6 +86,7 @@
     <AvaloniaResource Include="Assets\**" />
     <EmbeddedResource Include="StartPage\WhatsNew.md" LogicalName="NetPrints.Editor.StartPage.WhatsNew.md" />
     <EmbeddedResource Include="Graph\GridShader.sksl" LogicalName="NetPrints.Editor.Graph.GridShader.sksl" />
+    <EmbeddedResource Include="Theming\Presets\*.nptheme.json" LogicalName="NetPrints.Editor.Theming.Presets.%(Filename)%(Extension)" />
   </ItemGroup>
 
   <!-- ADR-0022: the latest released version (nearest v* tag) is stamped into the assembly, so a build

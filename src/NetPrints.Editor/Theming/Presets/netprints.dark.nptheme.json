@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "id": "netprints.dark",
+  "label": "NetPrints Dark",
+  "base": "dark",
+  "tokens": {}
+}

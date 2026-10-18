@@ -126,4 +126,12 @@ internal static partial class Log
     /// <param name="reason">Why it could not be used.</param>
     [LoggerMessage(EventId = 1042, Level = LogLevel.Warning, Message = "The view resource {Uri} of extension {Owner} was ignored: {Reason}")]
     public static partial void ViewResourceIgnored(ILogger logger, string owner, string uri, string reason);
+
+    /// <summary>Logs 1043: a <c>darkPreset</c> or <c>lightPreset</c> setting names no preset of its variant, so the variant's default applies.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="id">The id in the setting.</param>
+    /// <param name="variant">The variant the setting is for.</param>
+    /// <param name="fallback">The id of the preset applied instead.</param>
+    [LoggerMessage(EventId = 1043, Level = LogLevel.Warning, Message = "The theme preset {Id} is unknown for the {Variant} variant; {Fallback} applies")]
+    public static partial void ThemePresetUnknown(ILogger logger, string id, string variant, string fallback);
 }

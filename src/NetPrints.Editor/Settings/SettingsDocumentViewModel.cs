@@ -6,6 +6,7 @@ using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.State;
+using NetPrints.Editor.Theming;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
 
@@ -56,7 +57,7 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
         ArgumentNullException.ThrowIfNull(extensionPages);
         ArgumentNullException.ThrowIfNull(restart);
         this.restart = restart;
-        Pages = Build(store, registry, extensions.Current, extensionPages, new SettingsFieldServices(picker, _ => null));
+        Pages = Build(store, registry, extensions.Current, extensionPages, new SettingsFieldServices(picker, ChoicesOf));
         foreach (SettingsFieldViewModel field in Pages.SelectMany(page => page.Items).OfType<SettingsFieldViewModel>())
         {
             field.Saved += OnFieldSaved;
@@ -159,6 +160,13 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
         base.Dispose(disposing);
     }
 
+    private static IReadOnlyList<string>? ChoicesOf(string providerId) => providerId switch
+    {
+        EditorSettings.DarkPresetChoices => ThemePresets.IdsFor(ThemeBase.Dark),
+        EditorSettings.LightPresetChoices => ThemePresets.IdsFor(ThemeBase.Light),
+        _ => null,
+    };
+
     private static ImmutableArray<SettingsPageViewModel> Build(
         ISettingsStore store,
         IContributionRegistry contributions,
@@ -177,7 +185,7 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
         var pages = new List<SettingsPageViewModel>
         {
             new(GeneralPageId, Strings.Settings_Page_General, [.. host.CreateFields(services, [EnableAnimationsKey, LanguageKey])], isChild: false),
-            new(AppearancePageId, Strings.Settings_Page_Appearance, [.. appearance.CreateFields(services)], isChild: false),
+            new(AppearancePageId, Strings.Settings_Page_Appearance, [.. appearance.CreateFields(services), new ThemePreviewItemViewModel(store)], isChild: false),
             new(KeyboardPageId, Strings.Settings_Page_Keyboard, [new KeyboardShortcutsItemViewModel(contributions, store)], isChild: false),
             new(RunPageId, Strings.Settings_Page_Run, [.. run.CreateFields(services)], isChild: false),
             new(ExtensionsPageId, Strings.Settings_Page_Extensions, extensionItems, isChild: false),

@@ -708,6 +708,9 @@ public static class AutomationIds
     /// <summary>Automation id of the "Requires restart" note of a settings field.</summary>
     public const string SettingsRequiresRestart = "Settings.RequiresRestart";
 
+    /// <summary>Automation id of the preview strip of the chosen presets on the Appearance page.</summary>
+    public const string SettingsThemePreview = "Settings.ThemePreview";
+
     /// <summary>Automation id of the "Restart to apply" bar of the Settings document.</summary>
     public const string SettingsRestartBar = "Settings.RestartBar";
 

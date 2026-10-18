@@ -874,6 +874,13 @@
     <Setter Property="Spacing" Value="4" />
     <Setter Property="MaxWidth" Value="480" />
   </Style>
+  <Style Selector="Border.swatch">
+    <Setter Property="Width" Value="{StaticResource Icon.Medium}" />
+    <Setter Property="Height" Value="{StaticResource Icon.Medium}" />
+    <Setter Property="CornerRadius" Value="{StaticResource Radius.Control}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Row.Separator}" />
+  </Style>
   <Style Selector="TextBlock.formLabel">
     <Setter Property="VerticalAlignment" Value="Center" />
     <Setter Property="Margin" Value="4" />

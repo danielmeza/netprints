@@ -62,6 +62,20 @@ public sealed class SettingsDocumentViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public void TheAppearancePageOffersThePresetsOfEachVariantAndAPreview()
+    {
+        using SettingsDocumentViewModel document = Open(NewStore());
+
+        SettingsPageViewModel appearance = document.Pages.Single(page => page.Title == "Appearance");
+
+        ChoiceFieldViewModel dark = appearance.Items.OfType<ChoiceFieldViewModel>().Single(field => field.QualifiedKey.EndsWith("darkPreset", StringComparison.Ordinal));
+        ChoiceFieldViewModel light = appearance.Items.OfType<ChoiceFieldViewModel>().Single(field => field.QualifiedKey.EndsWith("lightPreset", StringComparison.Ordinal));
+        Assert.Equal(["netprints.dark", "classic.dark", "high-contrast.dark"], dark.Choices);
+        Assert.Equal(["netprints.light", "high-contrast.light"], light.Choices);
+        Assert.Single(appearance.Items.OfType<ThemePreviewItemViewModel>());
+    }
+
+    [Fact]
     public void EverySettingOfTheBuiltInSectionsIsOnAPage()
     {
         using SettingsDocumentViewModel document = Open(NewStore());

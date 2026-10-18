@@ -375,6 +375,18 @@
   <data name="Settings.LoadedExtensions.Description" xml:space="preserve">
     <value>The extensions loaded at start, with their version and the folder they came from</value>
   </data>
+  <data name="Settings.ThemePreview.Label" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="Settings.ThemePreview.Description" xml:space="preserve">
+    <value>The canvas, node card, pins and selected wire of the presets chosen for each variant</value>
+  </data>
+  <data name="Settings.ThemePreview.Dark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="Settings.ThemePreview.Light" xml:space="preserve">
+    <value>Light</value>
+  </data>
   <data name="Settings.BuiltInSource" xml:space="preserve">
     <value>Built in</value>
   </data>

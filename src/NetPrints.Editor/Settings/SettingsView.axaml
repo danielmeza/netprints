@@ -24,6 +24,34 @@
         </ItemsControl>
       </StackPanel>
     </DataTemplate>
+    <DataTemplate DataType="edsettings:ThemePreviewItemViewModel" x:DataType="edsettings:ThemePreviewItemViewModel">
+      <StackPanel Classes="settingsField" IsVisible="{Binding IsVisible}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsThemePreview}">
+        <TextBlock Classes="groupTitle" Text="{Binding Label}" />
+        <TextBlock Classes="secondary" Text="{Binding Description}" TextWrapping="Wrap" />
+        <ItemsControl ItemsSource="{Binding Rows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="edsettings:ThemePreviewRow">
+              <StackPanel Orientation="Horizontal" Spacing="8" AutomationProperties.Name="{Binding PresetLabel}">
+                <TextBlock Text="{Binding Variant}" VerticalAlignment="Center" />
+                <TextBlock Classes="secondary" Text="{Binding PresetLabel}" VerticalAlignment="Center" />
+                <ItemsControl ItemsSource="{Binding Swatches}" AutomationProperties.AccessibilityView="Raw">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="4" />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="edsettings:ThemeSwatch">
+                      <Border Classes="swatch" Background="{Binding Brush}" ToolTip.Tip="{Binding Token}" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </DataTemplate>
     <DataTemplate DataType="edsettings:KeyboardShortcutsItemViewModel" x:DataType="edsettings:KeyboardShortcutsItemViewModel">
       <StackPanel Classes="settingsField" IsVisible="{Binding IsVisible}" Focusable="True">
         <Interaction.Behaviors>

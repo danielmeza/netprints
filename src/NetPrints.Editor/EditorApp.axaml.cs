@@ -38,6 +38,8 @@ public partial class EditorApp : Application
 
     private Style? noTransitions;
 
+    private Theming.ThemeApplier? themeApplier;
+
     /// <summary>
     /// Process-wide services (logging, extensions, settings, host channel, MSBuild availability). Set by the host (<c>NetPrints.Desktop</c>'s <c>Program</c>) before
     /// <c>StartWithClassicDesktopLifetime</c> runs; read by
@@ -150,12 +152,13 @@ public partial class EditorApp : Application
     /// <param name="theme">The theme to switch to.</param>
     public void ApplyTheme(EditorTheme theme) => RequestedThemeVariant = Variants[theme];
 
-    /// <summary>Applies the theme stored in the settings file, <see cref="EditorTheme.Dark"/> when none is.</summary>
-    /// <param name="settings">The settings to read the theme from.</param>
+    /// <summary>Applies the appearance stored in the settings file: the theme (<see cref="EditorTheme.Dark"/> when none is) and the preset of each variant.</summary>
+    /// <param name="settings">The settings to read the appearance from.</param>
     public void ApplyThemeSetting(ISettingsStore settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
-        ApplyTheme(settings.Get(EditorSettings.Descriptor).Theme);
+        themeApplier ??= new Theming.ThemeApplier(this, hostServices?.LoggerFactory.CreateLogger(nameof(EditorApp)) ?? Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance);
+        themeApplier.Apply(settings.Get(EditorSettings.Descriptor));
     }
 
     /// <summary>
