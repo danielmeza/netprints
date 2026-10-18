@@ -82,7 +82,7 @@ public class RegistrySurfaceTests
     {
         using var rig = SurfaceRig.Create();
 
-        Assert.Equal(Ids("newProject", "openProject", "openFolder", "closeProject", Separator, "newClass", "addExistingClass", Separator, "save", "saveAll", Separator, "projectSettings", "references", Separator, "exit"), Layout(rig.Open("File")).Select(Strip(MenuId)));
+        Assert.Equal(Ids("newProject", "openProject", "openFolder", "closeProject", Separator, "newClass", "addExistingClass", Separator, "save", "saveAll", Separator, "projectSettings", "references", Separator, "openSettings", Separator, "exit"), Layout(rig.Open("File")).Select(Strip(MenuId)));
         Assert.Equal(Ids("undo", "redo", Separator, "delete", "rename", "selectAll", Separator, "nodeSearch", Separator, "classSettings", "addMethod", "addConstructor", "addVariable", "addEventGraph", "overrideMethod"), Layout(rig.Open("Edit")).Select(Strip(MenuId)));
         Assert.Equal(
             [.. Ids("frameSelection", "fitAll", Separator, "showPanel.projectTree", "showPanel.inspector", "showPanel.variables", "showPanel.errors", "showPanel.output", "showPanel.csharp", Separator, "floatDocument", "dockDocument", "resetLayout", Separator), ThemeSubmenuId, .. Ids(Separator, "commandPalette")],
