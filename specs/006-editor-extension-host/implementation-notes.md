@@ -1539,3 +1539,18 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - **T087 layout**: the generator is test code (`tests/NetPrints.Editor.Tests/Docs/SettingsSchemaFile.cs`, like `ShortcutGuide`); `schemas/settings.v1.schema.json` is checked by `eng/validate-schemas.sh` (metaschema, lint, and the tracked
   `tests/Fixtures/Settings/example.settings.json`; run locally, 53 instances pass) and copied by `scripts/build-docs.sh`. `docs/guide/editor/settings.md` holds only the generated table between markers; T091 writes the rest.
   Descriptions end without a period because the schema lint requires it. The `x-netprints-*` keywords appear in the file through restart (language, extensionPaths), path (extensionPaths, trustedProjects) and choices (presets).
+
+## Batch D1-CP (T098, Checkpoint D1)
+
+- Suite (Release, solution-wide, `--ignore-exit-code 8`, at 9e8aacfa): 5231 total, 5195 passed, 36 skipped, 0 failed (UITests 16 min 07 s, Editor.Tests 2 min 19 s,
+  Cli.Tests 53 s, Catalog.Tests 62 s, Core.Tests 45 s, Analyzers.Tests 7 s). E2E (`NETPRINTS_E2E=1`, `--fail-skips on`, display start 300, own `NETPRINTS_STATE_DIR` and
+  `XDG_CONFIG_HOME`): 56 total, 55 passed, 1 skipped (`GuideScreenshotTests`, explicit filtering, as at C1), 0 failed, 9 min 40 s. `dotnet format --verify-no-changes` clean; trim ratchet 8 of 8.
+- CI (run 39173174355, green at e2c0a31d): UI shards 1/4 7 min 41 s, 2/4 5 min 44 s, 3/4 8 min 57 s, 4/4 6 min 11 s; longest job Desktop E2E (Linux, Xvfb) 12 min 17 s, then perf 11 min 1 s.
+  No UI shard is near 12 minutes, so no fifth shard (R28). The CI run for 9e8aacfa was still running when this was written.
+- Gate D1. SC-004: `ExtensionKindsTests` (T083, every public kind found on its surface, none after the project unloads) plus the failure fixtures of D1b: pass. SC-006: the settings store
+  tests (T086), the page-reachability and restart-survival tests (T090) and the effective-gesture tests (T092): pass. SC-007: `RebindShortcutsTests` E2E (rebind a built-in and an extension
+  command, resolve a conflict, restart, run both): pass in the E2E run above. SC-009: `ContrastMathTests`, `ThemePresetsTests`/`ThemePresetTests` (every preset passes every gated pair, a Dark preset
+  changes 0 Light tokens, no restart): pass. Dock check: the pin is 12.1.0.10; 12.1.0.11 and 12.1.0.12 are released (12.1.0.12 on 2026-10-17), not evaluated or adopted here.
+- Open for the D1+D2 review: `ContrastCheck.Passed` rounds the ratio to 2 decimals, so the mandated Classic card (`#AA202020` over `#000`, ratio 1.1497) passes the 1.15 gate. Flagged, not changed.
+- Docs: the settings, themes and shortcuts guides and the diagnostics guide (NPX014) were already current; the release notes (`.github/release-notes.md`, Unreleased) gained the Settings document,
+  rebindable shortcuts and theme presets entries.

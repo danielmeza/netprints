@@ -835,7 +835,7 @@ tests. **Gate (plan)**: SC-004, SC-006, SC-007, SC-009.
   the overlay writer for `ThemeDictionaries[Dark|Light]`, and the Appearance page fields with the preview strip.
 - [x] T097 [P] [US8] The theming guide (FR-066, FR-116; 1 unit). Write `docs/guide/editor/themes.md`: modes, presets,
   the contrast policy and the token list generated from the catalogue (a staleness test). Guide index.
-- [ ] T098 **Checkpoint D1**. Whole suite plus the E2E pass; CI green; if a UI shard passes 12 minutes, add a fifth
+- [x] T098 **Checkpoint D1**. Whole suite plus the E2E pass; CI green; if a UI shard passes 12 minutes, add a fifth
   shard here (research R28). Report the plan's gate D1: SC-004 (T083's run, the failure fixtures), SC-006 (T090, T092
   and T086 runs), SC-007 (`RebindShortcutsTests`), SC-009 (contrast and overlay tests); the longest CI job; the Dock
   check. Docs updated: the settings, themes and shortcuts guides, the diagnostics guide, the release notes.

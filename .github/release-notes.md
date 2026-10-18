@@ -34,6 +34,12 @@
 
 **Added:** `netprints.language` in the `netprints` settings section chooses the editor language (a culture name; empty follows the operating system).
 
+**Added:** a Settings document (File › Settings, `Ctrl+,`) with the pages General, Appearance, Keyboard shortcuts, Run and Extensions. `settings.json` is described by a published schema, a value out of range falls back to its default (NPX014 for an extension's section), and an unreadable file is copied to `settings.json.unreadable-<timestamp>` before the first write.
+
+**Added:** every command can be rebound on the Keyboard shortcuts page, with conflict resolution; your changes are stored as differences from the defaults in the `keyboard` section.
+
+**Added:** theme presets per variant (NetPrints Dark, NetPrints Light, Classic Dark, High contrast) chosen on Settings › Appearance with `darkPreset` and `lightPreset`, applied without a restart. Every theme token is in a catalogue, and a preset that fails the contrast gate is reported.
+
 **Added:** the status bar shows the error and warning counts, the number of selected nodes and the zoom level of the open graph. Their texts, with one form for a single item and one for several, are in the resx.
 
 **Added:** a call to a method with `out` or `ref` parameters has an output pin for each of them (keyed `out.data.<parameterName>`) that carries the value after the call, and a void method with an `out` parameter can be made pure. Saved graphs do not change. Node capabilities (`IPinListEditor`, `IOverloadableNode`, `IPinNameEditor`) are role interfaces the editor asks for.
