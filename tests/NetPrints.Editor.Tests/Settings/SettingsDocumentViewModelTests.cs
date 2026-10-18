@@ -1,4 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using NetPrints.Editor.Contributions;
+using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Settings;
 using NetPrints.Editor.State;
@@ -39,7 +41,9 @@ public sealed class SettingsDocumentViewModelTests : IAsyncDisposable
         string[] folders = withTestExtension ? [FixtureExtensions.TestExtensionFolder()] : [];
         var host = new ExtensionHost(new ExtensionLoaderOptions([], folders, []), NullLoggerFactory.Instance);
         hosts.Add(host);
-        return new SettingsDocumentViewModel(store, host, [], new FakeFilePicker(), _ =>
+        var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
+        BuiltInContributions.Register(registry);
+        return new SettingsDocumentViewModel(store, registry, host, [], new FakeFilePicker(), _ =>
         {
             restarts++;
             return Task.CompletedTask;
@@ -53,7 +57,7 @@ public sealed class SettingsDocumentViewModelTests : IAsyncDisposable
 
         Assert.Equal(DocumentId.Settings, document.Id);
         Assert.Equal("Settings", document.Title);
-        Assert.Equal(["General", "Appearance", "Run", "Extensions"], document.Pages.Select(page => page.Title));
+        Assert.Equal(["General", "Appearance", "Keyboard shortcuts", "Run", "Extensions"], document.Pages.Select(page => page.Title));
         Assert.Same(document.Pages[0], document.SelectedPage);
     }
 

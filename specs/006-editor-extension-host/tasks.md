@@ -800,20 +800,20 @@ tests. **Gate (plan)**: SC-004, SC-006, SC-007, SC-009.
 
 ### Batch D1f — model: sonnet — T092–T094 — 3 units
 
-- [ ] T092 [US6] Effective gestures and the `keyboard` section (FR-046, FR-048–FR-050, research R21; 1 unit). Test
+- [x] T092 [US6] Effective gestures and the `keyboard` section (FR-046, FR-048–FR-050, research R21; 1 unit). Test
   first: `tests/NetPrints.Editor.Tests/Settings/KeyBindingResolverTests.cs`: the effective set is (defaults − remove) ∪
   add; precedence is user override, then built-in default, then extension default in load order; an extension default
   that a user binding takes is marked "overridden" (edge case); a single-key or Shift-only gesture in Global is refused
   with the reason, function keys exempt (US6 scenario 5); overrides of commands that are not loaded are kept (scenario
   4); an unparseable gesture is reported and ignored (edge case); the set is computed once per registry snapshot. Then
   the resolver and the `keyboard` section; every surface that shows gestures reads the effective set.
-- [ ] T093 [US6] The Keyboard shortcuts page (FR-045–FR-047; 1 unit; load `avalonia-xaml`, `avalonia-behaviors` and
+- [x] T093 [US6] The Keyboard shortcuts page (FR-045–FR-047; 1 unit; load `avalonia-xaml`, `avalonia-behaviors` and
   `avalonia-styling`). Test first: headless page tests: one row per command with label, owner, scope, default and
   current gestures; filter by text and by a recorded gesture (US6 scenario 1); add, remove, reset one and reset all
   (scenario 6); a conflict names the other command first, accepting removes the gesture from it and cancelling changes
   nothing (scenario 3); "Not loaded" lists kept overrides. Then the page; `keyboardShortcuts` opens it, and the
   shortcuts sheet keeps its printable view with "Edit shortcuts".
-- [ ] T094 [US6] The `RebindShortcuts` E2E and the shortcuts guide (SC-006, SC-007, FR-116; 1 unit).
+- [x] T094 [US6] The `RebindShortcuts` E2E and the shortcuts guide (SC-006, SC-007, FR-116; 1 unit).
   `tests/NetPrints.Desktop.E2ETests/Scenarios/RebindShortcutsTests.cs`, keyboard only, with its own `XDG_CONFIG_HOME`:
   rebind a built-in command and an extension command, resolve a conflict, restart, and run both through their new
   gestures. Update `docs/guide/editor/commands-and-shortcuts.md`.

@@ -138,7 +138,7 @@ internal sealed class ShellHost : IDisposable
         }
     }
 
-    private static DocumentViewModel? OpenDocument(DocumentId id, ShellViewModel shell, EditorContext context, StartPageContext startPageContext, IContributionSnapshot contributions)
+    private static DocumentViewModel? OpenDocument(DocumentId id, ShellViewModel shell, EditorContext context, StartPageContext startPageContext, IContributionRegistry contributions)
     {
         if (id.Kind == DocumentKind.StartPage)
         {
@@ -149,6 +149,7 @@ internal sealed class ShellHost : IDisposable
         {
             return new SettingsDocumentViewModel(
                 context.Settings,
+                contributions,
                 context.Extensions,
                 contributions.SettingsPages,
                 context.FilePicker,

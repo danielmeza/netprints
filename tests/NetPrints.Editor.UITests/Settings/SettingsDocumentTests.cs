@@ -90,7 +90,7 @@ public class SettingsDocumentTests
         await using ShellApp app = ShellApp.Start();
         SettingsDocumentViewModel document = await OpenAsync(app, "openSettings", () => Document(app));
 
-        Assert.Equal(["General", "Appearance", "Run", "Extensions"], Find(app, AutomationIds.SettingsPageItem).Select(Avalonia.Automation.AutomationProperties.GetName));
+        Assert.Equal(["General", "Appearance", "Keyboard shortcuts", "Run", "Extensions"], Find(app, AutomationIds.SettingsPageItem).Select(Avalonia.Automation.AutomationProperties.GetName));
         Assert.Single(Find(app, AutomationIds.SettingsFieldInput, "Language"));
 
         document.SelectedPage = document.Pages.Single(page => page.Title == "Run");

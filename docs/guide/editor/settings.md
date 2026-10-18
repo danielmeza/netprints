@@ -13,7 +13,7 @@ completion and checking.
 Open it with **File › Settings**, with `Ctrl+,` or from the command palette. It opens as a tab, and opening it again
 switches to the open tab. It needs no project, so you can change a setting from the start page.
 
-The page list on the left holds **General**, **Appearance**, **Run** and **Extensions**. The pages of the extensions that
+The page list on the left holds **General**, **Appearance**, **Keyboard shortcuts**, **Run** and **Extensions**. The pages of the extensions that
 have settings are listed under Extensions, ordered by the extension's name. The fields of the selected page are on the
 right. Each field has a label, a help text and, when the setting needs a restart, the note **Requires restart**.
 
@@ -21,6 +21,7 @@ right. Each field has a label, a help text and, when the setting needs a restart
 |---|---|
 | General | `netprints.language` and `netprints.enableAnimations` |
 | Appearance | `netprints.editor.theme` and the Dark and Light presets |
+| Keyboard shortcuts | every command with its shortcuts; stored in the `keyboard` section (see [Commands and shortcuts](./commands-and-shortcuts.md)) |
 | Run | `run.stopTimeoutSeconds` and `run.linuxTerminal` |
 | Extensions | `netprints.extensionPaths`, `netprints.trustedProjects` and the list of loaded extensions with their version and the folder they came from |
 

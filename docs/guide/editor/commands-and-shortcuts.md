@@ -124,4 +124,27 @@ two shortcuts lists both. A dash means the command has no shortcut; it is still 
 The rows of **Other** are commands with no menu entry: Esc closes a popup that is open on the graph canvas, and Enter
 opens the graph selected in the project tree.
 
-The table is the list of commands the editor registers, in the order of the menus.
+The table is the list of commands the editor registers, in the order of the menus. It shows the defaults; the sheet and
+every menu, tooltip and the palette show the shortcuts in force, including your changes.
+
+## Change a shortcut
+
+Open **Settings** (Ctrl+,) and choose the **Keyboard shortcuts** page, or press **Edit shortcuts** on the shortcuts
+sheet. The page has one row for every command, built-in or from an extension, with its label, owner, scope, default
+shortcuts and current shortcuts. Type in the filter to find a command by label, id or owner, or press **Record gesture**
+and then a key combination to list the commands that use it.
+
+- **Add gesture** on a row, then press the key combination. The change applies at once.
+- The **✕** beside a shortcut removes it. **Reset** on a row restores that command's defaults, and **Reset all**
+  restores every command.
+- If another command already uses the combination in a scope that overlaps, the page names that command first. **Move**
+  takes the combination from it; **Cancel** changes nothing.
+- A single key or Shift plus one key cannot be used for a command that works anywhere in the window; function keys
+  can. The page tells you when it refuses a combination. Press **Esc** to stop recording.
+- On macOS **Ctrl** in a combination means the Command key.
+
+Your changes are saved as differences from the defaults in the `keyboard` section of `settings.json`, so a new default
+in a later version still reaches you. Changes for a command that is not loaded, such as an extension you removed, stay
+in the file and are listed under **Not loaded**, where you can remove them. A combination in the file that cannot be read
+is listed on the page and ignored. When two commands claim one combination, a command you changed wins over a built-in
+default, and a built-in default wins over an extension default.

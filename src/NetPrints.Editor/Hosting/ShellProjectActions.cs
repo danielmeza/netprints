@@ -9,6 +9,7 @@ using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Navigation;
 using NetPrints.Editor.References;
+using NetPrints.Editor.Settings;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.StartPage;
 using NetPrints.Editor.State;
@@ -223,7 +224,16 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
 
     /// <inheritdoc/>
     public Task ShowKeyboardShortcutsAsync(CancellationToken cancellationToken) =>
-        context.Dialogs.ShowKeyboardShortcutsAsync(new KeyboardShortcutsViewModel(shell.Registry));
+        context.Dialogs.ShowKeyboardShortcutsAsync(new KeyboardShortcutsViewModel(shell.Registry, ShowShortcutsPage));
+
+    private void ShowShortcutsPage()
+    {
+        Api?.OpenDocument(DocumentId.Settings);
+        if (shell.FindDocument(DocumentId.Settings) is SettingsDocumentViewModel settings)
+        {
+            settings.SelectPage(SettingsDocumentViewModel.KeyboardPageId);
+        }
+    }
 
     /// <inheritdoc/>
     public EditorTheme Theme => context.Settings.Get(EditorSettings.Descriptor).Theme;

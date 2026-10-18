@@ -12,7 +12,15 @@
         WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsDialog}">
   <ctl:DialogShell Title="{Binding $parent[Window].Title}" IconId="{x:Static icons:IconIds.DialogInfo}">
     <ctl:DialogShell.Actions>
-      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsCloseButton}" Content="Close" Classes="dialogAction"
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsEdit}" Content="Edit shortcuts" Classes="dialogAction"
+              Command="{Binding EditShortcutsCommand}">
+        <Interaction.Behaviors>
+          <ButtonClickEventTriggerBehavior>
+            <CloseWindowAction />
+          </ButtonClickEventTriggerBehavior>
+        </Interaction.Behaviors>
+      </Button>
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsCloseButton}" Content="Close" Classes="dialogAction Primary" Theme="{DynamicResource SolidButton}"
               IsDefault="True" IsCancel="True">
         <Interaction.Behaviors>
           <ButtonClickEventTriggerBehavior>

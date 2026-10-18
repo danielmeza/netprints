@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
              xmlns:edsettings="clr-namespace:NetPrints.Editor.Settings"
              x:Class="NetPrints.Editor.Settings.SettingsView"
              x:DataType="edsettings:SettingsDocumentViewModel">
@@ -17,6 +18,101 @@
                 <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
                 <TextBlock Grid.Column="1" Classes="secondary" Text="{Binding Version}" />
                 <TextBlock Grid.Column="2" Classes="secondary" Text="{Binding Source}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Source}" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </DataTemplate>
+    <DataTemplate DataType="edsettings:KeyboardShortcutsItemViewModel" x:DataType="edsettings:KeyboardShortcutsItemViewModel">
+      <StackPanel Classes="settingsField" IsVisible="{Binding IsVisible}" Focusable="True">
+        <Interaction.Behaviors>
+          <edbehaviors:RecordGestureBehavior IsRecording="{Binding IsRecording}" Command="{Binding CaptureCommand}"
+                                             CancelCommand="{Binding CancelRecordingCommand}" />
+        </Interaction.Behaviors>
+        <TextBlock Classes="secondary" Text="{Binding Description}" TextWrapping="Wrap" />
+        <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto">
+          <TextBox Text="{Binding FilterText}" PlaceholderText="Filter by label, id or owner"
+                   AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsFilter}"
+                   AutomationProperties.Name="Filter shortcuts" />
+          <Button Grid.Column="1" Content="Record gesture" Command="{Binding RecordFilterCommand}"
+                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsRecordFilter}" />
+          <TextBlock Grid.Column="2" Classes="secondary" Text="{Binding FilterGesture}" VerticalAlignment="Center" />
+          <Button Grid.Column="3" Content="Clear" Command="{Binding ClearFilterGestureCommand}"
+                  IsVisible="{Binding FilterGesture, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsClearFilter}" />
+          <Button Grid.Column="4" Content="Reset all" Command="{Binding ResetAllCommand}"
+                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsResetAll}" />
+        </Grid>
+        <Border Classes="restartBar" IsVisible="{Binding Conflict, Converter={x:Static ObjectConverters.IsNotNull}}"
+                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsConflict}"
+                AutomationProperties.Name="{Binding Conflict.Message}">
+          <DockPanel DataContext="{Binding Conflict}" x:DataType="edsettings:GestureConflictViewModel">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4">
+              <Button Content="Move" Command="{Binding AcceptCommand}"
+                      AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsConflictAccept}" />
+              <Button Content="Cancel" Command="{Binding CancelCommand}"
+                      AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsConflictCancel}" />
+            </StackPanel>
+            <TextBlock Text="{Binding Message}" TextWrapping="Wrap" VerticalAlignment="Center" />
+          </DockPanel>
+        </Border>
+        <TextBlock Classes="fieldError" Text="{Binding Refusal}" IsVisible="{Binding HasRefusal}"
+                   AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsRefusal}" />
+        <ItemsControl ItemsSource="{Binding IssueTexts}" IsVisible="{Binding HasIssues}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <TextBlock Classes="fieldError" Text="{Binding}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <ItemsControl ItemsSource="{Binding VisibleRows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="edsettings:ShortcutEditRowViewModel">
+              <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" Classes.recording="{Binding IsRecording}"
+                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsEditRow}"
+                    AutomationProperties.Name="{Binding Label}">
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding Label}" ToolTip.Tip="{Binding CommandId}" />
+                  <TextBlock Classes="secondary" Text="{Binding Owner}" />
+                  <TextBlock Classes="secondary" Text="{Binding Scope}" ToolTip.Tip="{Binding Defaults}" />
+                </StackPanel>
+                <ItemsControl Grid.Row="1" ItemsSource="{Binding Gestures}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <WrapPanel />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="edsettings:GestureChipViewModel">
+                      <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Text}" VerticalAlignment="Center" />
+                        <Button Classes="icon" Content="✕" Command="{Binding RemoveCommand}"
+                                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsRemoveGesture}"
+                                AutomationProperties.Name="Remove gesture" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <StackPanel Grid.Column="1" Grid.RowSpan="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                  <Button Content="{Binding AddLabel}" Command="{Binding ToggleRecordingCommand}"
+                          AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsAdd}" />
+                  <Button Content="Reset" Command="{Binding ResetCommand}"
+                          AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsReset}" />
+                </StackPanel>
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBlock Classes="groupTitle" Text="Not loaded" IsVisible="{Binding HasNotLoaded}" />
+        <ItemsControl ItemsSource="{Binding NotLoaded}" IsVisible="{Binding HasNotLoaded}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="edsettings:NotLoadedRowViewModel">
+              <Grid ColumnDefinitions="*,Auto" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsNotLoaded}"
+                    AutomationProperties.Name="{Binding Summary}">
+                <TextBlock Text="{Binding Summary}" TextTrimming="CharacterEllipsis" />
+                <Button Grid.Column="1" Content="Remove" Command="{Binding RemoveCommand}"
+                        AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsNotLoadedRemove}" />
               </Grid>
             </DataTemplate>
           </ItemsControl.ItemTemplate>

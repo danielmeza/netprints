@@ -714,6 +714,51 @@ public static class AutomationIds
     /// <summary>Automation id of the "Restart now" button of the restart bar.</summary>
     public const string SettingsRestartNow = "Settings.RestartNow";
 
+    /// <summary>Automation id of the filter box of the Keyboard shortcuts page.</summary>
+    public const string ShortcutsFilter = "Settings.Shortcuts.Filter";
+
+    /// <summary>Automation id of the button that records a gesture to filter by.</summary>
+    public const string ShortcutsRecordFilter = "Settings.Shortcuts.RecordFilter";
+
+    /// <summary>Automation id of the button that clears the gesture filter.</summary>
+    public const string ShortcutsClearFilter = "Settings.Shortcuts.ClearFilter";
+
+    /// <summary>Automation id of the Reset all button.</summary>
+    public const string ShortcutsResetAll = "Settings.Shortcuts.ResetAll";
+
+    /// <summary>Automation id of a command row of the Keyboard shortcuts page.</summary>
+    public const string ShortcutsEditRow = "Settings.Shortcuts.Row";
+
+    /// <summary>Automation id of the Add gesture button of a row.</summary>
+    public const string ShortcutsAdd = "Settings.Shortcuts.Add";
+
+    /// <summary>Automation id of the Reset button of a row.</summary>
+    public const string ShortcutsReset = "Settings.Shortcuts.Reset";
+
+    /// <summary>Automation id of the remove button of one gesture.</summary>
+    public const string ShortcutsRemoveGesture = "Settings.Shortcuts.RemoveGesture";
+
+    /// <summary>Automation id of the question that names the command already using a gesture.</summary>
+    public const string ShortcutsConflict = "Settings.Shortcuts.Conflict";
+
+    /// <summary>Automation id of the Move button of the conflict question.</summary>
+    public const string ShortcutsConflictAccept = "Settings.Shortcuts.ConflictAccept";
+
+    /// <summary>Automation id of the Cancel button of the conflict question.</summary>
+    public const string ShortcutsConflictCancel = "Settings.Shortcuts.ConflictCancel";
+
+    /// <summary>Automation id of the message that explains a refused gesture.</summary>
+    public const string ShortcutsRefusal = "Settings.Shortcuts.Refusal";
+
+    /// <summary>Automation id of a row of the "Not loaded" list.</summary>
+    public const string ShortcutsNotLoaded = "Settings.Shortcuts.NotLoaded";
+
+    /// <summary>Automation id of the Remove button of a "Not loaded" row.</summary>
+    public const string ShortcutsNotLoadedRemove = "Settings.Shortcuts.NotLoadedRemove";
+
+    /// <summary>Automation id of the "Edit shortcuts" button of the shortcuts sheet.</summary>
+    public const string ShortcutsEdit = "Shortcuts.Edit";
+
     /// <summary>Automation id of the Browse button of a path field or path list.</summary>
     public const string SettingsBrowse = "Settings.Browse";
 

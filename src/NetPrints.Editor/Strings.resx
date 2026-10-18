@@ -330,6 +330,33 @@
   <data name="Settings.Page.Appearance" xml:space="preserve">
     <value>Appearance</value>
   </data>
+  <data name="Settings.Page.Keyboard" xml:space="preserve">
+    <value>Keyboard shortcuts</value>
+  </data>
+  <data name="Settings.Keyboard.Label" xml:space="preserve">
+    <value>Keyboard shortcuts</value>
+  </data>
+  <data name="Settings.Keyboard.Description" xml:space="preserve">
+    <value>Every command with its gestures. Add, remove or reset a gesture; a change applies at once.</value>
+  </data>
+  <data name="Settings.Keyboard.BuiltInOwner" xml:space="preserve">
+    <value>Built-in</value>
+  </data>
+  <data name="Settings.Keyboard.AddGesture" xml:space="preserve">
+    <value>Add gesture</value>
+  </data>
+  <data name="Settings.Keyboard.Recording" xml:space="preserve">
+    <value>Press keys…</value>
+  </data>
+  <data name="Settings.Keyboard.Conflict" xml:space="preserve">
+    <value>"{1}" already uses {0}. Move it to "{2}"?</value>
+  </data>
+  <data name="Settings.Keyboard.NotLoadedSummary" xml:space="preserve">
+    <value>{0} (add: {1}; remove: {2})</value>
+  </data>
+  <data name="Settings.Keyboard.IssueFormat" xml:space="preserve">
+    <value>{0}: "{1}" ignored. {2}</value>
+  </data>
   <data name="Settings.Page.Run" xml:space="preserve">
     <value>Run</value>
   </data>

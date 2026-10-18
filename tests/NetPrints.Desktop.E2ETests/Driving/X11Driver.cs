@@ -176,6 +176,7 @@ public sealed class X11Driver(XServer server, EditorProcess editor, Tool tool) :
         "Enter" => "Return",
         "Esc" => "Escape",
         "Space" => "space",
+        "," => "comma",
         var key when key.Length == 1 => key.ToLowerInvariant(),
         var key => key,
     }));

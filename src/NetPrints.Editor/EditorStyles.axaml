@@ -883,6 +883,9 @@
   <Style Selector="StackPanel.settingsField">
     <Setter Property="Spacing" Value="4" />
   </Style>
+  <Style Selector="Grid.recording">
+    <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
+  </Style>
 
   <!-- Key hint next to a menu item. -->
   <Style Selector="TextBlock.menuShortcut">

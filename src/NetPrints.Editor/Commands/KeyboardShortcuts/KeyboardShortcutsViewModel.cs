@@ -1,19 +1,24 @@
+using CommunityToolkit.Mvvm.Input;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Shell;
 
 namespace NetPrints.Editor.Commands.KeyboardShortcuts;
 
 /// <summary>The keyboard shortcuts sheet: every registered command with its shortcuts, grouped as in the menu bar.</summary>
-public sealed class KeyboardShortcutsViewModel
+public sealed partial class KeyboardShortcutsViewModel
 {
+    private readonly Action? edit;
+
     /// <summary>Title of the group that holds the commands without a menu entry.</summary>
     public const string OtherTitle = "Other";
 
     /// <summary>Builds the sheet from the registry.</summary>
     /// <param name="registry">The registry whose commands are listed.</param>
-    public KeyboardShortcutsViewModel(IContributionRegistry registry)
+    /// <param name="edit">Opens the Keyboard shortcuts page of the Settings document; <see langword="null"/> when the sheet cannot offer it.</param>
+    public KeyboardShortcutsViewModel(IContributionRegistry registry, Action? edit = null)
     {
         ArgumentNullException.ThrowIfNull(registry);
+        this.edit = edit;
         ContributionSnapshot snapshot = registry.Snapshot;
         CommandDescriptor[] commands = [.. snapshot.Commands];
         CommandDescriptor[] withMenu = [.. commands.Where(command => command.Menu is not null)];
@@ -27,6 +32,13 @@ public sealed class KeyboardShortcutsViewModel
 
         Groups = [.. groups.Where(group => group.Rows.Count > 0)];
     }
+
+    /// <summary>Gets a value indicating whether the sheet can open the page that edits the shortcuts.</summary>
+    public bool CanEdit => edit is not null;
+
+    /// <summary>Opens the Keyboard shortcuts page of the Settings document.</summary>
+    [RelayCommand(CanExecute = nameof(CanEdit))]
+    public void EditShortcuts() => edit?.Invoke();
 
     /// <summary>Gets the groups: the menus in menu bar order, then <see cref="OtherTitle"/> when a command has no menu.</summary>
     public IReadOnlyList<ShortcutGroup> Groups { get; }

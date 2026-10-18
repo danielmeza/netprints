@@ -53,14 +53,23 @@ public static class TestEditorIds
 /// <param name="Text">The text the contribution shows.</param>
 public sealed record TestContent(string Text);
 
-/// <summary>A command that does nothing.</summary>
+/// <summary>A command that appends a line to the file named by <see cref="MarkerVariable"/> when that variable is set, and otherwise does nothing.</summary>
 public sealed class TestCommandHandler : ICommandHandler
 {
+    /// <summary>The environment variable that names the file a run is recorded in.</summary>
+    public const string MarkerVariable = "NETPRINTS_TEST_COMMAND_MARKER";
+
     /// <inheritdoc />
     public bool CanExecute(ICommandContext context) => true;
 
     /// <inheritdoc />
-    public Task ExecuteAsync(ICommandContext context, CancellationToken cancellationToken) => Task.CompletedTask;
+    public async Task ExecuteAsync(ICommandContext context, CancellationToken cancellationToken)
+    {
+        if (Environment.GetEnvironmentVariable(MarkerVariable) is { Length: > 0 } marker)
+        {
+            await File.AppendAllTextAsync(marker, "hello\n", cancellationToken).ConfigureAwait(false);
+        }
+    }
 }
 
 /// <summary>Answers a tooltip for the pin subject <see cref="TestEditorIds.TooltipSubject"/>.</summary>

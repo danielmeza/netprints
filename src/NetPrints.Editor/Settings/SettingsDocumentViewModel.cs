@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.State;
@@ -20,6 +21,10 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
     private const string GeneralPageId = "netprints.settings.general";
     private const string AppearancePageId = "netprints.settings.appearance";
     private const string RunPageId = "netprints.settings.run";
+
+    /// <summary>The id of the Keyboard shortcuts page.</summary>
+    public const string KeyboardPageId = "netprints.settings.keyboard";
+
     private const string ExtensionsPageId = "netprints.settings.extensions";
     private const string ExtensionPagePrefix = "netprints.settings.extension.";
     private const string EnableAnimationsKey = "enableAnimations";
@@ -31,12 +36,14 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
 
     /// <summary>Builds the pages over a store and the loaded extensions.</summary>
     /// <param name="store">The settings store every field reads and writes.</param>
+    /// <param name="registry">The registry whose commands the Keyboard shortcuts page lists and whose key bindings it changes.</param>
     /// <param name="extensions">The extension host whose loaded extensions and settings sections are listed.</param>
     /// <param name="extensionPages">The settings pages the extensions contributed; they give a section's page its title.</param>
     /// <param name="picker">The file and folder picker of the path fields, or <see langword="null"/> when there is none.</param>
     /// <param name="restart">Runs the normal exit path for "Restart now".</param>
     public SettingsDocumentViewModel(
         ISettingsStore store,
+        IContributionRegistry registry,
         IExtensionHost extensions,
         IReadOnlyList<SettingsPageDescriptor> extensionPages,
         IFilePickerService? picker,
@@ -44,11 +51,12 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
         : base(DocumentId.Settings, Strings.Settings_Title)
     {
         ArgumentNullException.ThrowIfNull(store);
+        ArgumentNullException.ThrowIfNull(registry);
         ArgumentNullException.ThrowIfNull(extensions);
         ArgumentNullException.ThrowIfNull(extensionPages);
         ArgumentNullException.ThrowIfNull(restart);
         this.restart = restart;
-        Pages = Build(store, extensions.Current, extensionPages, new SettingsFieldServices(picker, _ => null));
+        Pages = Build(store, registry, extensions.Current, extensionPages, new SettingsFieldServices(picker, _ => null));
         foreach (SettingsFieldViewModel field in Pages.SelectMany(page => page.Items).OfType<SettingsFieldViewModel>())
         {
             field.Saved += OnFieldSaved;
@@ -122,8 +130,38 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
         SelectedPage = previous is { IsVisible: true } ? previous : VisiblePages.FirstOrDefault();
     }
 
+    /// <summary>Shows a page.</summary>
+    /// <param name="pageId">The id of a page, such as <see cref="KeyboardPageId"/>.</param>
+    /// <returns><see langword="true"/> when the page exists and passes the search.</returns>
+    public bool SelectPage(string pageId)
+    {
+        SettingsPageViewModel? page = VisiblePages.FirstOrDefault(candidate => candidate.Id == pageId);
+        if (page is null)
+        {
+            return false;
+        }
+
+        SelectedPage = page;
+        return true;
+    }
+
+    /// <inheritdoc/>
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            foreach (IDisposable item in Pages.SelectMany(page => page.Items).OfType<IDisposable>())
+            {
+                item.Dispose();
+            }
+        }
+
+        base.Dispose(disposing);
+    }
+
     private static ImmutableArray<SettingsPageViewModel> Build(
         ISettingsStore store,
+        IContributionRegistry contributions,
         ExtensionRegistry registry,
         IReadOnlyList<SettingsPageDescriptor> extensionPages,
         SettingsFieldServices services)
@@ -140,6 +178,7 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
         {
             new(GeneralPageId, Strings.Settings_Page_General, [.. host.CreateFields(services, [EnableAnimationsKey, LanguageKey])], isChild: false),
             new(AppearancePageId, Strings.Settings_Page_Appearance, [.. appearance.CreateFields(services)], isChild: false),
+            new(KeyboardPageId, Strings.Settings_Page_Keyboard, [new KeyboardShortcutsItemViewModel(contributions, store)], isChild: false),
             new(RunPageId, Strings.Settings_Page_Run, [.. run.CreateFields(services)], isChild: false),
             new(ExtensionsPageId, Strings.Settings_Page_Extensions, extensionItems, isChild: false),
         };
