@@ -180,6 +180,7 @@ Extension codes are also described in [Extensions](extensions.md).
 | NPX011 | warning | A contributed handler, provider or view model factory threw while the editor ran it; its result is skipped and the failure is logged once per provider and session. |
 | NPX012 | info | A project's extension has the same id as one in the user extension directories; the project's copy serves the session and the message names both versions. |
 | NPX013 | warning | A contributed id (for now a node search provider's) does not start with the manifest id of the extension that contributed it; the contribution is dropped. |
+| NPX014 | warning | An extension's settings section failed validation; the section uses its defaults for the session and the file keeps what you wrote. |
 
 ## NPXE: experimental APIs
 

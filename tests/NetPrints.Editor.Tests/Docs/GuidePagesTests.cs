@@ -16,6 +16,8 @@ public sealed partial class GuidePagesTests
         "event-graphs.md",
     ];
 
+    private static readonly string[] TextOnlyPages = ["settings.md"];
+
     private static string GuideFolder => Path.Combine(RepositoryPaths.Root(), "docs", "guide", "editor");
 
     private static string ImagesFolder => Path.Combine(RepositoryPaths.Root(), "website", "static", "img", "guide", "editor");
@@ -55,6 +57,6 @@ public sealed partial class GuidePagesTests
     {
         string[] pages = [.. Directory.GetFiles(GuideFolder, "*.md").Select(Path.GetFileName).OfType<string>().Order(StringComparer.Ordinal)];
 
-        Assert.Equal([.. Pages.Order(StringComparer.Ordinal)], pages);
+        Assert.Equal([.. Pages.Concat(TextOnlyPages).Order(StringComparer.Ordinal)], pages);
     }
 }
