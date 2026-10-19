@@ -71,13 +71,18 @@ public class ViewResourceLoaderTests
             $$"""{ "id": "fx.views", "name": "{{name}}", "version": "{{version}}", "assembly": "{{assembly}}", "netprintsApi": "0.4", "dependsOn": [] }""");
     }
 
-    private static async Task<int> SessionOfAProjectCopyAsync(string projectVersion, string projectAssembly, RecordingLoggerFactory logs, Func<object, string[]> ownersOfProjectModel)
+    private static async Task<int> SessionOfAProjectCopyAsync(string projectVersion, string projectAssembly, RecordingLoggerFactory logs, Func<object, string[]> ownersOfProjectModel, bool alterProjectAssembly = false, int reopens = 0)
     {
         string temp = Path.Combine(Path.GetTempPath(), "netprints-ui-tests", Guid.NewGuid().ToString("N"));
         string userRoot = Path.Combine(temp, "user");
         string projectCopy = Path.Combine(temp, "project", "fx.views");
         CopyExtension(Path.Combine(userRoot, "fx.views"), "User copy");
         CopyExtension(projectCopy, "Project copy", projectVersion, projectAssembly);
+        if (alterProjectAssembly)
+        {
+            File.AppendAllBytes(Path.Combine(projectCopy, "Fx.Views.dll"), [0]);
+        }
+
         try
         {
             var recorder = new ExtensionContributionRecorder(new Microsoft.Extensions.Logging.Logger<ExtensionContributionRecorder>(logs));
@@ -87,6 +92,12 @@ public class ViewResourceLoaderTests
             registry.Freeze();
             await using var session = new ExtensionHost(new ExtensionLoaderOptions([userRoot], [projectCopy], []) { EditorContributions = recorder.Factory }, NullLoggerFactory.Instance);
             registry.AddSessionGroup(GroupKey, group => recorder.PopulateSessionGroup(group, session.Current, [projectCopy]));
+            for (int reopen = 0; reopen < reopens; reopen++)
+            {
+                registry.RemoveSessionGroup(GroupKey);
+                registry.AddSessionGroup(GroupKey, group => recorder.PopulateSessionGroup(group, session.Current, [projectCopy]));
+            }
+
             ViewResourceLoader.Sync(App, registry.ViewResources);
 
             return ownersOfProjectModel(NewModelOf(projectCopy)).Length;
@@ -115,6 +126,26 @@ public class ViewResourceLoaderTests
         var logs = new RecordingLoggerFactory();
 
         await SessionOfAProjectCopyAsync("2.0.0", "Fx.Views.dll", logs, TemplateOwners);
+
+        Assert.Single(logs.Ids, id => id == 1046);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task AProjectCopyOfTheSameVersionWithDifferentContentIsWarnedAbout()
+    {
+        var logs = new RecordingLoggerFactory();
+
+        await SessionOfAProjectCopyAsync("1.0.0", "Fx.Views.dll", logs, TemplateOwners, alterProjectAssembly: true);
+
+        Assert.Single(logs.Ids, id => id == 1046);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task AProjectCopyThatReopensIsWarnedAboutOnlyOnce()
+    {
+        var logs = new RecordingLoggerFactory();
+
+        await SessionOfAProjectCopyAsync("2.0.0", "Fx.Views.dll", logs, TemplateOwners, reopens: 2);
 
         Assert.Single(logs.Ids, id => id == 1046);
     }

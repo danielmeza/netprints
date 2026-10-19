@@ -65,8 +65,23 @@ public partial class SettingsSchemaTests
         Assert.Equal("^[a-z]+$", (string?)label["pattern"]);
     }
 
+    [Fact]
+    public void ARequiredStringNeedsAtLeastOneCharacterUnlessEmptyIsAllowed()
+    {
+        Assert.Equal(1, (int?)Property("needed")["minLength"]);
+        Assert.Null(Property("mayBeEmpty")["minLength"]);
+        var schema = (JsonObject)SettingsSchema.Export(FxSettingsContext.Default.FxSettings);
+        Assert.Contains(Assert.IsType<JsonArray>(schema["required"]), name => (string?)name == "mayBeEmpty");
+    }
+
     internal sealed record FxSettings
     {
+        [Required]
+        public string Needed { get; init; } = "x";
+
+        [Required(AllowEmptyStrings = true)]
+        public string MayBeEmpty { get; init; } = "";
+
         [Range(1, 600)]
         public int Timeout { get; init; } = 5;
 
