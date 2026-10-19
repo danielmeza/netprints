@@ -2,6 +2,7 @@ using System.Windows.Input;
 using Avalonia;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using Avalonia.Xaml.Interactivity;
 using NetPrints.Extensibility.Editor;
 
@@ -10,6 +11,7 @@ namespace NetPrints.Editor.Behaviors;
 /// <summary>
 /// While <see cref="IsRecording"/> is on, turns the next key chord pressed inside the attached element into a gesture
 /// text and passes it to <see cref="Command"/>; Escape passes it to <see cref="CancelCommand"/>. Modifier keys alone are ignored.
+/// Recording also ends when the keyboard focus leaves the element or the element leaves the visual tree.
 /// </summary>
 public sealed class RecordGestureBehavior : StyledElementBehavior<InputElement>
 {
@@ -71,7 +73,7 @@ public sealed class RecordGestureBehavior : StyledElementBehavior<InputElement>
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == IsRecordingProperty && change.GetNewValue<bool>() && AssociatedObject is { IsKeyboardFocusWithin: false } element)
+        if (change.Property == IsRecordingProperty && change.GetNewValue<bool>() && AssociatedObject is { } element)
         {
             element.Focus();
         }
@@ -81,14 +83,49 @@ public sealed class RecordGestureBehavior : StyledElementBehavior<InputElement>
     protected override void OnAttached()
     {
         base.OnAttached();
-        AssociatedObject?.AddHandler(InputElement.KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel);
+        if (AssociatedObject is { } element)
+        {
+            element.AddHandler(InputElement.KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel);
+            element.PropertyChanged += OnElementPropertyChanged;
+            element.DetachedFromVisualTree += OnDetachedFromVisualTree;
+        }
     }
 
     /// <inheritdoc/>
     protected override void OnDetaching()
     {
-        AssociatedObject?.RemoveHandler(InputElement.KeyDownEvent, OnKeyDown);
+        if (AssociatedObject is { } element)
+        {
+            element.RemoveHandler(InputElement.KeyDownEvent, OnKeyDown);
+            element.PropertyChanged -= OnElementPropertyChanged;
+            element.DetachedFromVisualTree -= OnDetachedFromVisualTree;
+        }
+
         base.OnDetaching();
+    }
+
+    private void OnElementPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property == InputElement.IsKeyboardFocusWithinProperty && e.NewValue is false && IsRecording)
+        {
+            Dispatcher.UIThread.Post(CancelIfFocusLeft, DispatcherPriority.Input);
+        }
+    }
+
+    private void OnDetachedFromVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
+    {
+        if (IsRecording)
+        {
+            CancelCommand?.Execute(null);
+        }
+    }
+
+    private void CancelIfFocusLeft()
+    {
+        if (IsRecording && AssociatedObject is { IsKeyboardFocusWithin: false })
+        {
+            CancelCommand?.Execute(null);
+        }
     }
 
     private void OnKeyDown(object? sender, KeyEventArgs e)

@@ -1786,3 +1786,9 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - Decision (schema of the binding members): `KeyboardSettings`'s binding members render as nullable (`type: ["string","null"]`,
   `default: null`) in the generated schema because the DD-1 constructor parameters are nullable; the schema is generated, not
   hand-edited.
+
+## Batch T112-2 (T112, part 2: DD-15, DD-3, DD-2, DD-14)
+
+- DD-15: `RecordGestureBehavior` ends the recording when the keyboard focus leaves the attached element, posted so focus can move
+  between two elements of the page first, and when the element leaves the visual tree. Red: `LeavingThePageWhileRecordingEndsTheRecordingAndTheBindingsWorkAgain`
+  failed with `Assert.False() Failure` (the page was still recording after the settings search took the keyboard). Green.

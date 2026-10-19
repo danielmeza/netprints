@@ -43,4 +43,33 @@ public class KeyboardShortcutsPageUiTests
         var item = Assert.IsType<KeyboardShortcutsItemViewModel>(document.SelectedPage?.Items.Single());
         Assert.Contains("Q", item.Rows.Single(candidate => candidate.Label == "Settings").Current, StringComparison.Ordinal);
     }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task LeavingThePageWhileRecordingEndsTheRecordingAndTheBindingsWorkAgain()
+    {
+        await using ShellApp app = ShellApp.Start();
+        Assert.True(app.Commands.TryRun("openSettings"));
+        await UiWait.UntilAsync(app.Driver, () => Task.FromResult(app.Api.OpenDocuments.Contains(DocumentId.Settings)), "settings open", Token);
+        var document = Assert.IsType<SettingsDocumentViewModel>(app.Shell.FindDocument(DocumentId.Settings));
+        Assert.True(document.SelectPage(SettingsDocumentViewModel.KeyboardPageId));
+        HeadlessDriver.Pump();
+
+        var item = Assert.IsType<KeyboardShortcutsItemViewModel>(document.SelectedPage?.Items.Single());
+        Control row = Assert.Single(Find(app, AutomationIds.ShortcutsEditRow, "Settings"));
+        var add = Assert.IsType<Button>(Assert.Single(row.GetVisualDescendants().OfType<Button>(), button => Avalonia.Automation.AutomationProperties.GetAutomationId(button) == AutomationIds.ShortcutsAdd));
+
+        add.Focus();
+        add.Command?.Execute(null);
+        HeadlessDriver.Pump();
+        Assert.True(item.IsRecording);
+        Assert.True(app.Registry.IsRecordingGestures);
+
+        var search = Assert.IsType<TextBox>(Assert.Single(Find(app, AutomationIds.SettingsSearch)));
+        search.Focus();
+        HeadlessDriver.Pump();
+        HeadlessDriver.Pump();
+
+        Assert.False(item.IsRecording);
+        Assert.False(app.Registry.IsRecordingGestures);
+    }
 }
