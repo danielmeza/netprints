@@ -1789,10 +1789,10 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 
 ## Batch T112-2 (T112, part 2: DD-15, DD-3, DD-2, DD-14)
 
-- DD-15: `RecordGestureBehavior` ends the recording when the keyboard focus leaves the attached element, posted so focus can move
+- DD-15 (466c2a10): `RecordGestureBehavior` ends the recording when the keyboard focus leaves the attached element, posted so focus can move
   between two elements of the page first, and when the element leaves the visual tree. Red: `LeavingThePageWhileRecordingEndsTheRecordingAndTheBindingsWorkAgain`
   failed with `Assert.False() Failure` (the page was still recording after the settings search took the keyboard). Green.
-- DD-3: `FocusOnRequestBehavior` (a counter focuses the element once the layout has run), `FilterFocusRequest` and
+- DD-3 (a2528b3d): `FocusOnRequestBehavior` (a counter focuses the element once the layout has run), `FilterFocusRequest` and
   `RecordFirstVisible` on the Keyboard shortcuts page, `SelectFirstVisiblePage` on the Settings document, `Settings.PageList` and
   the `SettingsSearch`/`ShortcutsFilter`/conflict wiring in `SettingsView.axaml` give the page a full keyboard path: Down in the
   search selects the first shown page and focuses the page list, Tab reaches the filter, Enter records the first shown row, the
@@ -1801,10 +1801,16 @@ T076, Checkpoint C2, gate items measured on this head (Release).
   compile red on the missing command. Green: `KeyboardShortcutsPageUiTests` 5 of 5, `KeyboardShortcutsPageTests` 12 of 12.
 - Decision (DD-3, page list): the `Pages` `ListBox` gained `Focusable="True"` because `FocusControlAction` does not focus a list
   whose `Focusable` is not set explicitly, and `x:Name="Pages"` is read by that action (D15).
-- DD-2: the ShellMainFlow failure of CI run 39164167733 attempt 1 (head 142a178d) was a product bug, not a flake: a second press
+- DD-2 (37d4e529): the ShellMainFlow failure of CI run 39164167733 attempt 1 (head 142a178d) was a product bug, not a flake: a second press
   outside the Errors rows walked past the list to a Dock container and passed its `ToolDock` to `NavigateCommand`
   (ArgumentException, "Unexpected error" dialog). The walk now stops at the attached list. Red:
   `System.ArgumentException : Parameter "parameter" (object) cannot be of type ...OuterItem, as the command type requires an argument of type System.String.`
   Green: `ExecuteCommandOnItemDoubleClickBehaviorTests` 2 of 2, `BottomPanelsWiringTests` + `ProjectTreeWiringTests` 13 of 13.
-- DD-14: `ShellWithNoProjectOpen` and the `StartPage` theory mask the focused recent-projects search box, as the search-popup
+- DD-14 (c6a90576): `ShellWithNoProjectOpen` and the `StartPage` theory mask the focused recent-projects search box, as the search-popup
   snapshot masks its box; masks are skipped by the comparison, so no baseline changed. Green: `SnapshotTests` 5 of 5 runs.
+- Suite (Release, solution-wide, at c6a90576): 5321 total, 5284 passed, 37 skipped, 0 failed (Editor.UITests 16 min 43 s, Editor.Tests 2 min 38 s,
+  Catalog.Tests 1 min 27 s, Cli.Tests 1 min 13 s, Core.Tests 1 min 04 s). E2E (`NETPRINTS_E2E=1`, `--fail-skips on`, display start 300, own
+  `NETPRINTS_STATE_DIR` and `XDG_CONFIG_HOME`): `RebindShortcutsTests` pass, `ShellMainFlowTests` pass. `dotnet format --verify-no-changes` clean;
+  trim ratchet 8 of 8. No packable surface change.
+- Decision (notes commit): as in T112-1, a line citing its own commit's sha cannot be written in that commit; each fix commit carries its
+  implementation-notes text without the sha, and this fifth commit records the four shas, the suite and the E2E totals.
