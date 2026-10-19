@@ -270,6 +270,9 @@ it needs the same per-entry ledger, enforced by `SourceHygieneTests.NoUnlistedBu
 |---|---|---|---|
 | `Directory.Build.props` | `MSBuildWarningsNotAsErrors` | MINVER1001 | MinVer warns when there is no `.git` history (a source archive); release contract §1 requires the build to stay green in that case. |
 | `Directory.Build.targets` | `NoWarn` | `NPXE0001`–`NPXE0004` | Per-project, per-id opt-in to `[Experimental]` extension APIs through `NetPrintsExperimentalOptIn` items; the one allowed `<NoWarn>`, gated by `SourceHygieneTests` (ADR-0017). |
+| `src/NetPrints.Templates/content/netprints-extension/MyExtension/MyExtension.csproj` | `NoWarn` | `NU5100` | The extension package keeps its folder under `extension/`, not `lib/` (ADR-0041); NuGet's NU5100 says a dll is outside `lib/`. Every other pack check stays on; `NoPackageAnalysis` is forbidden. |
+| `extensions/NetPrints.Godot/src/NetPrints.Godot/NetPrints.Godot.csproj` | `NoWarn` | `NU5100`, NPXE ids | NU5100 as above; the NPXE ids are the author's opt-in (ADR-0017), because the sample builds only from the packed packages (research R26). |
+| `extensions/NetPrints.Godot/tests/NetPrints.Godot.Tests/NetPrints.Godot.Tests.csproj` | `NoWarn` | NPXE ids | The author's opt-in (ADR-0017). |
 
 ### BannedApiAnalyzers scoping, and the XML-documentation promotion
 

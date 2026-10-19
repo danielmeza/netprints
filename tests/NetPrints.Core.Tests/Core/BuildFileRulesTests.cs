@@ -58,6 +58,23 @@ namespace NetPrints.Tests.Core
         }
 
         [Fact]
+        public void NoPackageAnalysisIsAnOffender()
+        {
+            Assert.NotEmpty(BuildFileRules.WarningOffenders("src/X/X.csproj", Project("<PropertyGroup><NoPackageAnalysis>true</NoPackageAnalysis></PropertyGroup>")));
+        }
+
+        [Fact]
+        public void AnExtensionProjectMayOptInAndSuppressNu5100Only()
+        {
+            string godot = "extensions/NetPrints.Godot/src/NetPrints.Godot/NetPrints.Godot.csproj";
+
+            Assert.Empty(BuildFileRules.WarningOffenders(godot, Project("<PropertyGroup><NoWarn>$(NoWarn);NU5100;NPXE0005</NoWarn></PropertyGroup>")));
+            Assert.Empty(BuildFileRules.WarningOffenders(BuildFileRules.TemplateExtensionProject, Project("<PropertyGroup><NoWarn>$(NoWarn);NU5100</NoWarn></PropertyGroup>")));
+            Assert.NotEmpty(BuildFileRules.WarningOffenders(godot, Project("<PropertyGroup><NoWarn>$(NoWarn);CS1591</NoWarn></PropertyGroup>")));
+            Assert.NotEmpty(BuildFileRules.WarningOffenders("src/NetPrints.Core/NetPrints.Core.csproj", Project("<PropertyGroup><NoWarn>$(NoWarn);NU5100</NoWarn></PropertyGroup>")));
+        }
+
+        [Fact]
         public void TheNpxe0004DuplicateIsAllowedOnlyAsOneDeclarationInEachOfTheTwoNamedFiles()
         {
             string[] both = ["NetPrints.Core/ExperimentalApiIds.cs", "NetPrints.Catalog/Engine/ExperimentalApis.cs"];

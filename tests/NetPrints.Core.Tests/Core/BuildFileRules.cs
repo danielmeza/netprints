@@ -18,6 +18,12 @@ namespace NetPrints.Tests.Core
 
         internal const string OptInItem = "NetPrintsExperimentalOptIn";
 
+        internal const string ExtensionsFolder = "extensions/";
+
+        internal const string TemplateExtensionProject = "src/NetPrints.Templates/content/netprints-extension/MyExtension/MyExtension.csproj";
+
+        internal const string PackLayoutWarning = "NU5100";
+
         /// <summary>ADR-0003 "Build-property allowances": engine-level warning suppression allowed for one code in one file.</summary>
         private static readonly HashSet<(string File, string Code)> BuildPropertyAllowlist = new()
         {
@@ -56,22 +62,41 @@ namespace NetPrints.Tests.Core
             && noWarn.Value.Trim() == OptInNoWarnValue
             && Named(document, "NoWarn").Count() == 1;
 
+        /// <summary>ADR-0003 allowances and ADR-0017: an extension project's own <c>NoWarn</c> (a project file under <c>extensions/</c>, or the template's extension project): <c>$(NoWarn)</c> followed only by NPXE ids and NU5100.</summary>
+        internal static bool IsExtensionProjectNoWarn(string relativePath, XElement noWarn)
+        {
+            if (noWarn.HasAttributes || !relativePath.EndsWith(".csproj", StringComparison.Ordinal)
+                || !(relativePath.StartsWith(ExtensionsFolder, StringComparison.Ordinal) || relativePath == TemplateExtensionProject))
+            {
+                return false;
+            }
+
+            string[] tokens = noWarn.Value.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            return tokens.Length >= 2 && tokens[0] == "$(NoWarn)"
+                && tokens.Skip(1).All(token => token == PackLayoutWarning || System.Text.RegularExpressions.Regex.IsMatch(token, @"^NPXE\d{4}$"));
+        }
+
         /// <summary>Every <c>&lt;NoWarn&gt;</c> element of a file, whatever its attributes.</summary>
         internal static IEnumerable<XElement> NoWarnElements(XDocument document) => Named(document, "NoWarn");
 
         /// <summary>
-        /// The ways a build file lowers the warning bar or hides a diagnostic: a <c>NoWarn</c> other than the opt-in line,
-        /// <c>WarningsNotAsErrors</c>, <c>TreatWarningsAsErrors=false</c>, <c>WarningLevel</c>, an unlisted engine-level
-        /// suppression, another analyzer config file (<c>GlobalAnalyzerConfigFiles</c>, <c>EditorConfigFiles</c>) or an
-        /// <c>&lt;Analyzer Remove&gt;</c> item.
+        /// The ways a build file lowers the warning bar or hides a diagnostic: a <c>NoWarn</c> other than the opt-in line or
+        /// an extension project's allowance, <c>WarningsNotAsErrors</c>, <c>TreatWarningsAsErrors=false</c>, <c>WarningLevel</c>,
+        /// <c>NoPackageAnalysis</c>, an unlisted engine-level suppression, another analyzer config file
+        /// (<c>GlobalAnalyzerConfigFiles</c>, <c>EditorConfigFiles</c>) or an <c>&lt;Analyzer Remove&gt;</c> item.
         /// </summary>
         internal static IReadOnlyList<string> WarningOffenders(string relativePath, XDocument document)
         {
             var offenders = new List<string>();
 
-            foreach (XElement noWarn in NoWarnElements(document).Where(element => !IsOptInNoWarn(relativePath, document, element)))
+            foreach (XElement noWarn in NoWarnElements(document).Where(element => !IsOptInNoWarn(relativePath, document, element) && !IsExtensionProjectNoWarn(relativePath, element)))
             {
                 offenders.Add($"{relativePath}: <NoWarn>");
+            }
+
+            foreach (XElement element in Named(document, "NoPackageAnalysis").Where(element => string.Equals(element.Value.Trim(), "true", StringComparison.OrdinalIgnoreCase)))
+            {
+                offenders.Add($"{relativePath}: <NoPackageAnalysis>true</NoPackageAnalysis>");
             }
 
             AddIfAny(offenders, relativePath, document, "WarningsNotAsErrors");

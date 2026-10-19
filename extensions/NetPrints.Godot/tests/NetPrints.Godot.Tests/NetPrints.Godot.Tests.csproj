@@ -2,15 +2,9 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
+    <!-- ADR-0017: an extension opts in to experimental APIs with NoWarn. -->
+    <NoWarn>$(NoWarn);NPXE0002;NPXE0005;NPXE0009;NPXE0012;NPXE0013</NoWarn>
   </PropertyGroup>
-
-  <ItemGroup>
-    <NetPrintsExperimentalOptIn Include="NPXE0002" />
-    <NetPrintsExperimentalOptIn Include="NPXE0005" />
-    <NetPrintsExperimentalOptIn Include="NPXE0009" />
-    <NetPrintsExperimentalOptIn Include="NPXE0012" />
-    <NetPrintsExperimentalOptIn Include="NPXE0013" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="xunit.v3" />

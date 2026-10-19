@@ -194,9 +194,9 @@ namespace NetPrints.Tests.Core
             Assert.Empty(offenders);
         }
 
-        /// <summary>ADR-0017: the opt-in line exists exactly once, in <c>Directory.Build.targets</c>, and no other file has a <c>&lt;NoWarn&gt;</c>.</summary>
+        /// <summary>ADR-0017 and ADR-0003: the opt-in line exists exactly once, in <c>Directory.Build.targets</c>, and the only other <c>&lt;NoWarn&gt;</c> holders are extension projects that name NPXE ids and NU5100.</summary>
         [Fact]
-        public void TheOnlyNoWarnIsTheExperimentalOptInLine()
+        public void TheOnlyNoWarnsAreTheOptInLineAndExtensionProjects()
         {
             string root = SampleProjectFactory.FindRepositoryRoot();
             var holders = new List<string>();
@@ -208,7 +208,15 @@ namespace NetPrints.Tests.Core
                 }
             }
 
-            Assert.Equal([BuildFileRules.OptInTargetsFile], holders);
+            Assert.Contains(BuildFileRules.OptInTargetsFile, holders);
+            foreach (string holder in holders.Where(holder => holder != BuildFileRules.OptInTargetsFile))
+            {
+                XDocument document = XDocument.Load(Path.Combine(root, holder));
+                Assert.True(
+                    BuildFileRules.NoWarnElements(document).All(noWarn => BuildFileRules.IsExtensionProjectNoWarn(holder, noWarn)),
+                    $"{holder} may only opt in to NPXE ids and suppress NU5100");
+            }
+
             XDocument targets = XDocument.Load(Path.Combine(root, BuildFileRules.OptInTargetsFile));
             Assert.True(
                 BuildFileRules.NoWarnElements(targets).All(noWarn => BuildFileRules.IsOptInNoWarn(BuildFileRules.OptInTargetsFile, targets, noWarn)),

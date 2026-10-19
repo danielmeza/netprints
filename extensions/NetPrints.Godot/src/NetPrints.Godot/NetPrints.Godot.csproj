@@ -20,17 +20,10 @@
     <PackageType>NetPrintsExtension</PackageType>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
-    <NoPackageAnalysis>true</NoPackageAnalysis>
+    <!-- ADR-0017: an extension opts in to experimental APIs with NoWarn; NU5100: the dll is packed under extension/ on purpose (ADR-0041). -->
+    <NoWarn>$(NoWarn);NU5100;NPXE0002;NPXE0005;NPXE0009;NPXE0012;NPXE0013</NoWarn>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);AddExtensionFolder</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
-
-  <ItemGroup>
-    <NetPrintsExperimentalOptIn Include="NPXE0002" />
-    <NetPrintsExperimentalOptIn Include="NPXE0005" />
-    <NetPrintsExperimentalOptIn Include="NPXE0009" />
-    <NetPrintsExperimentalOptIn Include="NPXE0012" />
-    <NetPrintsExperimentalOptIn Include="NPXE0013" />
-  </ItemGroup>
 
   <ItemGroup>
     <!-- The host supplies the NetPrints assemblies at run time; the extension must see the host's own copies. -->
@@ -39,6 +32,11 @@
 
   <ItemGroup>
     <None Include="netprints-extension.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <Target Name="AddExtensionFolder">

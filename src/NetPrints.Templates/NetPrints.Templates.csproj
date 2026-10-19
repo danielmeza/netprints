@@ -8,7 +8,6 @@
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <EnableDefaultItems>false</EnableDefaultItems>
-    <NoPackageAnalysis>true</NoPackageAnalysis>
     <Description>The dotnet new templates of NetPrints: netprints-extension creates an extension project and its test project on the conformance kit. NetPrints continues the original NetPrints by Robin Kahlow (https://github.com/RobinKa/netprints).</Description>
     <PackageTags>$(PackageTags);dotnet-new;templates</PackageTags>
   </PropertyGroup>

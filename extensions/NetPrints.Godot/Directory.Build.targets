@@ -1,4 +1,3 @@
 <Project>
-  <!-- ADR-0017: the one per-id opt-in to [Experimental] APIs and the package README step are the repository's own. -->
-  <Import Project="../../Directory.Build.targets" />
+  <!-- Stops the walk to the repository's targets: the sample builds only against the packed NetPrints packages (research R26). -->
 </Project>

@@ -16,7 +16,8 @@
     <PackageType>NetPrintsExtension</PackageType>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
-    <NoPackageAnalysis>true</NoPackageAnalysis>
+    <!-- NU5100: the extension's dll is packed under extension/, not lib/, on purpose (ADR-0041). -->
+    <NoWarn>$(NoWarn);NU5100</NoWarn>
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);AddExtensionFolder</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
