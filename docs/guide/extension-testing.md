@@ -140,9 +140,10 @@ NPK014 (graph rules) arrives with the graph rules.
 ```yaml
 jobs:
   extension:
-    uses: danielmeza/netprints/.github/workflows/netprints-extension.yml@master
+    uses: danielmeza/netprints/.github/workflows/netprints-extension.yml@v0.4.0
     with:
       extension-folder: .
+      netprints-version: 0.4.0
 ```
 
 | Input | Meaning |
@@ -152,4 +153,4 @@ jobs:
 | `netprints-version` | The version of the `NetPrints.Cli` tool that verifies the package; the latest release by default. |
 | `dotnet-version` | The .NET SDK to install; `10.0.x` by default. |
 
-The workflow uploads the extension package as the artifact named in its `package-artifact` output. Pin the `uses:` reference to a release tag or a commit once one exists.
+The workflow uploads the extension package as the artifact named in its `package-artifact` output. The workflow first ships with NetPrints 0.4.0. Pin `uses:` to the tag of the NetPrints release whose packages you build against (or to its commit SHA), and pass the same version as `netprints-version`.

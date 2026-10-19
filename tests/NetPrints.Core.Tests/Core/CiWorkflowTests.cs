@@ -387,6 +387,18 @@ namespace NetPrints.Tests.Core
         }
 
         [Fact]
+        public void TheTestingGuidePinsTheReusableWorkflowToAReleaseTag()
+        {
+            string root = SampleProjectFactory.FindRepositoryRoot();
+            string guide = File.ReadAllText(Path.Combine(root, "docs", "guide", "extension-testing.md"));
+            string usesLine = guide.Split('\n').Single(candidate => candidate.Contains("netprints-extension.yml@", StringComparison.Ordinal));
+
+            Match match = Regex.Match(usesLine, @"@v(?<version>\d+\.\d+\.\d+)\s*$");
+            Assert.True(match.Success, usesLine);
+            Assert.Contains($"netprints-version: {match.Groups["version"].Value}", guide, StringComparison.Ordinal);
+        }
+
+        [Fact]
         public void RequiredCheckNamesAreUnchanged()
         {
             Dictionary<string, object?> jobs = Jobs();
