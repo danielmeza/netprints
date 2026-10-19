@@ -30,6 +30,27 @@ public static class NpkDiagnosticCodes
     /// <summary>Two translations of the same graph produce identical text.</summary>
     public const string DeterministicEmitters = "NPK008";
 
+    /// <summary>The settings sections serialize, validate and export a schema.</summary>
+    public const string Settings = "NPK009";
+
+    /// <summary>A host channel opens, takes subscribers, closes and disposes without failing.</summary>
+    public const string HostChannel = "NPK010";
+
+    /// <summary>The extension coexists with the built-in extension and with a noisy neighbour.</summary>
+    public const string Coexistence = "NPK011";
+
+    /// <summary>The registry and what the extension contributed dispose without failing and more than once.</summary>
+    public const string Disposal = "NPK012";
+
+    /// <summary>The extension's service provider builds, validates, registers only its own types and leaks no scoped service.</summary>
+    public const string Services = "NPK013";
+
+    /// <summary>The editor contributions have prefixed ids, resolvable labels, gestures that parse and follow the scope rules, and known icons.</summary>
+    public const string EditorContributions = "NPK015";
+
+    /// <summary>The contributed views hold no colour or font literal a theme cannot reach.</summary>
+    public const string ContributedViews = "NPK016";
+
     /// <summary>The checks implemented by this version, in order.</summary>
     public static IReadOnlyList<string> All { get; } =
     [
@@ -41,5 +62,12 @@ public static class NpkDiagnosticCodes
         NodeRoundTrip,
         TranslationCompiles,
         DeterministicEmitters,
+        Settings,
+        HostChannel,
+        Coexistence,
+        Disposal,
+        Services,
+        EditorContributions,
+        ContributedViews,
     ];
 }

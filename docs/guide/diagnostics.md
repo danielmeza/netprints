@@ -120,6 +120,13 @@ The conformance suite of [`NetPrints.Extensibility.Testing`](extensions.md) repo
 | NPK006 | error | A node kind of the extension is not written and read back to the same bytes. |
 | NPK007 | error | The C# generated for a node kind of the extension does not compile. |
 | NPK008 | error | Translating the same graph twice gives different text. |
+| NPK009 | error | A settings section of the extension does not serialize its default, does not accept it as valid, does not read back unchanged or cannot export a JSON schema. |
+| NPK010 | error | A host channel is closed when it is created, throws when it takes a subscriber, or is not closed after it is disposed (or disposing it twice throws). |
+| NPK011 | error | Loading the extension changes an environment variable or the current directory of the process, or what the extension contributes differs when a failing neighbour and a neighbour that claims the same project properties are loaded next to it. |
+| NPK012 | error | Disposing the registry, with a session still open and more than once, throws or logs a disposal failure of something the extension contributed. |
+| NPK013 | error | The extension's service provider does not build or validate (a missing registration, a singleton that captures a scoped service), the extension registers a type it does not own or replaces a host export, or a scoped or transient service is still reachable after its session is disposed. |
+| NPK015 | error | An editor contribution id does not start with the extension id, a label has neither a default text nor a string resource, a gesture does not parse back to itself or has no modifier on a global command, or an icon id is not the extension id, a dot and a name that a view resource defines. |
+| NPK016 | error | A `.axaml` view of the extension holds a colour literal outside a theme dictionary or a `FontSize` or `FontFamily` literal. |
 
 ## NPS: repository style
 

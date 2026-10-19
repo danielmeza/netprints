@@ -12,6 +12,7 @@ public abstract class ConformanceTests<TExtension>
     where TExtension : INetPrintsExtension, new()
 {
     private const int FolderSearchDepth = 4;
+    private const string InProcessId = "harness.inprocess.0";
 
     /// <summary>
     /// Gets the folder the extension is built into: the one with <c>netprints-extension.json</c> and the extension assembly, and none of the host's.
@@ -31,9 +32,17 @@ public abstract class ConformanceTests<TExtension>
         return new ConformanceOptions
         {
             ExtensionFolder = folder,
-            HarnessFactory = cancellationToken => CreateHarnessAsync(manifestFolder, cancellationToken),
+            SourceDirectory = SourceDirectory ?? manifestFolder,
+            HarnessFactory = cancellationToken => CreateHarnessAsync(manifestFolder, [], cancellationToken),
+            NeighbourHarnessFactory = (neighbours, cancellationToken) => CreateHarnessAsync(manifestFolder, neighbours, cancellationToken),
         };
     }
+
+    /// <summary>
+    /// Gets the directory that holds the extension's <c>.axaml</c> sources, or <see langword="null"/> to use the folder that holds
+    /// <c>netprints-extension.json</c> next to the extension assembly or above it. The contributed views check scans it.
+    /// </summary>
+    protected virtual string? SourceDirectory => null;
 
     /// <summary>Checks <c>NPK001</c>: the manifest.</summary>
     /// <returns>A task that completes when the check ran.</returns>
@@ -75,6 +84,41 @@ public abstract class ConformanceTests<TExtension>
     [Fact]
     public Task NPK008_DeterministicEmittersAsync() => RunCheckAsync(NpkDiagnosticCodes.DeterministicEmitters);
 
+    /// <summary>Checks <c>NPK009</c>: the settings sections.</summary>
+    /// <returns>A task that completes when the check ran.</returns>
+    [Fact]
+    public Task NPK009_SettingsAsync() => RunCheckAsync(NpkDiagnosticCodes.Settings);
+
+    /// <summary>Checks <c>NPK010</c>: the host channel lifecycle.</summary>
+    /// <returns>A task that completes when the check ran.</returns>
+    [Fact]
+    public Task NPK010_HostChannelAsync() => RunCheckAsync(NpkDiagnosticCodes.HostChannel);
+
+    /// <summary>Checks <c>NPK011</c>: coexistence with the built-in extension and a noisy neighbour.</summary>
+    /// <returns>A task that completes when the check ran.</returns>
+    [Fact]
+    public Task NPK011_CoexistenceAsync() => RunCheckAsync(NpkDiagnosticCodes.Coexistence);
+
+    /// <summary>Checks <c>NPK012</c>: disposal.</summary>
+    /// <returns>A task that completes when the check ran.</returns>
+    [Fact]
+    public Task NPK012_DisposalAsync() => RunCheckAsync(NpkDiagnosticCodes.Disposal);
+
+    /// <summary>Checks <c>NPK013</c>: the service provider.</summary>
+    /// <returns>A task that completes when the check ran.</returns>
+    [Fact]
+    public Task NPK013_ServicesAsync() => RunCheckAsync(NpkDiagnosticCodes.Services);
+
+    /// <summary>Checks <c>NPK015</c>: the editor contributions.</summary>
+    /// <returns>A task that completes when the check ran.</returns>
+    [Fact]
+    public Task NPK015_EditorContributionsAsync() => RunCheckAsync(NpkDiagnosticCodes.EditorContributions);
+
+    /// <summary>Checks <c>NPK016</c>: the contributed views.</summary>
+    /// <returns>A task that completes when the check ran.</returns>
+    [Fact]
+    public Task NPK016_ContributedViewsAsync() => RunCheckAsync(NpkDiagnosticCodes.ContributedViews);
+
     private static string? FindManifestFolder()
     {
         string? directory = Path.GetDirectoryName(typeof(TExtension).Assembly.Location);
@@ -91,11 +135,13 @@ public abstract class ConformanceTests<TExtension>
         return null;
     }
 
-    private static async Task<ExtensionHarness> CreateHarnessAsync(string? folder, CancellationToken cancellationToken)
+    private static async Task<ExtensionHarness> CreateHarnessAsync(
+        string? folder, IReadOnlyList<(ExtensionManifest Manifest, INetPrintsExtension Extension)> neighbours, CancellationToken cancellationToken)
     {
         if (folder is null)
         {
-            return await ExtensionHarness.CreateAsync([], [new TExtension()], cancellationToken).ConfigureAwait(false);
+            var subject = (new ExtensionManifest(InProcessId, InProcessId, "1.0.0", InProcessId + ".dll", $"{ExtensionApi.Version.Major}.{ExtensionApi.Version.Minor}", []), (INetPrintsExtension)new TExtension());
+            return await ExtensionHarness.CreateWithManifestsAsync([], [subject, .. neighbours], cancellationToken).ConfigureAwait(false);
         }
 
         string path = Path.Combine(folder, ExtensionManifest.FileName);
@@ -105,14 +151,14 @@ public abstract class ConformanceTests<TExtension>
             manifest = ExtensionManifest.Parse(stream, path);
         }
 
-        return await ExtensionHarness.CreateWithManifestsAsync([], [(manifest, new TExtension())], cancellationToken).ConfigureAwait(false);
+        return await ExtensionHarness.CreateWithManifestsAsync([], [(manifest, new TExtension()), .. neighbours], cancellationToken).ConfigureAwait(false);
     }
 
     private async Task RunCheckAsync(string code)
     {
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
         ConformanceOptions options = CreateOptions();
-        Func<CancellationToken, Task<ExtensionHarness>> factory = options.HarnessFactory ?? (token => CreateHarnessAsync(options.ExtensionFolder, token));
+        Func<CancellationToken, Task<ExtensionHarness>> factory = options.HarnessFactory ?? (token => CreateHarnessAsync(options.ExtensionFolder, [], token));
         await using ExtensionHarness harness = await factory(cancellationToken).ConfigureAwait(false);
         ConformanceCheckResult result = await ConformanceSuite.RunCheckAsync(harness, options, code, cancellationToken).ConfigureAwait(false);
         switch (result.Status)

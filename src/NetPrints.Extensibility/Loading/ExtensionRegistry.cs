@@ -27,6 +27,7 @@ public sealed class ExtensionRegistry : IAsyncDisposable
 
     private readonly List<object> owned;
     private readonly Dictionary<string, ServiceProvider> providers;
+    private readonly Dictionary<string, IReadOnlyList<ServiceDescriptor>> serviceDescriptors;
     private readonly List<IServiceScope> sessions = [];
     private readonly ILogger logger;
     private bool disposed;
@@ -53,9 +54,11 @@ public sealed class ExtensionRegistry : IAsyncDisposable
         NodeDataMigrator nodeMigrator,
         List<object> owned,
         Dictionary<string, ServiceProvider> providers,
+        Dictionary<string, IReadOnlyList<ServiceDescriptor>> serviceDescriptors,
         ILogger logger)
     {
         this.providers = providers;
+        this.serviceDescriptors = serviceDescriptors;
         Results = results;
         Loaded = loaded;
         NodeKinds = nodeKinds;
@@ -208,6 +211,18 @@ public sealed class ExtensionRegistry : IAsyncDisposable
     {
         ArgumentNullException.ThrowIfNull(extensionId);
         return providers.GetValueOrDefault(extensionId) ?? NoServices;
+    }
+
+    /// <summary>
+    /// Gets the services an extension registered on <see cref="IExtensionBuilder.Services"/>, including the ones the host rejected.
+    /// </summary>
+    /// <param name="extensionId">The extension id.</param>
+    /// <returns>The descriptors in registration order; empty for an id that registered no services or did not load.</returns>
+    [Experimental(ExperimentalApiIds.ExtensionServices, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    public IReadOnlyList<ServiceDescriptor> ServiceDescriptorsOf(string extensionId)
+    {
+        ArgumentNullException.ThrowIfNull(extensionId);
+        return serviceDescriptors.GetValueOrDefault(extensionId) ?? [];
     }
 
     /// <summary>

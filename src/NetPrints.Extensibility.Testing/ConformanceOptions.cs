@@ -1,3 +1,5 @@
+using NetPrints.Extensibility.Loading;
+
 namespace NetPrints.Extensibility.Testing;
 
 /// <summary>
@@ -25,4 +27,10 @@ public sealed class ConformanceOptions
     /// Gets a factory that loads the extension into a new harness. Checks that compare two loads need it and are skipped without it.
     /// </summary>
     public Func<CancellationToken, Task<ExtensionHarness>>? HarnessFactory { get; init; }
+
+    /// <summary>
+    /// Gets a factory that loads the extension into a new harness together with other in-process extensions, each under its manifest.
+    /// The coexistence check needs it and is skipped without it.
+    /// </summary>
+    public Func<IReadOnlyList<(ExtensionManifest Manifest, INetPrintsExtension Extension)>, CancellationToken, Task<ExtensionHarness>>? NeighbourHarnessFactory { get; init; }
 }

@@ -20,12 +20,12 @@ internal sealed class RegistryIssuesCheck : ConformanceCheck
 
         ExtensionRegistry registry = context.Harness.Registry;
         var findings = new List<ConformanceFinding>();
-        foreach (ExtensionLoadResult.Failed failure in registry.Results.OfType<ExtensionLoadResult.Failed>().Where(result => result.Id == id))
+        foreach (ExtensionLoadResult.Failed failure in registry.Results.OfType<ExtensionLoadResult.Failed>().Where(result => result.Id == id && !ServicesCheck.IsBuildFailure(result)))
         {
             findings.Add(Finding(Rule, $"{failure.Code} {failure.Reason}"));
         }
 
-        foreach (ExtensionContributionIssue issue in registry.Issues.Where(issue => issue.ExtensionId == id))
+        foreach (ExtensionContributionIssue issue in registry.Issues.Where(issue => issue.ExtensionId == id && !ServicesCheck.IsRejectedService(issue)))
         {
             findings.Add(Finding(Rule, $"{issue.Code} {issue.Contribution}: {issue.Reason}"));
         }

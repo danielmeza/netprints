@@ -37,6 +37,13 @@
     <Project Path="tests/Fixtures/Extensions/Fixture.SharedLib.V1/Fixture.SharedLib.V1.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fixture.SharedLib.V2/Fixture.SharedLib.V2.csproj" />
     <Project Path="tests/Fixtures/Extensions/Conformance/Fx.Fail.Determinism/Fx.Fail.Determinism.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Conformance/Fx.Fail.Settings/Fx.Fail.Settings.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Conformance/Fx.Fail.HostChannel/Fx.Fail.HostChannel.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Conformance/Fx.Fail.Coexistence/Fx.Fail.Coexistence.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Conformance/Fx.Fail.Disposal/Fx.Fail.Disposal.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Conformance/Fx.Fail.Services/Fx.Fail.Services.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Conformance/Fx.Fail.Editor/Fx.Fail.Editor.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Conformance/Fx.Fail.Views/Fx.Fail.Views.csproj" />
     <Project Path="tests/Fixtures/Extensions/Conformance/Fx.Fail.Manifest/Fx.Fail.Manifest.csproj" />
     <Project Path="tests/Fixtures/Extensions/Conformance/Fx.Fail.Packaging/Fx.Fail.Packaging.csproj" />
     <Project Path="tests/Fixtures/Extensions/Conformance/Fx.Fail.Registration/Fx.Fail.Registration.csproj" />

@@ -17,6 +17,13 @@ public static class ConformanceSuite
         new NodeRoundTripCheck(),
         new TranslationCompilesCheck(),
         new DeterministicEmittersCheck(),
+        new SettingsCheck(),
+        new HostChannelCheck(),
+        new CoexistenceCheck(),
+        new DisposalCheck(),
+        new ServicesCheck(),
+        new EditorContributionsCheck(),
+        new ContributedViewsCheck(),
     ];
 
     /// <summary>Runs every check this version implements.</summary>

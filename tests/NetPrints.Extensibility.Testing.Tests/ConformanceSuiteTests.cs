@@ -13,12 +13,21 @@ public sealed class ConformanceSuiteTests
         { NpkDiagnosticCodes.NodeRoundTrip, "Fx.Fail.RoundTrip", "fx.fail.roundtrip", "saved and loaded unchanged", "fx.fail.roundtrip/Ping" },
         { NpkDiagnosticCodes.TranslationCompiles, "Fx.Fail.Translation", "fx.fail.translation", "generated C# compiles", "fx.fail.translation/Ping" },
         { NpkDiagnosticCodes.DeterministicEmitters, "Fx.Fail.Determinism", "fx.fail.determinism", "two translations", "fx.fail.determinism/Ping" },
+        { NpkDiagnosticCodes.Settings, "Fx.Fail.Settings", "fx.fail.settings", "serializes, validates and exports a schema", "Retries must be positive" },
+        { NpkDiagnosticCodes.HostChannel, "Fx.Fail.HostChannel", "fx.fail.hostchannel", "closes when it is disposed", "fx.fail.hostchannel" },
+        { NpkDiagnosticCodes.Coexistence, "Fx.Fail.Coexistence", "fx.fail.coexistence", "changes nothing outside the extension", "FX_FAIL_COEXISTENCE" },
+        { NpkDiagnosticCodes.Disposal, "Fx.Fail.Disposal", "fx.fail.disposal", "disposes without failing", "ThrowingLibrary" },
+        { NpkDiagnosticCodes.Services, "Fx.Fail.Services", "fx.fail.services", "released with its session", "LeakyService" },
+        { NpkDiagnosticCodes.EditorContributions, "Fx.Fail.Editor", "fx.fail.editor", "start with the extension id", "other.hello" },
+        { NpkDiagnosticCodes.ContributedViews, "Fx.Fail.Views", "fx.fail.views", "no colour or font literal", "BadView.axaml" },
     };
 
     private static ConformanceOptions OptionsFor(string folder) => new()
     {
         ExtensionFolder = folder,
+        SourceDirectory = Path.GetFullPath(Path.Combine(folder, "..", "..", "..", "..")),
         HarnessFactory = token => ExtensionHarness.CreateAsync([folder], [], token),
+        NeighbourHarnessFactory = (neighbours, token) => ExtensionHarness.CreateWithManifestsAsync([folder], neighbours, token),
     };
 
     [Fact]
@@ -57,7 +66,15 @@ public sealed class ConformanceSuiteTests
         string folder = KitFixtures.FailFolder(project, id);
         await using ExtensionHarness harness = await ExtensionHarness.CreateAsync([folder], [], TestContext.Current.CancellationToken);
 
-        ConformanceCheckResult result = await ConformanceSuite.RunCheckAsync(harness, OptionsFor(folder), code, TestContext.Current.CancellationToken);
+        ConformanceCheckResult result;
+        try
+        {
+            result = await ConformanceSuite.RunCheckAsync(harness, OptionsFor(folder), code, TestContext.Current.CancellationToken);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("FX_FAIL_COEXISTENCE", null);
+        }
 
         Assert.Equal(ConformanceStatus.Failed, result.Status);
         string message = string.Join('\n', result.Findings.Select(finding => finding.ToString()));

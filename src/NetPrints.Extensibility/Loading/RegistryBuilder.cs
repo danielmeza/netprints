@@ -25,6 +25,7 @@ namespace NetPrints.Extensibility.Loading;
 internal sealed class RegistryBuilder(ILogger logger, ILoggerFactory loggerFactory, ISettingsStore? settingsStore)
 {
     private readonly Dictionary<string, ServiceProvider> providers = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, IReadOnlyList<ServiceDescriptor>> serviceDescriptors = new(StringComparer.Ordinal);
     private readonly List<NodeKindDescriptor> nodeKinds = [];
     private readonly HashSet<string> kindIds = new(StringComparer.Ordinal);
     private readonly HashSet<Type> nodeTypes = [];
@@ -149,6 +150,7 @@ internal sealed class RegistryBuilder(ILogger logger, ILoggerFactory loggerFacto
         }
 
         providers[manifest.Id] = extensionServices;
+        serviceDescriptors[manifest.Id] = [.. contributions.Services];
         foreach ((string contribution, string reason) in serviceRejections)
         {
             Reject(manifest, ExtensionDiagnosticCodes.ContributionRejected, contribution, reason);
@@ -271,6 +273,7 @@ internal sealed class RegistryBuilder(ILogger logger, ILoggerFactory loggerFacto
             nodeMigrator,
             owned,
             providers,
+            serviceDescriptors,
             loggerFactory.CreateLogger<ExtensionRegistry>());
     }
 

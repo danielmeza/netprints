@@ -1,0 +1,8 @@
+{
+  "id": "fx.fail.views",
+  "name": "Fails NPK016: a view holds a colour and a font size literal",
+  "version": "1.0.0",
+  "assembly": "Fx.Fail.Views.dll",
+  "netprintsApi": "0.4",
+  "dependsOn": []
+}

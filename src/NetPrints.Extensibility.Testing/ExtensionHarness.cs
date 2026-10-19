@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Extensibility.Loading;
@@ -25,15 +26,25 @@ public sealed class ExtensionHarness : IAsyncDisposable
     private readonly JsonDocumentFormat format;
     private readonly DocumentMapper mapper;
 
-    private ExtensionHarness(ExtensionRegistry registry)
+    private readonly EditorContributionRecorder recorder;
+
+    private ExtensionHarness(ExtensionRegistry registry, EditorContributionRecorder recorder, HarnessLog logs)
     {
         Registry = registry;
+        this.recorder = recorder;
+        Log = logs;
         format = new JsonDocumentFormat(new NetPrintsJsonOptions(registry.NodeConverters), new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance));
         mapper = new DocumentMapper(registry.NodeConverters, NullLogger<DocumentMapper>.Instance);
     }
 
     /// <summary>The registry the loader built: the built-in extension, the folders' extensions and the in-process ones.</summary>
     public ExtensionRegistry Registry { get; }
+
+    /// <summary>Gets the editor contributions the loaded extensions made, in load order.</summary>
+    public IReadOnlyList<RecordedContribution> EditorContributions => recorder.Items;
+
+    /// <summary>Gets the warnings and errors the host logged for this harness; it stays readable after the harness is disposed.</summary>
+    public HarnessLog Log { get; }
 
     /// <summary>Loads the built-in extension, every extension folder in <paramref name="folders"/> and every in-process extension.</summary>
     /// <param name="folders">Extension folders, each holding a <c>netprints-extension.json</c>, in discovery order.</param>
@@ -67,9 +78,12 @@ public sealed class ExtensionHarness : IAsyncDisposable
         var entries = new List<(ExtensionManifest, INetPrintsExtension)> { BuiltInExtension.InProcessEntry };
         entries.AddRange(inProcess.Select(entry => (entry.Manifest, entry.Extension)));
 
-        var options = new ExtensionLoaderOptions([], [.. folders], entries);
-        ExtensionRegistry registry = await Task.Run(() => new ExtensionLoader(options, NullLoggerFactory.Instance).Load(cancellationToken), cancellationToken).ConfigureAwait(false);
-        return new ExtensionHarness(registry);
+        var recorder = new EditorContributionRecorder();
+        var logs = new HarnessLog();
+        using ILoggerFactory loggerFactory = logs.CreateFactory();
+        var options = new ExtensionLoaderOptions([], [.. folders], entries) { EditorContributions = manifest => recorder.For(manifest.Id) };
+        ExtensionRegistry registry = await Task.Run(() => new ExtensionLoader(options, loggerFactory).Load(cancellationToken), cancellationToken).ConfigureAwait(false);
+        return new ExtensionHarness(registry, recorder, logs);
     }
 
     /// <summary>Builds a public class with a static <c>Main</c> that runs one node of each kind in <paramref name="kinds"/>, in order.</summary>

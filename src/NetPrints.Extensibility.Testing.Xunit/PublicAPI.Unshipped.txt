@@ -11,3 +11,11 @@ NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK007_Transl
 NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK008_DeterministicEmittersAsync() -> System.Threading.Tasks.Task!
 virtual NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.CreateOptions() -> NetPrints.Extensibility.Testing.ConformanceOptions!
 virtual NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.ExtensionFolder.get -> string?
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK009_SettingsAsync() -> System.Threading.Tasks.Task!
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK010_HostChannelAsync() -> System.Threading.Tasks.Task!
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK011_CoexistenceAsync() -> System.Threading.Tasks.Task!
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK012_DisposalAsync() -> System.Threading.Tasks.Task!
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK013_ServicesAsync() -> System.Threading.Tasks.Task!
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK015_EditorContributionsAsync() -> System.Threading.Tasks.Task!
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK016_ContributedViewsAsync() -> System.Threading.Tasks.Task!
+virtual NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.SourceDirectory.get -> string?

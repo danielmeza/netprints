@@ -8,6 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <NetPrintsExperimentalOptIn Include="NPXE0005" />
+    <NetPrintsExperimentalOptIn Include="NPXE0008" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="xunit.v3" />
     <Using Include="Xunit" />
   </ItemGroup>
@@ -34,5 +39,12 @@
     <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.RoundTrip\Fx.Fail.RoundTrip.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.Translation\Fx.Fail.Translation.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.Determinism\Fx.Fail.Determinism.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.Settings\Fx.Fail.Settings.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.HostChannel\Fx.Fail.HostChannel.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.Coexistence\Fx.Fail.Coexistence.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.Disposal\Fx.Fail.Disposal.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.Services\Fx.Fail.Services.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.Editor\Fx.Fail.Editor.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.Views\Fx.Fail.Views.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 </Project>
