@@ -41,6 +41,10 @@ EXPECTED_FILES=(
     "NetPrints.Extensibility.$VERSION.snupkg"
     "NetPrints.Extensibility.Abstractions.$VERSION.nupkg"
     "NetPrints.Extensibility.Abstractions.$VERSION.snupkg"
+    "NetPrints.Extensibility.Testing.$VERSION.nupkg"
+    "NetPrints.Extensibility.Testing.$VERSION.snupkg"
+    "NetPrints.Extensibility.Testing.Xunit.$VERSION.nupkg"
+    "NetPrints.Extensibility.Testing.Xunit.$VERSION.snupkg"
     "NetPrints.Reflection.$VERSION.nupkg"
     "NetPrints.Reflection.$VERSION.snupkg"
     "NetPrints.Sdk.$VERSION.nupkg"
@@ -89,7 +93,7 @@ check_common_metadata() {
     local heading
     heading="$(head -n 1 "$EXTRACT/README.md")"
     case "$id" in
-        NetPrints.Annotations | NetPrints.Catalog | NetPrints.Serialization | NetPrints.Extensibility | NetPrints.Extensibility.Abstractions)
+        NetPrints.Annotations | NetPrints.Catalog | NetPrints.Serialization | NetPrints.Extensibility | NetPrints.Extensibility.Abstractions | NetPrints.Extensibility.Testing | NetPrints.Extensibility.Testing.Xunit)
             [[ "$heading" == "# $id" ]] || fail "step 2 ($id): packed README.md starts with '$heading', expected '# $id' (src/$id/README.md)"
             ;;
         *)
@@ -129,7 +133,7 @@ check_common_metadata NetPrints.Catalog
 [[ -f "$EXTRACT/lib/net10.0/NetPrints.Catalog.dll" ]] || fail "step 2 (NetPrints.Catalog): missing lib/net10.0/NetPrints.Catalog.dll"
 [[ -f "$EXTRACT/lib/net10.0/NetPrints.Catalog.xml" ]] || fail "step 2 (NetPrints.Catalog): missing lib/net10.0/NetPrints.Catalog.xml"
 
-for id in NetPrints.Serialization NetPrints.Extensibility.Abstractions NetPrints.Extensibility; do
+for id in NetPrints.Serialization NetPrints.Extensibility.Abstractions NetPrints.Extensibility NetPrints.Extensibility.Testing NetPrints.Extensibility.Testing.Xunit; do
     extract_nupkg "$id"
     check_common_metadata "$id"
     [[ -f "$EXTRACT/lib/net10.0/$id.dll" ]] || fail "step 2 ($id): missing lib/net10.0/$id.dll"

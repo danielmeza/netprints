@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Fx.Fail.Manifest</AssemblyName>
+    <OutputPath>bin/$(Configuration)/extensions/fx.fail.manifest/</OutputPath>
+  </PropertyGroup>
+</Project>

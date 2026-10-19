@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Fx.Fail.Translation</AssemblyName>
+    <OutputPath>bin/$(Configuration)/extensions/fx.fail.translation/</OutputPath>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Fx.Fail.TypeIdentity</AssemblyName>
+    <OutputPath>bin/$(Configuration)/extensions/fx.fail.typeidentity/</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- A NetPrints assembly that is not part of the extension contract: the host does not share it with the extension. -->
+    <ProjectReference Include="..\..\..\..\..\src\NetPrints.Generation\NetPrints.Generation.csproj" Private="false" ExcludeAssets="runtime" />
+  </ItemGroup>
+</Project>

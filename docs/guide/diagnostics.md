@@ -11,6 +11,7 @@ This page lists every code. The tests keep it in step with the sources: a code t
 | NPD | The graph document reader |
 | NPE | The editor |
 | NPI | The repository's internal source generators (NetPrints' own source, not shipped) |
+| NPK | The extension test kit's conformance checks (`NetPrints.Extensibility.Testing`) |
 | NPS | The repository style analyzers (NetPrints' own source, not shipped) |
 | NPT | The translator and the code generator |
 | NPW | The project system (project evaluation and restore) |
@@ -104,6 +105,21 @@ These rules belong to the generators that compose the editor (`[Singleton<T>]`, 
 | NPI005 | error | A type registered for several services is disposable (the container would dispose the one instance once for each registration) or the registrations have different lifetimes. |
 | NPI010 | error | A `[SmartEnum]` type is not a top-level `abstract partial class`. |
 | NPI011 | error | A smart enum member is a property or a field that is not `static readonly`, or a static field initializer reads `All` before every member field is declared (`All` would be read half-built). |
+
+## NPK: extension conformance checks
+
+The conformance suite of [`NetPrints.Extensibility.Testing`](extensions.md) reports these. A failed check names its code, the rule it enforces and the item that breaks it. They are test failures, not build diagnostics, and a check that cannot run (for example because the extension folder is not given) is skipped, not failed.
+
+| Code | Severity | Cause |
+|---|---|---|
+| NPK001 | error | The manifest cannot be read, or its `netprintsApi` is not a version the host implements. |
+| NPK002 | error | The extension folder does not hold the assembly the manifest names, or it holds a copy of a host assembly. |
+| NPK003 | error | The extension assembly references a NetPrints assembly that is not part of the extension contract, so the host cannot share it. |
+| NPK004 | error | Loading the extension twice gives different registries: registration is not pure or not repeatable. |
+| NPK005 | error | The extension fails to load, or its contributions raise a registry issue. |
+| NPK006 | error | A node kind of the extension is not written and read back to the same bytes. |
+| NPK007 | error | The C# generated for a node kind of the extension does not compile. |
+| NPK008 | error | Translating the same graph twice gives different text. |
 
 ## NPS: repository style
 

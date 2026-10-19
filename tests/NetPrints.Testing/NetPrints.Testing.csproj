@@ -13,7 +13,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- ExtensionHarness: loads extensions and drives the translator, the document format and the generator. -->
+    <!-- The kit's ExtensionHarness loads extensions; ExtensionHarnessGeneration adds the generator. -->
+    <ProjectReference Include="..\..\src\NetPrints.Extensibility.Testing\NetPrints.Extensibility.Testing.csproj" />
     <ProjectReference Include="..\..\src\NetPrints.Core\NetPrints.Core.csproj" />
     <ProjectReference Include="..\..\src\NetPrints.Extensibility\NetPrints.Extensibility.csproj" />
     <ProjectReference Include="..\..\src\NetPrints.Generation\NetPrints.Generation.csproj" />

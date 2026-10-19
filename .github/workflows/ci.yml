@@ -200,6 +200,14 @@ jobs:
             --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config \
             --hangdump --hangdump-timeout 8m --hangdump-type Mini ${{ matrix.filter }}
 
+      # The extension test kit's tests ride on the Core leg: they need the same fixture extensions as Core.Tests.
+      - name: Test (extension kit)
+        if: matrix.leg == 'core'
+        run: |
+          dotnet build tests/NetPrints.Extensibility.Testing.Tests -c Release
+          dotnet test --project tests/NetPrints.Extensibility.Testing.Tests -c Release --no-build \
+            --report-xunit-trx --results-directory TestResults
+
       - name: Kernel memory events
         if: always()
         run: sudo dmesg -T | grep -iE 'out of memory|oom|killed process' | tail -20 || true

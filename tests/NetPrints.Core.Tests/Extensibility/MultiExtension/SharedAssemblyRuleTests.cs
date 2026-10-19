@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NetPrints.Core;
 using NetPrints.Extensibility.Loading;
+using NetPrints.Extensibility.Testing;
 using NetPrints.Graph;
 using NetPrints.Testing.Extensions;
 using Xunit;

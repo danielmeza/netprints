@@ -6,6 +6,7 @@ using System.Runtime.Loader;
 using System.Threading.Tasks;
 using NetPrints.Core;
 using NetPrints.Extensibility.Loading;
+using NetPrints.Extensibility.Testing;
 using NetPrints.Testing.Extensions;
 using Xunit;
 

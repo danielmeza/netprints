@@ -1,0 +1,8 @@
+{
+  "id": "fx.fail.translation",
+  "name": "Fails NPK007: translates a node to C# that does not compile",
+  "version": "1.0.0",
+  "assembly": "Fx.Fail.Translation.dll",
+  "netprintsApi": "0.4",
+  "dependsOn": []
+}

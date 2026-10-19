@@ -32,6 +32,8 @@ public class PackageValidationTests
         "NetPrints.Core",
         "NetPrints.Extensibility",
         "NetPrints.Extensibility.Abstractions",
+        "NetPrints.Extensibility.Testing",
+        "NetPrints.Extensibility.Testing.Xunit",
         "NetPrints.Reflection",
         "NetPrints.Serialization",
     ];

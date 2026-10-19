@@ -862,7 +862,7 @@ contracts/cli.md §2–§3. **Independent test**: US10's independent test. **Gat
 
 ### Batch D2a — model: sonnet — T101–T102 — 4 units
 
-- [ ] T101 [US10] The kit packages (FR-076, research R25, contracts/extension-api.md §10; 2 units). Test first: a new
+- [x] T101 [US10] The kit packages (FR-076, research R25, contracts/extension-api.md §10; 2 units). Test first: a new
   project `tests/NetPrints.Extensibility.Testing.Tests` (run in the Core leg of the CI matrix; `CiWorkflowTests`
   updated): `ExtensionTest<T>` with a declarative `TestState` and `RunAsync` drives a minimal extension;
   `ExtensionHarness` loads a real and a folder-based extension. Then `src/NetPrints.Extensibility.Testing/`
@@ -870,7 +870,7 @@ contracts/cli.md §2–§3. **Independent test**: US10's independent test. **Gat
   `tests/NetPrints.Testing/Extensions/ExtensionHarness.cs`, `InMemoryHostChannel`, `ConformanceSuite`,
   `ConformanceOptions`, `ConformanceReport`, `NpkDiagnosticCodes`) and `src/NetPrints.Extensibility.Testing.Xunit/`
   (`ConformanceTests<TExtension>`, one test per check, xunit.v3); both packable with API files, XML docs and READMEs.
-- [ ] T102 [US10] Checks NPK001–NPK008 (FR-076, FR-078, SC-011; 2 units). For each check: test first with its failing
+- [x] T102 [US10] Checks NPK001–NPK008 (FR-076, FR-078, SC-011; 2 units). For each check: test first with its failing
   fixture `tests/Fixtures/Extensions/Conformance/Fx.Fail.<Check>/`, whose run fails with a message naming the code, the
   rule and the offending item (US10 scenario 2), and a passing run on a good fixture; then the check. Guide rows.
 

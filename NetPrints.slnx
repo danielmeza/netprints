@@ -14,6 +14,8 @@
     <Project Path="src/NetPrints.Desktop/NetPrints.Desktop.csproj" />
     <Project Path="src/NetPrints.Editor/NetPrints.Editor.csproj" />
     <Project Path="src/NetPrints.Extensibility.Abstractions/NetPrints.Extensibility.Abstractions.csproj" />
+    <Project Path="src/NetPrints.Extensibility.Testing.Xunit/NetPrints.Extensibility.Testing.Xunit.csproj" />
+    <Project Path="src/NetPrints.Extensibility.Testing/NetPrints.Extensibility.Testing.csproj" />
     <Project Path="src/NetPrints.Extensibility/NetPrints.Extensibility.csproj" />
     <Project Path="src/NetPrints.Generation/NetPrints.Generation.csproj" />
     <Project Path="src/NetPrints.Generator/NetPrints.Generator.csproj" />
@@ -34,6 +36,14 @@
     <Project Path="tests/Fixtures/Extensions/Fixture.MidLib/Fixture.MidLib.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fixture.SharedLib.V1/Fixture.SharedLib.V1.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fixture.SharedLib.V2/Fixture.SharedLib.V2.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Conformance/Fx.Fail.Determinism/Fx.Fail.Determinism.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Conformance/Fx.Fail.Manifest/Fx.Fail.Manifest.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Conformance/Fx.Fail.Packaging/Fx.Fail.Packaging.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Conformance/Fx.Fail.Registration/Fx.Fail.Registration.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Conformance/Fx.Fail.RegistryIssues/Fx.Fail.RegistryIssues.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Conformance/Fx.Fail.RoundTrip/Fx.Fail.RoundTrip.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Conformance/Fx.Fail.Translation/Fx.Fail.Translation.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Conformance/Fx.Fail.TypeIdentity/Fx.Fail.TypeIdentity.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.Alpha/Fx.Alpha.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.Beta/Fx.Beta.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.Catalog/Fx.Catalog.csproj" />
@@ -59,6 +69,7 @@
     <Project Path="tests/NetPrints.Core.Tests/NetPrints.Core.Tests.csproj" />
     <Project Path="tests/NetPrints.Desktop.E2ETests/NetPrints.Desktop.E2ETests.csproj" />
     <Project Path="tests/NetPrints.Editor.Tests/NetPrints.Editor.Tests.csproj" />
+    <Project Path="tests/NetPrints.Extensibility.Testing.Tests/NetPrints.Extensibility.Testing.Tests.csproj" />
     <Project Path="tests/NetPrints.Editor.UITests/NetPrints.Editor.UITests.csproj" />
     <Project Path="tests/NetPrints.TestExtension/NetPrints.TestExtension.csproj" />
     <Project Path="tests/NetPrints.Testing/NetPrints.Testing.csproj" />

@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using NetPrints.Core;
 using NetPrints.Extensibility;
 using NetPrints.Extensibility.Loading;
+using NetPrints.Extensibility.Testing;
 using NetPrints.Testing.Extensions;
 using Xunit;
 using static NetPrints.Tests.Extensibility.ExtensionTestSupport;

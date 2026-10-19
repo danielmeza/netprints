@@ -96,6 +96,8 @@
     <PackageVersion Include="xunit.v3" Version="3.2.2" />
     <!-- Assertions for the shared UI scenarios in NetPrints.Testing.Ui (same version as xunit.v3). -->
     <PackageVersion Include="xunit.v3.assert" Version="3.2.2" />
+    <!-- NetPrints.Extensibility.Testing.Xunit: the attributes and TestContext the conformance base class uses, without the runner of xunit.v3. -->
+    <PackageVersion Include="xunit.v3.extensibility.core" Version="3.2.2" />
     <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.3" />
     <!-- 11.x is the xUnit v3 3.x line (12.x requires xUnit 4). Not used in the UI test
          assembly: its test framework replaces Avalonia's and every [AvaloniaFact] fails. -->

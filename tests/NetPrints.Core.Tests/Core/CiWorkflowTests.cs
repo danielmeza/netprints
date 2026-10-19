@@ -21,6 +21,8 @@ namespace NetPrints.Tests.Core
         private const string CliWindowsWorkflow = ".github/workflows/cli-windows.yml";
         private const string AggregateJobName = "Build and test (Linux)";
 
+        private const string KitTestsProject = "NetPrints.Extensibility.Testing.Tests";
+
         private static readonly string[] NotAggregated = ["build-test", "e2e", "packages", "perf"];
 
         [Fact]
@@ -32,7 +34,7 @@ namespace NetPrints.Tests.Core
                 .. Directory.EnumerateDirectories(Path.Combine(root, "tests"))
                     .Select(directory => Path.GetFileName(directory))
                     .Where(name => name.EndsWith(".Tests", StringComparison.Ordinal) || name.EndsWith(".UITests", StringComparison.Ordinal))
-                    .Where(name => name != "NetPrints.Desktop.E2ETests")
+                    .Where(name => name != "NetPrints.Desktop.E2ETests" && name != KitTestsProject)
                     .Where(name => File.Exists(Path.Combine(root, "tests", name, name + ".csproj")))
                     .Select(name => "tests/" + name)
                     .Order(StringComparer.Ordinal),
@@ -42,6 +44,21 @@ namespace NetPrints.Tests.Core
 
             Assert.NotEmpty(expected);
             Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void TheCoreLegAlsoBuildsAndRunsTheExtensionKitTests()
+        {
+            string root = SampleProjectFactory.FindRepositoryRoot();
+            Assert.True(File.Exists(Path.Combine(root, "tests", KitTestsProject, KitTestsProject + ".csproj")));
+            string path = "tests/" + KitTestsProject;
+
+            object? step = Items(Get(Get(Jobs(), "test"), "steps")).SingleOrDefault(candidate => Text(Get(candidate, "if")) == "matrix.leg == 'core'");
+
+            Assert.NotNull(step);
+            string run = Text(Get(step, "run"));
+            Assert.Contains("dotnet build " + path, run, StringComparison.Ordinal);
+            Assert.Contains("dotnet test --project " + path, run, StringComparison.Ordinal);
         }
 
         [Fact]
@@ -158,7 +175,7 @@ namespace NetPrints.Tests.Core
         [Fact]
         public void TestMatrixLegsRunTheirOwnProjectWithTheAdr0008CoverageSettings()
         {
-            string[] runs = [.. Items(Get(Ci(), "jobs", "test", "steps")).Select(step => Text(Get(step, "run")))];
+            string[] runs = [.. Items(Get(Ci(), "jobs", "test", "steps")).Where(step => Text(Get(step, "if")).Length == 0).Select(step => Text(Get(step, "run")))];
             string testRun = Assert.Single(runs, run => run.Contains("dotnet test", StringComparison.Ordinal));
 
             Assert.Contains("${{ matrix.project }}", testRun, StringComparison.Ordinal);

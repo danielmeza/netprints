@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Fx.Fail.Packaging</AssemblyName>
+    <OutputPath>bin/$(Configuration)/extensions/fx.fail.packaging/</OutputPath>
+    <!-- Copies NetPrints.Core.dll into the extension folder, which the host must supply. -->
+    <FxHostPrivate>true</FxHostPrivate>
+  </PropertyGroup>
+</Project>

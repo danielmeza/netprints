@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Fx.Fail.RoundTrip</AssemblyName>
+    <OutputPath>bin/$(Configuration)/extensions/fx.fail.roundtrip/</OutputPath>
+  </PropertyGroup>
+</Project>

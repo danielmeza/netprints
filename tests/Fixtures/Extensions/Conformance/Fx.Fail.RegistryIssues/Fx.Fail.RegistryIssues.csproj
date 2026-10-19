@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Fx.Fail.RegistryIssues</AssemblyName>
+    <OutputPath>bin/$(Configuration)/extensions/fx.fail.registryissues/</OutputPath>
+  </PropertyGroup>
+</Project>
