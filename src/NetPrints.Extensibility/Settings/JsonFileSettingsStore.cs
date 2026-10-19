@@ -24,8 +24,8 @@ public sealed class JsonFileSettingsStore : ISettingsStore, ISettingsChangeSourc
     private const string FileSection = "$file";
     private const string NetPrintsKey = NetPrintsSettings.SectionId;
     private const string KeyboardKey = "keyboard";
+    private const string EditorSectionKey = "netprints.editor";
     private const string ExtensionsKey = "extensions";
-    private const string BuiltInPrefix = NetPrintsKey + ".";
     private const string SchemaVersionKey = "schemaVersion";
     private const int SchemaVersion = 1;
     private const string NullSectionReason = "the section is null";
@@ -229,8 +229,8 @@ public sealed class JsonFileSettingsStore : ISettingsStore, ISettingsChangeSourc
 
     private static bool IsHostSection(string id) => id is NetPrintsKey or RunSettings.SectionId or KeyboardKey;
 
-    private static bool IsBuiltInSection(string id) =>
-        IsHostSection(id) || id.StartsWith(BuiltInPrefix, StringComparison.Ordinal);
+    /// <summary>The sections the host and the editor own: the host's top-level sections and the editor's own section (built-in owner <c>netprints.editor</c>, data-model §2). Every other section belongs to an extension, whatever its id.</summary>
+    private static bool IsBuiltInSection(string id) => IsHostSection(id) || id == EditorSectionKey;
 
     private static JsonNode? FindSection(JsonObject root, string id) =>
         IsHostSection(id) ? root[id] : (root[ExtensionsKey] as JsonObject)?[id];

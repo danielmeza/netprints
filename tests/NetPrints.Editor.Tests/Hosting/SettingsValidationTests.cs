@@ -47,6 +47,7 @@ public sealed class SettingsValidationTests : IDisposable
         string message = Assert.Single(messages);
         Assert.Contains("netprints.editor", message, StringComparison.Ordinal);
         Assert.Contains("theme", message, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("NPX014", message, StringComparison.Ordinal);
     }
 
     [Theory]

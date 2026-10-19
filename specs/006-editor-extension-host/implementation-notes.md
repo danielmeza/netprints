@@ -1592,6 +1592,7 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - **T087 layout**: the generator is test code (`tests/NetPrints.Editor.Tests/Docs/SettingsSchemaFile.cs`, like `ShortcutGuide`); `schemas/settings.v1.schema.json` is checked by `eng/validate-schemas.sh` (metaschema, lint, and the tracked
   `tests/Fixtures/Settings/example.settings.json`; run locally, 53 instances pass) and copied by `scripts/build-docs.sh`. `docs/guide/editor/settings.md` holds only the generated table between markers; T091 writes the rest.
   Descriptions end without a period because the schema lint requires it. The `x-netprints-*` keywords appear in the file through restart (language, extensionPaths), path (extensionPaths, trustedProjects) and choices (presets).
+- **Corrected (T112-1, DD-12)**: a section is built-in when the host or the editor owns it (`netprints`, `run`, `keyboard`, `netprints.editor`); every other section, `netprints.godot` and `netprints.test` included, gets NPX014.
 
 ## Batch D1e (T089, T090, T091)
 

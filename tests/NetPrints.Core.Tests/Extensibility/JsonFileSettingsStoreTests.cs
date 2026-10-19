@@ -281,6 +281,24 @@ public class JsonFileSettingsStoreTests : IDisposable
         Assert.Equal(2, logs.Entries.Count);
     }
 
+    [Fact]
+    public async Task AnExtensionWhoseIdStartsWithNetprintsGetsNpx014()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(FilePath) ?? directory);
+        await File.WriteAllTextAsync(
+            FilePath,
+            """{ "extensions": { "netprints.godot": { "name": "x", "count": 99 } } }""",
+            TestContext.Current.CancellationToken);
+        var descriptor = new ExtensionSettingsDescriptor<SampleSettings>("netprints.godot", SampleSettingsContext.Default.SampleSettings, new SampleSettings("godot-default", 1))
+        {
+            Validator = value => value.Count > 10 ? ["count must be at most 10"] : [],
+        };
+        JsonFileSettingsStore store = NewStore();
+
+        Assert.Equal(descriptor.Default, store.Get(descriptor));
+        Assert.Equal(ExtensionDiagnosticCodes.SettingsInvalid, Assert.Single(store.Issues).Code);
+    }
+
     private static readonly ExtensionSettingsDescriptor<SampleSettings> Checked =
         new("test.checked", SampleSettingsContext.Default.SampleSettings, new SampleSettings("checked-default", 1))
         {
