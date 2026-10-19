@@ -1631,11 +1631,11 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - **Settings document**: General, Appearance, Run and Extensions pages. Fields are generated from the exported schema, validated on Enter or focus loss and saved at once. Restart fields raise a "Restart to apply" bar, and search filters the pages.
   `CommandKey.OemComma` gives Ctrl+,. `SetThemeAsync` no longer resets the presets.
 - **Decision (Keyboard page)**: left to T093.
-- **Decision (custom pages)**: custom `CreateViewModel` pages are not rendered yet. **Corrected (T112-5, DD-8)**: the Settings document renders the settings page kind: the built-in pages are registered through it, custom view models and page-only contributions render (with the ContributionErrorView fallback), `ParentPageId` places a page, and the extension pages rebuild on `Changed`; ExtensionKindsTests looks in the document.
+- **Decision (custom pages)**: custom `CreateViewModel` pages are not rendered yet. **Corrected (T112-5, DD-8)**: the Settings document renders the settings page kind: the built-in pages are registered through it, custom view models and page-only contributions render (with the ContributionErrorView fallback), `ParentPageId` places a page, and the extension pages rebuild on `Changed`; ExtensionKindsTests looks in the document. **Corrected again (R2-F2, R2-4)**: the document also follows `IExtensionHost.RegistryChanged`, so a project's generated section pages and the loaded-extensions list follow the extensions that load or unload while it is open.
 - **Decision (labels)**: the label is the property name in words, with no resource override.
 - **Decision (language)**: the language field is a text box.
 - **CI fix (4439d543)**: the invalid-value test now also waits for `field.HasError` to be false.
-- **Corrected (T112-1, DD-9)**: labels and help text read `Settings.<section>.<key>.Label`/`.Description` from the owner's resources, then the editor's, then the property name and the schema description; `language` is a drop-down of System and the shipped cultures (`LanguageChoices`); the Settings document's text comes from `Strings.resx`.
+- **Corrected (T112-1, DD-9)**: labels and help text read `Settings.<section>.<key>.Label`/`.Description` from the owner's resources, then the editor's, then the property name and the schema description; `language` is a drop-down of System and the shipped cultures (`LanguageChoices`); the Settings document's text comes from `Strings.resx`. **Corrected (R2-F2, R2-12)**: a built-in section reads the editor's resources only; an extension's section reads the loaded extensions' string resources, then the editor's (the registry keeps one list, not one per extension).
 
 ## Batch D1f (T092, T093, T094)
 
@@ -1969,3 +1969,20 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - Whole suite (Release, solution-wide, `--ignore-exit-code 8`, fresh `NETPRINTS_STATE_DIR` and `XDG_CONFIG_HOME`): 5473 total, 5433 passed, 40 skipped, 0 failed, 14m 07s. Editor.UITests passed in 14m 07s, Editor.Tests in 2m 01s.
 - E2E (`NETPRINTS_E2E=1`, display start 300, `--fail-skips on`): 56 total, 55 passed, 1 skipped (`GuideScreenshotTests`, explicit filtering), 0 failed, 2m 35s.
 - Slips: (1) I ran `python3 - <<'EOF'` with an empty body twice and `cat >> /dev/null <<'EOF'` once as no-op probes, and appended an empty heredoc to `implementation-notes.md` (`cat >> file <<'EOF'` with no content); nothing was written, but the rule bans heredocs into repository files. (2) The first R2-3 notes edit put the R2-3 section before the last R2-6 decision line; fixed before the commit. (3) Skills for the XAML edit were loaded only after the first `Write` of `Templates.axaml` was refused by the hook.
+
+## Batch R2-F2 (round-2 review fixes, minors and nits)
+
+### R2-4
+
+- 42c2ef04: the Settings document also subscribes to `IExtensionHost.RegistryChanged`; on that event it replaces the rows of the loaded-extensions list and rebuilds the extension pages with `force: true`, so a project's generated section pages and the list follow extensions that load or unload while the document is open. Closing the project no longer leaves the old pages behind.
+- Red: `AProjectsExtensionsComeAndGoWhileTheDocumentIsOpen` failed on the first `Assert.Contains` (`Filter not matched in collection`), because the open document did not follow the host load.
+- Green: `SettingsDocumentViewModelTests`, `ExtensionKindsTests`, `SettingsSchemaTests`, `SettingsFieldTests` and `SettingsValidationTests` 76 total, 0 failed; `SettingsDocumentTests`, `LanguageSettingTests` and `KeyboardShortcutsPageUiTests` 17 total, 0 failed.
+- Decision (delegated): the handler goes through `IUiDispatcher.Post`. `ExtensionHost` raises `RegistryChanged` after `loadGate.WaitAsync(...).ConfigureAwait(false)`, which can run on a pool thread when two loads overlap, and the rebuild writes `VisiblePages`, which the view binds.
+
+### R2-12
+
+- 42c2ef04: a built-in section now passes no resources to `SettingsSection`, so it reads the editor's resources alone and no extension can relabel it. An extension's page and section read the loaded extensions' string resources, then the editor's (`ExtensionResources`). The `netprints.language` description in `NetPrintsSettings`, the schema and the guide now names English as the only shipped language.
+- Red: `AnExtensionResourceDoesNotRelabelABuiltInSetting` failed with `Expected: "Language"`, `Actual: "Relabelled"`; `TheLanguageDescriptionNamesTheLanguagesTheDropDownOffers` failed with `en (English)` not found in the description.
+- Green: the same two filtered runs, 76 and 17 total, 0 failed.
+- Decision (delegated): no per-extension `ExtensionRegistry.StringResourcesOf(id)`. The registry keeps one flat list, so this would add public API to the packed `NetPrints.Extensibility` for a collision that needs one extension to ship a key named after another extension's id.
+- `CultureNameAttribute`'s message stays: it validates a hand-edited `settings.json`, which accepts any culture name.

@@ -1,3 +1,5 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+
 namespace NetPrints.Editor.Settings;
 
 /// <summary>One row of the loaded extensions list.</summary>
@@ -7,10 +9,11 @@ namespace NetPrints.Editor.Settings;
 /// <param name="Source">The folder the extension was loaded from, or the built-in marker.</param>
 internal sealed record LoadedExtensionRow(string Id, string Name, string Version, string Source);
 
-/// <summary>The block of the Extensions page that lists the loaded extensions with their version and source.</summary>
-internal sealed class LoadedExtensionsItemViewModel(IReadOnlyList<LoadedExtensionRow> rows)
+/// <summary>The block of the Extensions page that lists the loaded extensions with their version and source; the Settings document replaces the rows when the extension host loads another set.</summary>
+internal sealed partial class LoadedExtensionsItemViewModel(IReadOnlyList<LoadedExtensionRow> rows)
     : SettingsItemViewModel(Strings.Settings_LoadedExtensions_Label, Strings.Settings_LoadedExtensions_Description)
 {
-    /// <summary>Gets the loaded extensions, ordered by name.</summary>
-    public IReadOnlyList<LoadedExtensionRow> Rows { get; } = rows;
+    /// <summary>Gets or sets the loaded extensions, ordered by name.</summary>
+    [ObservableProperty]
+    public partial IReadOnlyList<LoadedExtensionRow> Rows { get; set; } = rows;
 }

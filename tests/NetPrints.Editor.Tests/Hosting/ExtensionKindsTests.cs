@@ -141,7 +141,7 @@ public sealed class ExtensionKindsTests : IAsyncDisposable
             found.Add("status bar item");
         }
 
-        using (var settings = new SettingsDocumentViewModel(editor.Settings, registry, editor.Extensions, _ => new EditorContexts(new Contexts().Create()), null, _ => Task.CompletedTask))
+        using (var settings = new SettingsDocumentViewModel(editor.Settings, registry, editor.Extensions, new InlineDispatcher(), _ => new EditorContexts(new Contexts().Create()), null, _ => Task.CompletedTask))
         {
             if (settings.Pages.Any(page => page.Id == TestEditorIds.SettingsPage && page.Items.OfType<SettingsFieldViewModel>().Any()))
             {

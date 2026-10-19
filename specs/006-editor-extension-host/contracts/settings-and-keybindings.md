@@ -37,7 +37,7 @@ the page.
 
 - A section registered with `AddSettings` and no custom page gets a page generated from its exported schema
   ([data-model.md](../data-model.md) §3 "Settings field").
-- Label: the `Settings.<section>.<key>.Label` resource of the owner, else the JSON property name split into words.
+- Label: the `Settings.<section>.<key>.Label` resource, else the JSON property name split into words. A built-in section looks the resource up in the editor's resources only, so no extension relabels it; an extension's section looks in the loaded extensions' string resources, then the editor's.
   Help text: `Settings.<section>.<key>.Description`, else the schema `description`.
 - A value is validated when the field loses focus or the user presses Enter, by the section's generated validator. An
   invalid value shows the validator's message under the field and is not saved. A valid value is saved at once

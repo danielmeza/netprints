@@ -42,12 +42,12 @@ public sealed record NetPrintsSettings
     public bool EnableAnimations { get; init; } = true;
 
     /// <summary>
-    /// The UI language as a culture name such as <c>es-MX</c>; empty means the operating system's culture. A change applies after a restart.
+    /// The UI language: <c>en</c> (English), the only culture the editor ships so far, or empty for the operating system's culture. A change applies after a restart.
     /// </summary>
     [CultureName]
     [SettingChoices(LanguageChoices)]
     [RequiresRestart]
-    [Description("The interface language as a culture name such as es-MX. Empty uses the system language")]
+    [Description("The interface language: en (English), the only language shipped so far. Empty uses the system language")]
     public string Language { get; init; } = "";
 
     /// <summary>

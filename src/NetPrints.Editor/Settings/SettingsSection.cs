@@ -14,7 +14,7 @@ internal sealed class SettingsSection
     /// <summary>Creates the section over a descriptor.</summary>
     /// <param name="descriptor">The descriptor whose schema lists the fields.</param>
     /// <param name="store">The store the section is read from and written to.</param>
-    /// <param name="resources">The resources of the section's owner, then the editor's; the editor's alone when <see langword="null"/>.</param>
+    /// <param name="resources">The resources the labels are looked up in, in order: for an extension's section the loaded extensions' string resources, then the editor's; the editor's alone when <see langword="null"/>, which a built-in section uses.</param>
     public SettingsSection(ExtensionSettingsDescriptor descriptor, ISettingsStore store, IReadOnlyList<ResourceManager>? resources = null)
     {
         ArgumentNullException.ThrowIfNull(descriptor);
@@ -28,7 +28,7 @@ internal sealed class SettingsSection
     /// <summary>Gets the id of the section, the key it has in <c>settings.json</c>.</summary>
     public string Id => descriptor.ExtensionId;
 
-    /// <summary>Gets the resources the labels and help texts are looked up in, the owner's first.</summary>
+    /// <summary>Gets the resources the labels and help texts are looked up in, in lookup order.</summary>
     public IReadOnlyList<ResourceManager> Resources { get; }
 
     /// <summary>Reads one key of the section as it is stored now.</summary>

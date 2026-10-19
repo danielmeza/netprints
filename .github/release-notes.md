@@ -34,7 +34,7 @@
 
 **Added:** a node of an extension kind may carry `kindVersion` in the graph file, the version of the data its kind wrote it with; a registered migration upgrades older data when the graph opens, and an older editor keeps the node untouched.
 
-**Added:** `netprints.language` in the `netprints` settings section chooses the editor language (a culture name; empty follows the operating system).
+**Added:** `netprints.language` in the `netprints` settings section chooses the editor language: English, the only language shipped so far, or empty to follow the operating system.
 
 **Added:** a Settings document (File › Settings, `Ctrl+,`) with the pages General, Appearance, Keyboard shortcuts, Run and Extensions. `settings.json` is described by a published schema, a value out of range falls back to its default (NPX014 for an extension's section), and an unreadable file is copied to `settings.json.unreadable-<timestamp>` before the first write.
 

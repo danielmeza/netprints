@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging.Abstractions;
+using NetPrints.Editor.Settings;
 using NetPrints.Editor.State;
 using NetPrints.Editor.Tests.Architecture;
 using NetPrints.Extensibility.Settings;
@@ -71,6 +72,15 @@ public sealed class SettingsSchemaTests
         Assert.Equal(["command"], Assert.IsType<JsonArray>(entry["required"]).Select(name => (string?)name));
         Assert.Equal("string", (string?)command["type"]);
         Assert.Equal(1, (int?)command["minLength"]);
+    }
+
+    [Fact]
+    public void TheLanguageDescriptionNamesTheLanguagesTheDropDownOffers()
+    {
+        string description = (string?)Property(NetPrintsSettings.SectionId, "language")["description"] ?? "";
+
+        Assert.All(LanguageChoices.Values.Where(value => value.Length > 0), value => Assert.Contains($"{value} ({LanguageChoices.LabelOf(value)})", description, StringComparison.Ordinal));
+        Assert.DoesNotContain("es-MX", description, StringComparison.Ordinal);
     }
 
     [Fact]

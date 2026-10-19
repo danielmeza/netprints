@@ -19,7 +19,7 @@ namespace NetPrints.Editor.Settings;
 /// <summary>
 /// The Settings document (FR-039): the pages of the settings page kind (the built-in General, Appearance, Keyboard shortcuts,
 /// Run and Extensions, then the extensions' pages under Extensions or under the page they name), and a generated page for
-/// every loaded extension section no page claims. It rebuilds the extension pages when the registry changes. A search filters
+/// every loaded extension section no page claims. It rebuilds the extension pages when the registry changes or the extension host loads another set of extensions, which also refreshes the list of loaded extensions. A search filters
 /// the fields of every page; a field that needs a restart raises the "Restart to apply" bar.
 /// </summary>
 internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
@@ -36,6 +36,7 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
     private readonly ISettingsStore store;
     private readonly IContributionRegistry registry;
     private readonly IExtensionHost extensions;
+    private readonly IUiDispatcher dispatcher;
     private readonly Func<SettingsPageDescriptor, ISettingsPageContext> pageContexts;
     private readonly SettingsFieldServices services;
     private readonly Func<CancellationToken, Task> restart;
@@ -43,11 +44,13 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
     private readonly List<SettingsPageViewModel> extensionPages = [];
     private readonly Dictionary<string, string?> extensionParents = new(StringComparer.Ordinal);
     private string shownExtensionKey = "";
+    private bool closed;
 
     /// <summary>Builds the pages over a store and the loaded extensions.</summary>
     /// <param name="store">The settings store every field reads and writes.</param>
     /// <param name="registry">The registry whose settings pages are listed, whose commands the Keyboard shortcuts page lists and whose key bindings it changes.</param>
     /// <param name="extensions">The extension host whose loaded extensions and settings sections are listed.</param>
+    /// <param name="dispatcher">Runs the refresh that follows the extension host on the UI thread.</param>
     /// <param name="pageContexts">Gives the context an extension page's view model factory is given.</param>
     /// <param name="picker">The file and folder picker of the path fields, or <see langword="null"/> when there is none.</param>
     /// <param name="restart">Runs the normal exit path for "Restart now".</param>
@@ -55,6 +58,7 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
         ISettingsStore store,
         IContributionRegistry registry,
         IExtensionHost extensions,
+        IUiDispatcher dispatcher,
         Func<SettingsPageDescriptor, ISettingsPageContext> pageContexts,
         IFilePickerService? picker,
         Func<CancellationToken, Task> restart)
@@ -63,16 +67,19 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(registry);
         ArgumentNullException.ThrowIfNull(extensions);
+        ArgumentNullException.ThrowIfNull(dispatcher);
         ArgumentNullException.ThrowIfNull(pageContexts);
         ArgumentNullException.ThrowIfNull(restart);
         this.store = store;
         this.registry = registry;
         this.extensions = extensions;
+        this.dispatcher = dispatcher;
         this.pageContexts = pageContexts;
         this.restart = restart;
         services = new SettingsFieldServices(picker, ChoicesOf, ChoiceLabelsOf);
         builtInPages.AddRange(BuildBuiltInPages());
         registry.Changed += OnRegistryChanged;
+        extensions.RegistryChanged += OnExtensionsChanged;
         RebuildExtensionPages(force: true);
         SelectedPage = Pages.FirstOrDefault();
     }
@@ -139,7 +146,9 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
     {
         if (disposing)
         {
+            closed = true;
             registry.Changed -= OnRegistryChanged;
+            extensions.RegistryChanged -= OnExtensionsChanged;
             DisposeItems(Pages);
         }
 
@@ -212,21 +221,19 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
         return pages;
     }
 
-    private IReadOnlyList<SettingsItemViewModel>? BuiltInItems(string pageId)
-    {
-        IReadOnlyList<ResourceManager> resources = Resources();
-        return pageId switch
+    private IReadOnlyList<SettingsItemViewModel>? BuiltInItems(string pageId) =>
+        pageId switch
         {
-            SettingsPageContributions.GeneralId => [.. new SettingsSection(NetPrintsSettings.Descriptor, store, resources).CreateFields(services, [EnableAnimationsKey, LanguageKey])],
-            SettingsPageContributions.AppearanceId => [.. new SettingsSection(EditorSettings.Descriptor, store, resources).CreateFields(services), new ThemePreviewItemViewModel(store)],
+            SettingsPageContributions.GeneralId => [.. new SettingsSection(NetPrintsSettings.Descriptor, store).CreateFields(services, [EnableAnimationsKey, LanguageKey])],
+            SettingsPageContributions.AppearanceId => [.. new SettingsSection(EditorSettings.Descriptor, store).CreateFields(services), new ThemePreviewItemViewModel(store)],
             SettingsPageContributions.KeyboardId => [new KeyboardShortcutsItemViewModel(registry, store)],
-            SettingsPageContributions.RunId => [.. new SettingsSection(RunSettings.Descriptor, store, resources).CreateFields(services)],
-            SettingsPageContributions.ExtensionsId => [.. new SettingsSection(NetPrintsSettings.Descriptor, store, resources).CreateFields(services, [ExtensionPathsKey, TrustedProjectsKey]), new LoadedExtensionsItemViewModel(LoadedRows(extensions.Current))],
+            SettingsPageContributions.RunId => [.. new SettingsSection(RunSettings.Descriptor, store).CreateFields(services)],
+            SettingsPageContributions.ExtensionsId => [.. new SettingsSection(NetPrintsSettings.Descriptor, store).CreateFields(services, [ExtensionPathsKey, TrustedProjectsKey]), new LoadedExtensionsItemViewModel(LoadedRows(extensions.Current))],
             _ => null,
         };
-    }
 
-    private IReadOnlyList<ResourceManager> Resources() => [.. extensions.Current.StringResources, Strings.ResourceManager];
+    /// <summary>The lookup order of an extension page's title and its section's labels: the loaded extensions' string resources, then the editor's.</summary>
+    private IReadOnlyList<ResourceManager> ExtensionResources() => [.. extensions.Current.StringResources, Strings.ResourceManager];
 
     private void RebuildExtensionPages(bool force)
     {
@@ -248,7 +255,7 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
         extensionPages.Clear();
         extensionParents.Clear();
 
-        IReadOnlyList<ResourceManager> resources = Resources();
+        IReadOnlyList<ResourceManager> resources = ExtensionResources();
         List<ExtensionPage> created = [];
         foreach (SettingsPageDescriptor page in descriptors)
         {
@@ -377,6 +384,24 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
     }
 
     private void OnRegistryChanged(object? sender, ContributionSnapshot snapshot) => RebuildExtensionPages(force: false);
+
+    private void OnExtensionsChanged(object? sender, ExtensionRegistry loaded) => dispatcher.Post(FollowExtensions);
+
+    private void FollowExtensions()
+    {
+        if (closed)
+        {
+            return;
+        }
+
+        List<LoadedExtensionRow> rows = LoadedRows(extensions.Current);
+        foreach (LoadedExtensionsItemViewModel list in builtInPages.SelectMany(page => page.Items).OfType<LoadedExtensionsItemViewModel>())
+        {
+            list.Rows = rows;
+        }
+
+        RebuildExtensionPages(force: true);
+    }
 
     private void OnFieldSaved(object? sender, EventArgs e)
     {

@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Resources;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
@@ -8,6 +9,7 @@ using NetPrints.Editor.Shell;
 using NetPrints.Editor.State;
 using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Editor.Tests.Shell;
+using NetPrints.Extensibility;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Testing;
@@ -17,6 +19,7 @@ namespace NetPrints.Editor.Tests.Settings;
 public sealed class SettingsDocumentViewModelTests : IAsyncDisposable
 {
     private const string TestExtensionId = "netprints.test";
+    private const string LanguageLabelKey = "Settings.netprints.language.Label";
 
     private sealed record CustomPageState;
 
@@ -63,11 +66,14 @@ public sealed class SettingsDocumentViewModelTests : IAsyncDisposable
     }
 
     private SettingsDocumentViewModel Create(JsonFileSettingsStore store, ExtensionHost host, ContributionRegistry registry) =>
-        new(store, registry, host, _ => new EditorContexts(new CommandContext(new FakeShell(), null, null, null, CommandSelection.None)), new FakeFilePicker(), _ =>
+        new(store, registry, host, new InlineDispatcher(), _ => new EditorContexts(new CommandContext(new FakeShell(), null, null, null, CommandSelection.None)), new FakeFilePicker(), _ =>
         {
             restarts++;
             return Task.CompletedTask;
         });
+
+    private static LoadedExtensionsItemViewModel LoadedList(SettingsDocumentViewModel document) =>
+        document.Pages.Single(page => page.Id == SettingsPageContributions.ExtensionsId).Items.OfType<LoadedExtensionsItemViewModel>().Single();
 
     [Fact]
     public void TheDocumentHasTheSettingsIdAndTheBuiltInPagesInOrder()
@@ -379,6 +385,59 @@ public sealed class SettingsDocumentViewModelTests : IAsyncDisposable
         }
     }
 
+    [Fact]
+    public async Task AProjectsExtensionsComeAndGoWhileTheDocumentIsOpen()
+    {
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        var host = new ExtensionHost(new ExtensionLoaderOptions([], [], []), NullLoggerFactory.Instance);
+        hosts.Add(host);
+        var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
+        BuiltInContributions.Register(registry);
+        using SettingsDocumentViewModel document = Create(NewStore(), host, registry);
+
+        await host.LoadForProjectAsync([FixtureExtensions.TestExtensionFolder()], cancellationToken);
+
+        Assert.Contains(document.Pages, page => page.Title == "NetPrints test extension");
+        Assert.Contains(LoadedList(document).Rows, row => row.Id == TestExtensionId);
+
+        await host.LoadForProjectAsync([], cancellationToken);
+
+        Assert.DoesNotContain(document.Pages, page => page.Title == "NetPrints test extension");
+        Assert.DoesNotContain(LoadedList(document).Rows, row => row.Id == TestExtensionId);
+    }
+
+    [Fact]
+    public void AnExtensionResourceDoesNotRelabelABuiltInSetting()
+    {
+        string api = $"{ExtensionApi.Version.Major}.{ExtensionApi.Version.Minor}";
+        var manifest = new ExtensionManifest("fx.relabel", "Relabel", "1.0.0", string.Empty, api, []);
+        var host = new ExtensionHost(new ExtensionLoaderOptions([], [], [(manifest, new RelabelExtension())]), NullLoggerFactory.Instance);
+        hosts.Add(host);
+        var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
+        BuiltInContributions.Register(registry);
+        using SettingsDocumentViewModel document = Create(NewStore(), host, registry);
+
+        Assert.Contains(host.Current.StringResources, resources => resources is RelabelResources);
+        Assert.Equal("Language", document.FindField("netprints.language").Label);
+    }
+
     private static string[] Keys(SettingsDocumentViewModel document, string page) =>
         [.. document.Pages.Single(candidate => candidate.Title == page).Items.OfType<SettingsFieldViewModel>().Select(field => field.QualifiedKey)];
+
+    private sealed class RelabelExtension : INetPrintsExtension
+    {
+        public void Register(IExtensionBuilder builder) => builder.AddStringResources(new RelabelResources());
+    }
+
+    private sealed class RelabelResources : ResourceManager
+    {
+        protected override ResourceSet? InternalGetResourceSet(CultureInfo culture, bool createIfNotExists, bool tryParents) => new RelabelSet();
+    }
+
+    private sealed class RelabelSet : ResourceSet
+    {
+        public override string? GetString(string name) => name == LanguageLabelKey ? "Relabelled" : null;
+
+        public override string? GetString(string name, bool ignoreCase) => GetString(name);
+    }
 }
