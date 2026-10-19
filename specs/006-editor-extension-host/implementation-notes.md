@@ -1815,3 +1815,17 @@ T076, Checkpoint C2, gate items measured on this head (Release).
   trim ratchet 8 of 8. No packable surface change.
 - Decision (notes commit): as in T112-1, a line citing its own commit's sha cannot be written in that commit; each fix commit carries its
   implementation-notes text without the sha, and this fifth commit records the four shas, the suite and the E2E totals.
+## Batch T112-3 (T112, part 3: DD-7, DD-4, DD-20)
+
+- DD-7 (532abef3): the Classic Dark preset is removed (it only mimicked the legacy editor), and `ContrastCheck.Passed` compares the exact
+  ratio without rounding. Red: `ACheckPassesOnlyWhenTheExactRatioReachesTheMinimum` (rows 1, 3 and 4 expected False, actual True) and
+  `EveryBuiltInPresetPassesEveryContrastGate` fails on `classic.dark` (1.14998 against 1.15 gate). Green.
+- DD-4 (7b29496f): the catalogue gains 50 size, spacing, thickness, radius, font and motion resources with six new token kinds, parsed by
+  `ThemeValueParser` and looked up with `DynamicResource` so a preset applies at once (about 130 uses in EditorStyles, DockStyles and
+  views converted). Red: `NoCatalogueTokenIsLookedUpWithStaticResource` and `EveryKeyedResourceOfEditorStylesIsInTheCatalogue` (the 50
+  names), `ValuesAreParsedByTheKindOfTheToken` new rows (InvalidOperationException), `APresetCanSetEveryNewKindOfToken` (18 expected,
+  14 actual), `APresetSizeTokenReachesARenderedViewAtOnce` (still 120 on StaticResource). Green.
+- DD-20 (215da1da): data-model §5 lists the preset ids shipped (netprints.dark, netprints.light, high-contrast.dark, high-contrast.light)
+  and ADR-0035 Amendment 2 records the High contrast behavior in System mode. Green.
+- Suite (Release, solution-wide, at 215da1da): 5440 total, 5403 passed, 37 skipped, 0 failed. `dotnet format --verify-no-changes` clean;
+  trim ratchet 8 of 8. No packable surface change.
