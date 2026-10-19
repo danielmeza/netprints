@@ -1747,3 +1747,42 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - Docs: `docs/guide/extension-testing.md` (every NPK check, NPK017, the reusable CI workflow), `docs/guide/cli.md` (`extension verify`), `docs/guide/diagnostics.md` (NPK rows), ADR-0041 and ADR-0010 with its
   Amendment 1 already cover the D2 work; no gap was found, so no doc change was needed. `.github/release-notes.md` (Unreleased) gained the author kit, the template and package type, `extension verify`,
   the reusable workflow and the NetPrints.Godot sample extension.
+
+## Batch T112-1 (T112, part 1: DD-1, DD-11, DD-12, DD-9)
+
+- DD-1 (0a4517aa): `KeyBindingOverride` takes nullable constructor parameters with defaults, so a `keyboard` binding that omits
+  or nulls `scope`, `add` or `remove` loads as `Global` with empty lists, and `KeyboardSettings` gained a validator that makes a
+  null entry or an entry without a command use the section's defaults (contract §7). Red: `KeyboardSettingsLoadTests` 5 of 5
+  failed — `Assert.Equal()` on the scope (Expected `"Global"`, Actual `null`), `NullReferenceException` from
+  `KeyBindingResolver.Resolve`, `Assert.Single()` on the explicit-null case (the deserializer threw, so the section fell back to
+  its defaults with zero bindings) and `Assert.Empty()` on the null entry and the entry without a command. Green: 5 of 5;
+  `KeyBindingResolverTests`, `KeyboardShortcutsPageTests` and Core's `JsonFileSettingsStoreTests` green.
+- DD-11 (fd0ea48d): `SettingsSchemaFile` exports `KeyboardSettings` with the built-in sections, so `schemas/settings.v1.schema.json`,
+  the settings table of the guide and `tests/Fixtures/Settings/example.settings.json` carry `keyboard.bindings` and the golden test
+  goes red when the section changes. Red: `SettingsSchemaTests` 4 failed — `Assert.IsType()` from the `Section` helper for the
+  keyboard section, the missing table row and `Assert.Single()` on the example's bindings. Green: 9 of 9 after
+  `NETPRINTS_UPDATE_SNAPSHOTS=1`; `git diff` added only the `keyboard` section and its table row.
+- DD-12 (71014859): `JsonFileSettingsStore.IsBuiltInSection` treats only the host's sections (`netprints`, `run`, `keyboard`) and the
+  editor's own `netprints.editor` section as built-in, so every extension section, `netprints.godot` and `netprints.test` included,
+  reports NPX014 (the `netprints.` prefix no longer decides). Red: `AnExtensionWhoseIdStartsWithNetprintsGetsNpx014` (Expected
+  `"NPX014"`, Actual `null`). Green: Core's `JsonFileSettingsStoreTests` 22 of 22; `SettingsValidationTests` 25 of 25 (the editor's
+  section stays built-in and still logs no NPX code).
+- DD-9 (a7511319): the D1 text of the Settings document, the shortcuts sheet, New project and the key-binding reasons moves to
+  `Strings.resx`; generated labels and help texts read `Settings.<section>.<key>.Label`/`.Description` from the owner's resources
+  (the extension's, then the editor's), then the property name and the schema description; `language` became a drop-down of System
+  and the shipped cultures (`LanguageChoices`, `[SettingChoices]` on `NetPrintsSettings.Language`). Red:
+  `SettingsViewTakesEveryTextFromResources` failed with 23 offenders; `EveryBuiltInFieldTakesItsLabelAndHelpTextFromTheResources`
+  and the owner-resources test were compile-only reds on the new `SettingsSection` third argument and `ChoiceFieldViewModel.Options`,
+  and `TheLanguageIsADropDownOfTheShippedCulturesAndSystem` was an `Assert.Single()` red with the language still a text field.
+  Green: `XamlHygieneTests` 29 of 29, `SettingsFieldTests` + `SettingsDocumentViewModelTests` 32 of 32, `SettingsSchemaTests`,
+  `KeyBindingResolverTests` + `KeyboardShortcutsPageTests` 35 of 35, `SettingsDocumentTests` + `KeyboardShortcutsPageUiTests` 8 of 8.
+- Decision (notes commit): a line that cites its own commit's sha cannot be written in that commit, so the `## Batch T112-1` section
+  is a fifth commit on top of the four fixes, the repository's pattern (e.g. c0e1104a "Record batch D1d ..."); the four fix commits
+  carry every other change this batch names.
+- Decision (existing tests): the language field is a `ChoiceFieldViewModel` now, so
+  `SettingsDocumentViewModelTests.ARestartFieldShowsTheBarAndRestartNowTakesTheExitPath` and the UI
+  `SettingsDocumentTests.ARestartFieldShowsTheRequiresRestartNoteAndTheBarWithRestartNow` choose from the drop-down
+  (`ChooseCommand`/`SelectedIndex`) instead of typing in a text box.
+- Decision (schema of the binding members): `KeyboardSettings`'s binding members render as nullable (`type: ["string","null"]`,
+  `default: null`) in the generated schema because the DD-1 constructor parameters are nullable; the schema is generated, not
+  hand-edited.
