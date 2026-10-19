@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
@@ -16,6 +17,9 @@ namespace NetPrints.Editor.Hosting;
 /// </summary>
 public static class ViewResourceLoader
 {
+    private const string XamlLoaderType = "CompiledAvaloniaXaml.!XamlLoader";
+    private const string TryLoadMethod = "TryLoad";
+
     private static readonly ConditionalWeakTable<Application, State> States = new();
 
     private static readonly Dictionary<string, Func<object>> Compiled = new(StringComparer.Ordinal)
@@ -35,31 +39,32 @@ public static class ViewResourceLoader
         ArgumentNullException.ThrowIfNull(application);
         ArgumentNullException.ThrowIfNull(declarations);
         State state = States.GetOrCreateValue(application);
-        ViewResourceDeclaration[] wanted = [.. declarations.DistinctBy(declaration => declaration.Uri, StringComparer.Ordinal)];
-        HashSet<string> wantedUris = [.. wanted.Select(declaration => declaration.Uri)];
+        ViewResourceDeclaration[] wanted = [.. declarations.DistinctBy(KeyOf, StringComparer.Ordinal)];
+        HashSet<string> wantedKeys = [.. wanted.Select(KeyOf)];
 
-        foreach (string uri in state.Applied.Keys.Where(uri => !wantedUris.Contains(uri)).ToArray())
+        foreach (string key in state.Applied.Keys.Where(key => !wantedKeys.Contains(key)).ToArray())
         {
-            state.Applied[uri].Remove(application);
-            state.Applied.Remove(uri);
+            state.Applied[key].Remove(application);
+            state.Applied.Remove(key);
         }
 
-        state.Failed.RemoveWhere(uri => !wantedUris.Contains(uri));
+        state.Failed.RemoveWhere(key => !wantedKeys.Contains(key));
         List<ViewResourceFailure> failures = [];
         foreach (ViewResourceDeclaration declaration in wanted)
         {
-            if (state.Applied.ContainsKey(declaration.Uri) || state.Failed.Contains(declaration.Uri))
+            string key = KeyOf(declaration);
+            if (state.Applied.ContainsKey(key) || state.Failed.Contains(key))
             {
                 continue;
             }
 
             try
             {
-                state.Applied[declaration.Uri] = Add(application, declaration, templateFailed);
+                state.Applied[key] = Add(application, declaration, templateFailed);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                state.Failed.Add(declaration.Uri);
+                state.Failed.Add(key);
                 failures.Add(new ViewResourceFailure(declaration, ex.Message));
             }
         }
@@ -69,17 +74,32 @@ public static class ViewResourceLoader
 
     private static AppliedResource Add(Application application, ViewResourceDeclaration declaration, Action<ViewResourceDeclaration, Exception>? templateFailed)
     {
-        object document = Compiled.TryGetValue(declaration.Uri, out Func<object>? create) ? create() : LoadByUri(declaration.Uri);
+        object document = Compiled.TryGetValue(declaration.Uri, out Func<object>? create) ? create() : Load(declaration);
         ViewResourceTarget target = Array.Find(Targets, candidate => candidate.Accepts(document))
             ?? throw new InvalidOperationException($"'{declaration.Uri}' is a {document.GetType().Name}, not a DataTemplates, ResourceDictionary or Styles document.");
         object applied = target.Add(application, document, declaration, templateFailed);
         return new AppliedResource(target, applied);
     }
 
-    private static object LoadByUri(string uri) =>
-        Uri.TryCreate(uri, UriKind.Absolute, out Uri? parsed) && parsed.Scheme == "avares"
-            ? AvaloniaXamlLoader.Load(EmptyServiceProvider.Instance, parsed)
-            : throw new InvalidOperationException($"'{uri}' is not an avares:// URI.");
+    private static string KeyOf(ViewResourceDeclaration declaration) => declaration.Scope + "|" + declaration.Uri;
+
+    private static object Load(ViewResourceDeclaration declaration)
+    {
+        string uri = declaration.Uri;
+        if (!Uri.TryCreate(uri, UriKind.Absolute, out Uri? parsed) || parsed.Scheme != "avares")
+        {
+            throw new InvalidOperationException($"'{uri}' is not an avares:// URI.");
+        }
+
+        return declaration.Source is { } source ? LoadFrom(source, uri) : AvaloniaXamlLoader.Load(EmptyServiceProvider.Instance, parsed);
+    }
+
+    private static object LoadFrom(Assembly source, string uri)
+    {
+        MethodInfo? tryLoad = source.GetType(XamlLoaderType)?.GetMethod(TryLoadMethod, [typeof(IServiceProvider), typeof(string)]);
+        return tryLoad?.Invoke(null, [EmptyServiceProvider.Instance, uri])
+            ?? throw new InvalidOperationException($"'{uri}' is not a compiled resource of {source.GetName().Name}.");
+    }
 
     private sealed class State
     {

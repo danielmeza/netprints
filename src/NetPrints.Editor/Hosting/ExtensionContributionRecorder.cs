@@ -1,3 +1,5 @@
+using System.Reflection;
+using System.Runtime.Loader;
 using NetPrints.Editor.Contributions;
 using NetPrints.Extensibility.Editor;
 using NetPrints.Extensibility.Loading;
@@ -73,8 +75,26 @@ public sealed class ExtensionContributionRecorder
                 builder.Shadow(result.Id);
             }
 
+            if (FindAssembly(result.ManifestPath, result.Manifest.Assembly) is { } assembly)
+            {
+                builder.UseAssembly(result.Id, assembly);
+            }
+
             recording.ReplayTo(builder.For(result.Id, result.Manifest.Name), includeApplicationLevel: fromProject, includeProjectLevel: true);
         }
+    }
+
+    private static Assembly? FindAssembly(string? manifestPath, string assemblyFile)
+    {
+        if (manifestPath is null || Path.GetDirectoryName(Path.GetFullPath(manifestPath)) is not { } folder)
+        {
+            return null;
+        }
+
+        string path = Path.Combine(folder, assemblyFile);
+        return AssemblyLoadContext.All
+            .SelectMany(context => context.Assemblies)
+            .FirstOrDefault(assembly => !assembly.IsDynamic && string.Equals(assembly.Location, path, StringComparison.Ordinal));
     }
 
     private Recording Record(ExtensionManifest manifest)

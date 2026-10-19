@@ -365,7 +365,12 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
     private void AddViewResources(string owner, string resourceUri)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(resourceUri);
-        Target.ViewResources.Add(new ViewResourceDeclaration(owner, resourceUri) { OwnerName = Target.OwnerNames.GetValueOrDefault(owner, owner) });
+        Target.ViewResources.Add(new ViewResourceDeclaration(owner, resourceUri)
+        {
+            OwnerName = Target.OwnerNames.GetValueOrDefault(owner, owner),
+            Scope = Target.Key ?? "",
+            Source = Target.OwnerAssemblies.GetValueOrDefault(owner),
+        });
         Publish();
     }
 
@@ -521,6 +526,13 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
 
         public void AddProjectTemplate(ProjectTemplateDescriptor template, string? owner = null) =>
             registry.As(group, owner ?? ContributionIds.Owner, () => registry.AddProjectTemplate(template));
+
+        public void UseAssembly(string owner, System.Reflection.Assembly assembly)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(owner);
+            ArgumentNullException.ThrowIfNull(assembly);
+            group.OwnerAssemblies[owner] = assembly;
+        }
 
         public void Shadow(string owner)
         {
