@@ -182,6 +182,23 @@ public sealed class ConformanceRuleTests
     }
 
     [Fact]
+    public async Task AChannelWhoseMessagesNeverCompleteFails()
+    {
+        ConformanceCheckResult result = await RunAsync(new SilentChannelExtension(), NpkDiagnosticCodes.HostChannel);
+
+        Assert.Equal(ConformanceStatus.Failed, result.Status);
+        Assert.Contains("silent: Messages did not complete within 5 seconds of the channel closing", Messages(result), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AChannelThatCompletesItsMessagesOnAnotherThreadAfterClosingPasses()
+    {
+        ConformanceCheckResult result = await RunAsync(new LateChannelExtension(), NpkDiagnosticCodes.HostChannel);
+
+        Assert.Equal(ConformanceStatus.Passed, result.Status);
+    }
+
+    [Fact]
     public async Task ASettingsSectionThatPassesIsExercised()
     {
         string folder = KitFixtures.AlphaFolder();
@@ -235,6 +252,123 @@ public sealed class ConformanceRuleTests
         public ValueTask SendAsync(HostMessage message, CancellationToken cancellationToken) => ValueTask.CompletedTask;
 
         public ValueTask DisposeAsync() => inner.DisposeAsync();
+    }
+
+    private sealed class SilentChannelExtension : INetPrintsExtension
+    {
+        public void Register(IExtensionBuilder builder)
+        {
+            ArgumentNullException.ThrowIfNull(builder);
+            builder.AddHostChannel(new SilentFactory());
+        }
+    }
+
+    private sealed class SilentFactory : IHostChannelFactory
+    {
+        public string Id => "silent";
+
+        public IHostChannel Create(HostLaunchContext context) => new SilentChannel(InMemoryHostChannel.CreatePair("silent").Editor);
+    }
+
+    private sealed class SilentChannel(IHostChannel inner) : IHostChannel
+    {
+        public string Id => inner.Id;
+
+        public HostChannelState State => inner.State;
+
+        public IObservable<HostMessage> Messages { get; } = new SilentMessages();
+
+        public ValueTask SendAsync(HostMessage message, CancellationToken cancellationToken) => inner.SendAsync(message, cancellationToken);
+
+        public ValueTask DisposeAsync() => inner.DisposeAsync();
+    }
+
+    private sealed class SilentMessages : IObservable<HostMessage>
+    {
+        public IDisposable Subscribe(IObserver<HostMessage> observer) => new EmptySubscription();
+    }
+
+    private sealed class LateChannelExtension : INetPrintsExtension
+    {
+        public void Register(IExtensionBuilder builder)
+        {
+            ArgumentNullException.ThrowIfNull(builder);
+            builder.AddHostChannel(new LateFactory());
+        }
+    }
+
+    private sealed class LateFactory : IHostChannelFactory
+    {
+        public string Id => "late";
+
+        public IHostChannel Create(HostLaunchContext context) => new LateChannel(InMemoryHostChannel.CreatePair("late").Editor);
+    }
+
+    private sealed class LateChannel(IHostChannel inner) : IHostChannel
+    {
+        private readonly LateMessages messages = new();
+
+        public string Id => inner.Id;
+
+        public HostChannelState State => inner.State;
+
+        public IObservable<HostMessage> Messages => messages;
+
+        public ValueTask SendAsync(HostMessage message, CancellationToken cancellationToken) => inner.SendAsync(message, cancellationToken);
+
+        public ValueTask DisposeAsync()
+        {
+            messages.CompleteOnAnotherThread();
+            return inner.DisposeAsync();
+        }
+    }
+
+    private sealed class LateMessages : IObservable<HostMessage>
+    {
+        private const int DelayMilliseconds = 50;
+
+        private readonly Lock gate = new();
+        private readonly List<IObserver<HostMessage>> observers = [];
+
+        public IDisposable Subscribe(IObserver<HostMessage> observer)
+        {
+            lock (gate)
+            {
+                observers.Add(observer);
+            }
+
+            return new EmptySubscription();
+        }
+
+        public void CompleteOnAnotherThread()
+        {
+            var thread = new Thread(() =>
+            {
+                Thread.Sleep(DelayMilliseconds);
+                IObserver<HostMessage>[] current;
+                lock (gate)
+                {
+                    current = [.. observers];
+                    observers.Clear();
+                }
+
+                foreach (IObserver<HostMessage> observer in current)
+                {
+                    observer.OnCompleted();
+                }
+            })
+            {
+                IsBackground = true,
+            };
+            thread.Start();
+        }
+    }
+
+    private sealed class EmptySubscription : IDisposable
+    {
+        public void Dispose()
+        {
+        }
     }
 }
 

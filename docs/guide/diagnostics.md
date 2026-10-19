@@ -121,7 +121,7 @@ The conformance suite of [`NetPrints.Extensibility.Testing`](extensions.md) repo
 | NPK007 | error | The C# generated for a node kind of the extension does not compile. |
 | NPK008 | error | Translating the same graph twice gives different text. |
 | NPK009 | error | A settings section of the extension does not serialize its default, does not accept it as valid, does not read back unchanged or cannot export a JSON schema. |
-| NPK010 | error | A host channel is closed when it is created, throws when it takes a subscriber, or is not closed after it is disposed (or disposing it twice throws). |
+| NPK010 | error | A host channel is closed when it is created, throws when it takes a subscriber, is not closed after it is disposed (or disposing it twice throws), does not complete `Messages` within 5 seconds of closing, or takes a message after it closed. |
 | NPK011 | error | Loading the extension changes an environment variable or the current directory of the process, or what the extension contributes differs when a failing neighbour and a neighbour that claims the same project properties are loaded next to it. |
 | NPK012 | error | Disposing the registry, with a session still open and more than once, throws or logs a disposal failure of something the extension contributed. |
 | NPK013 | error | The extension's service provider does not build or validate (a missing registration, a singleton that captures a scoped service), the extension registers a type it does not own or replaces a host export, or a scoped or transient service is still reachable after its session is disposed. |

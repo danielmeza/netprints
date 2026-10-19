@@ -1989,12 +1989,19 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 
 ### R2-5
 
-- SHA-R2F2-2: `ErrorListViewModel.Refresh` builds the rows and keeps the shown ones unless the diagnostic or the resolved member name differs, so a rename that leaves the diagnostic unchanged (CS0026) shows the new member name.
+- 3592e6d7: `ErrorListViewModel.Refresh` builds the rows and keeps the shown ones unless the diagnostic or the resolved member name differs, so a rename that leaves the diagnostic unchanged (CS0026) shows the new member name.
 - Red: `ARenamedMethodShowsItsNewNameWhenTheDiagnosticsAreUnchanged` failed with `Expected: "New"`, `Actual: "Old"`.
 - Green: `ErrorListViewModelTests` 10 total, 0 failed; `BottomPanelsWiringTests` 6 total, 0 failed.
 - Decision (delegated): compare `(Diagnostic, MemberName)` instead of making `MemberName` follow the graph's `Name`; that would need a subscription and a disposal per row for a column that only changes when a snapshot or build arrives.
 
 ### R2-9
 
-- SHA-R2F2-2: the Unreleased notes record that the Errors panel lists a diagnostic once when the live analysis and the last build both report it, which 0.3.0 listed twice.
+- 3592e6d7: the Unreleased notes record that the Errors panel lists a diagnostic once when the live analysis and the last build both report it, which 0.3.0 listed twice.
 - DD-2's double-click crash is left out: its walk is unchanged since 0.3.0, and the `ToolDock` container it reached comes from the Dock 12.1 tree adopted in D1c, after 0.3.0.
+
+### R2-7
+
+- SHA-R2F2-3: NPK010's observer completes a `TaskCompletionSource`, and the check waits up to 5 seconds for it on whatever thread the channel completes `Messages`, instead of reading a flag right after `DisposeAsync`.
+- Red: `AChannelWhoseMessagesNeverCompleteFails` failed because the finding was the old `Messages did not complete when the channel closed`; `AChannelThatCompletesItsMessagesOnAnotherThreadAfterClosingPasses` failed with `Expected: Passed`, `Actual: Failed` because the completion arrived 50 ms after the flag was read.
+- Green: `ConformanceRuleTests` + `ConformanceSuiteTests` 42 total, 0 failed; `DiagnosticsGuideTests` 7 total, 0 failed.
+- Decision (delegated): wait for the completion rather than making the flag `volatile`; a volatile flag still reads before a late completion arrives.

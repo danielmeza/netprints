@@ -105,7 +105,7 @@ Each settings section serializes its default, accepts it as valid, writes it bac
 
 ### NPK010
 
-Each host channel is open or connecting when it is created, takes and releases a subscriber, and is closed after disposal, which can be repeated. It then checks that `Messages` completed and that `SendAsync` on the closed channel throws `InvalidOperationException`, as `IHostChannel` documents. Fix: set the state to closed in `DisposeAsync` and make a second call do nothing.
+Each host channel is open or connecting when it is created, takes and releases a subscriber, and is closed after disposal, which can be repeated. It then waits up to 5 seconds for `Messages` to complete, on whatever thread the channel completes it, and checks that `SendAsync` on the closed channel throws `InvalidOperationException`, as `IHostChannel` documents. Fix: in `DisposeAsync`, set the state to closed and complete `Messages`; refuse `SendAsync` once closed; make a second call do nothing.
 
 ### NPK011
 

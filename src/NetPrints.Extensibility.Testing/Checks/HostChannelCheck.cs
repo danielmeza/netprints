@@ -3,13 +3,14 @@ using NetPrints.Extensibility.Hosting;
 
 namespace NetPrints.Extensibility.Testing.Checks;
 
-/// <summary>NPK010: each host channel of the extension is created in a live state, takes and releases a subscriber, is closed by disposal that can repeat, completes its messages and refuses a message once closed (the IHostChannel contract).</summary>
+/// <summary>NPK010: each host channel of the extension is created in a live state, takes and releases a subscriber, is closed by disposal that can repeat, completes its messages within 5 seconds of closing, on whatever thread, and refuses a message once closed (the IHostChannel contract).</summary>
 internal sealed class HostChannelCheck : ConformanceCheck
 {
     private const string Rule = "a host channel closes when it is disposed";
     private const string ProbeType = "netprints.conformance-probe";
 
     private static readonly JsonElement ProbePayload = JsonDocument.Parse("{}").RootElement.Clone();
+    private static readonly TimeSpan CompletionTimeout = TimeSpan.FromSeconds(5);
 
     public override string Code => NpkDiagnosticCodes.HostChannel;
 
@@ -59,7 +60,7 @@ internal sealed class HostChannelCheck : ConformanceCheck
                     return "the channel is closed when it is created";
                 }
 
-                var observer = new IgnoringObserver();
+                var observer = new CompletionObserver();
                 using IDisposable subscription = channel.Messages.Subscribe(observer);
                 await dispose().ConfigureAwait(false);
                 if (stateOf() != HostChannelState.Closed)
@@ -67,9 +68,9 @@ internal sealed class HostChannelCheck : ConformanceCheck
                     return $"the channel is {stateOf()} after it is disposed";
                 }
 
-                if (!observer.Completed)
+                if (!await observer.CompletesWithinAsync(CompletionTimeout, cancellationToken).ConfigureAwait(false))
                 {
-                    return "Messages did not complete when the channel closed";
+                    return "Messages did not complete within 5 seconds of the channel closing";
                 }
 
                 try
@@ -93,14 +94,24 @@ internal sealed class HostChannelCheck : ConformanceCheck
         }
     }
 
-    private sealed class IgnoringObserver : IObserver<HostMessage>
+    private sealed class CompletionObserver : IObserver<HostMessage>
     {
-        public bool Completed { get; private set; }
+        private readonly TaskCompletionSource completed = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public void OnCompleted()
+        public async Task<bool> CompletesWithinAsync(TimeSpan timeout, CancellationToken cancellationToken)
         {
-            Completed = true;
+            try
+            {
+                await completed.Task.WaitAsync(timeout, cancellationToken).ConfigureAwait(false);
+                return true;
+            }
+            catch (TimeoutException)
+            {
+                return false;
+            }
         }
+
+        public void OnCompleted() => completed.TrySetResult();
 
         public void OnError(Exception error)
         {

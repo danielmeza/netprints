@@ -96,7 +96,7 @@ and green on the repository (red/green). VSTHRD002 and VSTHRD103 go to `error` i
 | NPK007 | Translation compiles: generated C# for each node kind with a node-search entry compiles; a kind without one makes the check Skipped and is named | yes | — |
 | NPK008 | Deterministic emitters: two runs write identical bytes, over the same kinds as NPK007 | yes | — |
 | NPK009 | Settings: sections serialize, validate and export a schema | yes | — |
-| NPK010 | Host channel lifecycle: open, subscribe, close, dispose twice, messages complete, a message on the closed channel is refused | yes | — |
+| NPK010 | Host channel lifecycle: open, subscribe, close, dispose twice, messages complete within 5 seconds on any thread, a message on the closed channel is refused | yes | — |
 | NPK011 | Coexistence with the built-ins and a noisy neighbour | yes | — |
 | NPK012 | Disposal: no exception, idempotent; the load-context leak test waits for collectible load contexts (ADR-0010, research: not in P3) | yes | — |
 | NPK013 | Service providers: builds, validates, only allowed host exports, capture and leak test | yes | — |
