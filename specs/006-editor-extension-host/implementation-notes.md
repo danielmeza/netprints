@@ -1621,7 +1621,7 @@ T076, Checkpoint C2, gate items measured on this head (Release).
   theme changes with no restart. The Appearance page has preset drop-downs and a preview; event 1043 logs an unknown preset. `themes.md` carries a generated token list.
 - **Decision (ContrastCheck rounding)**: it rounds to 2 decimals, so the Classic card at 1.1497 passes the 1.15 gate. Flagged for T111.
 - **Decision (high contrast)**: one file per variant, with an optional `semiVariant`. In system mode the high-contrast tokens apply without the Semi variant.
-- **Decision (plain resources)**: sizes and fonts stay plain resources.
+- **Decision (plain resources)**: sizes and fonts stay plain resources. **Corrected (T112-3, DD-4)**: sizes, spacing, thicknesses, radii, fonts, durations and the easing are catalogue tokens (50 more, kinds Thickness, CornerRadius, GridLength, FontFamily, Duration and Easing), and every token is looked up with DynamicResource.
 - **Decision (aliases)**: there is no alias table yet.
 - **Corrected (T112-3, DD-7; owner 2026-10-18)**: Classic Dark is removed and `ContrastCheck.Passed` compares the exact ratio.
 

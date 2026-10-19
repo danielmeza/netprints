@@ -31,7 +31,7 @@
         </Interaction.Behaviors>
       </TextBox>
       <TextBlock Grid.Row="1" Classes="secondary" Text="{Binding HidingNotice}" IsVisible="{Binding HasHidingNotice}" TextWrapping="Wrap"
-                 Margin="{StaticResource Space.S}" Focusable="False" AutomationProperties.AccessibilityView="Content"
+                 Margin="{DynamicResource Space.S}" Focusable="False" AutomationProperties.AccessibilityView="Content"
                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SearchHiddenNotice}" />
       <TextBlock Grid.Row="2" Text="Loading..." IsVisible="{Binding IsLoading}" Margin="8" />
       <ctl:EmptyState Grid.Row="2" IconId="{x:Static icons:IconIds.EmptySearch}" Message="{Binding EmptyMessage}" IsVisible="{Binding IsEmpty}"

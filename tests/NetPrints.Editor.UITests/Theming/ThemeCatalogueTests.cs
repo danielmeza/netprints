@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Avalonia;
 using Avalonia.Headless.XUnit;
@@ -80,5 +81,43 @@ public class ThemeCatalogueTests
         Assert.True(ThemeTokenCatalogue.Find("Wire.Thickness")?.PerVariant);
         Assert.Contains(ThemeTokenCatalogue.All, token => token.Name.StartsWith("Inspector.", StringComparison.Ordinal));
         Assert.Equal(ThemeTokenKind.Shape, ThemeTokenCatalogue.Find("Pin.TypeShape")?.Kind);
+    }
+
+    [Fact]
+    public void EveryKeyedResourceOfEditorStylesIsInTheCatalogue()
+    {
+        XDocument document = XDocument.Load(Path.Combine(LocalSdkLayout.FindRepositoryRoot(), "src", "NetPrints.Editor", "EditorStyles.axaml"));
+        string[] missing =
+        [
+            .. document.Descendants()
+                .Where(element => element.Attribute(Xaml + "Key") is not null)
+                .Where(element => !element.Ancestors().Any(ancestor => ancestor.Name.LocalName.EndsWith("ThemeDictionaries", StringComparison.Ordinal)))
+                .Where(element => element.Name.LocalName is not ("ControlTheme" or "FocusAdornerTemplate"))
+                .Select(element => (string?)element.Attribute(Xaml + "Key"))
+                .OfType<string>()
+                .Where(key => !key.StartsWith("Pin.TypeShape.", StringComparison.Ordinal))
+                .Where(key => ThemeTokenCatalogue.Find(key) is null),
+        ];
+
+        Assert.True(missing.Length == 0, $"Keyed resources of EditorStyles.axaml missing from ThemeTokenCatalogue: {string.Join(", ", missing)}");
+    }
+
+    [Fact]
+    public void NoCatalogueTokenIsLookedUpWithStaticResource()
+    {
+        string root = LocalSdkLayout.FindRepositoryRoot();
+        var pattern = new Regex(@"\{StaticResource\s+(?<key>[\w.]+)\}");
+        List<string> offenders = [];
+        foreach (string file in Directory.EnumerateFiles(Path.Combine(root, "src"), "*.axaml", SearchOption.AllDirectories)
+                     .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                         && !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)))
+        {
+            offenders.AddRange(pattern.Matches(File.ReadAllText(file))
+                .Select(match => match.Groups["key"].Value)
+                .Where(key => ThemeTokenCatalogue.Find(key) is not null)
+                .Select(key => $"{Path.GetRelativePath(root, file)}: {key}"));
+        }
+
+        Assert.True(offenders.Count == 0, "Catalogue tokens looked up with StaticResource: " + string.Join(", ", offenders));
     }
 }

@@ -116,7 +116,7 @@
             </Interaction.Behaviors>
             <Button.Flyout>
               <Flyout Placement="BottomEdgeAlignedLeft">
-                <ctl:MethodPickerList Width="{StaticResource Flyout.MethodPickerWidth}" DataContext="{Binding OverloadPicker}" />
+                <ctl:MethodPickerList Width="{DynamicResource Flyout.MethodPickerWidth}" DataContext="{Binding OverloadPicker}" />
               </Flyout>
             </Button.Flyout>
           </Button>

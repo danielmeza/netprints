@@ -4,7 +4,7 @@ sidebar_position: 10
 
 # Themes
 
-Every colour, shadow, pin shape, wire opacity and wire thickness of the editor is a theme token. A theme is data: a
+Every colour, shadow, pin shape, size, spacing, thickness, radius, font, duration and easing of the editor is a theme token. A theme is data: a
 set of token values laid over the editor's own, never code and never XAML.
 
 ## Modes and presets
@@ -73,7 +73,10 @@ An unknown token is warned about and ignored. A bad value is warned about and ke
 file that is not JSON and a file over 262144 characters are skipped. A token you leave out keeps its base value.
 
 Values by kind: a colour or brush is `#RRGGBB` or `#AARRGGBB`; a number is a plain decimal; a shadow is a list such as
-`4 4 8 0 #80000000`; the pin shape is `triangle` or `diamond`.
+`4 4 8 0 #80000000`; the pin shape is `triangle` or `diamond`. A thickness is `4`, `8,2` or `1,0,1,0`; a corner radius is
+`4` or `4,4,0,0`; a grid length is `120`, `Auto` or `2*`; a font family is a family name such as `Cascadia Mono` (no URL or
+font file); a duration is `h:m:s` such as `0:0:0.15`; an easing is the four numbers `x1,y1,x2,y2` of a cubic Bézier curve,
+with x from 0 to 1.
 
 Semi's own resources (accents, fonts and density) are not NetPrints tokens and are not listed here; see the
 [Semi.Avalonia repository](https://github.com/irihitech/Semi.Avalonia) for their keys.
@@ -151,4 +154,54 @@ The list is generated from the token catalogue. Update it with `NETPRINTS_UPDATE
 | `Inspector.RowSpacing` | Number | yes |
 | `Pin.TypeShape` | Shape | no |
 | `Pin.OutlineThickness` | Number | no |
+| `StartPage.RecentTileSize` | Number | no |
+| `Font.Caption` | Number | no |
+| `Font.Body` | Number | no |
+| `Font.Subtitle` | Number | no |
+| `Font.Title` | Number | no |
+| `Font.Watermark` | Number | no |
+| `Space.XS.Size` | Number | no |
+| `Space.S.Size` | Number | no |
+| `Space.M.Size` | Number | no |
+| `Space.L.Size` | Number | no |
+| `Space.XL.Size` | Number | no |
+| `Icon.Small` | Number | no |
+| `Icon.Medium` | Number | no |
+| `Icon.Large` | Number | no |
+| `Tab.Height` | Number | no |
+| `Tab.CloseButtonSize` | Number | no |
+| `Tab.InactiveOpacity` | Number | no |
+| `Density.RowHeight` | Number | no |
+| `Density.CommandBarHeight` | Number | no |
+| `VariableChip.Size` | Number | no |
+| `Dialog.MinWidth` | Number | no |
+| `Dialog.MaxWidth` | Number | no |
+| `Dialog.ListMaxHeight` | Number | no |
+| `Flyout.MethodPickerWidth` | Number | no |
+| `Space.XS` | Thickness | no |
+| `Space.S` | Thickness | no |
+| `Space.M` | Thickness | no |
+| `Space.L` | Thickness | no |
+| `Space.XL` | Thickness | no |
+| `Focus.RingThickness` | Thickness | no |
+| `Tab.SelectedBorderThickness` | Thickness | no |
+| `Tab.StripOverlap` | Thickness | no |
+| `Tab.InactiveInset` | Thickness | no |
+| `Tab.BodyPadding` | Thickness | no |
+| `Tab.SelectedBodyPadding` | Thickness | no |
+| `Tab.AccentThickness` | Thickness | no |
+| `Density.RowPadding` | Thickness | no |
+| `Row.Padding` | Thickness | no |
+| `Row.ChipMargin` | Thickness | no |
+| `Row.TypeMargin` | Thickness | no |
+| `SectionHeader.Margin` | Thickness | no |
+| `SectionHeader.SpacedMargin` | Thickness | no |
+| `Radius.Control` | CornerRadius | no |
+| `Radius.Tab` | CornerRadius | no |
+| `Inspector.LabelColumnWidth` | GridLength | no |
+| `Row.RemoveColumnWidth` | GridLength | no |
+| `Font.Mono` | FontFamily | no |
+| `Motion.Fast` | Duration | no |
+| `Motion.Normal` | Duration | no |
+| `Motion.Easing` | Easing | no |
 <!-- tokens:end -->

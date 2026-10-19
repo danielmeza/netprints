@@ -7,7 +7,7 @@
   <!-- Local variable inspector: the name and the type of a local of the opened method. -->
   <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.LocalVariableInspector}" RowDefinitions="Auto,Auto,Auto,Auto" Classes="propertyGrid inspectorRoot">
     <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="{StaticResource Inspector.LabelColumnWidth}" />
+      <ColumnDefinition Width="{DynamicResource Inspector.LabelColumnWidth}" />
       <ColumnDefinition Width="*" />
     </Grid.ColumnDefinitions>
     <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />

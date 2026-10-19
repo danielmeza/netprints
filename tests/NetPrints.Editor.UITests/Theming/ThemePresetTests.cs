@@ -1,11 +1,18 @@
 using Avalonia;
+using Avalonia.Animation.Easings;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Avalonia.VisualTree;
 using Microsoft.Extensions.Logging;
+using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.State;
 using NetPrints.Editor.Theming;
+using NetPrints.Editor.UITests.Driving;
+using NetPrints.Editor.UITests.Shell;
+using NetPrints.Testing.Ui.Driving;
 using Semi.Avalonia;
 
 namespace NetPrints.Editor.UITests.Theming;
@@ -23,6 +30,8 @@ public class ThemePresetTests
 
         return data;
     }
+
+    private static CancellationToken Token => TestContext.Current.CancellationToken;
 
     private static Application App => Application.Current ?? throw new InvalidOperationException("No application.");
 
@@ -146,6 +155,64 @@ public class ThemePresetTests
         finally
         {
             App.RequestedThemeVariant = ThemeVariant.Dark;
+        }
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void APresetCanSetEveryNewKindOfToken()
+    {
+        var overlay = new ThemeOverlay(App);
+        using IDisposable restore = new ThemeOverlayScope(App);
+
+        overlay.Apply(
+            ThemeBase.Dark,
+            new ThemePreset(
+                "test.sizes",
+                "Sizes",
+                ThemeBase.Dark,
+                null,
+                new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["Font.Body"] = "18",
+                    ["Space.S"] = "10",
+                    ["Radius.Control"] = "6",
+                    ["Inspector.LabelColumnWidth"] = "200",
+                    ["Font.Mono"] = "Courier New",
+                    ["Motion.Normal"] = "0:0:0.2",
+                    ["Motion.Easing"] = "0.25,0.1,0.25,1",
+                }));
+
+        Assert.Equal(18d, Resolve("Font.Body", ThemeVariant.Dark));
+        Assert.Equal(new Thickness(10), Resolve("Space.S", ThemeVariant.Dark));
+        Assert.Equal(new CornerRadius(6), Resolve("Radius.Control", ThemeVariant.Dark));
+        Assert.Equal(new GridLength(200), Resolve("Inspector.LabelColumnWidth", ThemeVariant.Dark));
+        Assert.Equal("Courier New", Assert.IsType<FontFamily>(Resolve("Font.Mono", ThemeVariant.Dark)).Name);
+        Assert.Equal(TimeSpan.FromSeconds(0.2), Resolve("Motion.Normal", ThemeVariant.Dark));
+        Assert.IsType<SplineEasing>(Resolve("Motion.Easing", ThemeVariant.Dark));
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task APresetSizeTokenReachesARenderedViewAtOnce()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await session.Page.Tree.SelectAsync(session.Page.Tree.Class("Program"), Token);
+        await new UiElement(session.Driver, new AutomationQuery(AutomationIds.ClassInspector)).WaitVisibleAsync(Token);
+        Grid inspector = session.Window.GetVisualDescendants().OfType<Grid>().Single(grid => AutomationProperties.GetAutomationId(grid) == AutomationIds.ClassInspector);
+        Assert.Equal(new GridLength(120), inspector.ColumnDefinitions[0].Width);
+
+        using (IDisposable restore = new ThemeOverlayScope(App))
+        {
+            new ThemeOverlay(App).Apply(
+                ThemeBase.Dark,
+                new ThemePreset(
+                    "test.sizes",
+                    "Sizes",
+                    ThemeBase.Dark,
+                    null,
+                    new Dictionary<string, string>(StringComparer.Ordinal) { ["Inspector.LabelColumnWidth"] = "200" }));
+            HeadlessDriver.Pump();
+
+            Assert.Equal(new GridLength(200), inspector.ColumnDefinitions[0].Width);
         }
     }
 

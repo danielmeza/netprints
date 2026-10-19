@@ -9,7 +9,7 @@
   <!-- The member variables of the active class, and the local variables of the active method: compact rows, "+" in the header, selection shows the inspector.
        One scroll viewer holds both lists, which grow with their rows (a class has tens of variables, not thousands). -->
   <Panel>
-    <TextBlock Margin="{StaticResource Space.S}" TextWrapping="Wrap" Text="Open a graph to see the variables of its class."
+    <TextBlock Margin="{DynamicResource Space.S}" TextWrapping="Wrap" Text="Open a graph to see the variables of its class."
                IsVisible="{Binding Current, Converter={x:Static ObjectConverters.IsNull}}"
                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariablesEmpty}" />
     <ScrollViewer VerticalScrollBarVisibility="Auto" DataContext="{Binding Current}"
@@ -19,7 +19,7 @@
           <Grid Classes="sectionHeaderRow">
             <Grid.ColumnDefinitions>
               <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="{StaticResource Row.RemoveColumnWidth}" />
+              <ColumnDefinition Width="{DynamicResource Row.RemoveColumnWidth}" />
             </Grid.ColumnDefinitions>
             <TextBlock Classes="sectionHeader" Text="Variables" />
             <Button Grid.Column="1" Classes="icon" HorizontalAlignment="Center" Command="{Binding CreateVariableCommand}" ToolTip.Tip="Add variable" AutomationProperties.Name="Add variable"
@@ -43,7 +43,7 @@
           <Grid Classes="sectionHeaderRow spaced">
             <Grid.ColumnDefinitions>
               <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="{StaticResource Row.RemoveColumnWidth}" />
+              <ColumnDefinition Width="{DynamicResource Row.RemoveColumnWidth}" />
             </Grid.ColumnDefinitions>
             <TextBlock Classes="sectionHeader" Text="{Binding MethodGroupHeader}" />
             <Button Grid.Column="1" Classes="icon" HorizontalAlignment="Center" Command="{Binding CreateLocalVariableCommand}" ToolTip.Tip="Add local variable" AutomationProperties.Name="Add local variable"

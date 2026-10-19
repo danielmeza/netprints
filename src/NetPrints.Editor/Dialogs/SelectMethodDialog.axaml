@@ -9,7 +9,7 @@
         x:DataType="eddialogs:SelectMethodDialogViewModel"
         Title="{Binding Title}"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
-        Width="{StaticResource Dialog.MaxWidth}" SizeToContent="Height" CanResize="False"
+        Width="{DynamicResource Dialog.MaxWidth}" SizeToContent="Height" CanResize="False"
         WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SelectMethodDialog}">
   <Interaction.Behaviors>
     <edb:DialogCloseBehavior />

@@ -21,9 +21,9 @@
       <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.UnsavedDontSaveButton}" Content="Don't save" Classes="dialogAction" Command="{Binding DontSaveCommand}" />
       <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.UnsavedSaveAllButton}" Content="Save all" Classes="dialogAction Primary" Theme="{DynamicResource SolidButton}" IsDefault="True" Command="{Binding SaveAllCommand}" />
     </ctl:DialogShell.Actions>
-    <StackPanel Spacing="{StaticResource Space.S.Size}">
+    <StackPanel Spacing="{DynamicResource Space.S.Size}">
       <TextBlock Text="These files have changes that are not saved:" TextWrapping="Wrap" />
-      <ListBox ItemsSource="{Binding Files}" MaxHeight="{StaticResource Dialog.ListMaxHeight}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.UnsavedFiles}"
+      <ListBox ItemsSource="{Binding Files}" MaxHeight="{DynamicResource Dialog.ListMaxHeight}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.UnsavedFiles}"
                AutomationProperties.Name="Unsaved files">
         <ListBox.ItemTemplate>
           <DataTemplate x:DataType="edlife:UnsavedFile">

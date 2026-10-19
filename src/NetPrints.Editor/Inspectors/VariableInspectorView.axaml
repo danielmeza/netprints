@@ -7,7 +7,7 @@
   <!-- Variable inspector (PAR-36) -->
   <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableInspector}" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Classes="propertyGrid" Margin="4">
     <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="{StaticResource Inspector.LabelColumnWidth}" />
+      <ColumnDefinition Width="{DynamicResource Inspector.LabelColumnWidth}" />
       <ColumnDefinition Width="*" />
     </Grid.ColumnDefinitions>
     <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />

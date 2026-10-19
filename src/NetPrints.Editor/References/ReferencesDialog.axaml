@@ -8,7 +8,7 @@
         x:DataType="edreferences:ReferenceListViewModel"
         Title="References"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
-        SizeToContent="Height" Width="{StaticResource Dialog.MaxWidth}"
+        SizeToContent="Height" Width="{DynamicResource Dialog.MaxWidth}"
         WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferencesDialog}">
   <ctl:DialogShell Title="{Binding $parent[Window].Title}" IconId="{x:Static icons:IconIds.References}">
     <ctl:DialogShell.Actions>
@@ -29,7 +29,7 @@
               ToolTip.Tip="Add a source code directory reference which searches for .cs files" />
     </Grid>
 
-    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="{StaticResource Dialog.ListMaxHeight}">
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="{DynamicResource Dialog.ListMaxHeight}">
       <ItemsControl x:Name="ReferenceList" ItemsSource="{Binding References}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="edreferences:DeclaredReferenceViewModel">
@@ -39,7 +39,7 @@
                          RemoveCommandParameter="{Binding}">
               <Grid ColumnDefinitions="*,150">
               <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
-                         FontSize="{StaticResource Font.Body}" ToolTip.Tip="{Binding DisplayText}" />
+                         FontSize="{DynamicResource Font.Body}" ToolTip.Tip="{Binding DisplayText}" />
               <!-- OneWay (R2-10, D10): toggling invokes SetIncludedCommand instead of a property setter
                    kicking off an untracked async edit. The parameter is the switch's own clicked state
                    (F-06), not the row's last-applied state, so a stale switch cannot invert the next click. -->

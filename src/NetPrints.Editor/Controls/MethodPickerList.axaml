@@ -9,7 +9,7 @@
   <UserControl.KeyBindings>
     <KeyBinding Gesture="Escape" Command="{Binding CancelCommand}" />
   </UserControl.KeyBindings>
-  <Grid RowDefinitions="Auto,Auto" RowSpacing="{StaticResource Space.S.Size}">
+  <Grid RowDefinitions="Auto,Auto" RowSpacing="{DynamicResource Space.S.Size}">
     <TextBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MethodPickerFilter}" Text="{Binding Filter}" PlaceholderText="Filter methods">
       <Interaction.Behaviors>
         <FocusOnAttachedToVisualTreeBehavior />
@@ -21,7 +21,7 @@
     </TextBox>
     <ctl:EmptyState Grid.Row="1" IconId="{x:Static icons:IconIds.EmptySearch}" Message="No method matches your filter." IsVisible="{Binding IsEmpty}"
                     AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MethodPickerEmpty}" />
-    <ListBox x:Name="RowList" Grid.Row="1" Classes="rows methodPicker" Focusable="True" Height="{StaticResource Dialog.ListMaxHeight}" ItemsSource="{Binding Rows}"
+    <ListBox x:Name="RowList" Grid.Row="1" Classes="rows methodPicker" Focusable="True" Height="{DynamicResource Dialog.ListMaxHeight}" ItemsSource="{Binding Rows}"
              SelectedItem="{Binding Selected}" SelectionMode="Single" IsVisible="{Binding !IsEmpty}"
              AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MethodPickerRows}">
       <Interaction.Behaviors>
@@ -33,7 +33,7 @@
           <Grid Classes="methodRow" Classes.header="{Binding IsHeader}" Classes.current="{Binding IsCurrent}" Classes.dimmed="{Binding IsOverridden}"
                 ColumnDefinitions="*,Auto" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MethodPickerRow}" AutomationProperties.Name="{Binding Text}">
             <TextBlock Classes="methodText" Text="{Binding Text}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="{StaticResource Space.S.Size}" VerticalAlignment="Center">
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="{DynamicResource Space.S.Size}" VerticalAlignment="Center">
               <TextBlock Classes="methodMark" Text="current" IsVisible="{Binding IsCurrent}" />
               <TextBlock Classes="methodMark" Text="abstract" IsVisible="{Binding IsAbstract}" />
               <TextBlock Classes="methodMark" Text="overridden" IsVisible="{Binding IsOverridden}" />

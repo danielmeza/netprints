@@ -11,7 +11,7 @@
   <Interaction.Behaviors>
     <edb:DialogCloseBehavior />
   </Interaction.Behaviors>
-  <Grid RowDefinitions="Auto,Auto,Auto,Auto" Margin="{StaticResource Space.M}" RowSpacing="8" MinWidth="{StaticResource Dialog.MinWidth}" MaxWidth="{StaticResource Dialog.MaxWidth}">
+  <Grid RowDefinitions="Auto,Auto,Auto,Auto" Margin="{DynamicResource Space.M}" RowSpacing="8" MinWidth="{DynamicResource Dialog.MinWidth}" MaxWidth="{DynamicResource Dialog.MaxWidth}">
     <TextBlock TextWrapping="Wrap" Text="{Binding Message}" />
     <TextBlock Grid.Row="1" Text="The copy goes in:" />
     <SelectableTextBlock Grid.Row="2" TextWrapping="Wrap" FontWeight="SemiBold" Text="{Binding TargetFolder}"

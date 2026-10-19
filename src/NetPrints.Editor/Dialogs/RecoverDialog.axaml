@@ -19,9 +19,9 @@
       <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.RecoverDiscardButton}" Content="Discard all" Classes="dialogAction" IsCancel="True" Command="{Binding DiscardCommand}" />
       <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.RecoverRestoreButton}" Content="Apply" Classes="dialogAction Primary" Theme="{DynamicResource SolidButton}" IsDefault="True" Command="{Binding RestoreCommand}" />
     </ctl:DialogShell.Actions>
-    <StackPanel Spacing="{StaticResource Space.S.Size}">
+    <StackPanel Spacing="{DynamicResource Space.S.Size}">
       <TextBlock Text="The editor found backups of unsaved changes. Checked files are restored; unchecked ones are discarded." TextWrapping="Wrap" />
-      <ListBox ItemsSource="{Binding Rows}" MaxHeight="{StaticResource Dialog.ListMaxHeight}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.RecoverFiles}"
+      <ListBox ItemsSource="{Binding Rows}" MaxHeight="{DynamicResource Dialog.ListMaxHeight}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.RecoverFiles}"
                AutomationProperties.Name="Backed-up files">
         <ListBox.ItemTemplate>
           <DataTemplate x:DataType="eddialogs:RecoveryRowViewModel">

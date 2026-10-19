@@ -92,6 +92,19 @@ public class ThemeFileLoaderTests
     [InlineData("Node.CardShadow", "lots", false)]
     [InlineData("Pin.TypeShape", "diamond", true)]
     [InlineData("Pin.TypeShape", "M0,0 L1,1", false)]
+    [InlineData("Space.S", "8,2", true)]
+    [InlineData("Space.S", "wide", false)]
+    [InlineData("Radius.Control", "4,4,0,0", true)]
+    [InlineData("Radius.Control", "round", false)]
+    [InlineData("Inspector.LabelColumnWidth", "Auto", true)]
+    [InlineData("Inspector.LabelColumnWidth", "wide", false)]
+    [InlineData("Font.Mono", "Cascadia Code", true)]
+    [InlineData("Font.Mono", "avares://NetPrints.Editor/Assets/Fonts#Cascadia Mono", false)]
+    [InlineData("Motion.Fast", "0:0:0.2", true)]
+    [InlineData("Motion.Fast", "-0:0:1", false)]
+    [InlineData("Motion.Easing", "0.25,0.1,0.25,1", true)]
+    [InlineData("Motion.Easing", "CubicEaseOut", false)]
+    [InlineData("Font.Body", "18", true)]
     public void ValuesAreParsedByTheKindOfTheToken(string name, string text, bool valid)
     {
         ThemeToken token = ThemeTokenCatalogue.Find(name) ?? throw new InvalidOperationException(name);

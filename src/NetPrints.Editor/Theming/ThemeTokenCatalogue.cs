@@ -5,8 +5,7 @@ using NetPrints.Editor.Graph.Pins;
 namespace NetPrints.Editor.Theming;
 
 /// <summary>
-/// The theme token catalogue (FR-066, ADR-0035 decision 1): every colour, shadow, shape, opacity and thickness a theme can set.
-/// Sizes, fonts and spacing that no variant changes stay plain resources until user themes (B1) widen the catalogue.
+/// The theme token catalogue (FR-066, ADR-0035 decision 1): every colour, shadow, shape, opacity, size, spacing, thickness, radius, font, duration and easing a theme can set.
 /// </summary>
 public static class ThemeTokenCatalogue
 {
@@ -29,6 +28,27 @@ public static class ThemeTokenCatalogue
 
     private static readonly string[] NumberNames = ["Wire.Opacity", "Wire.Thickness", "Inspector.RowSpacing"];
 
+    private static readonly string[] SizeNames =
+    [
+        "StartPage.RecentTileSize", "Font.Caption", "Font.Body", "Font.Subtitle", "Font.Title", "Font.Watermark",
+        "Space.XS.Size", "Space.S.Size", "Space.M.Size", "Space.L.Size", "Space.XL.Size", "Icon.Small", "Icon.Medium",
+        "Icon.Large", "Tab.Height", "Tab.CloseButtonSize", "Tab.InactiveOpacity", "Density.RowHeight",
+        "Density.CommandBarHeight", "VariableChip.Size", "Dialog.MinWidth", "Dialog.MaxWidth", "Dialog.ListMaxHeight",
+        "Flyout.MethodPickerWidth",
+    ];
+
+    private static readonly string[] ThicknessNames =
+    [
+        "Space.XS", "Space.S", "Space.M", "Space.L", "Space.XL", "Focus.RingThickness", "Tab.SelectedBorderThickness",
+        "Tab.StripOverlap", "Tab.InactiveInset", "Tab.BodyPadding", "Tab.SelectedBodyPadding", "Tab.AccentThickness",
+        "Density.RowPadding", "Row.Padding", "Row.ChipMargin", "Row.TypeMargin", "SectionHeader.Margin",
+        "SectionHeader.SpacedMargin",
+    ];
+
+    private static readonly string[] RadiusNames = ["Radius.Control", "Radius.Tab"];
+
+    private static readonly string[] GridLengthNames = ["Inspector.LabelColumnWidth", "Row.RemoveColumnWidth"];
+
     /// <summary>Gets the key of the type-pin shape token.</summary>
     public const string PinShapeToken = "Pin.TypeShape";
 
@@ -43,6 +63,14 @@ public static class ThemeTokenCatalogue
         .. NumberNames.Select(name => new ThemeToken(name, ThemeTokenKind.Number)),
         new ThemeToken(PinShapeToken, ThemeTokenKind.Shape, PerVariant: false),
         new ThemeToken("Pin.OutlineThickness", ThemeTokenKind.Number, PerVariant: false),
+        .. SizeNames.Select(name => new ThemeToken(name, ThemeTokenKind.Number, PerVariant: false)),
+        .. ThicknessNames.Select(name => new ThemeToken(name, ThemeTokenKind.Thickness, PerVariant: false)),
+        .. RadiusNames.Select(name => new ThemeToken(name, ThemeTokenKind.CornerRadius, PerVariant: false)),
+        .. GridLengthNames.Select(name => new ThemeToken(name, ThemeTokenKind.GridLength, PerVariant: false)),
+        new ThemeToken("Font.Mono", ThemeTokenKind.FontFamily, PerVariant: false),
+        new ThemeToken("Motion.Fast", ThemeTokenKind.Duration, PerVariant: false),
+        new ThemeToken("Motion.Normal", ThemeTokenKind.Duration, PerVariant: false),
+        new ThemeToken("Motion.Easing", ThemeTokenKind.Easing, PerVariant: false),
     ];
 
     private static readonly FrozenDictionary<string, ThemeToken> ByName = All.ToFrozenDictionary(token => token.Name, StringComparer.Ordinal);

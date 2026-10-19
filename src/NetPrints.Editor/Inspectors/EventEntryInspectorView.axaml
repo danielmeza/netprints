@@ -9,7 +9,7 @@
   <!-- Event entry inspector (US8, FR-071 to FR-074): name, kind and arguments; an override's are read-only. -->
   <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspector}" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Classes="propertyGrid">
     <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="{StaticResource Inspector.LabelColumnWidth}" />
+      <ColumnDefinition Width="{DynamicResource Inspector.LabelColumnWidth}" />
       <ColumnDefinition Width="*" />
     </Grid.ColumnDefinitions>
     <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />

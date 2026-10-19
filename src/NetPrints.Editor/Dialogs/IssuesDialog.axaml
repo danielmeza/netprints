@@ -21,11 +21,11 @@
         </Interaction.Behaviors>
       </Button>
     </ctl:DialogShell.Actions>
-    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="{StaticResource Dialog.ListMaxHeight}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="{DynamicResource Dialog.ListMaxHeight}">
       <ItemsControl AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ExtensionLoadErrors}" ItemsSource="{Binding Issues}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="x:String">
-            <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="2,4" FontFamily="{StaticResource Font.Mono}"
+            <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="2,4" FontFamily="{DynamicResource Font.Mono}"
                        AutomationProperties.AutomationId="{x:Static ed:AutomationIds.IssueRow}" AutomationProperties.Name="{Binding}" />
           </DataTemplate>
         </ItemsControl.ItemTemplate>

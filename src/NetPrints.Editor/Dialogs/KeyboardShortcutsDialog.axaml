@@ -29,7 +29,7 @@
         </Interaction.Behaviors>
       </Button>
     </ctl:DialogShell.Actions>
-    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="{StaticResource Dialog.ListMaxHeight}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="{DynamicResource Dialog.ListMaxHeight}">
       <ItemsControl AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsList}" ItemsSource="{Binding Groups}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="edks:ShortcutGroup">
@@ -46,7 +46,7 @@
                         <TextBlock Classes="secondary" Text="{Binding Owner}" IsVisible="{Binding Owner, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsOwner}" />
                       </StackPanel>
-                      <TextBlock Grid.Column="1" Text="{Binding Shortcuts}" FontFamily="{StaticResource Font.Mono}" />
+                      <TextBlock Grid.Column="1" Text="{Binding Shortcuts}" FontFamily="{DynamicResource Font.Mono}" />
                     </Grid>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>

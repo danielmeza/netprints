@@ -504,7 +504,7 @@ namespace NetPrints.Tests.Core
         {
             Assert.Contains(
                 StyleSetters(LoadAxaml("src/NetPrints.Editor/EditorStyles.axaml"), "TextBox.codeBlock"),
-                s => s.Attribute("Property")?.Value == "FontFamily" && s.Attribute("Value")?.Value == "{StaticResource Font.Mono}");
+                s => s.Attribute("Property")?.Value == "FontFamily" && s.Attribute("Value")?.Value == "{DynamicResource Font.Mono}");
             Assert.Contains(
                 LoadAxaml("src/NetPrints.Editor/Dialogs/ErrorDialog.axaml").Document.Descendants(),
                 e => e.Name.LocalName == "TextBox" && e.Attribute("Classes")?.Value.Split(' ').Contains("codeBlock") == true);
