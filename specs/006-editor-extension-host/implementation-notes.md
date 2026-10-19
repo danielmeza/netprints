@@ -1849,3 +1849,12 @@ T076, Checkpoint C2, gate items measured on this head (Release).
   `TwoGenuineDiagnosticsWithTheSameTextInOneSourceStayTwoRows` as a guard. The E2E is unchanged.
 - E2E: `ShellMainFlowTests` with NETPRINTS_E2E=1, own Xvfb from :300, fresh state and config dirs, 5 runs in a row: 5/5 passed (about 82 s each).
   The error-list, panel, row and double-click behavior tests are green; `dotnet format` clean; trim ratchet 8 of 8.
+
+## Batch T112-4 (T112, part 4: DD-6, DD-16, DD-17, DD-19)
+
+- **DD-6** (f2a157ff): a session group shadows the app-group items of an extension whose project copy it holds (`ContributionGroup.ShadowedOwners`, `IContributionGroupBuilder.Shadow`, filtering in the registry's duplicate checks and in the snapshot). Red: `AProjectsCopyOfAUserExtensionServesItsSession` (four DuplicateId issues). Green.
+- **DD-16** (7ce5c3b6): `TooltipConnection` (NPXE0005) is the subject of a connection tooltip; the built-in provider reads the view model through the internal `IEditorTooltipProvider`. API hash row updated. Red: `AnExtensionTooltipProviderGetsTheModelPinsOfTheConnection` (the subject was a `ConnectionViewModel`). Green.
+- **DD-17** (1dd5275e): `ContainedDataTemplate` wraps an extension's data templates; a template that throws shows `ContributionErrorView` and logs 1044. Red: `ATemplateThatThrowsShowsThePlaceholderNamingTheExtension` (`InvalidOperationException: view template` out of `window.Show()`). Green.
+- **DD-19** (30f272cb): ADR-0020 Amendment 2 records the app and session groups and the shadowing. Docs only.
+- Gates: filtered runs green, `dotnet format` clean, trim 8 of 8, `pack-local.sh` and `verify-packages.sh` passed.
+- Decision: `ViewResourceLoader.Sync` takes the failure callback as an optional last parameter (default null), so the existing two-argument callers compile unchanged.
