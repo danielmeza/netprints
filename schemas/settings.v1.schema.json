@@ -67,12 +67,9 @@
             "type": "object",
             "properties": {
               "command": {
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "default": null,
-                "description": "The id of the command"
+                "type": "string",
+                "description": "The id of the command",
+                "minLength": 1
               },
               "scope": {
                 "type": [
@@ -104,7 +101,10 @@
                 "default": null,
                 "description": "Default gestures removed from the command, in canonical form"
               }
-            }
+            },
+            "required": [
+              "command"
+            ]
           },
           "description": "Your changes to the default key bindings, one entry per changed command"
         }

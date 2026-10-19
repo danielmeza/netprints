@@ -61,6 +61,19 @@ public sealed class SettingsSchemaTests
     }
 
     [Fact]
+    public void AKeyboardEntryNeedsACommandAndTheSchemaSaysSo()
+    {
+        var schema = Assert.IsType<JsonObject>(JsonNode.Parse(SettingsSchemaFile.Generate()));
+        JsonObject bindings = Assert.IsType<JsonObject>(Assert.IsType<JsonObject>(Section(schema, KeyboardSettings.SectionId)["properties"])["bindings"]);
+        JsonObject entry = Assert.IsType<JsonObject>(bindings["items"]);
+        JsonObject command = Assert.IsType<JsonObject>(Assert.IsType<JsonObject>(entry["properties"])["command"]);
+
+        Assert.Equal(["command"], Assert.IsType<JsonArray>(entry["required"]).Select(name => (string?)name));
+        Assert.Equal("string", (string?)command["type"]);
+        Assert.Equal(1, (int?)command["minLength"]);
+    }
+
+    [Fact]
     public void TheDataAnnotationRangesAppearInTheSchema()
     {
         JsonObject timeout = Property(RunSettings.SectionId, "stopTimeoutSeconds");

@@ -82,16 +82,32 @@ public sealed class KeyboardSettingsLoadTests : IDisposable
     }
 
     [Theory]
-    [InlineData("""{"keyboard":{"bindings":[null]}}""")]
-    [InlineData("""{"keyboard":{"bindings":[{"add":["Ctrl+K"]}]}}""")]
-    public void ANullEntryOrAnEntryWithoutCommandMakesTheSectionUseItsDefaults(string json)
+    [InlineData("""{"add":["Ctrl+K"]}""")]
+    [InlineData("""{"command":null,"add":["Ctrl+K"]}""")]
+    public void AnEntryWithoutCommandIsKeptAndListedAsNotLoadedWhileTheOthersLoad(string bad)
     {
-        Write(json);
+        Write("""{"keyboard":{"bindings":[{"command":"probe.cmd","add":["Ctrl+K"]},""" + bad + "," + """{"command":"probe.other","remove":["Ctrl+L"]}]}}""");
         JsonFileSettingsStore store = NewStore();
 
-        Assert.Empty(store.Get(KeyboardSettings.Descriptor).Bindings);
-        SettingsSectionIssue issue = Assert.Single(store.Issues);
-        Assert.Equal("keyboard", issue.SectionId);
-        Assert.Null(issue.Code);
+        KeyboardSettings settings = store.Get(KeyboardSettings.Descriptor);
+        EffectiveKeyBindings result = KeyBindingResolver.Resolve(
+            [new CommandDescriptor("probe.cmd", "probe.cmd", new NoopHandler()), new CommandDescriptor("probe.other", "probe.other", new NoopHandler())],
+            settings);
+
+        Assert.Equal(["probe.cmd", "", "probe.other"], settings.Bindings.Select(entry => entry.Command));
+        Assert.Equal(["Ctrl+K"], result.For("probe.cmd").Effective.Select(gesture => gesture.ToString()));
+        KeyBindingOverride notLoaded = Assert.Single(result.NotLoaded);
+        Assert.Equal(["Ctrl+K"], notLoaded.Add);
+        Assert.Empty(store.Issues);
+    }
+
+    [Fact]
+    public void ANullEntryIsDroppedAndTheOthersLoad()
+    {
+        Write("""{"keyboard":{"bindings":[{"command":"probe.cmd","add":["Ctrl+K"]},null,{"command":"probe.other","remove":["Ctrl+L"]}]}}""");
+        JsonFileSettingsStore store = NewStore();
+
+        Assert.Equal(["probe.cmd", "probe.other"], store.Get(KeyboardSettings.Descriptor).Bindings.Select(entry => entry.Command));
+        Assert.Empty(store.Issues);
     }
 }

@@ -261,6 +261,27 @@ public sealed class KeyboardShortcutsPageTests : IDisposable
     }
 
     [Fact]
+    public async Task ARebindKeepsTheOtherBindingsOfAFileWithAnEntryThatHasNoCommand()
+    {
+        Directory.CreateDirectory(folder);
+        await File.WriteAllTextAsync(
+            FilePath,
+            """{"keyboard":{"bindings":[{"command":"ext.gone.run","add":["Ctrl+Alt+G"]},{"add":["Ctrl+Alt+K"]},{"command":"netprints.command.beta","remove":["Ctrl+Alt+C"]}]}}""",
+            TestContext.Current.CancellationToken);
+        JsonFileSettingsStore store = NewStore();
+        KeyboardShortcutsItemViewModel page = Open(NewRegistry(store), store);
+
+        await Record(page, Alpha, "Ctrl+Alt+X");
+
+        KeyBindingOverride[] saved = [.. NewStore().Get(KeyboardSettings.Descriptor).Bindings];
+        Assert.Contains(saved, entry => entry.Command == "ext.gone.run" && entry.Add.SequenceEqual(["Ctrl+Alt+G"]));
+        Assert.Contains(saved, entry => entry.Command == Beta && entry.Remove.SequenceEqual(["Ctrl+Alt+C"]));
+        Assert.Contains(saved, entry => entry.Command == Alpha && entry.Add.SequenceEqual(["Ctrl+Alt+X"]));
+        Assert.Contains(saved, entry => entry.Command.Length == 0 && entry.Add.SequenceEqual(["Ctrl+Alt+K"]));
+        Assert.Equal(2, page.NotLoaded.Count);
+    }
+
+    [Fact]
     public async Task ChangesSurviveARestart()
     {
         JsonFileSettingsStore store = NewStore();

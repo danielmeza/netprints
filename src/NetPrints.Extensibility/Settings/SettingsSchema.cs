@@ -23,6 +23,13 @@ public static class SettingsSchema
     public const string ChoicesKeyword = "x-netprints-choices";
 
     private const string DescriptionKeyword = "description";
+    private const string PropertiesKeyword = "properties";
+    private const string RequiredKeyword = "required";
+    private const string TypeKeyword = "type";
+    private const string DefaultKeyword = "default";
+    private const string MinLengthKeyword = "minLength";
+    private const string NullType = "null";
+    private const string StringType = "string";
 
     /// <summary>
     /// Exports the schema of a section.
@@ -66,8 +73,57 @@ public static class SettingsSchema
         }
     }
 
+    private static void RequireMembers(JsonTypeInfo typeInfo, JsonObject schema)
+    {
+        if (schema[PropertiesKeyword] is not JsonObject properties)
+        {
+            return;
+        }
+
+        JsonArray required = schema[RequiredKeyword] as JsonArray ?? [];
+        foreach (JsonPropertyInfo property in typeInfo.Properties)
+        {
+            if (property.AttributeProvider?.IsDefined(typeof(RequiredAttribute), true) != true || properties[property.Name] is not JsonObject member)
+            {
+                continue;
+            }
+
+            if (!required.Any(name => (string?)name == property.Name))
+            {
+                required.Add(property.Name);
+            }
+
+            MakeNonNull(member);
+        }
+
+        if (required.Count > 0)
+        {
+            schema[RequiredKeyword] = required;
+        }
+    }
+
+    private static void MakeNonNull(JsonObject member)
+    {
+        if (member[TypeKeyword] is JsonArray types)
+        {
+            string[] kept = [.. types.Select(type => (string?)type).OfType<string>().Where(type => type != NullType)];
+            member[TypeKeyword] = kept.Length == 1 ? kept[0] : new JsonArray([.. kept.Select(type => JsonValue.Create(type))]);
+        }
+
+        member.Remove(DefaultKeyword);
+        if ((string?)member[TypeKeyword] == StringType && member[MinLengthKeyword] is null)
+        {
+            member[MinLengthKeyword] = 1;
+        }
+    }
+
     private static JsonNode Transform(JsonSchemaExporterContext context, JsonNode schema)
     {
+        if (schema is JsonObject objectSchema && context.TypeInfo.Kind == JsonTypeInfoKind.Object)
+        {
+            RequireMembers(context.TypeInfo, objectSchema);
+        }
+
         ICustomAttributeProvider? provider = context.PropertyInfo?.AttributeProvider;
         if (provider is null || schema is not JsonObject obj)
         {
