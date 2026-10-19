@@ -57,6 +57,58 @@
         }
       }
     },
+    "keyboard": {
+      "type": "object",
+      "properties": {
+        "bindings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "command": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null,
+                "description": "The id of the command"
+              },
+              "scope": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": null,
+                "description": "The scope of the command when the entry was written"
+              },
+              "add": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "type": "string"
+                },
+                "default": null,
+                "description": "Gestures added to the command, in canonical form"
+              },
+              "remove": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "type": "string"
+                },
+                "default": null,
+                "description": "Default gestures removed from the command, in canonical form"
+              }
+            }
+          },
+          "description": "Your changes to the default key bindings, one entry per changed command"
+        }
+      }
+    },
     "extensions": {
       "type": "object",
       "properties": {

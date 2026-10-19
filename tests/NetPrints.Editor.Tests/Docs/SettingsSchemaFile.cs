@@ -35,6 +35,7 @@ internal static class SettingsSchemaFile
     [
         Describe(NetPrintsSettings.Descriptor, NetPrintsSettings.SectionId),
         Describe(RunSettings.Descriptor, RunSettings.SectionId),
+        Describe(KeyboardSettings.Descriptor, KeyboardSettings.SectionId),
         Describe(EditorSettings.Descriptor, EditorSettings.SectionId),
     ];
 

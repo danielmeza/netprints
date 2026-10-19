@@ -56,6 +56,7 @@ public sealed class SettingsSchemaTests
         Assert.NotNull(Section(schema, NetPrintsSettings.SectionId));
         Assert.NotNull(Section(schema, RunSettings.SectionId));
         Assert.NotNull(Section(schema, EditorSettings.SectionId));
+        Assert.NotNull(Section(schema, KeyboardSettings.SectionId));
         Assert.True((bool?)schema["additionalProperties"]);
     }
 
@@ -89,7 +90,7 @@ public sealed class SettingsSchemaTests
     public void EverySettingHasADescriptionInTheSchema()
     {
         var schema = Assert.IsType<JsonObject>(JsonNode.Parse(SettingsSchemaFile.Generate()));
-        foreach (string key in new[] { NetPrintsSettings.SectionId, RunSettings.SectionId, EditorSettings.SectionId })
+        foreach (string key in new[] { NetPrintsSettings.SectionId, RunSettings.SectionId, EditorSettings.SectionId, KeyboardSettings.SectionId })
         {
             foreach (KeyValuePair<string, JsonNode?> property in Assert.IsType<JsonObject>(Section(schema, key)["properties"]))
             {
@@ -121,6 +122,7 @@ public sealed class SettingsSchemaTests
         Assert.Contains("| `netprints.editor.darkPreset` | string | `netprints.dark` |", table, StringComparison.Ordinal);
         Assert.Contains("| `netprints.language` | string | empty |", table, StringComparison.Ordinal);
         Assert.Contains("| `netprints.extensionPaths` | list of string | empty |", table, StringComparison.Ordinal);
+        Assert.Contains("| `keyboard.bindings` |", table, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -144,6 +146,7 @@ public sealed class SettingsSchemaTests
         Assert.Equal("es-MX", store.Get(NetPrintsSettings.Descriptor).Language);
         Assert.Equal(600, store.Get(RunSettings.Descriptor).StopTimeoutSeconds);
         Assert.Equal("light", store.Get(EditorSettings.Descriptor).Theme.ToString().ToLowerInvariant());
+        Assert.Equal("netprints.command.save", Assert.Single(store.Get(KeyboardSettings.Descriptor).Bindings).Command);
         Assert.Empty(store.Issues);
     }
 }
