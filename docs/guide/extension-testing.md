@@ -127,4 +127,4 @@ Editor contributions follow the editor's rules: ids start with the extension id,
 
 The extension's `.axaml` views hold no colour literal outside a theme dictionary and no `FontSize` or `FontFamily` literal, the E2 and E8 rules of the editor's own XAML tests. Use theme tokens (`{DynamicResource ...}`), style classes and the type ramp, so the views follow the theme. Files whose root is `Application`, `Styles` or `ResourceDictionary` are not scanned.
 
-Two more checks exist outside the suite's `NPK001` to `NPK016` run: NPK014 (graph rules) arrives with the graph rules, and NPK017 (API compatibility) belongs to `netprints extension verify`, which does not need a test project.
+Two more checks exist outside the suite's `NPK001` to `NPK016` run: NPK014 (graph rules) arrives with the graph rules, and NPK017 (API compatibility) belongs to [`netprints extension verify`](cli.md#extension-verify--check-an-extension-without-loading-it), which does not need a test project and also runs NPK001 to NPK003.

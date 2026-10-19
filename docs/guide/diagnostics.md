@@ -127,6 +127,7 @@ The conformance suite of [`NetPrints.Extensibility.Testing`](extensions.md) repo
 | NPK013 | error | The extension's service provider does not build or validate (a missing registration, a singleton that captures a scoped service), the extension registers a type it does not own or replaces a host export, or a scoped or transient service is still reachable after its session is disposed. |
 | NPK015 | error | An editor contribution id does not start with the extension id, a label has neither a default text nor a string resource, a gesture does not parse back to itself or has no modifier on a global command, or an icon id is not the extension id, a dot and a name that a view resource defines. |
 | NPK016 | error | A `.axaml` view of the extension holds a colour literal outside a theme dictionary or a `FontSize` or `FontFamily` literal. |
+| NPK017 | error | The extension references a NetPrints type or member that the host does not have. Reported by `netprints extension verify`, not by the conformance suite; each missing member is listed with the extension type that references it. |
 
 ## NPS: repository style
 

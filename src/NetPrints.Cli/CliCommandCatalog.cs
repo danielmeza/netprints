@@ -17,6 +17,8 @@ internal static class CliCommandCatalog
     private const string SampleAssembly = "MyLibrary.dll";
     private const string SampleCatalog = "mylibrary.npcat.json";
     private const string SampleCatalogConfig = "netprints.catalog.json";
+    private const string SampleExtension = "bin/Release/extension";
+    private const string SamplePackage = "MyExtension.1.0.0.nupkg";
     private const string SampleGraph = "samples/HelloWorld/HelloWorld.Program.netpc.json";
 
     /// <summary>Gets all registered commands, in help order.</summary>
@@ -61,5 +63,13 @@ internal static class CliCommandCatalog
             .WithExample(GitInstallCommand.Name)
             .WithExample(GitInstallCommand.Name, "--merge", "--command", "dotnet tool run netprints")
             .WithExample(GitInstallCommand.Name, "--global", "--uninstall")),
+        new(ExtensionVerifyCommand.Branch, config => config.AddBranch(ExtensionVerifyCommand.Branch, branch =>
+        {
+            branch.SetDescription("Work with NetPrints extensions.");
+            branch.AddCommand<ExtensionVerifyCommand>(ExtensionVerifyCommand.Name)
+                .WithDescription("Check an extension folder or package without loading it: manifest, packaging, type identity and API compatibility with the host.")
+                .WithExample(ExtensionVerifyCommand.Branch, ExtensionVerifyCommand.Name, SampleExtension)
+                .WithExample(ExtensionVerifyCommand.Branch, ExtensionVerifyCommand.Name, SamplePackage, "--format", "json");
+        })),
     ];
 }

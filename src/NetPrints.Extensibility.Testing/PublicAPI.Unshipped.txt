@@ -143,3 +143,47 @@ static NetPrints.Extensibility.Testing.HarnessLogEntry.operator !=(NetPrints.Ext
 static NetPrints.Extensibility.Testing.HarnessLogEntry.operator ==(NetPrints.Extensibility.Testing.HarnessLogEntry? left, NetPrints.Extensibility.Testing.HarnessLogEntry? right) -> bool
 static NetPrints.Extensibility.Testing.RecordedContribution.operator !=(NetPrints.Extensibility.Testing.RecordedContribution? left, NetPrints.Extensibility.Testing.RecordedContribution? right) -> bool
 static NetPrints.Extensibility.Testing.RecordedContribution.operator ==(NetPrints.Extensibility.Testing.RecordedContribution? left, NetPrints.Extensibility.Testing.RecordedContribution? right) -> bool
+const NetPrints.Extensibility.Testing.NpkDiagnosticCodes.ApiCompatibility = "NPK017" -> string!
+NetPrints.Extensibility.Testing.ExtensionVerification
+NetPrints.Extensibility.Testing.ExtensionVerification.<Clone>$() -> NetPrints.Extensibility.Testing.ExtensionVerification!
+NetPrints.Extensibility.Testing.ExtensionVerification.Deconstruct(out NetPrints.Extensibility.Testing.ConformanceReport! Report, out string? ExtensionId, out string? ExtensionVersion, out string? NetprintsApi, out System.Collections.Generic.IReadOnlyList<string!>! HostAssemblies, out System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Testing.MissingMember!>! MissingMembers) -> void
+NetPrints.Extensibility.Testing.ExtensionVerification.Equals(NetPrints.Extensibility.Testing.ExtensionVerification? other) -> bool
+NetPrints.Extensibility.Testing.ExtensionVerification.ExtensionId.get -> string?
+NetPrints.Extensibility.Testing.ExtensionVerification.ExtensionId.init -> void
+NetPrints.Extensibility.Testing.ExtensionVerification.ExtensionVerification(NetPrints.Extensibility.Testing.ConformanceReport! Report, string? ExtensionId, string? ExtensionVersion, string? NetprintsApi, System.Collections.Generic.IReadOnlyList<string!>! HostAssemblies, System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Testing.MissingMember!>! MissingMembers) -> void
+NetPrints.Extensibility.Testing.ExtensionVerification.ExtensionVersion.get -> string?
+NetPrints.Extensibility.Testing.ExtensionVerification.ExtensionVersion.init -> void
+NetPrints.Extensibility.Testing.ExtensionVerification.HostAssemblies.get -> System.Collections.Generic.IReadOnlyList<string!>!
+NetPrints.Extensibility.Testing.ExtensionVerification.HostAssemblies.init -> void
+NetPrints.Extensibility.Testing.ExtensionVerification.MissingMembers.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Testing.MissingMember!>!
+NetPrints.Extensibility.Testing.ExtensionVerification.MissingMembers.init -> void
+NetPrints.Extensibility.Testing.ExtensionVerification.NetprintsApi.get -> string?
+NetPrints.Extensibility.Testing.ExtensionVerification.NetprintsApi.init -> void
+NetPrints.Extensibility.Testing.ExtensionVerification.Report.get -> NetPrints.Extensibility.Testing.ConformanceReport!
+NetPrints.Extensibility.Testing.ExtensionVerification.Report.init -> void
+NetPrints.Extensibility.Testing.ExtensionVerifier
+NetPrints.Extensibility.Testing.MissingMember
+NetPrints.Extensibility.Testing.MissingMember.Assembly.get -> string!
+NetPrints.Extensibility.Testing.MissingMember.Assembly.init -> void
+NetPrints.Extensibility.Testing.MissingMember.<Clone>$() -> NetPrints.Extensibility.Testing.MissingMember!
+NetPrints.Extensibility.Testing.MissingMember.Deconstruct(out string! Assembly, out string! Type, out string? Member, out string! ReferencedFrom) -> void
+NetPrints.Extensibility.Testing.MissingMember.Equals(NetPrints.Extensibility.Testing.MissingMember? other) -> bool
+NetPrints.Extensibility.Testing.MissingMember.Member.get -> string?
+NetPrints.Extensibility.Testing.MissingMember.Member.init -> void
+NetPrints.Extensibility.Testing.MissingMember.MissingMember(string! Assembly, string! Type, string? Member, string! ReferencedFrom) -> void
+NetPrints.Extensibility.Testing.MissingMember.ReferencedFrom.get -> string!
+NetPrints.Extensibility.Testing.MissingMember.ReferencedFrom.init -> void
+NetPrints.Extensibility.Testing.MissingMember.Type.get -> string!
+NetPrints.Extensibility.Testing.MissingMember.Type.init -> void
+override NetPrints.Extensibility.Testing.ExtensionVerification.Equals(object? obj) -> bool
+override NetPrints.Extensibility.Testing.ExtensionVerification.GetHashCode() -> int
+override NetPrints.Extensibility.Testing.ExtensionVerification.ToString() -> string!
+override NetPrints.Extensibility.Testing.MissingMember.Equals(object? obj) -> bool
+override NetPrints.Extensibility.Testing.MissingMember.GetHashCode() -> int
+override NetPrints.Extensibility.Testing.MissingMember.ToString() -> string!
+static NetPrints.Extensibility.Testing.ExtensionVerification.operator !=(NetPrints.Extensibility.Testing.ExtensionVerification? left, NetPrints.Extensibility.Testing.ExtensionVerification? right) -> bool
+static NetPrints.Extensibility.Testing.ExtensionVerification.operator ==(NetPrints.Extensibility.Testing.ExtensionVerification? left, NetPrints.Extensibility.Testing.ExtensionVerification? right) -> bool
+static NetPrints.Extensibility.Testing.ExtensionVerifier.VerifyFolderAsync(string! folder, string? hostFolder, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<NetPrints.Extensibility.Testing.ExtensionVerification!>!
+static NetPrints.Extensibility.Testing.ExtensionVerifier.VerifyPackageAsync(string! package, string? hostFolder, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<NetPrints.Extensibility.Testing.ExtensionVerification!>!
+static NetPrints.Extensibility.Testing.MissingMember.operator !=(NetPrints.Extensibility.Testing.MissingMember? left, NetPrints.Extensibility.Testing.MissingMember? right) -> bool
+static NetPrints.Extensibility.Testing.MissingMember.operator ==(NetPrints.Extensibility.Testing.MissingMember? left, NetPrints.Extensibility.Testing.MissingMember? right) -> bool

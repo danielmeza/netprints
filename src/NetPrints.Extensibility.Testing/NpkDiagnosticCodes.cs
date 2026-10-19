@@ -51,7 +51,10 @@ public static class NpkDiagnosticCodes
     /// <summary>The contributed views hold no colour or font literal a theme cannot reach.</summary>
     public const string ContributedViews = "NPK016";
 
-    /// <summary>The checks implemented by this version, in order.</summary>
+    /// <summary>Every NetPrints type and member the extension references exists in the host; run by <c>netprints extension verify</c>, not by the conformance suite.</summary>
+    public const string ApiCompatibility = "NPK017";
+
+    /// <summary>The checks of the conformance suite implemented by this version, in order.</summary>
     public static IReadOnlyList<string> All { get; } =
     [
         Manifest,

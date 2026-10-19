@@ -896,7 +896,7 @@ contracts/cli.md §2–§3. **Independent test**: US10's independent test. **Gat
   loader's folder under `extension/` (US10 scenario 1). Then `src/NetPrints.Templates/` (the template package project)
   with the `netprints-extension` template: the extension project with the packing set up inline, and its test project on
   `ConformanceTests<T>`.
-- [ ] T107 [US10] `netprints extension verify` and ADR-0041 (FR-080, FR-116, contracts/cli.md §3; 2 units). Test first:
+- [x] T107 [US10] `netprints extension verify` and ADR-0041 (FR-080, FR-116, contracts/cli.md §3; 2 units). Test first:
   `tests/NetPrints.Cli.Tests/Commands/ExtensionVerifyCommandTests.cs`: a passing fixture package exits 0; one fixture
   per failing check (NPK001, NPK002, NPK003, NPK017) exits 1 with its message, and the NPK017 fixture lists each missing
   member (US10 scenario 3); a missing or wrong path exits 2; the JSON output matches the contract. Then
