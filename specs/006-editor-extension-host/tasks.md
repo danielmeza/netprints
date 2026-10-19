@@ -910,7 +910,7 @@ contracts/cli.md §2–§3. **Independent test**: US10's independent test. **Gat
 - [x] T108 [US10] The reusable author workflow (FR-081, research R25; 1 unit). Test first: `CiWorkflowTests` checks that
   `.github/workflows/netprints-extension.yml` is a `workflow_call` with inputs for the extension folder and an optional
   packages artifact, and runs restore, build, kit tests, pack and `verify`. Then the workflow.
-- [ ] T109 [US4] The Godot sample extension (FR-037, SC-003, research R26; 2 units). Create `extensions/NetPrints.Godot/`
+- [x] T109 [US4] The Godot sample extension (FR-037, SC-003, research R26; 2 units). Create `extensions/NetPrints.Godot/`
   outside `NetPrints.slnx` (`src/`, `tests/`, its own `Directory.Build.props`, `Directory.Packages.props` and
   `NuGet.config` on `local-packages/`). It contributes the `godot` project profile; a Godot template whose
   `Properties/launchSettings.json` holds `Executable` profiles for the game and the Godot editor (`%GODOT4%`,

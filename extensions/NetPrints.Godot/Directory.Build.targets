@@ -1,0 +1,4 @@
+<Project>
+  <!-- ADR-0017: the one per-id opt-in to [Experimental] APIs and the package README step are the repository's own. -->
+  <Import Project="../../Directory.Build.targets" />
+</Project>

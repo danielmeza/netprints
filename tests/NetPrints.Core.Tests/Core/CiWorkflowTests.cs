@@ -24,7 +24,7 @@ namespace NetPrints.Tests.Core
 
         private const string KitTestsProject = "NetPrints.Extensibility.Testing.Tests";
 
-        private static readonly string[] NotAggregated = ["build-test", "e2e", "packages", "perf"];
+        private static readonly string[] NotAggregated = ["build-test", "e2e", "godot-smoke", "packages", "perf"];
 
         [Fact]
         public void TestMatrixCoversEveryTestProjectExactlyOnce()
@@ -85,6 +85,26 @@ namespace NetPrints.Tests.Core
             string[] uses = [.. Regex.Matches(text, @"uses:\s*(\S+)").Select(match => match.Groups[1].Value)];
             Assert.NotEmpty(uses);
             Assert.All(uses, action => Assert.Matches("@[0-9a-f]{40}$", action));
+        }
+
+        [Fact]
+        public void TheGodotExtensionIsBuiltFromThePackedPackagesAndLoadedInTheEditorHost()
+        {
+            Dictionary<string, object?> jobs = Jobs();
+            object? upload = Items(Get(jobs["packages"], "steps")).Single(step => Text(Get(step, "uses")).StartsWith("actions/upload-artifact@", StringComparison.Ordinal));
+            object? godot = jobs["godot-extension"];
+            object? smoke = jobs["godot-smoke"];
+
+            Assert.Equal("./" + ExtensionWorkflow, Text(Get(godot, "uses")));
+            Assert.Equal(["packages"], Needs(godot));
+            Assert.Equal("extensions/NetPrints.Godot", Text(Get(godot, "with", "extension-folder")));
+            Assert.Equal(Text(Get(upload, "with", "name")), Text(Get(godot, "with", "packages-artifact")));
+            Assert.Equal(["godot-extension"], Needs(smoke));
+            string script = string.Join('\n', Items(Get(smoke, "steps")).Select(step => Text(Get(step, "run"))));
+            Assert.Contains(Items(Get(smoke, "steps")), step => Text(Get(step, "env", "NETPRINTS_GODOT_EXTENSION_DIR")).Length > 0);
+            Assert.Contains("GodotExtensionHostTests", script, StringComparison.Ordinal);
+            Assert.Contains("--fail-skips on", script, StringComparison.Ordinal);
+            Assert.DoesNotContain("godot-smoke", Needs(jobs["build-test"]));
         }
 
         [Fact]
