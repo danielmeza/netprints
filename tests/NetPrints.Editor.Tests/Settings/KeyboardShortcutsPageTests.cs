@@ -120,6 +120,23 @@ public sealed class KeyboardShortcutsPageTests : IDisposable
     }
 
     [Fact]
+    public async Task RecordFirstVisibleRecordsTheFirstFilteredRowAndAnyChangeAsksForTheFilter()
+    {
+        JsonFileSettingsStore store = NewStore();
+        KeyboardShortcutsItemViewModel page = Open(NewRegistry(store), store);
+        page.FilterText = "Beta";
+
+        page.RecordFirstVisibleCommand.Execute(null);
+
+        Assert.Equal(Beta, page.RecordingRow?.CommandId);
+
+        int before = page.FilterFocusRequest;
+        await page.CaptureCommand.ExecuteAsync("Ctrl+Alt+Shift+Q");
+
+        Assert.Equal(before + 1, page.FilterFocusRequest);
+    }
+
+    [Fact]
     public async Task AddingAGestureAppliesAtOnceAndIsStoredAsADifference()
     {
         JsonFileSettingsStore store = NewStore();

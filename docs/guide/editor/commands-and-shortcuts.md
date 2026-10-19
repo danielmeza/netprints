@@ -134,6 +134,8 @@ sheet. The page has one row for every command, built-in or from an extension, wi
 shortcuts and current shortcuts. Type in the filter to find a command by label, id or owner, or press **Record gesture**
 and then a key combination to list the commands that use it.
 
+From the keyboard: Ctrl+, puts you in the settings search. Type "Keyboard", press Down to pick the first page that matches and Tab to reach the filter. Type part of a command's label, id or owner and press Enter to record a gesture for the first command the filter shows, then press the combination. After each change the keyboard returns to the filter. When the page asks about a conflict, Enter on Move takes the combination and Esc cancels. Tab from the filter reaches Record gesture, Reset all and the buttons of each row.
+
 - **Add gesture** on a row, then press the key combination. The change applies at once.
 - The **✕** beside a shortcut removes it. **Reset** on a row restores that command's defaults, and **Reset all**
   restores every command.

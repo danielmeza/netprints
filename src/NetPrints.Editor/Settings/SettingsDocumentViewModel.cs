@@ -101,6 +101,16 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
     [RelayCommand]
     private Task RestartNowAsync(CancellationToken cancellationToken) => restart(cancellationToken);
 
+    /// <summary>Selects the first page the search shows (Down in the search box).</summary>
+    [RelayCommand]
+    private void SelectFirstVisiblePage()
+    {
+        if (VisiblePages.Count > 0)
+        {
+            SelectedPage = VisiblePages[0];
+        }
+    }
+
     partial void OnSearchTextChanged(string value)
     {
         foreach (SettingsPageViewModel page in Pages)

@@ -53,7 +53,7 @@
       </StackPanel>
     </DataTemplate>
     <DataTemplate DataType="edsettings:KeyboardShortcutsItemViewModel" x:DataType="edsettings:KeyboardShortcutsItemViewModel">
-      <StackPanel Classes="settingsField" IsVisible="{Binding IsVisible}" Focusable="True">
+      <StackPanel Classes="settingsField" IsVisible="{Binding IsVisible}" Focusable="True" KeyboardNavigation.IsTabStop="False">
         <Interaction.Behaviors>
           <edbehaviors:RecordGestureBehavior IsRecording="{Binding IsRecording}" Command="{Binding CaptureCommand}"
                                              CancelCommand="{Binding CancelRecordingCommand}" />
@@ -62,7 +62,12 @@
         <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto">
           <TextBox Text="{Binding FilterText}" PlaceholderText="{x:Static ed:Strings.Settings_Keyboard_FilterPlaceholder}"
                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsFilter}"
-                   AutomationProperties.Name="{x:Static ed:Strings.Settings_Keyboard_FilterName}" />
+                   AutomationProperties.Name="{x:Static ed:Strings.Settings_Keyboard_FilterName}">
+            <Interaction.Behaviors>
+              <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding RecordFirstVisibleCommand}" />
+              <edbehaviors:FocusOnRequestBehavior Request="{Binding FilterFocusRequest}" />
+            </Interaction.Behaviors>
+          </TextBox>
           <Button Grid.Column="1" Content="{x:Static ed:Strings.Settings_Keyboard_RecordFilter}" Command="{Binding RecordFilterCommand}"
                   AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsRecordFilter}" />
           <TextBlock Grid.Column="2" Classes="secondary" Text="{Binding FilterGesture}" VerticalAlignment="Center" />
@@ -75,10 +80,17 @@
         <Border Classes="restartBar" IsVisible="{Binding Conflict, Converter={x:Static ObjectConverters.IsNotNull}}"
                 AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsConflict}"
                 AutomationProperties.Name="{Binding Conflict.Message}">
+          <Border.KeyBindings>
+            <KeyBinding Gesture="Escape" Command="{Binding Conflict.CancelCommand}" />
+          </Border.KeyBindings>
           <DockPanel DataContext="{Binding Conflict}" x:DataType="edsettings:GestureConflictViewModel">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4">
               <Button Content="{x:Static ed:Strings.Settings_Keyboard_ConflictAccept}" Command="{Binding AcceptCommand}"
-                      AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsConflictAccept}" />
+                      AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsConflictAccept}">
+                <Interaction.Behaviors>
+                  <edbehaviors:FocusOnDataContextBehavior />
+                </Interaction.Behaviors>
+              </Button>
               <Button Content="{x:Static ed:Strings.Settings_Keyboard_ConflictCancel}" Command="{Binding CancelCommand}"
                       AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsConflictCancel}" />
             </StackPanel>
@@ -274,8 +286,17 @@
       <DockPanel>
         <TextBox DockPanel.Dock="Top" Text="{Binding SearchText}" PlaceholderText="{x:Static ed:Strings.Settings_Search}"
                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsSearch}"
-                 AutomationProperties.Name="{x:Static ed:Strings.Settings_Search}" />
-        <ListBox Classes="rows" ItemsSource="{Binding VisiblePages}" SelectedItem="{Binding SelectedPage}">
+                 AutomationProperties.Name="{x:Static ed:Strings.Settings_Search}">
+          <Interaction.Behaviors>
+            <edbehaviors:FocusOnDataContextBehavior />
+            <KeyTrigger Key="Down" EventRoutingStrategy="Tunnel">
+              <InvokeCommandAction Command="{Binding SelectFirstVisiblePageCommand}" />
+              <FocusControlAction TargetControl="Pages" />
+            </KeyTrigger>
+          </Interaction.Behaviors>
+        </TextBox>
+        <ListBox x:Name="Pages" Classes="rows" Focusable="True" ItemsSource="{Binding VisiblePages}" SelectedItem="{Binding SelectedPage}"
+                 AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsPageList}">
           <ListBox.ItemTemplate>
             <DataTemplate x:DataType="edsettings:SettingsPageViewModel">
               <TextBlock Text="{Binding Title}" Classes.settingsChildPage="{Binding IsChild}"

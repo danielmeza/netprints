@@ -87,6 +87,10 @@ internal sealed partial class KeyboardShortcutsItemViewModel : SettingsItemViewM
     [ObservableProperty]
     public partial ShortcutEditRowViewModel? RecordingRow { get; private set; }
 
+    /// <summary>Gets a number that changes each time the keyboard should go back to the filter box.</summary>
+    [ObservableProperty]
+    public partial int FilterFocusRequest { get; private set; }
+
     /// <summary>Gets a value indicating whether the next key chord is recorded.</summary>
     public bool IsRecording => IsRecordingFilter || RecordingRow is not null;
 
@@ -127,6 +131,7 @@ internal sealed partial class KeyboardShortcutsItemViewModel : SettingsItemViewM
             IsRecordingFilter = false;
             FilterGesture = gestureText;
             ApplyFilter();
+            RequestFilterFocus();
             return;
         }
 
@@ -159,6 +164,11 @@ internal sealed partial class KeyboardShortcutsItemViewModel : SettingsItemViewM
                 string.Format(CultureInfo.CurrentCulture, Strings.Settings_Keyboard_Conflict, gesture, other.DisplayLabel, row.Label),
                 AcceptConflictAsync,
                 CancelConflict);
+        }
+
+        if (Conflict is null)
+        {
+            RequestFilterFocus();
         }
     }
 
@@ -196,6 +206,23 @@ internal sealed partial class KeyboardShortcutsItemViewModel : SettingsItemViewM
         IsRecordingFilter = true;
     }
 
+    /// <summary>Records the next key chord for the first row the filter shows (Enter in the filter box).</summary>
+    [RelayCommand]
+    private void RecordFirstVisible()
+    {
+        if (VisibleRows.Count == 0)
+        {
+            return;
+        }
+
+        ShortcutEditRowViewModel row = VisibleRows[0];
+        CancelRecording();
+        Conflict = null;
+        Refusal = "";
+        row.IsRecording = true;
+        RecordingRow = row;
+    }
+
     [RelayCommand]
     private void ClearFilterGesture()
     {
@@ -204,7 +231,11 @@ internal sealed partial class KeyboardShortcutsItemViewModel : SettingsItemViewM
     }
 
     [RelayCommand]
-    private Task ResetAllAsync(CancellationToken cancellationToken) => editor.ResetAllAsync(cancellationToken);
+    private async Task ResetAllAsync(CancellationToken cancellationToken)
+    {
+        await editor.ResetAllAsync(cancellationToken);
+        RequestFilterFocus();
+    }
 
     private async Task AcceptConflictAsync()
     {
@@ -215,9 +246,17 @@ internal sealed partial class KeyboardShortcutsItemViewModel : SettingsItemViewM
         {
             await editor.AddAsync(command, pendingGesture, acceptConflict: true, CancellationToken.None);
         }
+
+        RequestFilterFocus();
     }
 
-    private void CancelConflict() => Conflict = null;
+    private void CancelConflict()
+    {
+        Conflict = null;
+        RequestFilterFocus();
+    }
+
+    private void RequestFilterFocus() => FilterFocusRequest++;
 
     private void ToggleRecording(ShortcutEditRowViewModel row)
     {
@@ -243,7 +282,11 @@ internal sealed partial class KeyboardShortcutsItemViewModel : SettingsItemViewM
         foreach (CommandDescriptor command in snapshot.Commands)
         {
             CommandBindings own = bindings.For(command.Id);
-            GestureChipViewModel[] chips = [.. own.Effective.Select(gesture => new GestureChipViewModel(gesture.Display, () => editor.RemoveAsync(command, gesture, CancellationToken.None)))];
+            GestureChipViewModel[] chips = [.. own.Effective.Select(gesture => new GestureChipViewModel(gesture.Display, async () =>
+            {
+                await editor.RemoveAsync(command, gesture, CancellationToken.None);
+                RequestFilterFocus();
+            }))];
             Rows.Add(new ShortcutEditRowViewModel(
                 command.Id,
                 command.DisplayLabel,
@@ -254,7 +297,11 @@ internal sealed partial class KeyboardShortcutsItemViewModel : SettingsItemViewM
                 own.IsChanged,
                 own.Overridden.Count > 0,
                 ToggleRecording,
-                id => editor.ResetAsync(id, CancellationToken.None)));
+                async id =>
+                {
+                    await editor.ResetAsync(id, CancellationToken.None);
+                    RequestFilterFocus();
+                }));
         }
 
         RecordingRow = Rows.FirstOrDefault(row => row.CommandId == recordingId);

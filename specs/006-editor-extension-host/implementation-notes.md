@@ -1612,7 +1612,7 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - **Keyboard section**: `KeyboardSettings`, `KeyBindingOverride` and `KeyBindingResolver`; the effective gesture set is computed once in the registry snapshot.
 - **Keyboard shortcuts page**: filter by text and by recorded gesture; add, remove, reset one and reset all; a conflict question, refusal reasons and the Not-loaded list. `RecordGestureBehavior` sets `IsRecordingGestures`, which
   suspends the global bindings while recording. The shortcuts sheet has an Edit shortcuts button.
-- **E2E**: `RebindShortcuts` mixes pointer and keys; keyboard navigation of the page is not built. `X11Driver` maps "," to comma.
+- **E2E**: `RebindShortcuts` mixes pointer and keys; keyboard navigation of the page is not built. **Corrected (T112-2, DD-3)**: keyboard navigation of the page is built and `RebindShortcuts` uses keys only. `X11Driver` maps "," to comma.
 
 ## Batch D1g (T095, T096, T097)
 
@@ -1633,7 +1633,7 @@ T076, Checkpoint C2, gate items measured on this head (Release).
   No UI shard is near 12 minutes, so no fifth shard (R28). The CI run for 9e8aacfa was still running when this was written.
 - Gate D1. SC-004: `ExtensionKindsTests` (T083, every public kind found on its surface, none after the project unloads) plus the failure fixtures of D1b: pass. SC-006: the settings store
   tests (T086), the page-reachability and restart-survival tests (T090) and the effective-gesture tests (T092): pass. SC-007: `RebindShortcutsTests` E2E (rebind a built-in and an extension
-  command, resolve a conflict, restart, run both): pass in the E2E run above. SC-009: `ContrastMathTests`, `ThemePresetsTests`/`ThemePresetTests` (every preset passes every gated pair, a Dark preset
+  command, resolve a conflict, restart, run both): pass (at D1-CP the scenario still clicked; keys only since T112-2, DD-3) in the E2E run above. SC-009: `ContrastMathTests`, `ThemePresetsTests`/`ThemePresetTests` (every preset passes every gated pair, a Dark preset
   changes 0 Light tokens, no restart): pass. Dock check: the pin is 12.1.0.10; 12.1.0.11 and 12.1.0.12 are released (12.1.0.12 on 2026-10-17), not evaluated or adopted here.
 - Open for the D1+D2 review: `ContrastCheck.Passed` rounds the ratio to 2 decimals, so the mandated Classic card (`#AA202020` over `#000`, ratio 1.1497) passes the 1.15 gate. Flagged, not changed.
 - Docs: the settings, themes and shortcuts guides and the diagnostics guide (NPX014) were already current; the release notes (`.github/release-notes.md`, Unreleased) gained the Settings document,
@@ -1792,3 +1792,12 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - DD-15: `RecordGestureBehavior` ends the recording when the keyboard focus leaves the attached element, posted so focus can move
   between two elements of the page first, and when the element leaves the visual tree. Red: `LeavingThePageWhileRecordingEndsTheRecordingAndTheBindingsWorkAgain`
   failed with `Assert.False() Failure` (the page was still recording after the settings search took the keyboard). Green.
+- DD-3: `FocusOnRequestBehavior` (a counter focuses the element once the layout has run), `FilterFocusRequest` and
+  `RecordFirstVisible` on the Keyboard shortcuts page, `SelectFirstVisiblePage` on the Settings document, `Settings.PageList` and
+  the `SettingsSearch`/`ShortcutsFilter`/conflict wiring in `SettingsView.axaml` give the page a full keyboard path: Down in the
+  search selects the first shown page and focuses the page list, Tab reaches the filter, Enter records the first shown row, the
+  keyboard goes back to the filter after every write, a conflict question takes it on Move and Esc cancels. `RebindShortcuts` drives
+  every step with keys. Red: the three new headless tests (page list not focused; `RecordingRow` null) and the unit test was a
+  compile red on the missing command. Green: `KeyboardShortcutsPageUiTests` 5 of 5, `KeyboardShortcutsPageTests` 12 of 12.
+- Decision (DD-3, page list): the `Pages` `ListBox` gained `Focusable="True"` because `FocusControlAction` does not focus a list
+  whose `Focusable` is not set explicitly, and `x:Name="Pages"` is read by that action (D15).

@@ -8,7 +8,7 @@ using NetPrints.Testing.Ui.Driving;
 
 namespace NetPrints.Desktop.E2ETests.Scenarios;
 
-/// <summary>Rebinds a built-in and an extension command, resolves a conflict, restarts and runs both through their new gestures (SC-007).</summary>
+/// <summary>Rebinds a built-in and an extension command with the keyboard only, resolves a conflict, restarts and runs both through their new gestures (SC-007).</summary>
 public sealed class RebindShortcutsTests(DesktopWorkerPool pool) : ProjectEditorTestBase(pool)
 {
     private const string PaletteLabel = "Command palette…";
@@ -39,10 +39,14 @@ public sealed class RebindShortcutsTests(DesktopWorkerPool pool) : ProjectEditor
 
     private UiElement AddButton(string label) => new(Driver, new AutomationQuery(AutomationIds.ShortcutsAdd) { Within = Row(label).Query });
 
+    private UiElement Filter => new(Driver, new AutomationQuery(AutomationIds.ShortcutsFilter));
+
+    private Task WaitFocusedAsync(UiElement element, string what, CancellationToken token) =>
+        element.WaitUntilAsync(e => e[AutomationPropertyNames.IsFocused] == "True", what, token);
+
     private async Task RecordAsync(string label, string gesture, CancellationToken token)
     {
-        var filter = new UiElement(Driver, new AutomationQuery(AutomationIds.ShortcutsFilter));
-        await filter.ClickAsync(token);
+        await WaitFocusedAsync(Filter, "the filter has the keyboard", token);
         await Driver.PressAsync("Ctrl+A", token);
         await Driver.TypeAsync(label, token);
         if (lastFiltered is { } previous && previous != label)
@@ -52,7 +56,7 @@ public sealed class RebindShortcutsTests(DesktopWorkerPool pool) : ProjectEditor
 
         lastFiltered = label;
         await Row(label).WaitVisibleAsync(token);
-        await AddButton(label).ClickAsync(token);
+        await Driver.PressAsync("Enter", token);
         await AddButton(label).WaitUntilAsync(e => e.Text == "Press keys…", "recording", token);
         await Driver.PressAsync(gesture, token);
     }
@@ -104,8 +108,10 @@ public sealed class RebindShortcutsTests(DesktopWorkerPool pool) : ProjectEditor
         using (Step("open the Keyboard shortcuts page"))
         {
             await Driver.PressAsync("Ctrl+,", token);
-            var page = new UiElement(Driver, new AutomationQuery(AutomationIds.SettingsPageItem) { Name = KeyboardPage });
-            await page.ClickAsync(token);
+            await WaitFocusedAsync(new UiElement(Driver, new AutomationQuery(AutomationIds.SettingsSearch)), "the settings search has the keyboard", token);
+            await Driver.TypeAsync(KeyboardPage, token);
+            await Driver.PressAsync("Down", token);
+            await Driver.PressAsync("Tab", token);
             await Row(PaletteLabel).WaitVisibleAsync(token);
             await Row(ExtensionLabel).WaitVisibleAsync(token);
         }
@@ -119,7 +125,8 @@ public sealed class RebindShortcutsTests(DesktopWorkerPool pool) : ProjectEditor
             var conflict = new UiElement(Driver, new AutomationQuery(AutomationIds.ShortcutsConflict));
             await conflict.WaitVisibleAsync(token);
             Assert.Contains(PaletteLabel, (await conflict.GetAsync(token)).Name ?? "", StringComparison.Ordinal);
-            await new UiElement(Driver, new AutomationQuery(AutomationIds.ShortcutsConflictAccept)).ClickAsync(token);
+            await WaitFocusedAsync(new UiElement(Driver, new AutomationQuery(AutomationIds.ShortcutsConflictAccept)), "Move has the keyboard", token);
+            await Driver.PressAsync("Enter", token);
             await WaitStoredAsync("netprints.test.hello", "add", ExtensionGesture, token);
         }
 

@@ -699,6 +699,9 @@ public static class AutomationIds
     /// <summary>Automation id of the search box of the Settings document.</summary>
     public const string SettingsSearch = "Settings.Search";
 
+    /// <summary>Automation id of the page list of the Settings document.</summary>
+    public const string SettingsPageList = "Settings.PageList";
+
     /// <summary>Automation id of the editor of a settings field; its name is the field's label.</summary>
     public const string SettingsFieldInput = "Settings.FieldInput";
 
