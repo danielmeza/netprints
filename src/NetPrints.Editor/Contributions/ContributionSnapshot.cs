@@ -9,27 +9,33 @@ public sealed class ContributionSnapshot : IContributionSnapshot
     private readonly ImmutableDictionary<string, string> owners;
     private readonly ImmutableDictionary<string, string> ownerNames;
 
+    private readonly HashSet<string> shadowed;
+
     internal ContributionSnapshot(IReadOnlyList<ContributionGroup> groups, KeyboardSettings user)
     {
-        CommandDescriptor[] registered = [.. groups.SelectMany(group => group.Commands)];
+        shadowed = new HashSet<string>(groups.Where(group => group.Key is not null).SelectMany(group => group.ShadowedOwners), StringComparer.Ordinal);
+        CommandDescriptor[] registered = [.. groups.SelectMany(group => group.Commands.Where(command => !IsHidden(group, command.Id)))];
         KeyBindings = KeyBindingResolver.Resolve(registered, user);
         Commands = [.. registered.Select(WithEffectiveGestures)];
-        Panels = [.. groups.SelectMany(group => group.Panels)];
-        DashboardTiles = [.. groups.SelectMany(group => group.Tiles)];
-        StatusBarItems = [.. groups.SelectMany(group => group.StatusBarItems)];
-        Dialogs = [.. groups.SelectMany(group => group.Dialogs)];
-        SettingsPages = [.. groups.SelectMany(group => group.SettingsPages)];
-        ProjectTemplates = [.. groups.SelectMany(group => group.Templates)];
-        ContextMenuItems = [.. groups.SelectMany(group => group.MenuItems)];
+        Panels = [.. groups.SelectMany(group => group.Panels.Where(item => !IsHidden(group, item.Id)))];
+        DashboardTiles = [.. groups.SelectMany(group => group.Tiles.Where(item => !IsHidden(group, item.Id)))];
+        StatusBarItems = [.. groups.SelectMany(group => group.StatusBarItems.Where(item => !IsHidden(group, item.Id)))];
+        Dialogs = [.. groups.SelectMany(group => group.Dialogs.Where(item => !IsHidden(group, item.Id)))];
+        SettingsPages = [.. groups.SelectMany(group => group.SettingsPages.Where(item => !IsHidden(group, item.Id)))];
+        ProjectTemplates = [.. groups.SelectMany(group => group.Templates.Where(item => !IsHidden(group, item.Id)))];
+        ContextMenuItems = [.. groups.SelectMany(group => group.MenuItems.Where(item => !IsHidden(group, item.Id)))];
         TooltipProviders = [.. groups.SelectMany(group => group.TooltipProviders)];
         GoToProviders = [.. groups.SelectMany(group => group.GoToProviders)];
         UnknownReferences = FindUnknownReferences(groups);
         Issues = [.. groups.SelectMany(group => group.Issues), .. UnknownReferences];
-        ViewResources = [.. groups.SelectMany(group => group.ViewResources)];
+        ViewResources = [.. groups.SelectMany(group => group.ViewResources.Where(declaration => group.Key is not null || !shadowed.Contains(declaration.Owner)))];
         SessionKeys = [.. groups.Select(group => group.Key).OfType<string>()];
         owners = Merge(groups.Select(group => group.Owners));
-        ownerNames = Merge(groups.Select(group => group.OwnerNames));
+        ownerNames = Merge([.. groups.Where(group => group.Key is not null).Select(group => group.OwnerNames), .. groups.Where(group => group.Key is null).Select(group => group.OwnerNames)]);
     }
+
+    private bool IsHidden(ContributionGroup group, string id) =>
+        group.Key is null && shadowed.Count > 0 && group.Owners.TryGetValue(id, out string? owner) && shadowed.Contains(owner);
 
     /// <summary>Gets the accepted commands, in registration order. <see cref="CommandDescriptor.DefaultGestures"/> holds the gestures in force (user overrides applied); <see cref="KeyBindings"/> keeps the registered defaults.</summary>
     public IReadOnlyList<CommandDescriptor> Commands { get; }
@@ -103,13 +109,13 @@ public sealed class ContributionSnapshot : IContributionSnapshot
         {
             bool FromExtension(string id) => group.Owners.GetValueOrDefault(id, ContributionIds.Owner) is var owner && owner != ContributionIds.Owner && owner != BuiltIn.BuiltInContributions.OwnerId;
 
-            foreach (ContextMenuItemDescriptor item in group.MenuItems.Where(item => FromExtension(item.Id) && !commandIds.Contains(item.CommandId)))
+            foreach (ContextMenuItemDescriptor item in group.MenuItems.Where(item => !IsHidden(group, item.Id) && FromExtension(item.Id) && !commandIds.Contains(item.CommandId)))
             {
                 found.Add(new ContributionIssue(ContributionIssueKind.UnknownReference, item.Id, group.Owners.GetValueOrDefault(item.Id, ContributionIds.Owner),
                     $"The context menu item names the command '{item.CommandId}', which nothing registered."));
             }
 
-            foreach (SettingsPageDescriptor page in group.SettingsPages.Where(page => FromExtension(page.Id) && page.ParentPageId is { } parent && !pageIds.Contains(parent)))
+            foreach (SettingsPageDescriptor page in group.SettingsPages.Where(page => !IsHidden(group, page.Id) && FromExtension(page.Id) && page.ParentPageId is { } parent && !pageIds.Contains(parent)))
             {
                 found.Add(new ContributionIssue(ContributionIssueKind.UnknownReference, page.Id, group.Owners.GetValueOrDefault(page.Id, ContributionIds.Owner),
                     $"The settings page names the parent page '{page.ParentPageId}', which nothing registered."));

@@ -48,4 +48,7 @@ internal sealed class ContributionGroup(string? key)
 
     /// <summary>Gets the display name of each extension that gave one.</summary>
     public Dictionary<string, string> OwnerNames { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>Gets the owners whose app-group contributions this session group hides: a project's own copy of an extension serves its session.</summary>
+    public HashSet<string> ShadowedOwners { get; } = new(StringComparer.Ordinal);
 }

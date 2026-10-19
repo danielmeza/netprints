@@ -1545,6 +1545,7 @@ T076, Checkpoint C2, gate items measured on this head (Release).
   loads while one is open, which the unsaved-changes flow does not allow. Left as is.
 - **Fix for the trim ratchet**: `AvaloniaXamlLoader.Load` is the one new IL2026 in the Editor; two `JsonArray.Add<T>` warnings in `NetPrintsJsonSchema` were removed with a non-generic overload
   and the baseline in `eng/trim-warnings.txt` is now 8.
+- **Corrected (T112-4, DD-6)**: a project's copy of an extension now shadows the per-user copy's app-level items for the session (no NPX004, the project copy's name).
 
 ## Batch D1c (T084, T085, T175)
 

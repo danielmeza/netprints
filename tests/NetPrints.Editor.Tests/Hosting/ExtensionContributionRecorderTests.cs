@@ -86,4 +86,52 @@ public class ExtensionContributionRecorderTests
             Assert.Single(registry.DashboardTiles);
         }
     }
+
+    [Fact]
+    public async Task AProjectsCopyOfAUserExtensionServesItsSession()
+    {
+        string temp = TestPaths.CreateTempDirectory();
+        try
+        {
+            string userCopy = Path.Combine(temp, "netprints.test");
+            Directory.CreateDirectory(userCopy);
+            foreach (string file in Directory.GetFiles(TestExtensionFolder.Folder))
+            {
+                File.Copy(file, Path.Combine(userCopy, Path.GetFileName(file)));
+            }
+
+            await File.WriteAllTextAsync(
+                Path.Combine(userCopy, "netprints-extension.json"),
+                """{ "id": "netprints.test", "name": "User copy", "version": "0.9.0", "assembly": "NetPrints.TestExtension.dll", "netprintsApi": "0.4", "dependsOn": [] }""",
+                TestContext.Current.CancellationToken);
+            var recorder = new ExtensionContributionRecorder();
+            await using var appHost = new ExtensionHost(new ExtensionLoaderOptions([temp], [], [BuiltInExtension.InProcessEntry]) { EditorContributions = recorder.Factory }, NullLoggerFactory.Instance);
+            var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
+            recorder.ApplyToAppGroup(registry);
+            registry.Freeze();
+
+            Assert.Equal("User copy", registry.OwnerNameOf("netprints.test.tile"));
+
+            await using var session = new ExtensionHost(new ExtensionLoaderOptions([temp], [TestExtensionFolder.Folder], [BuiltInExtension.InProcessEntry]) { EditorContributions = recorder.Factory }, NullLoggerFactory.Instance);
+
+            Assert.Single(session.Current.Results.OfType<ExtensionLoadResult.Failed>(), failed => failed.Code == ExtensionDiagnosticCodes.Shadowed);
+
+            registry.AddSessionGroup("project", group => recorder.PopulateSessionGroup(group, session.Current, [TestExtensionFolder.Folder]));
+
+            Assert.DoesNotContain(registry.Issues, issue => issue.Kind == ContributionIssueKind.DuplicateId);
+            Assert.Single(registry.Commands, c => c.Id == "netprints.test.hello");
+            Assert.Single(registry.DashboardTiles, t => t.Id == "netprints.test.tile");
+            Assert.Single(registry.SettingsPages, p => p.Id == "netprints.test.settings");
+            Assert.Equal("NetPrints test extension", registry.OwnerNameOf("netprints.test.tile"));
+
+            registry.RemoveSessionGroup("project");
+
+            Assert.Equal("User copy", registry.OwnerNameOf("netprints.test.tile"));
+            Assert.Single(registry.DashboardTiles, t => t.Id == "netprints.test.tile");
+        }
+        finally
+        {
+            TestPaths.TryDelete(temp);
+        }
+    }
 }

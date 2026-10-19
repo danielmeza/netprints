@@ -13,4 +13,8 @@ public interface IContributionGroupBuilder
     /// <param name="template">The template.</param>
     /// <param name="owner">The extension id that owns it; <see langword="null"/> for the built-in owner.</param>
     void AddProjectTemplate(ProjectTemplateDescriptor template, string? owner = null);
+
+    /// <summary>Hides the app group's contributions of <paramref name="owner"/> while this group is in the registry: the project's own copy of the extension serves the session (spec Clarifications, data-model §1).</summary>
+    /// <param name="owner">The extension id.</param>
+    void Shadow(string owner);
 }

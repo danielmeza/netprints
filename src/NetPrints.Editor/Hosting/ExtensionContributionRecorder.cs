@@ -8,6 +8,7 @@ namespace NetPrints.Editor.Hosting;
 /// Keeps what each loaded extension registered through <c>IExtensionBuilder.Editor</c> and places it in the contribution groups
 /// (FR-032, Clarifications answer 2): the application-level kinds of an extension from the user directories join the app group once,
 /// its project-level kinds join each session group, and every kind of an extension a project declares joins that project's session group.
+/// When a project declares an extension the user directories already gave the app group, the session group hides the app group's items of that id, so the project's copy serves the session.
 /// The host passes <see cref="Factory"/> in <see cref="ExtensionLoaderOptions.EditorContributions"/>.
 /// </summary>
 public sealed class ExtensionContributionRecorder
@@ -61,6 +62,17 @@ public sealed class ExtensionContributionRecorder
 
             bool fromProject = result.ManifestPath is { } path
                 && folders.Contains(Path.GetDirectoryName(Path.GetFullPath(path)) ?? string.Empty, StringComparer.Ordinal);
+            bool applied;
+            lock (gate)
+            {
+                applied = appliedToAppGroup.Contains(result.Id);
+            }
+
+            if (fromProject && applied)
+            {
+                builder.Shadow(result.Id);
+            }
+
             recording.ReplayTo(builder.For(result.Id, result.Manifest.Name), includeApplicationLevel: fromProject, includeProjectLevel: true);
         }
     }

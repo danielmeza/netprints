@@ -29,8 +29,8 @@ Unknown manifest fields are ignored with an info message, so a newer manifest lo
 | User extension directories (`netprints.extensionPaths`, `NETPRINTS_EXTENSION_PATH`) | once, at editor start | app group for app-level kinds, each session group for project-level kinds | none beyond the user's own setting |
 
 When a project declares an id that is also loaded from a user directory, the project's copy serves that session, the
-user copy adds nothing to it, and an info diagnostic (NPX012) names both versions. Changes to user directories apply
-after a restart.
+user copy adds nothing to it, and an info diagnostic (NPX012) names both versions. The session group hides the app group's items of that id while the project is open (ADR-0020 Amendment 2).
+Changes to user directories apply after a restart.
 
 ### Extension package (`.nupkg`, package type `NetPrintsExtension`)
 

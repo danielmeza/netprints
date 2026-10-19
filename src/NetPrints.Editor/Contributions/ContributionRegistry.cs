@@ -332,7 +332,11 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
 
     private List<ContributionGroup> AllGroups() => [appGroup, .. sessions];
 
-    private IEnumerable<string> Ids(Func<ContributionGroup, IEnumerable<string>> select) => AllGroups().SelectMany(select);
+    private IEnumerable<string> Ids(Func<ContributionGroup, IEnumerable<string>> select) =>
+        AllGroups().SelectMany(group => select(group).Where(id => !IsShadowed(group, id)));
+
+    private bool IsShadowed(ContributionGroup group, string id) =>
+        ReferenceEquals(group, appGroup) && group.Owners.TryGetValue(id, out string? owner) && sessions.Exists(session => session.ShadowedOwners.Contains(owner));
 
     private void Publish(bool always = false)
     {
@@ -396,7 +400,7 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
         }
 
         var kept = new List<CommandGesture>(gestures.Count);
-        CommandDescriptor[] existing = [.. AllGroups().SelectMany(group => group.Commands)];
+        CommandDescriptor[] existing = [.. AllGroups().SelectMany(group => group.Commands.Where(c => !IsShadowed(group, c.Id)))];
         foreach (CommandGesture gesture in gestures)
         {
             var owner = existing.FirstOrDefault(c => ScopesOverlap(c.Scope, command.Scope) && (c.DefaultGestures ?? []).Contains(gesture));
@@ -502,6 +506,13 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
 
         public void AddProjectTemplate(ProjectTemplateDescriptor template, string? owner = null) =>
             registry.As(group, owner ?? ContributionIds.Owner, () => registry.AddProjectTemplate(template));
+
+        public void Shadow(string owner)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(owner);
+            group.ShadowedOwners.Add(owner);
+            registry.snapshot = null;
+        }
     }
 
     private sealed class OwnerFacet : IEditorContributions
