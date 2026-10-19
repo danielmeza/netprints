@@ -109,6 +109,24 @@ builds it from the packed packages alone (`scripts/verify-packages.sh`).
 Package versions follow the API version: `ExtensionApi.Version` is 0.4 for the 0.4.x packages, and the host loads an
 extension built for the same major and a minor up to its own.
 
+### Starting from the template
+
+The `NetPrints.Templates` package creates all of the above, with a test project on the conformance kit
+([Testing extensions](extension-testing.md)):
+
+```bash
+dotnet new install NetPrints.Templates
+dotnet new netprints-extension -n Acme.Widgets --ExtensionId acme.widgets
+dotnet test Acme.Widgets/Acme.Widgets.Tests
+dotnet pack Acme.Widgets/Acme.Widgets
+```
+
+The project builds and the kit passes with no edits. The extension project builds into `bin/<Configuration>/extension/`
+(the folder with `netprints-extension.json`), and the test project hands that folder to the kit so the manifest,
+packaging and type identity checks run. `dotnet pack` produces the **extension package**: a `.nupkg` of package type
+`NetPrintsExtension` that holds that folder under `extension/`. Its project file sets this up inline, so the package
+format is visible to the author. It is the unit `netprints extension verify` checks and a feed will carry.
+
 ## The editor facet and the contribution kinds
 
 `IExtensionBuilder` takes what the CLI, the build and the editor all use. `IExtensionBuilder.Editor` is the **editor facet**:

@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <NetPrintsExtensionId>my.extension</NetPrintsExtensionId>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>bin/$(Configuration)/extension/</OutputPath>
+  </PropertyGroup>
+
+  <!-- The extension package: a NuGet package of type NetPrintsExtension that holds the extension folder under extension/. -->
+  <PropertyGroup>
+    <PackageId>MyExtension</PackageId>
+    <Version>1.0.0</Version>
+    <PackageType>NetPrintsExtension</PackageType>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);AddExtensionFolder</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The host supplies the NetPrints assemblies at run time; the extension must see the host's own copies. -->
+    <PackageReference Include="NetPrints.Extensibility.Abstractions" Version="NetPrintsPackageVersion" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="netprints-extension.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Target Name="AddExtensionFolder">
+    <ItemGroup>
+      <ExtensionFile Include="@(IntermediateAssembly)" />
+      <ExtensionFile Include="netprints-extension.json" />
+      <ExtensionFile Include="@(ReferenceCopyLocalPaths)" Condition="'%(Extension)' == '.dll'" />
+      <TfmSpecificPackageFile Include="@(ExtensionFile)" PackagePath="extension/%(Filename)%(Extension)" />
+    </ItemGroup>
+  </Target>
+</Project>

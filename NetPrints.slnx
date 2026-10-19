@@ -24,6 +24,7 @@
     <Project Path="src/NetPrints.RepoAnalyzers/NetPrints.RepoAnalyzers.csproj" />
     <Project Path="src/NetPrints.Sdk/NetPrints.Sdk.csproj" />
     <Project Path="src/NetPrints.Serialization/NetPrints.Serialization.csproj" />
+    <Project Path="src/NetPrints.Templates/NetPrints.Templates.csproj" />
     <Project Path="src/NetPrints.Workspace/NetPrints.Workspace.csproj" />
   </Folder>
   <Folder Name="/tests/Fixtures/">

@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageType>Template</PackageType>
+    <IsPackable>true</IsPackable>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <IncludeSymbols>false</IncludeSymbols>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+    <Description>The dotnet new templates of NetPrints: netprints-extension creates an extension project and its test project on the conformance kit. NetPrints continues the original NetPrints by Robin Kahlow (https://github.com/RobinKa/netprints).</Description>
+    <PackageTags>$(PackageTags);dotnet-new;templates</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="content\**\*" Exclude="content\**\bin\**;content\**\obj\**;content\netprints-extension\.template.config\template.json" Pack="true" PackagePath="content\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <!-- template.json holds a token where the package version goes; the packed copy gets the version of this package. -->
+  <Target Name="StampTemplateVersion" DependsOnTargets="MinVer" BeforeTargets="_GetPackageFiles">
+    <PropertyGroup>
+      <TemplateJsonText>$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\content\netprints-extension\.template.config\template.json'))</TemplateJsonText>
+      <StampedTemplateJson>$(IntermediateOutputPath)template.stamped.json</StampedTemplateJson>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(StampedTemplateJson)" Lines="$(TemplateJsonText.Replace('NetPrintsStampedVersion', '$(PackageVersion)'))" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <Content Include="$(StampedTemplateJson)" Pack="true" PackagePath="content\netprints-extension\.template.config\template.json" />
+    </ItemGroup>
+  </Target>
+</Project>

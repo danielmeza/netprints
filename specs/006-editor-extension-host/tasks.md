@@ -888,7 +888,7 @@ contracts/cli.md §2–§3. **Independent test**: US10's independent test. **Gat
 
 ### Batch D2c — model: sonnet — T106–T107 — 4 units
 
-- [ ] T106 [US10] The extension package format and the `netprints-extension` template (FR-079, FR-080, SC-011, research
+- [x] T106 [US10] The extension package format and the `netprints-extension` template (FR-079, FR-080, SC-011, research
   R25, R17; 2 units; T026's outcome applies: if the analyzers do not flow through Abstractions, the template references
   `NetPrints.Core` directly and the guide says why). Test first, run by the `packages` job: install the packed
   `NetPrints.Templates` into a custom hive (`--debug:custom-hive`); `dotnet new netprints-extension` with no edits

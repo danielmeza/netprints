@@ -17,8 +17,8 @@ public class PackageValidationTests
     /// <summary>The suppression ids a test below checks against the API files or the assembly; any other id has no cross-check.</summary>
     private static readonly string[] CrossCheckedIds = ["CP0002", "CP0009"];
 
-    /// <summary>Packable projects that are not class libraries: a tool, an MSBuild SDK and an analyzer package.</summary>
-    private static readonly string[] NotLibraries = ["NetPrints.Annotations", "NetPrints.Cli", "NetPrints.Sdk"];
+    /// <summary>Packable projects that are not class libraries: a tool, an MSBuild SDK, an analyzer package and the template package.</summary>
+    private static readonly string[] NotLibraries = ["NetPrints.Annotations", "NetPrints.Cli", "NetPrints.Sdk", "NetPrints.Templates"];
 
     /// <summary>The libraries already on nuget.org. The new ones take their baseline in the release that first publishes them (docs/contributing/releasing.md).</summary>
     private static readonly string[] Published = ["NetPrints.Core", "NetPrints.Reflection", "NetPrints.Catalog"];

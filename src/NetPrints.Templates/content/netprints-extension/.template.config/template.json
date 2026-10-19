@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Daniel Meza",
+  "classifications": ["NetPrints", "Extension", "Library"],
+  "identity": "NetPrints.Templates.Extension",
+  "name": "NetPrints extension",
+  "shortName": "netprints-extension",
+  "description": "A NetPrints extension project and its test project on the conformance kit.",
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+  "sourceName": "MyExtension",
+  "preferNameDirectory": true,
+  "symbols": {
+    "ExtensionId": {
+      "type": "parameter",
+      "datatype": "text",
+      "description": "The extension id: the manifest id and the prefix of every contribution id.",
+      "defaultValue": "my.extension",
+      "replaces": "my.extension"
+    },
+    "NetPrintsVersion": {
+      "type": "parameter",
+      "datatype": "text",
+      "description": "The version of the NetPrints packages the projects reference.",
+      "defaultValue": "NetPrintsStampedVersion",
+      "replaces": "NetPrintsPackageVersion"
+    }
+  }
+}

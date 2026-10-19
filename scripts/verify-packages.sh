@@ -50,6 +50,7 @@ EXPECTED_FILES=(
     "NetPrints.Sdk.$VERSION.nupkg"
     "NetPrints.Serialization.$VERSION.nupkg"
     "NetPrints.Serialization.$VERSION.snupkg"
+    "NetPrints.Templates.$VERSION.nupkg"
 )
 
 for name in "${EXPECTED_FILES[@]}"; do
@@ -93,7 +94,7 @@ check_common_metadata() {
     local heading
     heading="$(head -n 1 "$EXTRACT/README.md")"
     case "$id" in
-        NetPrints.Annotations | NetPrints.Catalog | NetPrints.Serialization | NetPrints.Extensibility | NetPrints.Extensibility.Abstractions | NetPrints.Extensibility.Testing | NetPrints.Extensibility.Testing.Xunit)
+        NetPrints.Annotations | NetPrints.Catalog | NetPrints.Serialization | NetPrints.Extensibility | NetPrints.Extensibility.Abstractions | NetPrints.Extensibility.Testing | NetPrints.Extensibility.Testing.Xunit | NetPrints.Templates)
             [[ "$heading" == "# $id" ]] || fail "step 2 ($id): packed README.md starts with '$heading', expected '# $id' (src/$id/README.md)"
             ;;
         *)
@@ -276,5 +277,41 @@ dotnet build "$REPO_ROOT/tests/NetPrints.TestExtension/NetPrints.TestExtension.c
     || fail "step 5 (NetPrints.TestExtension): build from the local packages failed"
 [[ -f "$TEST_EXTENSION_OUT/NetPrints.TestExtension.dll" ]] || fail "step 5 (NetPrints.TestExtension): NetPrints.TestExtension.dll was not built"
 [[ -f "$TEST_EXTENSION_OUT/netprints-extension.json" ]] || fail "step 5 (NetPrints.TestExtension): netprints-extension.json was not copied"
+
+# --- Step 6: the netprints-extension template (FR-079, SC-011, research R25 and R17) ----------------------
+
+extract_nupkg NetPrints.Templates
+check_common_metadata NetPrints.Templates
+grep -q '<packageType name="Template" />' "$EXTRACT/NetPrints.Templates.nuspec" || fail "step 6 (NetPrints.Templates): nuspec has no Template packageType"
+[[ -f "$EXTRACT/content/netprints-extension/.template.config/template.json" ]] || fail "step 6 (NetPrints.Templates): missing the netprints-extension template.json"
+[[ -d "$EXTRACT/lib" ]] && fail "step 6 (NetPrints.Templates): package has a lib/ folder (should have none)"
+
+HIVE="$WORK/hive"
+dotnet new install "$FEED/NetPrints.Templates.$VERSION.nupkg" --debug:custom-hive "$HIVE" >&2 || fail "step 6 (template): dotnet new install failed"
+
+AUTHOR="$WORK/author"
+mkdir -p "$AUTHOR"
+dotnet new netprints-extension -n Acme.Widgets -o "$AUTHOR" --ExtensionId acme.widgets --NetPrintsVersion "$VERSION" --debug:custom-hive "$HIVE" >&2 \
+    || fail "step 6 (template): dotnet new netprints-extension failed"
+write_nuget_config "$AUTHOR"
+
+dotnet build "$AUTHOR/Acme.Widgets.Tests" -c Release >&2 || fail "step 6 (template): the generated solution does not build"
+TEMPLATE_TEST_OUTPUT="$(cd "$AUTHOR/Acme.Widgets.Tests" && dotnet test -c Release --no-build --no-progress --no-ansi 2>&1)" \
+    || { echo "$TEMPLATE_TEST_OUTPUT" >&2; fail "step 6 (template): the generated kit tests failed"; }
+grep -Eq 'Passed|passed' <<<"$TEMPLATE_TEST_OUTPUT" || fail "step 6 (template): no kit test passed: $TEMPLATE_TEST_OUTPUT"
+grep -Eq 'skipped: *[1-9]|Skipped *: *[1-9]' <<<"$TEMPLATE_TEST_OUTPUT" && fail "step 6 (template): a kit check was skipped in the generated project: $TEMPLATE_TEST_OUTPUT"
+
+PACK_OUT="$WORK/author-pack"
+dotnet pack "$AUTHOR/Acme.Widgets" -c Release -o "$PACK_OUT" >&2 || fail "step 6 (template): dotnet pack of the generated extension failed"
+PACKAGE="$(find "$PACK_OUT" -maxdepth 1 -name '*.nupkg' | head -n 1)"
+[[ -n "$PACKAGE" ]] || fail "step 6 (template): dotnet pack produced no .nupkg"
+EXT_EXTRACT="$WORK/author-extract"
+mkdir -p "$EXT_EXTRACT"
+unzip -qq "$PACKAGE" -d "$EXT_EXTRACT"
+grep -q '<packageType name="NetPrintsExtension" />' "$EXT_EXTRACT"/*.nuspec || fail "step 6 (extension package): nuspec has no NetPrintsExtension packageType"
+[[ -f "$EXT_EXTRACT/extension/netprints-extension.json" ]] || fail "step 6 (extension package): missing extension/netprints-extension.json"
+[[ -f "$EXT_EXTRACT/extension/Acme.Widgets.dll" ]] || fail "step 6 (extension package): missing extension/Acme.Widgets.dll"
+[[ ! -e "$EXT_EXTRACT/extension/NetPrints.Core.dll" ]] || fail "step 6 (extension package): the extension folder holds a host assembly"
+[[ ! -d "$EXT_EXTRACT/lib" ]] || fail "step 6 (extension package): the package has a lib/ folder"
 
 echo "verify-packages.sh: all checks passed for $VERSION"
