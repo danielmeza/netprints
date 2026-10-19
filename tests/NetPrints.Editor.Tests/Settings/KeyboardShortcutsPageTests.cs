@@ -282,6 +282,28 @@ public sealed class KeyboardShortcutsPageTests : IDisposable
     }
 
     [Fact]
+    public async Task ARebindKeepsEveryOtherBindingAndTheRawJsonOfAWrongTypedEntry()
+    {
+        Directory.CreateDirectory(folder);
+        await File.WriteAllTextAsync(
+            FilePath,
+            """{"keyboard":{"bindings":[{"command":"ext.gone.run","add":["Ctrl+Alt+G"]},{"command":"ext.bad","add":"Ctrl+Alt+J"},{"command":"netprints.command.beta","remove":["Ctrl+Alt+C"]}]}}""",
+            TestContext.Current.CancellationToken);
+        JsonFileSettingsStore store = NewStore();
+        KeyboardShortcutsItemViewModel page = Open(NewRegistry(store), store);
+
+        await Record(page, Alpha, "Ctrl+Alt+X");
+
+        using var saved = System.Text.Json.JsonDocument.Parse(await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken));
+        System.Text.Json.JsonElement[] entries = [.. saved.RootElement.GetProperty("keyboard").GetProperty("bindings").EnumerateArray()];
+        Assert.Equal(4, entries.Length);
+        Assert.Contains(entries, entry => entry.GetProperty("command").GetString() == "ext.gone.run");
+        Assert.Contains(entries, entry => entry.GetProperty("command").GetString() == Beta);
+        Assert.Contains(entries, entry => entry.GetProperty("command").GetString() == Alpha);
+        Assert.Contains(entries, entry => entry.GetProperty("command").GetString() == "ext.bad" && entry.GetProperty("add").GetString() == "Ctrl+Alt+J" && !entry.TryGetProperty("scope", out _));
+    }
+
+    [Fact]
     public async Task ChangesSurviveARestart()
     {
         JsonFileSettingsStore store = NewStore();

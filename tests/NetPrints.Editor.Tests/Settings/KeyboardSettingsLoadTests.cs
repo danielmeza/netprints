@@ -101,6 +101,44 @@ public sealed class KeyboardSettingsLoadTests : IDisposable
         Assert.Empty(store.Issues);
     }
 
+    [Theory]
+    [InlineData("""{"command":"probe.bad","add":"Ctrl+J"}""", "probe.bad")]
+    [InlineData("""{"command":"probe.bad","add":["Ctrl+J",5]}""", "probe.bad")]
+    [InlineData("""{"command":"probe.bad","remove":"Ctrl+J"}""", "probe.bad")]
+    [InlineData("""{"command":5,"add":["Ctrl+J"]}""", null)]
+    [InlineData("\"Ctrl+J\"", null)]
+    [InlineData("42", null)]
+    [InlineData("""["Ctrl+J"]""", null)]
+    public void AWrongTypedEntryIsKeptRawAndListedWhileTheOthersLoad(string bad, string? command)
+    {
+        Write("""{"keyboard":{"bindings":[{"command":"probe.cmd","add":["Ctrl+K"]},""" + bad + "," + """{"command":"probe.other","remove":["Ctrl+L"]}]}}""");
+        JsonFileSettingsStore store = NewStore();
+
+        KeyboardSettings settings = store.Get(KeyboardSettings.Descriptor);
+        EffectiveKeyBindings result = KeyBindingResolver.Resolve(
+            [new CommandDescriptor("probe.cmd", "probe.cmd", new NoopHandler()), new CommandDescriptor("probe.other", "probe.other", new NoopHandler())],
+            settings);
+
+        Assert.Equal(["probe.cmd", "", "probe.other"], settings.Bindings.Select(entry => entry.Command));
+        Assert.Equal(["Ctrl+K"], result.For("probe.cmd").Effective.Select(gesture => gesture.ToString()));
+        Assert.Equal(["Ctrl+L"], settings.Bindings[2].Remove);
+        Assert.Single(result.NotLoaded);
+        KeyBindingIssue issue = Assert.Single(result.Issues);
+        Assert.Contains("entry 1", issue.Reason, StringComparison.Ordinal);
+        Assert.Equal(command is null, !issue.Reason.Contains("probe.bad", StringComparison.Ordinal));
+        Assert.Empty(store.Issues);
+    }
+
+    [Fact]
+    public void ANullBindingsListLoadsAsEmpty()
+    {
+        Write("""{"keyboard":{"bindings":null}}""");
+        JsonFileSettingsStore store = NewStore();
+
+        Assert.Empty(store.Get(KeyboardSettings.Descriptor).Bindings);
+        Assert.Empty(store.Issues);
+    }
+
     [Fact]
     public void ANullEntryIsDroppedAndTheOthersLoad()
     {

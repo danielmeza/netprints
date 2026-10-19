@@ -30,6 +30,7 @@ public static class SettingsSchema
     private const string MinLengthKeyword = "minLength";
     private const string NullType = "null";
     private const string StringType = "string";
+    private const string ArrayType = "array";
 
     /// <summary>
     /// Exports the schema of a section.
@@ -73,6 +74,21 @@ public static class SettingsSchema
         }
     }
 
+    // A list member the file omits loads as the empty list, but the exporter takes a constructor parameter's null as its default.
+    private static void DefaultOmittedListToEmpty(JsonObject obj)
+    {
+        bool isList = obj[TypeKeyword] switch
+        {
+            JsonArray types => types.Any(type => (string?)type == ArrayType),
+            JsonNode type => (string?)type == ArrayType,
+            _ => false,
+        };
+        if (isList && obj.TryGetPropertyValue(DefaultKeyword, out JsonNode? current) && current is null)
+        {
+            obj[DefaultKeyword] = new JsonArray();
+        }
+    }
+
     private static void RequireMembers(JsonTypeInfo typeInfo, JsonObject schema)
     {
         if (schema[PropertiesKeyword] is not JsonObject properties)
@@ -94,7 +110,8 @@ public static class SettingsSchema
                 required.Add(name);
             }
 
-            MakeNonNull(member);
+            bool allowEmpty = property.AttributeProvider?.GetCustomAttributes(typeof(RequiredAttribute), true).OfType<RequiredAttribute>().Any(attribute => attribute.AllowEmptyStrings) == true;
+            MakeNonNull(member, allowEmpty);
         }
 
         if (required.Count > 0)
@@ -103,7 +120,7 @@ public static class SettingsSchema
         }
     }
 
-    private static void MakeNonNull(JsonObject member)
+    private static void MakeNonNull(JsonObject member, bool allowEmpty)
     {
         if (member[TypeKeyword] is JsonArray types)
         {
@@ -112,7 +129,7 @@ public static class SettingsSchema
         }
 
         member.Remove(DefaultKeyword);
-        if ((string?)member[TypeKeyword] == StringType && member[MinLengthKeyword] is null)
+        if (!allowEmpty && (string?)member[TypeKeyword] == StringType && member[MinLengthKeyword] is null)
         {
             member[MinLengthKeyword] = 1;
         }
@@ -137,6 +154,7 @@ public static class SettingsSchema
         }
 
         WriteConstraints(provider, obj);
+        DefaultOmittedListToEmpty(obj);
 
         if (provider.IsDefined(typeof(RequiresRestartAttribute), true))
         {

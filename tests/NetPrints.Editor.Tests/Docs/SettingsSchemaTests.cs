@@ -75,6 +75,18 @@ public sealed class SettingsSchemaTests
     }
 
     [Fact]
+    public void TheKeyboardEntryDefaultsAreGlobalAndEmptyLists()
+    {
+        var schema = Assert.IsType<JsonObject>(JsonNode.Parse(SettingsSchemaFile.Generate()));
+        JsonObject bindings = Assert.IsType<JsonObject>(Assert.IsType<JsonObject>(Section(schema, KeyboardSettings.SectionId)["properties"])["bindings"]);
+        JsonObject properties = Assert.IsType<JsonObject>(Assert.IsType<JsonObject>(bindings["items"])["properties"]);
+
+        Assert.Equal("Global", (string?)Assert.IsType<JsonObject>(properties["scope"])["default"]);
+        Assert.Empty(Assert.IsType<JsonArray>(Assert.IsType<JsonObject>(properties["add"])["default"]));
+        Assert.Empty(Assert.IsType<JsonArray>(Assert.IsType<JsonObject>(properties["remove"])["default"]));
+    }
+
+    [Fact]
     public void TheLanguageDescriptionNamesTheLanguagesTheDropDownOffers()
     {
         string description = (string?)Property(NetPrintsSettings.SectionId, "language")["description"] ?? "";

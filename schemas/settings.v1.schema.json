@@ -76,7 +76,7 @@
                   "string",
                   "null"
                 ],
-                "default": null,
+                "default": "Global",
                 "description": "The scope of the command when the entry was written"
               },
               "add": {
@@ -87,7 +87,7 @@
                 "items": {
                   "type": "string"
                 },
-                "default": null,
+                "default": [],
                 "description": "Gestures added to the command, in canonical form"
               },
               "remove": {
@@ -98,7 +98,7 @@
                 "items": {
                   "type": "string"
                 },
-                "default": null,
+                "default": [],
                 "description": "Default gestures removed from the command, in canonical form"
               }
             },

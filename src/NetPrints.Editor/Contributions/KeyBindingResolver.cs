@@ -88,6 +88,11 @@ internal static class KeyBindingResolver
 
         foreach (KeyBindingOverride entry in user.Bindings)
         {
+            if (entry.Problem is { } problem)
+            {
+                issues.Add(new KeyBindingIssue(KeyboardSettings.SectionId + ".bindings", entry.RawJson ?? "", problem));
+            }
+
             if (!byId.TryGetValue(entry.Command, out CommandDescriptor? command))
             {
                 notLoaded.Add(entry);

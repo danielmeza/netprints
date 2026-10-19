@@ -146,7 +146,7 @@ section; a log entry and a one-time message for a built-in one). The editor stil
 
 | Field | Rule |
 |---|---|
-| `command` | required, a command id; kept when the command is not loaded ("Not loaded" list); an entry without one is kept in the file, listed there, and never costs the other entries; a `null` array element is dropped |
+| `command` | required, a command id; kept when the command is not loaded ("Not loaded" list); an entry without one is kept in the file, listed there, and never costs the other entries; a `null` array element is dropped; an entry that is not an object or has a wrong-typed member is kept as written (raw JSON, written back unchanged), listed as not loaded, reported with its index and command, and never costs the other entries |
 | `scope` | `Global`, `Graph`, `ProjectTree` or a comma list; the command's declared scope when written; Global when omitted |
 | `add` | gestures added; canonical form; each parsed at load, an unparseable one reported and ignored; none when omitted |
 | `remove` | default gestures removed; none when omitted |

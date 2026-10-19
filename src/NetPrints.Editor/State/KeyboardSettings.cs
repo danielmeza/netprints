@@ -22,9 +22,15 @@ public sealed record KeyboardSettings
         new(SectionId, KeyboardSettingsJsonContext.Default.KeyboardSettings, new KeyboardSettings());
 }
 
-/// <summary>Reads the <c>bindings</c> array entry by entry, so a <see langword="null"/> element costs only itself.</summary>
+/// <summary>
+/// Reads the <c>bindings</c> array entry by entry, so a bad entry costs only itself: a <see langword="null"/> element is dropped, an
+/// entry that cannot be read becomes an entry without a command that keeps its raw JSON and the reason (ADR-0040 decision 5).
+/// </summary>
 internal sealed class KeyBindingListConverter : JsonConverter<IReadOnlyList<KeyBindingOverride>>
 {
+    /// <inheritdoc/>
+    public override bool HandleNull => true;
+
     /// <inheritdoc/>
     public override IReadOnlyList<KeyBindingOverride> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -39,15 +45,39 @@ internal sealed class KeyBindingListConverter : JsonConverter<IReadOnlyList<KeyB
         }
 
         List<KeyBindingOverride> entries = [];
+        int index = 0;
         while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
         {
-            if (reader.TokenType != JsonTokenType.Null && JsonSerializer.Deserialize(ref reader, KeyboardSettingsJsonContext.Default.KeyBindingOverride) is { } entry)
+            JsonElement element = JsonElement.ParseValue(ref reader);
+            if (element.ValueKind != JsonValueKind.Null)
             {
-                entries.Add(entry);
+                entries.Add(ReadEntry(element, index));
             }
+
+            index++;
         }
 
         return entries;
+    }
+
+    private static KeyBindingOverride ReadEntry(JsonElement element, int index)
+    {
+        try
+        {
+            if (element.ValueKind != JsonValueKind.Object)
+            {
+                throw new JsonException(Strings.Settings_Keyboard_EntryNotObject);
+            }
+
+            return element.Deserialize(KeyboardSettingsJsonContext.Default.KeyBindingOverride) ?? throw new JsonException(Strings.Settings_Keyboard_EntryNotObject);
+        }
+        catch (JsonException ex)
+        {
+            string command = element.ValueKind == JsonValueKind.Object && element.TryGetProperty("command", out JsonElement named) && named.ValueKind == JsonValueKind.String
+                ? TextFormat.Of(Strings.Settings_Keyboard_EntryCommand, named.GetString())
+                : "";
+            return new KeyBindingOverride { RawJson = element.GetRawText(), Problem = TextFormat.Of(Strings.Settings_Keyboard_EntryProblem, index, command, ex.Message) };
+        }
     }
 
     /// <inheritdoc/>
@@ -56,7 +86,14 @@ internal sealed class KeyBindingListConverter : JsonConverter<IReadOnlyList<KeyB
         writer.WriteStartArray();
         foreach (KeyBindingOverride entry in value)
         {
-            JsonSerializer.Serialize(writer, entry, KeyboardSettingsJsonContext.Default.KeyBindingOverride);
+            if (entry.RawJson is { } raw)
+            {
+                writer.WriteRawValue(raw);
+            }
+            else
+            {
+                JsonSerializer.Serialize(writer, entry, KeyboardSettingsJsonContext.Default.KeyBindingOverride);
+            }
         }
 
         writer.WriteEndArray();
@@ -74,7 +111,7 @@ public sealed record KeyBindingOverride
     /// <param name="add">The gestures the user added; none when omitted.</param>
     /// <param name="remove">The default gestures the user removed; none when omitted.</param>
     [JsonConstructor]
-    public KeyBindingOverride(string? command = null, string? scope = null, IReadOnlyList<string>? add = null, IReadOnlyList<string>? remove = null)
+    public KeyBindingOverride(string? command = null, string? scope = DefaultScope, IReadOnlyList<string>? add = null, IReadOnlyList<string>? remove = null)
     {
         Command = command ?? "";
         Scope = scope ?? DefaultScope;
@@ -84,8 +121,16 @@ public sealed record KeyBindingOverride
 
     /// <summary>Gets the id of the command; empty for an entry the file wrote without one, which is kept and listed as not loaded.</summary>
     [Description("The id of the command")]
-    [Required]
+    [Required(AllowEmptyStrings = false)]
     public string Command { get; init; }
+
+    /// <summary>Gets the raw JSON of an entry that could not be read; it is written back unchanged. <see langword="null"/> for a readable entry.</summary>
+    [JsonIgnore]
+    public string? RawJson { get; init; }
+
+    /// <summary>Gets why the entry could not be read, naming its index and command; <see langword="null"/> for a readable entry.</summary>
+    [JsonIgnore]
+    public string? Problem { get; init; }
 
     /// <summary>Gets the name of the command's scope when the entry was written; it is kept for the "Not loaded" list.</summary>
     [Description("The scope of the command when the entry was written")]

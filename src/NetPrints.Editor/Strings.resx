@@ -362,6 +362,15 @@
   <data name="Settings.Keyboard.NotLoadedSummary" xml:space="preserve">
     <value>{0} (add: {1}; remove: {2})</value>
   </data>
+  <data name="Settings.Keyboard.EntryNotObject" xml:space="preserve">
+    <value>an entry must be an object.</value>
+  </data>
+  <data name="Settings.Keyboard.EntryCommand" xml:space="preserve">
+    <value> (command '{0}')</value>
+  </data>
+  <data name="Settings.Keyboard.EntryProblem" xml:space="preserve">
+    <value>entry {0}{1} was kept as written and not loaded: {2}</value>
+  </data>
   <data name="Settings.Keyboard.IssueFormat" xml:space="preserve">
     <value>{0}: "{1}" ignored. {2}</value>
   </data>
