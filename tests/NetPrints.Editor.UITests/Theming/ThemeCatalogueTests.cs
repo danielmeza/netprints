@@ -184,7 +184,7 @@ public class ThemeCatalogueTests
         foreach (string file in SourceViews(root))
         {
             XDocument document = XDocument.Load(file);
-            if (document.Root?.Name.LocalName is not ("UserControl" or "Window"))
+            if (document.Root?.Name.LocalName is not ("UserControl" or "Window" or "DataTemplates"))
             {
                 continue;
             }
