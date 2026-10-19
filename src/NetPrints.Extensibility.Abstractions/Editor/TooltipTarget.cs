@@ -5,7 +5,7 @@ namespace NetPrints.Extensibility.Editor;
 
 /// <summary>What a tooltip is asked about.</summary>
 /// <param name="Kind">The kind of item.</param>
-/// <param name="Subject">The model or view model of the item.</param>
+/// <param name="Subject">The model of the item: a <see cref="NetPrints.Graph.NodePin"/> for <see cref="TooltipTargetKind.Pin"/>, a <see cref="TooltipConnection"/> for <see cref="TooltipTargetKind.Connection"/>; never an editor view model.</param>
 [Experimental(ExperimentalApiIds.EditorContributions, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public sealed record TooltipTarget(TooltipTargetKind Kind, object Subject);
 

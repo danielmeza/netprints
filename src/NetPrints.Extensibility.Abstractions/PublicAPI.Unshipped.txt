@@ -652,6 +652,15 @@ NetPrints.Extensibility.Editor.CommandKeyId.Z = 25 -> NetPrints.Extensibility.Ed
 [NPXE0005]NetPrints.Extensibility.Editor.TooltipContent.Title.get -> string!
 [NPXE0005]NetPrints.Extensibility.Editor.TooltipContent.Title.init -> void
 [NPXE0005]NetPrints.Extensibility.Editor.TooltipContent.TooltipContent(string! Title, System.Collections.Generic.IReadOnlyList<string!>! Lines, string? Documentation = null) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipConnection
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipConnection.<Clone>$() -> NetPrints.Extensibility.Editor.TooltipConnection!
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipConnection.Deconstruct(out NetPrints.Graph.NodePin! Source, out NetPrints.Graph.NodePin! Target) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipConnection.Equals(NetPrints.Extensibility.Editor.TooltipConnection? other) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipConnection.Source.get -> NetPrints.Graph.NodePin!
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipConnection.Source.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipConnection.Target.get -> NetPrints.Graph.NodePin!
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipConnection.Target.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipConnection.TooltipConnection(NetPrints.Graph.NodePin! Source, NetPrints.Graph.NodePin! Target) -> void
 [NPXE0005]NetPrints.Extensibility.Editor.TooltipTarget
 [NPXE0005]NetPrints.Extensibility.Editor.TooltipTarget.<Clone>$() -> NetPrints.Extensibility.Editor.TooltipTarget!
 [NPXE0005]NetPrints.Extensibility.Editor.TooltipTarget.Deconstruct(out NetPrints.Extensibility.Editor.TooltipTargetKind Kind, out object! Subject) -> void
@@ -739,6 +748,9 @@ NetPrints.Extensibility.Editor.CommandKeyId.Z = 25 -> NetPrints.Extensibility.Ed
 [NPXE0005]override NetPrints.Extensibility.Editor.TooltipContent.Equals(object? obj) -> bool
 [NPXE0005]override NetPrints.Extensibility.Editor.TooltipContent.GetHashCode() -> int
 [NPXE0005]override NetPrints.Extensibility.Editor.TooltipContent.ToString() -> string!
+[NPXE0005]override NetPrints.Extensibility.Editor.TooltipConnection.Equals(object? obj) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.TooltipConnection.GetHashCode() -> int
+[NPXE0005]override NetPrints.Extensibility.Editor.TooltipConnection.ToString() -> string!
 [NPXE0005]override NetPrints.Extensibility.Editor.TooltipTarget.Equals(object? obj) -> bool
 [NPXE0005]override NetPrints.Extensibility.Editor.TooltipTarget.GetHashCode() -> int
 [NPXE0005]override NetPrints.Extensibility.Editor.TooltipTarget.ToString() -> string!
@@ -785,6 +797,8 @@ NetPrints.Extensibility.Editor.CommandKeyId.Z = 25 -> NetPrints.Extensibility.Ed
 [NPXE0005]static NetPrints.Extensibility.Editor.PanelDescriptor.operator ==(NetPrints.Extensibility.Editor.PanelDescriptor? left, NetPrints.Extensibility.Editor.PanelDescriptor? right) -> bool
 [NPXE0005]static NetPrints.Extensibility.Editor.TooltipContent.operator !=(NetPrints.Extensibility.Editor.TooltipContent? left, NetPrints.Extensibility.Editor.TooltipContent? right) -> bool
 [NPXE0005]static NetPrints.Extensibility.Editor.TooltipContent.operator ==(NetPrints.Extensibility.Editor.TooltipContent? left, NetPrints.Extensibility.Editor.TooltipContent? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.TooltipConnection.operator !=(NetPrints.Extensibility.Editor.TooltipConnection? left, NetPrints.Extensibility.Editor.TooltipConnection? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.TooltipConnection.operator ==(NetPrints.Extensibility.Editor.TooltipConnection? left, NetPrints.Extensibility.Editor.TooltipConnection? right) -> bool
 [NPXE0005]static NetPrints.Extensibility.Editor.TooltipTarget.operator !=(NetPrints.Extensibility.Editor.TooltipTarget? left, NetPrints.Extensibility.Editor.TooltipTarget? right) -> bool
 [NPXE0005]static NetPrints.Extensibility.Editor.TooltipTarget.operator ==(NetPrints.Extensibility.Editor.TooltipTarget? left, NetPrints.Extensibility.Editor.TooltipTarget? right) -> bool
 [NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.A -> NetPrints.Extensibility.Editor.CommandKey!

@@ -46,6 +46,12 @@ public sealed class CommandInvoker(IContributionRegistry registry, ICommandConte
     /// <returns>The first provider's content, or null.</returns>
     public TooltipContent? TooltipFor(TooltipTarget target) => TooltipResolver.Resolve(registry.TooltipProviders, target);
 
+    /// <summary>Gets the tooltip the registered providers give a target; a built-in provider also gets the editor's object behind it.</summary>
+    /// <param name="target">What the pointer is over, with its model subject.</param>
+    /// <param name="editorSubject">The editor's object behind the target, or <see langword="null"/>.</param>
+    /// <returns>The first provider's content, or null.</returns>
+    public TooltipContent? TooltipFor(TooltipTarget target, object? editorSubject) => TooltipResolver.Resolve(registry.TooltipProviders, target, editorSubject);
+
     /// <summary>Raised when the registry changed: commands, key bindings and context-menu items may have been added or removed (see <see cref="IContributionRegistry.Changed"/>).</summary>
     public event EventHandler? CommandsChanged
     {

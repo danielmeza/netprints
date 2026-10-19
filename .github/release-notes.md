@@ -30,6 +30,8 @@
 
 **Added:** three packages, `NetPrints.Serialization`, `NetPrints.Extensibility.Abstractions` and `NetPrints.Extensibility`, with the extension API. The stable part of the API is tracked in `PublicAPI.Shipped.txt`; what is not yet stable is marked `[Experimental]` with an `NPXE` id. `NetPrints.Core` carries the same API tracking and the author analyzers: NPA020 to NPA024 (icon ids, gestures, contribution ids, duplicate commands and menu slots) and NPA040 to NPA042 (resource keys of node kinds); `docs/guide/diagnostics.md` lists their severities.
 
+**Added:** `TooltipConnection` (NPXE0005), the subject of a connection tooltip; tooltip providers no longer receive the editor's view model.
+
 **Added:** a node of an extension kind may carry `kindVersion` in the graph file, the version of the data its kind wrote it with; a registered migration upgrades older data when the graph opens, and an older editor keeps the node untouched.
 
 **Added:** `netprints.language` in the `netprints` settings section chooses the editor language (a culture name; empty follows the operating system).

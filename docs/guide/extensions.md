@@ -155,7 +155,7 @@ extension fail to load. The facet and its descriptors are experimental (`NPXE000
 | Status bar items | `Editor.AddStatusBarItem` | A segment of the status bar. |
 | Dialogs | `Editor.AddDialog` | A dialog shown by id. |
 | Settings pages | `Editor.AddSettingsPage` | A page of the Settings document; without a view model it is generated from the section's schema. |
-| Tooltips and go-to | `Editor.AddTooltipProvider`, `Editor.AddGoToProvider` | Tooltip content and go-to-anything results. |
+| Tooltips and go-to | `Editor.AddTooltipProvider`, `Editor.AddGoToProvider` | Tooltip content and go-to-anything results. A tooltip provider gets a `TooltipTarget` whose subject is the model: a `NodePin` for a pin, a `TooltipConnection` (the two model pins) for a connection. |
 | View resources | `Editor.AddViewResources` | The templates, styles and icon geometries the extension's views use. |
 
 Every id an extension adds starts with its manifest id (`com.example.sample.openPanel`); a contribution without the prefix

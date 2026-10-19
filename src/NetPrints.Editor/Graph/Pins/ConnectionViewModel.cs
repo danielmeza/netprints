@@ -77,7 +77,7 @@ public sealed partial class ConnectionViewModel : ObservableObject, IDisposable
 
     /// <summary>The tooltip text of the cable: the heading, the type and the documentation, from the registered tooltip providers; null while none gives any.</summary>
     public string? ToolTip =>
-        Source.Node.Graph.Commands?.TooltipFor(new TooltipTarget(TooltipTargetKind.Connection, this)) is { } content
+        Source.Node.Graph.Commands?.TooltipFor(new TooltipTarget(TooltipTargetKind.Connection, new TooltipConnection(Source.Pin, Target.Pin)), this) is { } content
             ? string.Join(Environment.NewLine, [content.Title, .. content.Lines, .. content.Documentation is { } documentation ? (string[])["", documentation] : []])
             : null;
 

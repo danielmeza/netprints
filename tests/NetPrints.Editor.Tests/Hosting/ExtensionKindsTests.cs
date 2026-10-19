@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging.Abstractions;
+using NetPrints.Core;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Shell;
@@ -7,6 +8,7 @@ using NetPrints.Editor.Tests.Shell;
 using NetPrints.Extensibility;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
+using NetPrints.Graph;
 using NetPrints.Projects;
 
 namespace NetPrints.Editor.Tests.Hosting;
@@ -35,8 +37,6 @@ public sealed class ExtensionKindsTests : IAsyncDisposable
         public const string SuggestionProvider = "netprints.test.rows";
 
         public const string GoToQuery = "hello";
-
-        public const string TooltipSubject = "netprints.test.pin";
 
         public const string LogKind = "netprints.test/Legacy";
 
@@ -70,6 +70,12 @@ public sealed class ExtensionKindsTests : IAsyncDisposable
         }
 
         public CommandContext Create(object? parameter = null, CommandScope scope = CommandScope.Global) => new(new FakeShell(), null, null, null, CommandSelection.None, parameter, scope);
+    }
+
+    private static TooltipConnection AConnection()
+    {
+        var method = new MethodGraph("Probe");
+        return new TooltipConnection(((MethodEntryNode)method.EntryNode).ExecPin, ((ReturnNode)method.MainReturnNode).ExecPin);
     }
 
     private async Task<string> ProjectDeclaringTheTestExtensionAsync()
@@ -113,7 +119,7 @@ public sealed class ExtensionKindsTests : IAsyncDisposable
             found.Add("context menu item");
         }
 
-        if (invoker.TooltipFor(new TooltipTarget(TooltipTargetKind.Pin, TestEditorIds.TooltipSubject)) is { Title: "Test pin" })
+        if (invoker.TooltipFor(new TooltipTarget(TooltipTargetKind.Connection, AConnection())) is { Title: "Test connection" })
         {
             found.Add("tooltip provider");
         }

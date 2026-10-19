@@ -42,9 +42,6 @@ public static class TestEditorIds
     /// <summary>The text a go-to query must contain for the go-to provider to answer.</summary>
     public const string GoToQuery = "hello";
 
-    /// <summary>The subject of a pin tooltip target the tooltip provider answers for.</summary>
-    public const string TooltipSubject = "netprints.test.pin";
-
     /// <summary>The URI of the dictionary that holds the geometry of <see cref="Icon"/>.</summary>
     public const string ViewResourcesUri = "avares://NetPrints.TestExtension/TestIcons.axaml";
 }
@@ -72,7 +69,7 @@ public sealed class TestCommandHandler : ICommandHandler
     }
 }
 
-/// <summary>Answers a tooltip for the pin subject <see cref="TestEditorIds.TooltipSubject"/>.</summary>
+/// <summary>Answers a tooltip for a connection, whose subject is the editor's <see cref="TooltipConnection"/>.</summary>
 public sealed class TestTooltipProvider : ITooltipProvider
 {
     /// <inheritdoc />
@@ -82,8 +79,8 @@ public sealed class TestTooltipProvider : ITooltipProvider
     public TooltipContent? TryProvide(TooltipTarget target)
     {
         ArgumentNullException.ThrowIfNull(target);
-        return target.Kind == TooltipTargetKind.Pin && target.Subject is TestEditorIds.TooltipSubject
-            ? new TooltipContent("Test pin", ["from the test extension"])
+        return target.Kind == TooltipTargetKind.Connection && target.Subject is TooltipConnection
+            ? new TooltipContent("Test connection", ["from the test extension"])
             : null;
     }
 }
