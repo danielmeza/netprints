@@ -84,6 +84,25 @@ internal sealed class KeyBindingEditor(IContributionRegistry registry, ISettings
         return ApplyAsync(settings with { Bindings = [.. settings.Bindings.Where(entry => entry.Command != commandId)] }, cancellationToken);
     }
 
+    /// <summary>Deletes one entry of the file, whatever its command, and leaves every other entry as it is.</summary>
+    /// <param name="entry">The entry, as listed by the registry; matched by instance.</param>
+    /// <param name="cancellationToken">Cancels the write.</param>
+    /// <returns>A task that completes when the change is stored and applied.</returns>
+    public Task RemoveEntryAsync(KeyBindingOverride entry, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        KeyboardSettings settings = store.Get(KeyboardSettings.Descriptor);
+        int index = -1;
+        for (int i = 0; i < settings.Bindings.Count && index < 0; i++)
+        {
+            index = ReferenceEquals(settings.Bindings[i], entry) ? i : index;
+        }
+
+        return index < 0
+            ? Task.CompletedTask
+            : ApplyAsync(settings with { Bindings = [.. settings.Bindings.Where((_, position) => position != index)] }, cancellationToken);
+    }
+
     /// <summary>Resets every command, including the entries of commands that are not loaded.</summary>
     /// <param name="cancellationToken">Cancels the write.</param>
     /// <returns>A task that completes when the change is stored and applied.</returns>

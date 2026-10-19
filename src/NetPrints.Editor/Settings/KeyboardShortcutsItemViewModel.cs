@@ -314,8 +314,8 @@ internal sealed partial class KeyboardShortcutsItemViewModel : SettingsItemViewM
         foreach (KeyBindingOverride entry in bindings.NotLoaded)
         {
             NotLoaded.Add(new NotLoadedRowViewModel(
-                string.Format(CultureInfo.CurrentCulture, Strings.Settings_Keyboard_NotLoadedSummary, entry.Command, string.Join(", ", entry.Add), string.Join(", ", entry.Remove)),
-                () => RemoveNotLoadedAsync(entry.Command)));
+                entry.Problem ?? string.Format(CultureInfo.CurrentCulture, Strings.Settings_Keyboard_NotLoadedSummary, entry.Command, string.Join(", ", entry.Add), string.Join(", ", entry.Remove)),
+                () => editor.RemoveEntryAsync(entry, CancellationToken.None)));
         }
 
         IssueTexts.Clear();
@@ -328,8 +328,6 @@ internal sealed partial class KeyboardShortcutsItemViewModel : SettingsItemViewM
         OnPropertyChanged(nameof(HasIssues));
         ApplyFilter();
     }
-
-    private Task RemoveNotLoadedAsync(string commandId) => editor.ResetAsync(commandId, CancellationToken.None);
 
     private void ApplyFilter()
     {

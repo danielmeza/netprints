@@ -261,6 +261,47 @@ public sealed class KeyboardShortcutsPageTests : IDisposable
     }
 
     [Fact]
+    public async Task AnEntryKeptAsWrittenShowsItsProblemInTheNotLoadedList()
+    {
+        Directory.CreateDirectory(folder);
+        await File.WriteAllTextAsync(
+            FilePath,
+            """{"keyboard":{"bindings":[{"command":"ext.a","add":"Ctrl+Alt+J"}]}}""",
+            TestContext.Current.CancellationToken);
+        JsonFileSettingsStore store = NewStore();
+        KeyboardShortcutsItemViewModel page = Open(NewRegistry(store), store);
+
+        NotLoadedRowViewModel row = Assert.Single(page.NotLoaded);
+
+        Assert.Contains("entry 0", row.Summary, StringComparison.Ordinal);
+        Assert.Contains("ext.a", row.Summary, StringComparison.Ordinal);
+        Assert.DoesNotContain("(add: ;", row.Summary, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task RemovingOneEntryKeptAsWrittenLeavesTheOtherEntriesInTheFile()
+    {
+        Directory.CreateDirectory(folder);
+        await File.WriteAllTextAsync(
+            FilePath,
+            """{"keyboard":{"bindings":[{"command":"ext.a","add":"Ctrl+Alt+J"},{"command":"ext.b","add":"Ctrl+Alt+K"},{"add":["Ctrl+Alt+L"]}]}}""",
+            TestContext.Current.CancellationToken);
+        JsonFileSettingsStore store = NewStore();
+        KeyboardShortcutsItemViewModel page = Open(NewRegistry(store), store);
+        NotLoadedRowViewModel first = page.NotLoaded.Single(row => row.Summary.Contains("ext.a", StringComparison.Ordinal));
+
+        await first.RemoveCommand.ExecuteAsync(null);
+
+        using var saved = System.Text.Json.JsonDocument.Parse(await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken));
+        System.Text.Json.JsonElement[] entries = [.. saved.RootElement.GetProperty("keyboard").GetProperty("bindings").EnumerateArray()];
+        Assert.Equal(2, entries.Length);
+        Assert.DoesNotContain(entries, entry => entry.TryGetProperty("command", out System.Text.Json.JsonElement c) && c.GetString() == "ext.a");
+        Assert.Contains(entries, entry => entry.TryGetProperty("command", out System.Text.Json.JsonElement c) && c.GetString() == "ext.b");
+        Assert.Contains(entries, entry => !entry.TryGetProperty("command", out _) || entry.GetProperty("command").GetString() == "");
+        Assert.Equal(2, page.NotLoaded.Count);
+    }
+
+    [Fact]
     public async Task ARebindKeepsTheOtherBindingsOfAFileWithAnEntryThatHasNoCommand()
     {
         Directory.CreateDirectory(folder);
