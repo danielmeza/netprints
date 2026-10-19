@@ -1806,3 +1806,5 @@ T076, Checkpoint C2, gate items measured on this head (Release).
   (ArgumentException, "Unexpected error" dialog). The walk now stops at the attached list. Red:
   `System.ArgumentException : Parameter "parameter" (object) cannot be of type ...OuterItem, as the command type requires an argument of type System.String.`
   Green: `ExecuteCommandOnItemDoubleClickBehaviorTests` 2 of 2, `BottomPanelsWiringTests` + `ProjectTreeWiringTests` 13 of 13.
+- DD-14: `ShellWithNoProjectOpen` and the `StartPage` theory mask the focused recent-projects search box, as the search-popup
+  snapshot masks its box; masks are skipped by the comparison, so no baseline changed. Green: `SnapshotTests` 5 of 5 runs.
