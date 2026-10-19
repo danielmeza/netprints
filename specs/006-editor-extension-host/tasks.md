@@ -826,9 +826,9 @@ tests. **Gate (plan)**: SC-004, SC-006, SC-007, SC-009.
   `src/NetPrints.Editor/Theming/` (the catalogue and the contrast math move into product code; the existing theming
   UITests call it).
 - [x] T096 [US8] Presets, the overlay and the Appearance page (FR-067–FR-069, SC-009; 2 units; load `avalonia-xaml` and
-  `avalonia-styling`). Test first: each of the four presets passes every gated contrast pair (US8 scenario 2); the
+  `avalonia-styling`). Test first: each of the three presets (NetPrints Dark, NetPrints Light, High contrast; FR-068) passes every gated contrast pair (US8 scenario 2); the
   overlay test shows a Dark preset changes 0 Light token values (FR-067, SC-009); switching presets needs no restart
-  (scenario 1); Classic Dark gives the `#000` canvas, triangle pins and the `#AA202020` card; High contrast uses Semi's
+  (scenario 1); High contrast uses Semi's
   high-contrast variants (Aquatic for Dark, Desert for Light) plus its tuned tokens (scenario 4); an unknown
   `darkPreset` falls back to the variant's default with a log entry and keeps the other appearance keys (scenario 3).
   Then the embedded `*.nptheme.json` presets in `src/NetPrints.Editor/Theming/Presets/`, the loader that B1 (T144) reuses,

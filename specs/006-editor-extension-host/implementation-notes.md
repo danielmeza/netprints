@@ -1223,7 +1223,7 @@ All 23 findings are resolved in batches T112-1 to T112-6 (the owner decided DD-7
 - DD-20 (215da1da, T112-3): data-model §5 lists the shipped preset ids and ADR-0035 Amendment 2 records the High contrast behaviour in System mode.
 - DD-21 (25afad18, T112-6): the guide's reusable-workflow example pins `@v0.4.0` with the matching `netprints-version`, and a test keeps it on a release tag.
 - DD-22 (86c47c64, T112-6): the extension author kit is stable from 0.4.0, as research R16 and the extensions guide's API stability section record.
-- DD-23 (7de4660e, T112-6): test-after in T095–T097, T101, T106, T107 and T109 is recorded in those batches' notes; their tests pin behaviour, and the two that did not (ThemeCatalogueTests, the settings-page row of ExtensionKindsTests) were fixed by DD-4 and DD-8. Roadmap: b3841ce5's entry was directed by the coordinator's T110 batch (§4, an owner request); 18d9934c's Dock line is for the coordinator to confirm. Rule: an implementer does not edit .specify/memory/roadmap.md unless its task says so (T112-3 did, for the Classic preset).
+- DD-23 (7de4660e, T112-6): test-after in T095–T097, T101, T106, T107 and T109 is recorded in those batches' notes; their tests pin behaviour, and the two that did not (ThemeCatalogueTests, the settings-page row of ExtensionKindsTests) were fixed by DD-4 and DD-8. Roadmap: b3841ce5's entry was directed by the coordinator's T110 batch (§4, an owner request); 18d9934c's Dock line is for the coordinator to confirm. Rule (AGENTS.md "Governance files", tasks.md batch rules): `.specify/memory/*`, the roadmap included, is changed only by the coordinating session with the owner's approval; an implementer never edits it, even when its task text says to, and proposes the change in implementation-notes.md instead. 532abef3 (T112-3, an implementer commit) broke this rule when it edited the roadmap for the Classic preset; the owner's decision behind it is recorded in FR-068, and the coordinating session confirmed that roadmap line on 2026-10-19, so it stays.
 
 ## Batch C2f (T074-T076)
 
@@ -2008,14 +2008,31 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 
 ### R2-8
 
-- SHA-R2F2-4: `BuildFileRules` keeps ADR-0003's three project rows as its own list, file by file, with the codes each row allows (NU5100 for the template and the Godot extension, NPXE ids for the Godot projects). A `<NoWarn>` in any other project, or a code its row does not name, is an offender, and `EveryExtensionNoWarnAllowanceIsARowOfAdr0003` keeps the list equal to the ADR table.
+- e708a16e: `BuildFileRules` keeps ADR-0003's three project rows as its own list, file by file, with the codes each row allows (NU5100 for the template and the Godot extension, NPXE ids for the Godot projects). A `<NoWarn>` in any other project, or a code its row does not name, is an offender, and `EveryExtensionNoWarnAllowanceIsARowOfAdr0003` keeps the list equal to the ADR table.
 - Red: `OnlyTheProjectsOfAdr0003MayHoldAnExtensionNoWarnWithTheirOwnCodes` failed on the first line with `Assert.NotEmpty() Failure: Collection was empty`, because the old rule accepted any project under `extensions/` with NU5100.
 - Green: `BuildFileRulesTests` + `SourceHygieneTests` 37 total, 0 failed.
 - The ADR paragraph and the `TheOnlyNoWarnsAreTheOptInLineAndExtensionProjects` summary and message now state the per-file allowance; the ADR's three project rows are unchanged.
 
 ### R2-11
 
-- SHA-R2F2-4: the `StaticResource` guard reads both `{StaticResource Key}`, `{StaticResource ResourceKey=Key}` and `<StaticResource ResourceKey="Key" />`; `StartPage.LogoSize` (42) is a catalogue token in `EditorStyles.axaml`, replacing the view's local `StartPageLogoSize`; a new guard rejects a size or colour in a view's own `UserControl.Resources` or `Window.Resources`.
+- e708a16e: the `StaticResource` guard reads both `{StaticResource Key}`, `{StaticResource ResourceKey=Key}` and `<StaticResource ResourceKey="Key" />`; `StartPage.LogoSize` (42) is a catalogue token in `EditorStyles.axaml`, replacing the view's local `StartPageLogoSize`; a new guard rejects a size or colour in a view's own `UserControl.Resources` or `Window.Resources`.
 - Red: `TheStaticResourceGuardReadsTheMarkupAndTheElementSyntax` returned `["Font.Title"]` instead of the three keys; `NoViewKeepsASizeOrColourOfItsOwn` reported `src/NetPrints.Editor/StartPage/StartPageView.axaml: StartPageLogoSize`; `TheStartPageLogoHasOneSize` failed with `Value is null`.
 - Green: `ThemeCatalogueTests`, `ThemeTokenTests`, `StartPageLayoutTests` and `ContactSheetTests` 334 total, 0 failed; `ThemesGuideTests` 2 total, 0 failed.
 - `docs/guide/editor/themes.md` gains the `StartPage.LogoSize` row.
+
+### R2-10 and R2-13
+
+- This commit: T096's acceptance now says three presets (NetPrints Dark, NetPrints Light, High contrast; FR-068) and drops the Classic Dark canvas, pin and card sentence; the `[x]` stays. DD-23 records AGENTS.md's governance rule: an implementer never edits `.specify/memory/*`, the roadmap included, even when its task text says to, and proposes the change here instead; 532abef3 (T112-3) is recorded as the breach whose owner decision stays through FR-068.
+- Red: none, both edits are documentation only.
+- Green: no test change; the T096 tests already encode FR-068.
+- `.specify/memory/roadmap.md` is untouched.
+
+### Gates and slips
+
+1. Release build (`dotnet build NetPrints.slnx -c Release -v q -tl:off --nologo`): 0 warnings, 0 errors.
+2. `dotnet format NetPrints.slnx --verify-no-changes --no-restore`: exit 0 (workspace load warnings only).
+3. `bash eng/trim-warnings.sh`: 8 of 8 (5 IL2026, 1 IL2057, 2 IL2091), at the baseline.
+4. Whole suite (Release, solution-wide, `--ignore-exit-code 8`, fresh `NETPRINTS_STATE_DIR` and `XDG_CONFIG_HOME`): 5486 total, 5446 passed, 40 skipped, 0 failed, 14m 43s. The skips are the usual ones: 3 kit checks for `netprints.test/Legacy`, `GodotExtensionHostTests` (no `NETPRINTS_GODOT_EXTENSION_DIR`), 34 Desktop E2E without `NETPRINTS_E2E`, `SnapshotTests.ClassInspectorSnapshotRepeatedly` (explicit filtering) and `HeadlessSmokeTests.PanCursor`.
+5. Desktop E2E is not a gate for this batch: no finding changes the shell's UI flow. R2-4 is view-model code covered by the unit and Settings UI tests, R2-11 keeps the logo at 42 and only moves its size into the catalogue, and R2-5 changes which Errors rows are kept. Not run.
+6. `pack-local.sh` and `verify-packages.sh` are not gates: R2-8 changes only the test-side rule and the ADR text, and R2-12 changes a `[Description]` string that adds no API. Not run.
+- Slip: the first R2-4/R2-12 notes named the pre-amend sha 42c2ef04; the R2-5/R2-9 commit corrects it to 93de8e39, and the final tree has the right sha.
