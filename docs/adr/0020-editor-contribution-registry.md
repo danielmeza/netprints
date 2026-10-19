@@ -22,7 +22,7 @@ roadmap requires the built-in editor to use the same points first (owner, 2026-0
   commands, panels, dashboard tiles, project templates, context-menu items, tooltip providers and go-to providers.
   Every built-in contribution is registered through it at composition time by feature modules
   (`FileContributions`, `EditContributions`, `BuildContributions`, `NavigationContributions`, …). The registry is
-  frozen once the shell starts; P3a has no dynamic add or remove.
+  frozen once the shell starts; P3a has no dynamic add or remove. (P3 replaces this with groups; see Amendment 2.)
 - **Descriptors are UI-toolkit free** (constitution II): ids and labels are strings, icons are icon-kind names,
   shortcuts are gesture strings (`"Ctrl+Shift+B"`), and menu locations are a path, a group and an order. Execution
   goes through a handler that receives a `CommandContext`: the shell services, the active document and the
@@ -122,3 +122,12 @@ The registry's descriptors became the public editor contract of `NetPrints.Exten
 - **Invalid descriptors.** A duplicate id keeps the first and an invalid descriptor is reported and ignored; neither stops
   the editor or the other contributions. The builder's own contributions (templates, migrations) must also carry the
   manifest prefix (NPX013).
+
+## Amendment 2: groups (P3, sub-phase D1)
+
+The registry keeps an app group (the built-ins, then the per-user extensions in load order) and one session group per open
+project. `Freeze()` ends the initial registration of the app group; after it, adding or removing a session group raises
+`Changed` with a new immutable snapshot, and every surface rebuilds from it (research R14). A session group can shadow an
+app-group owner: when a project declares its own copy of an extension the user directories already loaded, the app group's
+items of that id are hidden while the project is open, so the project's copy serves the session (spec Clarifications,
+T112 DD-6).
