@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Reflection;
+using System.Runtime.Loader;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Extensibility.Loading;
 
@@ -7,8 +9,9 @@ namespace NetPrints.Editor.Hosting;
 /// <summary>A loaded extension, as the error dialog names it.</summary>
 /// <param name="Id">The extension id.</param>
 /// <param name="Name">The display name.</param>
-/// <param name="AssemblyName">The simple name of the extension's assembly.</param>
-internal sealed record ExtensionOrigin(string Id, string Name, string AssemblyName);
+/// <param name="AssemblyName">The simple name of the extension's main assembly.</param>
+/// <param name="Context">The load context of the extension; every assembly loaded in it, when the exception is attributed, belongs to the extension. <see langword="null"/> when only the main assembly counts.</param>
+internal sealed record ExtensionOrigin(string Id, string Name, string AssemblyName, AssemblyLoadContext? Context = null);
 
 /// <summary>
 /// Finds the extension whose code threw an exception, by the assembly of the stack frames (FR-034): the first frame whose
@@ -26,9 +29,9 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
         return new ExtensionAttribution(() =>
             [
                 .. host.Current.Results.OfType<ExtensionLoadResult.Loaded>()
-                    .Select(result => (Result: result, Name: ExtensionAssemblies.Find(result.ManifestPath, result.Manifest.Assembly, result.Id, NullLogger.Instance)?.GetName().Name))
-                    .Where(found => found.Name is not null)
-                    .Select(found => new ExtensionOrigin(found.Result.Id, found.Result.Manifest.Name, found.Name ?? string.Empty)),
+                    .Select(result => (Result: result, Main: ExtensionAssemblies.Find(result.ManifestPath, result.Manifest.Assembly, result.Id, NullLogger.Instance)))
+                    .Where(found => found.Main?.GetName().Name is not null)
+                    .Select(found => new ExtensionOrigin(found.Result.Id, found.Result.Manifest.Name, found.Main?.GetName().Name ?? string.Empty, OwnContext(found.Main))),
             ]);
     }
 
@@ -72,6 +75,13 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
         }
     }
 
+    private static AssemblyLoadContext? OwnContext(Assembly? main) =>
+        main is not null && AssemblyLoadContext.GetLoadContext(main) is { } context && context != AssemblyLoadContext.Default ? context : null;
+
+    private static bool Owns(ExtensionOrigin origin, string simpleName) =>
+        string.Equals(origin.AssemblyName, simpleName, StringComparison.Ordinal)
+        || (origin.Context?.Assemblies.Any(assembly => string.Equals(assembly.GetName().Name, simpleName, StringComparison.Ordinal)) ?? false);
+
     private static ExtensionOrigin? Match(Exception exception, IReadOnlyList<ExtensionOrigin> known)
     {
         foreach (StackFrame frame in new StackTrace(exception, false).GetFrames())
@@ -84,7 +94,7 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
 
             int comma = assembly.IndexOf(',', StringComparison.Ordinal);
             string simple = (comma < 0 ? assembly : assembly[..comma]).Trim();
-            ExtensionOrigin? origin = known.FirstOrDefault(candidate => string.Equals(candidate.AssemblyName, simple, StringComparison.Ordinal));
+            ExtensionOrigin? origin = known.FirstOrDefault(candidate => Owns(candidate, simple));
             if (origin is not null)
             {
                 return origin;

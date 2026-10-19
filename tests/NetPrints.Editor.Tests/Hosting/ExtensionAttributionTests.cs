@@ -1,4 +1,6 @@
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.Loader;
 using NetPrints.Editor.Hosting;
 
 namespace NetPrints.Editor.Tests.Hosting;
@@ -65,6 +67,29 @@ public sealed class ExtensionAttributionTests
         var aggregate = new AggregateException(new ArgumentException("not thrown"), Thrown(new ArgumentException("thrown")));
 
         Assert.Equal("fx.one", attribution.Find(aggregate)?.Id);
+    }
+
+    [Fact]
+    public void AnExceptionFromADependencyLoadedInTheExtensionsContextIsAttributedToIt()
+    {
+        var context = new AssemblyLoadContext("fx.dependency", isCollectible: true);
+        try
+        {
+            Assembly dependency = context.LoadFromAssemblyPath(typeof(ExtensionAttributionTests).Assembly.Location);
+            MethodInfo thrown = dependency.GetType(typeof(ExtensionAttributionTests).FullName ?? string.Empty)?.GetMethod(nameof(Thrown), BindingFlags.NonPublic | BindingFlags.Static)
+                ?? throw new InvalidOperationException("The copy has no Thrown method.");
+            Exception exception = Assert.IsAssignableFrom<Exception>(thrown.Invoke(null, [new InvalidOperationException("boom")]));
+            var inContext = new ExtensionAttribution(() => [new ExtensionOrigin("fx.one", "Fixture one", "Fx.Main", context)]);
+            var elsewhere = new ExtensionAttribution(() => [new ExtensionOrigin("fx.one", "Fixture one", "Fx.Main", new AssemblyLoadContext("fx.empty", isCollectible: true))]);
+
+            Assert.Equal("fx.one", inContext.Find(exception)?.Id);
+            Assert.Null(elsewhere.Find(exception));
+            Assert.Null(new ExtensionAttribution(() => [Origin("Fx.Main")]).Find(exception));
+        }
+        finally
+        {
+            context.Unload();
+        }
     }
 
     [Fact]
