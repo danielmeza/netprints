@@ -384,4 +384,4 @@ and relies on the version check above to catch direct-dependency mismatches. Thi
 runtime uses: when your extension loads an assembly by name, it will get whichever version is already loaded (from a
 dependency or the host), and if that version is too old, the version check will catch it.
 
-For more on how extensions resolve and share assemblies, see [ADR-0010](../adr/0010-extension-testing-and-coexistence.md).
+For more on how extensions resolve and share assemblies, see [ADR-0010](../adr/0010-extension-testing-and-coexistence.md). To test an extension, see [Testing an extension](extension-testing.md).

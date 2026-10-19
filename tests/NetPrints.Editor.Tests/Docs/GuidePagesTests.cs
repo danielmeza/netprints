@@ -52,6 +52,28 @@ public sealed partial class GuidePagesTests
         }
     }
 
+    [GeneratedRegex("""const string \w+ = "(?<code>NPK\d{3})";""")]
+    private static partial Regex CheckCode();
+
+    [Fact]
+    public void TheExtensionTestingGuideHasASectionPerCheckAndIsLinkedFromTheIndexAndTheExtensionsGuide()
+    {
+        string root = RepositoryPaths.Root();
+        string guide = File.ReadAllText(Path.Combine(root, "docs", "guide", "extension-testing.md"));
+        string codes = File.ReadAllText(Path.Combine(root, "src", "NetPrints.Extensibility.Testing", "NpkDiagnosticCodes.cs"));
+
+        string[] checks = [.. CheckCode().Matches(codes).Select(match => match.Groups["code"].Value)];
+
+        Assert.NotEmpty(checks);
+        foreach (string code in checks)
+        {
+            Assert.Contains("### " + code, guide, StringComparison.Ordinal);
+        }
+
+        Assert.Contains("guide/extension-testing.md", File.ReadAllText(Path.Combine(root, "README.md")), StringComparison.Ordinal);
+        Assert.Contains("extension-testing.md", File.ReadAllText(Path.Combine(root, "docs", "guide", "extensions.md")), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void EveryGuideOfTheFolderIsListedHere()
     {

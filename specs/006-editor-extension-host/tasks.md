@@ -876,14 +876,14 @@ contracts/cli.md §2–§3. **Independent test**: US10's independent test. **Gat
 
 ### Batch D2b — model: sonnet — T103–T105 — 4 units
 
-- [ ] T103 [US10] Checks NPK009–NPK013, NPK015 and NPK016 (FR-076–FR-078, SC-011; 2 units). Same pattern as T102.
+- [x] T103 [US10] Checks NPK009–NPK013, NPK015 and NPK016 (FR-076–FR-078, SC-011; 2 units). Same pattern as T102.
   NPK016 scans the extension's `.axaml` sources with the repository's E2/E8 XAML rules, from
   `ConformanceOptions.SourceDirectory` or the folder holding `netprints-extension.json`. NPK014 (graph rules) lands
   with N2 in T138.
-- [ ] T104 [US10] `NetPrints.TestExtension` through the kit only (FR-078, US10 scenario 4; 1 unit). Replace its direct
+- [x] T104 [US10] `NetPrints.TestExtension` through the kit only (FR-078, US10 scenario 4; 1 unit). Replace its direct
   tests with a `ConformanceTests<TestExtension>` class and kit-based tests; amend ADR-0010 (conformance checks for
   service providers, graph rules and editor contributions; NPK013–NPK016, with NPK014 landing in T138).
-- [ ] T105 [P] [US10] The extension testing guide (FR-116; 1 unit). Write `docs/guide/extension-testing.md`: the kit,
+- [x] T105 [P] [US10] The extension testing guide (FR-116; 1 unit). Write `docs/guide/extension-testing.md`: the kit,
   the xUnit adapter, and each NPK check with its rule and its fix. Guide index.
 
 ### Batch D2c — model: sonnet — T106–T107 — 4 units
