@@ -13,7 +13,8 @@ namespace NetPrints.Editor.Behaviors;
 /// on a row of the attached items control: the whole item container, its indentation, padding and empty space, not only the
 /// template's content. Avalonia raises <c>DoubleTapped</c> only when both presses have the same source element, so a row
 /// that is re-templated or realized again between the presses (selection, scrolling, a slow UI thread) loses it; the click
-/// count depends on time and position only. Presses outside every row, other buttons and odd counts do nothing.
+/// count depends on time and position only. The walk stops at the attached control, so a press outside every row
+/// of it, even inside an item of an outer list (a dock), does nothing.
 /// </summary>
 public sealed class ExecuteCommandOnItemDoubleClickBehavior : StyledElementBehavior<ItemsControl>
 {
@@ -54,6 +55,11 @@ public sealed class ExecuteCommandOnItemDoubleClickBehavior : StyledElementBehav
 
         foreach (Visual visual in source.GetSelfAndVisualAncestors())
         {
+            if (ReferenceEquals(visual, AssociatedObject))
+            {
+                return;
+            }
+
             if (visual is Control { DataContext: { } item } container && ItemsControl.ItemsControlFromItemContainer(container) is not null)
             {
                 if (command.CanExecute(item))

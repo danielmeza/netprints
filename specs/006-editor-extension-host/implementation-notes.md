@@ -1801,3 +1801,8 @@ T076, Checkpoint C2, gate items measured on this head (Release).
   compile red on the missing command. Green: `KeyboardShortcutsPageUiTests` 5 of 5, `KeyboardShortcutsPageTests` 12 of 12.
 - Decision (DD-3, page list): the `Pages` `ListBox` gained `Focusable="True"` because `FocusControlAction` does not focus a list
   whose `Focusable` is not set explicitly, and `x:Name="Pages"` is read by that action (D15).
+- DD-2: the ShellMainFlow failure of CI run 39164167733 attempt 1 (head 142a178d) was a product bug, not a flake: a second press
+  outside the Errors rows walked past the list to a Dock container and passed its `ToolDock` to `NavigateCommand`
+  (ArgumentException, "Unexpected error" dialog). The walk now stops at the attached list. Red:
+  `System.ArgumentException : Parameter "parameter" (object) cannot be of type ...OuterItem, as the command type requires an argument of type System.String.`
+  Green: `ExecuteCommandOnItemDoubleClickBehaviorTests` 2 of 2, `BottomPanelsWiringTests` + `ProjectTreeWiringTests` 13 of 13.
