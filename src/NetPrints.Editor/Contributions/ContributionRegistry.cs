@@ -350,7 +350,7 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
     private void AddViewResources(string owner, string resourceUri)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(resourceUri);
-        Target.ViewResources.Add(new ViewResourceDeclaration(owner, resourceUri));
+        Target.ViewResources.Add(new ViewResourceDeclaration(owner, resourceUri) { OwnerName = Target.OwnerNames.GetValueOrDefault(owner, owner) });
         Publish();
     }
 

@@ -28,8 +28,9 @@ public static class ViewResourceLoader
     /// <summary>Makes the application hold the declared resources and no others: new ones are loaded and added, ones no longer declared are removed.</summary>
     /// <param name="application">The application.</param>
     /// <param name="declarations">The declarations of every group now in the registry, in registration order.</param>
+    /// <param name="templateFailed">Reports a contributed template that threw while it was built.</param>
     /// <returns>The declarations that could not be used and were not reported by an earlier call; each is ignored.</returns>
-    public static IReadOnlyList<ViewResourceFailure> Sync(Application application, IEnumerable<ViewResourceDeclaration> declarations)
+    public static IReadOnlyList<ViewResourceFailure> Sync(Application application, IEnumerable<ViewResourceDeclaration> declarations, Action<ViewResourceDeclaration, Exception>? templateFailed = null)
     {
         ArgumentNullException.ThrowIfNull(application);
         ArgumentNullException.ThrowIfNull(declarations);
@@ -54,7 +55,7 @@ public static class ViewResourceLoader
 
             try
             {
-                state.Applied[declaration.Uri] = Add(application, declaration);
+                state.Applied[declaration.Uri] = Add(application, declaration, templateFailed);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -66,13 +67,13 @@ public static class ViewResourceLoader
         return failures;
     }
 
-    private static AppliedResource Add(Application application, ViewResourceDeclaration declaration)
+    private static AppliedResource Add(Application application, ViewResourceDeclaration declaration, Action<ViewResourceDeclaration, Exception>? templateFailed)
     {
         object document = Compiled.TryGetValue(declaration.Uri, out Func<object>? create) ? create() : LoadByUri(declaration.Uri);
         ViewResourceTarget target = Array.Find(Targets, candidate => candidate.Accepts(document))
             ?? throw new InvalidOperationException($"'{declaration.Uri}' is a {document.GetType().Name}, not a DataTemplates, ResourceDictionary or Styles document.");
-        target.Add(application, document);
-        return new AppliedResource(target, document);
+        object applied = target.Add(application, document, declaration, templateFailed);
+        return new AppliedResource(target, applied);
     }
 
     private static object LoadByUri(string uri) =>
@@ -87,16 +88,16 @@ public static class ViewResourceLoader
         public HashSet<string> Failed { get; } = new(StringComparer.Ordinal);
     }
 
-    private sealed record AppliedResource(ViewResourceTarget Target, object Document)
+    private sealed record AppliedResource(ViewResourceTarget Target, object Applied)
     {
-        public void Remove(Application application) => Target.Remove(application, Document);
+        public void Remove(Application application) => Target.Remove(application, Applied);
     }
 
     private abstract class ViewResourceTarget
     {
         public abstract bool Accepts(object document);
 
-        public abstract void Add(Application application, object document);
+        public abstract object Add(Application application, object document, ViewResourceDeclaration declaration, Action<ViewResourceDeclaration, Exception>? templateFailed);
 
         public abstract void Remove(Application application, object document);
     }
@@ -105,11 +106,27 @@ public static class ViewResourceLoader
     {
         public override bool Accepts(object document) => document is DataTemplates;
 
-        public override void Add(Application application, object document) => application.DataTemplates.AddRange((DataTemplates)document);
+        public override object Add(Application application, object document, ViewResourceDeclaration declaration, Action<ViewResourceDeclaration, Exception>? templateFailed)
+        {
+            var templates = (DataTemplates)document;
+            if (declaration.Owner == BuiltInContributions.OwnerId)
+            {
+                application.DataTemplates.AddRange(templates);
+                return document;
+            }
+
+            string name = declaration.OwnerName.Length > 0 ? declaration.OwnerName : declaration.Owner;
+            IDataTemplate[] wrapped =
+            [
+                .. templates.Select(template => new ContainedDataTemplate(template, name, templateFailed is null ? null : ex => templateFailed(declaration, ex))),
+            ];
+            application.DataTemplates.AddRange(wrapped);
+            return wrapped;
+        }
 
         public override void Remove(Application application, object document)
         {
-            foreach (IDataTemplate template in (DataTemplates)document)
+            foreach (IDataTemplate template in document is DataTemplates templates ? (IEnumerable<IDataTemplate>)templates : (IDataTemplate[])document)
             {
                 application.DataTemplates.Remove(template);
             }
@@ -120,7 +137,11 @@ public static class ViewResourceLoader
     {
         public override bool Accepts(object document) => document is ResourceDictionary;
 
-        public override void Add(Application application, object document) => application.Resources.MergedDictionaries.Add((ResourceDictionary)document);
+        public override object Add(Application application, object document, ViewResourceDeclaration declaration, Action<ViewResourceDeclaration, Exception>? templateFailed)
+        {
+            application.Resources.MergedDictionaries.Add((ResourceDictionary)document);
+            return document;
+        }
 
         public override void Remove(Application application, object document) => application.Resources.MergedDictionaries.Remove((ResourceDictionary)document);
     }
@@ -129,7 +150,11 @@ public static class ViewResourceLoader
     {
         public override bool Accepts(object document) => document is IStyle;
 
-        public override void Add(Application application, object document) => application.Styles.Add((IStyle)document);
+        public override object Add(Application application, object document, ViewResourceDeclaration declaration, Action<ViewResourceDeclaration, Exception>? templateFailed)
+        {
+            application.Styles.Add((IStyle)document);
+            return document;
+        }
 
         public override void Remove(Application application, object document) => application.Styles.Remove((IStyle)document);
     }

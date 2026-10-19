@@ -1547,6 +1547,7 @@ T076, Checkpoint C2, gate items measured on this head (Release).
   and the baseline in `eng/trim-warnings.txt` is now 8.
 - **Corrected (T112-4, DD-6)**: a project's copy of an extension now shadows the per-user copy's app-level items for the session (no NPX004, the project copy's name).
 - **Corrected (T112-4, DD-16)**: a connection tooltip target carries `TooltipConnection` (the two model pins); only the built-in provider reads the connection view model, through the editor-internal `IEditorTooltipProvider`. Decision: the model-only `TryProvide(TooltipTarget)` of the built-in provider gives the title and type line and no documentation, as the spec says.
+- **Corrected (T112-4, DD-17)**: an extension's data templates are wrapped, so a template that throws while its view is built shows `ContributionErrorView` naming the extension and logs 1044.
 
 ## Batch D1c (T084, T085, T175)
 

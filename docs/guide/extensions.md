@@ -160,7 +160,8 @@ extension fail to load. The facet and its descriptors are experimental (`NPXE000
 
 Every id an extension adds starts with its manifest id (`com.example.sample.openPanel`); a contribution without the prefix
 is rejected with `NPX013`, and a conflicting one is reported (`NPX004` or `NPX006`) with the first kept. Neither stops
-the extension's other contributions.
+the extension's other contributions. A data template that throws while it builds its view shows a placeholder that names
+your extension, and the editor log has the exception (event 1044).
 
 ### Typed contexts
 

@@ -2,7 +2,7 @@ using NetPrints.Extensibility;
 
 namespace Fx.Views;
 
-/// <summary>Declares the view resources of its own assembly by URI: a data templates file, an icon dictionary, a styles file, a view that is none of them and a file that does not exist.</summary>
+/// <summary>Declares the view resources of its own assembly by URI: a data templates file with a view that throws, an icon dictionary, a styles file, a view that is none of them and a file that does not exist.</summary>
 public sealed class FxViewsExtension : INetPrintsExtension
 {
     /// <summary>The extension id, also the manifest id.</summary>

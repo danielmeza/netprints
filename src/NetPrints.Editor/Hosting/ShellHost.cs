@@ -132,7 +132,7 @@ internal sealed class ShellHost : IDisposable
 
     private static void SyncViewResources(global::Avalonia.Application application, IContributionSnapshot snapshot, ILogger logger)
     {
-        foreach (ViewResourceFailure failure in ViewResourceLoader.Sync(application, snapshot.ViewResources))
+        foreach (ViewResourceFailure failure in ViewResourceLoader.Sync(application, snapshot.ViewResources, (declaration, exception) => Log.ViewTemplateFailed(logger, exception, declaration.Owner, declaration.Uri)))
         {
             Log.ViewResourceIgnored(logger, failure.Declaration.Owner, failure.Declaration.Uri, failure.Reason);
         }

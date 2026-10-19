@@ -127,6 +127,14 @@ internal static partial class Log
     [LoggerMessage(EventId = 1042, Level = LogLevel.Warning, Message = "The view resource {Uri} of extension {Owner} was ignored: {Reason}")]
     public static partial void ViewResourceIgnored(ILogger logger, string owner, string uri, string reason);
 
+    /// <summary>Logs 1044: an extension's data template threw while its view was built; a placeholder names the extension.</summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="exception">The failure.</param>
+    /// <param name="owner">The id of the extension.</param>
+    /// <param name="uri">The URI of the templates file.</param>
+    [LoggerMessage(EventId = 1044, Level = LogLevel.Warning, Message = "A view template of extension {Owner} from {Uri} failed; a placeholder is shown")]
+    public static partial void ViewTemplateFailed(ILogger logger, Exception exception, string owner, string uri);
+
     /// <summary>Logs 1043: a <c>darkPreset</c> or <c>lightPreset</c> setting names no preset of its variant, so the variant's default applies.</summary>
     /// <param name="logger">Logger to write to.</param>
     /// <param name="id">The id in the setting.</param>
