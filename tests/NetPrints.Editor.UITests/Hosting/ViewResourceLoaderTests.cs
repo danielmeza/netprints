@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Runtime.Loader;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Headless.XUnit;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Editor.Contributions;
@@ -120,6 +121,58 @@ public class ViewResourceLoaderTests
             ViewResourceLoader.Sync(App, []);
             Directory.Delete(temp, recursive: true);
         }
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task AnExtensionsTreeTemplateStillShowsItsChildren()
+    {
+        (ContributionRegistry registry, ExtensionHost host) = LoadGroup();
+        await using ExtensionHost _ = host;
+        ViewResourceLoader.Sync(App, registry.ViewResources);
+        object root = NewModelOf(FixtureExtensions.ViewsFolder());
+        ((System.Collections.IList)(root.GetType().GetProperty("Children")?.GetValue(root) ?? throw new InvalidOperationException("Children is missing."))).Add(NewModelOf(FixtureExtensions.ViewsFolder()));
+        var tree = new TreeView { ItemsSource = new[] { root } };
+        var window = new Window { Width = 300, Height = 200, Content = tree };
+        try
+        {
+            window.Show();
+            window.UpdateLayout();
+            HeadlessDriver.Pump();
+
+            TreeViewItem item = Assert.IsType<TreeViewItem>(tree.ContainerFromIndex(0));
+            Assert.Equal(1, item.ItemCount);
+        }
+        finally
+        {
+            window.Close();
+            registry.RemoveSessionGroup(GroupKey);
+            ViewResourceLoader.Sync(App, registry.ViewResources);
+        }
+    }
+
+    private sealed class PlainTemplate : IDataTemplate
+    {
+        public bool Match(object? data) => true;
+
+        public Control? Build(object? param) => null;
+    }
+
+    [Fact]
+    public void AContainedTemplateHasTheCapabilitiesOfItsTemplateAndNoOthers()
+    {
+        ContainedDataTemplate plain = ContainedDataTemplate.Wrap(new PlainTemplate(), "x", null);
+        ContainedDataTemplate data = ContainedDataTemplate.Wrap(new Avalonia.Markup.Xaml.Templates.DataTemplate(), "x", null);
+        ContainedDataTemplate tree = ContainedDataTemplate.Wrap(new Avalonia.Markup.Xaml.Templates.TreeDataTemplate(), "x", null);
+
+        Assert.IsNotAssignableFrom<ITreeDataTemplate>(plain);
+        Assert.IsNotAssignableFrom<IRecyclingDataTemplate>(plain);
+        Assert.IsNotAssignableFrom<ITypedDataTemplate>(plain);
+        Assert.IsAssignableFrom<IRecyclingDataTemplate>(data);
+        Assert.IsAssignableFrom<ITypedDataTemplate>(data);
+        Assert.IsNotAssignableFrom<ITreeDataTemplate>(data);
+        Assert.IsAssignableFrom<ITreeDataTemplate>(tree);
+        Assert.IsAssignableFrom<ITypedDataTemplate>(tree);
+        Assert.IsNotAssignableFrom<IRecyclingDataTemplate>(tree);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

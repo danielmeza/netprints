@@ -138,7 +138,7 @@ public static class ViewResourceLoader
             string name = declaration.OwnerName.Length > 0 ? declaration.OwnerName : declaration.Owner;
             IDataTemplate[] wrapped =
             [
-                .. templates.Select(template => new ContainedDataTemplate(template, name, templateFailed is null ? null : ex => templateFailed(declaration, ex))),
+                .. templates.Select(template => ContainedDataTemplate.Wrap(template, name, templateFailed is null ? null : ex => templateFailed(declaration, ex))),
             ];
             application.DataTemplates.AddRange(wrapped);
             return wrapped;
