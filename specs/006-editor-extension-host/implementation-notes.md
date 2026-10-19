@@ -2093,7 +2093,7 @@ Commits: ee48f34e (R3-1, R3-3, R3-4, R3-5, R3-10, R3-11), 410f992f (R3-2, R3-6, 
 
 ## Batch R3-F2 (round-3 review fixes, test guards)
 
-Commit: 4ce7eb76 (R3-8 and the R3-9 helper and sample test), then this batch's follow-up commit that wires the guard (R3-9).
+Commit: 4ce7eb76 (R3-8 and the R3-9 helper and sample test), then a422cb88 that wires the guard (R3-9).
 
 ### R3-8
 
@@ -2120,5 +2120,6 @@ Commit: 4ce7eb76 (R3-8 and the R3-9 helper and sample test), then this batch's f
 - The whole suite, Desktop E2E, pack and trim are not gates for this batch: only tests and these notes changed. Not run.
 - The gates above were rerun in full after the guard wiring; the counts are unchanged.
 - Slip: the first filtered run through the in-process runner passed `--no-progress`, which that runner rejects (`unknown option: --no-progress`); rerun without the flag.
-- Slip: the first completion stopped at `RESULT: partial` and withheld the R3-9 guard wiring under the batch's fallback; this follow-up applies the delegated view-root scope and completes it.
+- Slip: the first completion stopped at `RESULT: partial` and withheld the R3-9 guard wiring under the batch's fallback; a422cb88 applies the delegated view-root scope and completes it.
+- Slip: the batch planned one commit; the partial stop and this continuation split the work into two (4ce7eb76 and a422cb88), which cannot be squashed without a force push.
 - The R3-8 mutation and the guard probe in `ContributionErrorView.axaml` were reverted with the edit tool; `git status` shows no view change.
