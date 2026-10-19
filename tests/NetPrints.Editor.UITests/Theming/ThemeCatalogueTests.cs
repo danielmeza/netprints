@@ -183,10 +183,13 @@ public class ThemeCatalogueTests
         List<string> offenders = [];
         foreach (string file in SourceViews(root))
         {
-            offenders.AddRange(XDocument.Load(file).Descendants()
-                .Where(element => element.Parent?.Name.LocalName is "UserControl.Resources" or "Window.Resources")
-                .Where(element => ValueElements.Contains(element.Name.LocalName, StringComparer.Ordinal))
-                .Select(element => $"{Path.GetRelativePath(root, file)}: {(string?)element.Attribute(Xaml + "Key")}"));
+            XDocument document = XDocument.Load(file);
+            if (document.Root?.Name.LocalName is not ("UserControl" or "Window"))
+            {
+                continue;
+            }
+
+            offenders.AddRange(ViewLocalValueKeys(document).Select(key => $"{Path.GetRelativePath(root, file)}: {key}"));
         }
 
         Assert.True(offenders.Count == 0, "Views that keep their own size or colour instead of a catalogue token: " + string.Join(", ", offenders));

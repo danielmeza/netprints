@@ -2093,7 +2093,7 @@ Commits: ee48f34e (R3-1, R3-3, R3-4, R3-5, R3-10, R3-11), 410f992f (R3-2, R3-6, 
 
 ## Batch R3-F2 (round-3 review fixes, test guards)
 
-Commit: this batch's one commit (R3-8, R3-9).
+Commit: 4ce7eb76 (R3-8 and the R3-9 helper and sample test), then this batch's follow-up commit that wires the guard (R3-9).
 
 ### R3-8
 
@@ -2105,8 +2105,10 @@ Commit: this batch's one commit (R3-8, R3-9).
 
 - Changed: `ValueElements` adds `LinearGradientBrush`, `RadialGradientBrush` and `ConicGradientBrush`. `ViewLocalValueKeys(XDocument)` returns the `x:Key` of every value element that has one and an ancestor whose local name ends with `.Resources`, so any control's resources and a `ResourceDictionary` wrapper at any depth are seen. `ViewLocalValueKeysSeesEveryResourceForm` parses a sample view holding a nested `UserControl.Resources` dictionary with `x:Double` A, `Grid.Resources` with `Thickness` B, `Border.Resources` with a `LinearGradientBrush` C and an unkeyed `SolidColorBrush` in `Border.Background`, and expects `A, B, C`.
 - Red: `dotnet build tests/NetPrints.Editor.UITests` failed with `error CS0103: The name 'ViewLocalValueKeys' does not exist in the current context` at the sample test. Green after the helper: `ThemeCatalogueTests` 245 total, 0 failed.
-- Held (batch fallback): wiring `NoViewKeepsASizeOrColourOfItsOwn` to the helper reports three resource-definition documents, not views: `src/NetPrints.Editor/EditorStyles.axaml` (the token catalogue itself), `src/NetPrints.Editor/Icons/AppMark.axaml` (brand colours) and `src/NetPrints.Editor/Shell/Docking/DockStyles.axaml` (dock surface tokens), all under `Styles.Resources`. No view was changed and the guard rewrite is not committed; the original direct-children guard stays in place. A follow-up must decide the scope before wiring the helper, for example only `UserControl`/`Window` documents, or excluding a root `Styles`.
-- Decision (delegated): the helper and its sample test are committed although the guard does not call the helper yet; the batch asks for the sample test to pass and only withholds the guard change. This keeps the red/green evidence and the unit test for the next round.
+- Guard wiring (continued): `NoViewKeepsASizeOrColourOfItsOwn` now calls `ViewLocalValueKeys` for each document rooted at `UserControl` or `Window`. The helper alone reports `src/NetPrints.Editor/EditorStyles.axaml` (the token catalogue itself), `src/NetPrints.Editor/Icons/AppMark.axaml` (brand colours) and `src/NetPrints.Editor/Shell/Docking/DockStyles.axaml` (dock surface tokens), all under `Styles.Resources`; those are the definition sites of the catalogue, not views, so the guard skips them by root element instead of changing a view or allowlisting a file. Every resource form inside a view (a nested `ResourceDictionary`, any control's resources, gradient brushes) is now seen.
+- Red (guard): a temporary `x:Double x:Key="Probe.Size"` in `ContributionErrorView.axaml` failed with `Views that keep their own size or colour instead of a catalogue token: src/NetPrints.Editor/Controls/ContributionErrorView.axaml: Probe.Size`; the view was reverted with the edit tool and the test is green again.
+- Decision (delegated): the guard scans only documents rooted at `UserControl` or `Window`. The literal `.Resources` ancestor rule also matches `Styles.Resources`, and the three hits are the token, brand and dock dictionaries themselves; flagging them would require editing the definition sites or allowlisting files, both worse than scoping the guard to views. The guard's name and message already say "view", and the finding R3-9 raised is about resources kept inside a view.
+- Decision (delegated): `ViewLocalValueKeys` stays general (any `.Resources` ancestor) so its sample test describes the detection rule on its own; the view scope lives in the guard's loop.
 - Decision (delegated): `ViewLocalValueKeys` returns keys in document order without sorting, like `StaticResourceKeys`.
 
 ### Gates and slips
@@ -2116,5 +2118,7 @@ Commit: this batch's one commit (R3-8, R3-9).
 3. `tests/NetPrints.Core.Tests` (Release, `--no-build`, fresh `NETPRINTS_STATE_DIR` and `XDG_CONFIG_HOME`): 1073 total, 1073 passed, 0 skipped, 0 failed.
 4. `tests/NetPrints.Editor.UITests` (same): 1107 total, 1105 passed, 2 skipped, 0 failed. The two skips are the usual ones (`HeadlessSmokeTests.PanCursor` and `SnapshotTests.ClassInspectorSnapshotRepeatedly`).
 - The whole suite, Desktop E2E, pack and trim are not gates for this batch: only tests and these notes changed. Not run.
+- The gates above were rerun in full after the guard wiring; the counts are unchanged.
 - Slip: the first filtered run through the in-process runner passed `--no-progress`, which that runner rejects (`unknown option: --no-progress`); rerun without the flag.
-- Slip: none else. The R3-8 mutation was reverted with the edit tool and `git diff` before the commit shows it is gone.
+- Slip: the first completion stopped at `RESULT: partial` and withheld the R3-9 guard wiring under the batch's fallback; this follow-up applies the delegated view-root scope and completes it.
+- The R3-8 mutation and the guard probe in `ContributionErrorView.axaml` were reverted with the edit tool; `git status` shows no view change.
