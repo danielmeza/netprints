@@ -1974,7 +1974,7 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 
 ### R2-4
 
-- 42c2ef04: the Settings document also subscribes to `IExtensionHost.RegistryChanged`; on that event it replaces the rows of the loaded-extensions list and rebuilds the extension pages with `force: true`, so a project's generated section pages and the list follow extensions that load or unload while the document is open. Closing the project no longer leaves the old pages behind.
+- 93de8e39: the Settings document also subscribes to `IExtensionHost.RegistryChanged`; on that event it replaces the rows of the loaded-extensions list and rebuilds the extension pages with `force: true`, so a project's generated section pages and the list follow extensions that load or unload while the document is open. Closing the project no longer leaves the old pages behind.
 - Red: `AProjectsExtensionsComeAndGoWhileTheDocumentIsOpen` failed on the first `Assert.Contains` (`Filter not matched in collection`), because the open document did not follow the host load.
 - Green: `SettingsDocumentViewModelTests`, `ExtensionKindsTests`, `SettingsSchemaTests`, `SettingsFieldTests` and `SettingsValidationTests` 76 total, 0 failed; `SettingsDocumentTests`, `LanguageSettingTests` and `KeyboardShortcutsPageUiTests` 17 total, 0 failed.
 - Decision (delegated): the handler goes through `IUiDispatcher.Post`. `ExtensionHost` raises `RegistryChanged` after `loadGate.WaitAsync(...).ConfigureAwait(false)`, which can run on a pool thread when two loads overlap, and the rebuild writes `VisiblePages`, which the view binds.
@@ -1986,3 +1986,15 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - Green: the same two filtered runs, 76 and 17 total, 0 failed.
 - Decision (delegated): no per-extension `ExtensionRegistry.StringResourcesOf(id)`. The registry keeps one flat list, so this would add public API to the packed `NetPrints.Extensibility` for a collision that needs one extension to ship a key named after another extension's id.
 - `CultureNameAttribute`'s message stays: it validates a hand-edited `settings.json`, which accepts any culture name.
+
+### R2-5
+
+- SHA-R2F2-2: `ErrorListViewModel.Refresh` builds the rows and keeps the shown ones unless the diagnostic or the resolved member name differs, so a rename that leaves the diagnostic unchanged (CS0026) shows the new member name.
+- Red: `ARenamedMethodShowsItsNewNameWhenTheDiagnosticsAreUnchanged` failed with `Expected: "New"`, `Actual: "Old"`.
+- Green: `ErrorListViewModelTests` 10 total, 0 failed; `BottomPanelsWiringTests` 6 total, 0 failed.
+- Decision (delegated): compare `(Diagnostic, MemberName)` instead of making `MemberName` follow the graph's `Name`; that would need a subscription and a disposal per row for a column that only changes when a snapshot or build arrives.
+
+### R2-9
+
+- SHA-R2F2-2: the Unreleased notes record that the Errors panel lists a diagnostic once when the live analysis and the last build both report it, which 0.3.0 listed twice.
+- DD-2's double-click crash is left out: its walk is unchanged since 0.3.0, and the `ToolDock` container it reached comes from the Dock 12.1 tree adopted in D1c, after 0.3.0.

@@ -174,14 +174,17 @@ public sealed partial class ErrorListViewModel : ObservableObject, IDisposable
     private static (CodeDiagnosticSeverity, string, string, string?, string?, string?) KeyOf(CodeDiagnostic d) =>
         (d.Severity, d.Id, d.Message, d.ClassFullName, d.GraphKey, d.NodeId);
 
+    private static (CodeDiagnostic Diagnostic, string? MemberName) Shown(DiagnosticRowViewModel row) => (row.Diagnostic, row.MemberName);
+
     private void Refresh()
     {
         EnsureProjectSubscription();
         IEnumerable<CodeDiagnostic> build = currentProject?.LastDiagnostics.Where(Belongs) ?? [];
         CodeDiagnostic[] diagnostics = [.. liveDiagnostics, .. WithoutLiveCounterparts(build)];
-        if (!diagnostics.SequenceEqual(Rows.Select(row => row.Diagnostic)))
+        DiagnosticRowViewModel[] rows = [.. diagnostics.Select(d => new DiagnosticRowViewModel(d, OwnerOf(d)))];
+        if (!rows.Select(Shown).SequenceEqual(Rows.Select(Shown)))
         {
-            Rows.ReplaceRange(diagnostics.Select(d => new DiagnosticRowViewModel(d, OwnerOf(d))));
+            Rows.ReplaceRange(rows);
         }
 
         OnPropertyChanged(nameof(ErrorCount));

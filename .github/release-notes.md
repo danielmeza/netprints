@@ -58,6 +58,8 @@
 
 **Added:** the NetPrints.Godot sample extension, built against the packed packages only, with the `godot` project profile, a project template, a setup command, a settings section and a status-bar item.
 
+**Fixed:** the Errors panel lists a diagnostic once when both the live analysis and the last build report it; 0.3.0 listed each such diagnostic twice.
+
 ## Downloads
 
 | Platform | File |

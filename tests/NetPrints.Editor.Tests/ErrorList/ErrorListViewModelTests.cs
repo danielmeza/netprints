@@ -115,6 +115,25 @@ public sealed class ErrorListViewModelTests
     }
 
     [Fact]
+    public void ARenamedMethodShowsItsNewNameWhenTheDiagnosticsAreUnchanged()
+    {
+        using var host = new FakeCodeAnalysisHost();
+        ClassGraph cls = NewClass("N", "C");
+        var method = new MethodGraph("Old");
+        cls.Methods.Add(method);
+        using var vm = new ErrorListViewModel(cls, host, new StrongReferenceMessenger());
+        var empty = new Dictionary<string, TranslatedClass>(StringComparer.Ordinal);
+        var diagnostic = new CodeDiagnostic(CodeDiagnosticSeverity.Error, "CS0026", "boom", "N.C", method.Id, null, null, null);
+        host.Push(new CodeAnalysisSnapshot(empty, [diagnostic]));
+        Assert.Equal("Old", vm.Rows.Single().MemberName);
+
+        method.Name = "New";
+        host.Push(new CodeAnalysisSnapshot(empty, [diagnostic]));
+
+        Assert.Equal("New", vm.Rows.Single().MemberName);
+    }
+
+    [Fact]
     public void HeaderStaysAtZeroCountsBeforeAnySnapshot()
     {
         using var host = new FakeCodeAnalysisHost();
