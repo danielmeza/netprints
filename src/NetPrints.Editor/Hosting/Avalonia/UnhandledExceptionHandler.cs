@@ -115,7 +115,7 @@ public sealed class UnhandledExceptionHandler : IDisposable
         {
             if (attribution?.Find(exception) is { } origin)
             {
-                await dialogs.ShowErrorAsync(Strings.Dialog_ExtensionErrorTitle,ExtensionAttribution.Describe(origin, exception));
+                await dialogs.ShowErrorAsync(Strings.Dialog_ExtensionErrorTitle, ExtensionAttribution.Describe(origin, exception));
             }
             else
             {

@@ -2036,3 +2036,57 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 5. Desktop E2E is not a gate for this batch: no finding changes the shell's UI flow. R2-4 is view-model code covered by the unit and Settings UI tests, R2-11 keeps the logo at 42 and only moves its size into the catalogue, and R2-5 changes which Errors rows are kept. Not run.
 6. `pack-local.sh` and `verify-packages.sh` are not gates: R2-8 changes only the test-side rule and the ADR text, and R2-12 changes a `[Description]` string that adds no API. Not run.
 - Slip: the first R2-4/R2-12 notes named the pre-amend sha 42c2ef04; 3592e6d7 corrected R2-4, and a sixth, docs-only commit corrects R2-12 to 93de8e39. The batch planned five commits.
+
+## Batch R3-F1 (round-3 review fixes)
+
+Commits: ee48f34e (R3-1, R3-3, R3-4, R3-5, R3-10, R3-11), 410f992f (R3-2, R3-6, R3-7), then a whitespace fix commit.
+
+### R3-1 (major) error dialog names the extension
+
+- Changed: `ExtensionAttribution` (new) maps the stack frames of an exception to a loaded extension through `DiagnosticMethodInfo.Create(frame)?.DeclaringAssemblyName` (trim-safe). The outer exception is checked first, then inner exceptions in order (AggregateException members in order). `UnhandledExceptionHandler` takes it through an internal constructor; `EditorServices.InstallUnhandledExceptionHandler` passes `ExtensionAttribution.For(Context.Extensions)`. The dialog then has the title `Extension error` and the text from `Message.ExtensionError` (display name, id, "disable it from the Extensions page", then the exception). Without a match the dialog is unchanged.
+- Fixture: `Fx.Views.LateThrowingView` measures once and throws on the measure after `Trip()`.
+- Red: `ExtensionAttributionTests` (7 tests, unit, a test assembly registered as the extension's) 6 failed on the stub; `ExtensionErrorAttributionTests` (headless, `ContainedView` around the late view, real handler, dialog text) failed with "Not found: NetPrints view resources fixture extension". Green: all pass.
+- Decision (delegated): the origins list is built from `host.Current.Results` only, so when two loaded copies share an assembly name the copy serving the current session is the one named; inside the list the first origin wins.
+- Decision (delegated): strings are resources (`Dialog.ExtensionErrorTitle`, `Message.ExtensionError`) because NPH006 rejects a literal title.
+- Decision (coordinator): FR-034 (spec.md) and R27 (research.md) now say that construction and the layout passes that run through the holder are replaced by the placeholder, and that any other exception from an extension's view code (later self-invalidated layout, attach, render, handlers, bindings) reaches the error dialog, which names the extension. Reason: Avalonia's layout manager measures a self-invalidated control directly, so no holder can catch it.
+
+### R3-2 keyboard entries read defensively
+
+- Changed: `KeyBindingListConverter` reads each element as a `JsonElement` and deserializes it inside a `try`. An entry it cannot read (not an object, or a wrong-typed member) becomes a `KeyBindingOverride` with `Command = ""`, `RawJson` (written back unchanged by `Write`) and `Problem` ("entry N (command 'x') was kept as written and not loaded: ..."). `KeyBindingResolver` turns each `Problem` into a `KeyBindingIssue`, and the entry lists under "Not loaded" because its command is empty. data-model.md row amended.
+- The `Null` branch: it was dead because `JsonConverter<T>` skips null tokens (`HandleNull` false). Made reachable with `HandleNull => true`, so `"bindings": null` loads as the empty list (probe before: "doesn't allow null values"; test `ANullBindingsListLoadsAsEmpty`).
+- Red (9 failed): the seven forms (`"add": "Ctrl+J"`, a non-string element, `"remove": "..."`, `"command": 5`, a string entry, a number entry, an array entry), the null list, and the rebind test. Green: all pass; the rebind test keeps the three other entries and the bad entry's raw JSON.
+- Open (not in scope): `bindings` itself being a non-array still gives the section defaults, as data-model.md allows.
+
+### R3-3 asset limit
+
+- Changed: ADR-0020 Amendment 2 and the extensions guide (view-resources row) record the limit. `ExtensionContributionRecorder` remembers the manifest applied to the app group; when a project copy shadows it and the version or the assembly's SHA-256 differs, it logs event 1046 once per copy (names both versions and the per-user path). Avalonia's asset loader is not replaced.
+- Red: `AProjectCopyThatDiffersFromTheUserCopyIsWarnedAboutOnce` found no 1046. Green: passes; `AProjectCopyEqualToTheUserCopyIsNotWarnedAbout` stays green throughout.
+- Decision (delegated): the per-user copy is the first other loaded assembly with the same simple name (what Avalonia would resolve to); "differs" is manifest version or file content.
+
+### R3-4 assembly path normalisation
+
+- Changed: `ExtensionAssemblies.Find` (new, replaces the private `FindAssembly`) uses `Path.GetFullPath(assemblyFile, folder)` and compares full paths, ordinal ignore-case on Windows, ordinal elsewhere (the repo's own pattern, `OperatingSystem.IsWindows()`; no shared helper exists). A miss logs warning 1045 naming the extension and the path. The recorder takes an optional `ILogger<ExtensionContributionRecorder>`; Desktop passes one.
+- Red: `./` and `sub/../` cases and the miss test failed; the end-to-end `./Fx.Views.dll` project copy served 0 templates. Green: pass.
+- Decision (delegated): the manifest search stays (no `Assembly` on `ExtensionLoadResult.Loaded`), as the task asked for normalising.
+
+### R3-5 canonical URI
+
+- Changed: `LoadFrom` receives `parsed.ToString()`. Red: `ADeclaredUriWithADotSegmentLoadsFromAProjectCopy` reported "not a compiled resource". Green: passes.
+
+### R3-6, R3-7 schema
+
+- Changed: `Command` is `[Required(AllowEmptyStrings = false)]` (the exporter adds `minLength: 1`, so both agree; `MakeNonNull` now skips `minLength` for `AllowEmptyStrings = true`). `scope` defaults to `"Global"` through the constructor parameter default, which is the exporter's default mechanism. The exporter takes a collection parameter's `null` as its default, so `SettingsSchema` writes `[]` for an omitted list member. `schemas/settings.v1.schema.json` regenerated with `NETPRINTS_UPDATE_SNAPSHOTS=1`. Research R6 lists `required`.
+- Red: `TheKeyboardEntryDefaultsAreGlobalAndEmptyLists` (expected "Global", was null). Green: passes; the existing required/minLength test stays green.
+
+### R3-10, R3-11
+
+- R3-10: the guide says a contributed view's root sits in a holder and a child selector no longer matches. R3-11: `ContainedDataTemplate.Typed` is sealed. No test (docs and a modifier).
+
+### Gates and slips
+
+1. Release build: 0 warnings, 0 errors. `dotnet format --verify-no-changes`: clean after the fix below. `bash eng/trim-warnings.sh`: 8 of 8.
+2. Whole suite (Release, `--ignore-exit-code 8`, fresh state and config dirs): 5512 total, 5472 passed, 40 skipped, 0 failed.
+3. Desktop E2E (`NETPRINTS_E2E=1`, `--fail-skips on`): 56 total, 55 passed, 1 skipped (GuideScreenshotTests, by design), 0 failed.
+- Slip: the first `dotnet format` run found a missing space I introduced in `UnhandledExceptionHandler.cs`; fixed in the third commit.
+- Slip: I ran one `cat >> implementation-notes.md` heredoc that appended nothing (empty body) before switching to Edit; no content was written that way.
+- Slip: the red phase for new-API tests used stub types (compile-clean, behaviour wrong), so the red runs are test failures, not compile errors.
