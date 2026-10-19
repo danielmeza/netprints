@@ -20,6 +20,7 @@ public sealed class UnhandledExceptionHandler : IDisposable
     private readonly IEditorDialogs dialogs;
     private readonly IUiDispatcher dispatcher;
     private readonly ILogger<UnhandledExceptionHandler> logger;
+    private readonly ExtensionAttribution? attribution;
     private bool reporting;
 
     /// <summary>
@@ -32,6 +33,16 @@ public sealed class UnhandledExceptionHandler : IDisposable
     /// <exception cref="ArgumentNullException"><paramref name="dialogs"/>, <paramref name="dispatcher"/>
     /// or <paramref name="logger"/> is <see langword="null"/>.</exception>
     public UnhandledExceptionHandler(IEditorDialogs dialogs, IUiDispatcher dispatcher, ILogger<UnhandledExceptionHandler> logger)
+        : this(dialogs, dispatcher, logger, null)
+    {
+    }
+
+    /// <summary>As the public constructor, and the dialog names the extension whose code threw.</summary>
+    /// <param name="dialogs">Used to show the error dialog.</param>
+    /// <param name="dispatcher">Used to marshal an unobserved task exception's report to the UI thread.</param>
+    /// <param name="logger">Used to log 1001 (UI thread) and 1002 (unobserved task) exceptions.</param>
+    /// <param name="attribution">Finds the extension behind an exception, or <see langword="null"/> to name none.</param>
+    internal UnhandledExceptionHandler(IEditorDialogs dialogs, IUiDispatcher dispatcher, ILogger<UnhandledExceptionHandler> logger, ExtensionAttribution? attribution)
     {
         ArgumentNullException.ThrowIfNull(dialogs);
         ArgumentNullException.ThrowIfNull(dispatcher);
@@ -39,6 +50,7 @@ public sealed class UnhandledExceptionHandler : IDisposable
         this.dialogs = dialogs;
         this.dispatcher = dispatcher;
         this.logger = logger;
+        this.attribution = attribution;
 
         Dispatcher.UIThread.UnhandledException += OnDispatcherUnhandledException;
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
@@ -101,7 +113,14 @@ public sealed class UnhandledExceptionHandler : IDisposable
         reporting = true;
         try
         {
-            await dialogs.ShowErrorAsync("Unexpected error", exception.ToString());
+            if (attribution?.Find(exception) is { } origin)
+            {
+                await dialogs.ShowErrorAsync(Strings.Dialog_ExtensionErrorTitle,ExtensionAttribution.Describe(origin, exception));
+            }
+            else
+            {
+                await dialogs.ShowErrorAsync("Unexpected error", exception.ToString());
+            }
         }
         finally
         {

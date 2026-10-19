@@ -135,6 +135,22 @@ internal static partial class Log
     [LoggerMessage(EventId = 1044, Level = LogLevel.Warning, Message = "A view template of extension {Owner} from {Uri} failed; a placeholder is shown")]
     public static partial void ViewTemplateFailed(ILogger logger, Exception exception, string owner, string uri);
 
+    /// <summary>Logs 1045: the assembly an extension's manifest names is not among the loaded assemblies, so its views resolve by assembly name.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="id">The extension id.</param>
+    /// <param name="path">The full path the manifest names.</param>
+    [LoggerMessage(EventId = 1045, Level = LogLevel.Warning, Message = "The assembly {Path} of extension {Id} is not loaded; its views resolve by assembly name")]
+    public static partial void ExtensionAssemblyNotFound(ILogger logger, string id, string path);
+
+    /// <summary>Logs 1046: a project's copy of an extension shadows a different per-user copy of the same assembly name.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="id">The extension id.</param>
+    /// <param name="projectVersion">Version of the project's copy.</param>
+    /// <param name="userVersion">Version of the per-user copy.</param>
+    /// <param name="userPath">Path of the per-user copy's assembly.</param>
+    [LoggerMessage(EventId = 1046, Level = LogLevel.Warning, Message = "The project's copy ({ProjectVersion}) of extension {Id} shadows the per-user copy ({UserVersion}, {UserPath}); images and fonts (avares:// assets) come from the per-user copy")]
+    public static partial void ExtensionCopyShadowed(ILogger logger, string id, string projectVersion, string userVersion, string userPath);
+
     /// <summary>Logs 1043: a <c>darkPreset</c> or <c>lightPreset</c> setting names no preset of its variant, so the variant's default applies.</summary>
     /// <param name="logger">Logger to write to.</param>
     /// <param name="id">The id in the setting.</param>

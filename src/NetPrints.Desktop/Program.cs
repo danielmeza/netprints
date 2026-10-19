@@ -64,7 +64,7 @@ internal static class Program
         }
 
         var settings = new JsonFileSettingsStore(JsonFileSettingsStore.DefaultFilePath(), loggerFactory.CreateLogger<JsonFileSettingsStore>());
-        var contributions = new ExtensionContributionRecorder();
+        var contributions = new ExtensionContributionRecorder(loggerFactory.CreateLogger<ExtensionContributionRecorder>());
         var extensions = new ExtensionHost(
             new ExtensionLoaderOptions(GetExtensionSearchDirectories(settings), [], [BuiltInExtension.InProcessEntry])
             {

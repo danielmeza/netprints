@@ -58,7 +58,7 @@ public class ViewResourceLoaderTests
         Assert.Null(gone);
     }
 
-    private static void CopyExtension(string target, string name)
+    private static void CopyExtension(string target, string name, string version = "1.0.0", string assembly = "Fx.Views.dll")
     {
         Directory.CreateDirectory(target);
         foreach (string file in Directory.GetFiles(FixtureExtensions.ViewsFolder()))
@@ -68,7 +68,90 @@ public class ViewResourceLoaderTests
 
         File.WriteAllText(
             Path.Combine(target, "netprints-extension.json"),
-            $$"""{ "id": "fx.views", "name": "{{name}}", "version": "1.0.0", "assembly": "Fx.Views.dll", "netprintsApi": "0.4", "dependsOn": [] }""");
+            $$"""{ "id": "fx.views", "name": "{{name}}", "version": "{{version}}", "assembly": "{{assembly}}", "netprintsApi": "0.4", "dependsOn": [] }""");
+    }
+
+    private static async Task<int> SessionOfAProjectCopyAsync(string projectVersion, string projectAssembly, RecordingLoggerFactory logs, Func<object, string[]> ownersOfProjectModel)
+    {
+        string temp = Path.Combine(Path.GetTempPath(), "netprints-ui-tests", Guid.NewGuid().ToString("N"));
+        string userRoot = Path.Combine(temp, "user");
+        string projectCopy = Path.Combine(temp, "project", "fx.views");
+        CopyExtension(Path.Combine(userRoot, "fx.views"), "User copy");
+        CopyExtension(projectCopy, "Project copy", projectVersion, projectAssembly);
+        try
+        {
+            var recorder = new ExtensionContributionRecorder(new Microsoft.Extensions.Logging.Logger<ExtensionContributionRecorder>(logs));
+            await using var appHost = new ExtensionHost(new ExtensionLoaderOptions([userRoot], [], []) { EditorContributions = recorder.Factory }, NullLoggerFactory.Instance);
+            var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
+            recorder.ApplyToAppGroup(registry);
+            registry.Freeze();
+            await using var session = new ExtensionHost(new ExtensionLoaderOptions([userRoot], [projectCopy], []) { EditorContributions = recorder.Factory }, NullLoggerFactory.Instance);
+            registry.AddSessionGroup(GroupKey, group => recorder.PopulateSessionGroup(group, session.Current, [projectCopy]));
+            ViewResourceLoader.Sync(App, registry.ViewResources);
+
+            return ownersOfProjectModel(NewModelOf(projectCopy)).Length;
+        }
+        finally
+        {
+            ViewResourceLoader.Sync(App, []);
+            Directory.Delete(temp, recursive: true);
+        }
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task AProjectCopyWhoseManifestNamesItsAssemblyWithADotSegmentStillServesTheSession()
+    {
+        var logs = new RecordingLoggerFactory();
+
+        int owners = await SessionOfAProjectCopyAsync("1.0.0", "./Fx.Views.dll", logs, TemplateOwners);
+
+        Assert.Equal(1, owners);
+        Assert.DoesNotContain(1045, logs.Ids);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task AProjectCopyThatDiffersFromTheUserCopyIsWarnedAboutOnce()
+    {
+        var logs = new RecordingLoggerFactory();
+
+        await SessionOfAProjectCopyAsync("2.0.0", "Fx.Views.dll", logs, TemplateOwners);
+
+        Assert.Single(logs.Ids, id => id == 1046);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task AProjectCopyEqualToTheUserCopyIsNotWarnedAbout()
+    {
+        var logs = new RecordingLoggerFactory();
+
+        await SessionOfAProjectCopyAsync("1.0.0", "Fx.Views.dll", logs, TemplateOwners);
+
+        Assert.DoesNotContain(1046, logs.Ids);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task ADeclaredUriWithADotSegmentLoadsFromAProjectCopy()
+    {
+        string temp = Path.Combine(Path.GetTempPath(), "netprints-ui-tests", Guid.NewGuid().ToString("N"));
+        CopyExtension(Path.Combine(temp, "fx.views"), "Copy");
+        string folder = Path.Combine(temp, "fx.views");
+        try
+        {
+            await using var host = new ExtensionHost(new ExtensionLoaderOptions([], [folder], []), NullLoggerFactory.Instance);
+            Assembly source = AssemblyLoadContext.All
+                .SelectMany(context => context.Assemblies)
+                .First(candidate => !candidate.IsDynamic && string.Equals(candidate.Location, Path.Combine(folder, "Fx.Views.dll"), StringComparison.Ordinal));
+            var declaration = new ViewResourceDeclaration("fx.views", "avares://Fx.Views/./Icons.axaml") { Source = source, OwnerName = "Copy" };
+
+            IReadOnlyList<ViewResourceFailure> failures = ViewResourceLoader.Sync(App, [declaration]);
+
+            Assert.Empty(failures);
+        }
+        finally
+        {
+            ViewResourceLoader.Sync(App, []);
+            Directory.Delete(temp, recursive: true);
+        }
     }
 
     private static object NewModelOf(string folder)

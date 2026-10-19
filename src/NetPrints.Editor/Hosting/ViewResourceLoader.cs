@@ -94,7 +94,7 @@ public static class ViewResourceLoader
             throw new InvalidOperationException($"'{uri}' is not an avares:// URI.");
         }
 
-        return declaration.Source is { } source ? LoadFrom(source, uri) : AvaloniaXamlLoader.Load(EmptyServiceProvider.Instance, parsed);
+        return declaration.Source is { } source ? LoadFrom(source, parsed.ToString()) : AvaloniaXamlLoader.Load(EmptyServiceProvider.Instance, parsed);
     }
 
     [RequiresUnreferencedCode(LoadReason)]

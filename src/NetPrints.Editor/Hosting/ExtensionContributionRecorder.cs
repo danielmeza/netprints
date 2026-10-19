@@ -1,5 +1,8 @@
 using System.Reflection;
 using System.Runtime.Loader;
+using System.Security.Cryptography;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Editor.Contributions;
 using NetPrints.Extensibility.Editor;
 using NetPrints.Extensibility.Loading;
@@ -17,7 +20,13 @@ public sealed class ExtensionContributionRecorder
 {
     private readonly object gate = new();
     private readonly Dictionary<string, Recording> recordings = new(StringComparer.Ordinal);
-    private readonly HashSet<string> appliedToAppGroup = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, ExtensionManifest> appliedToAppGroup = new(StringComparer.Ordinal);
+    private readonly HashSet<string> warnedShadows = new(StringComparer.Ordinal);
+    private readonly ILogger logger;
+
+    /// <summary>Creates the recorder.</summary>
+    /// <param name="logger">Receives the warnings about a project copy that shadows a different per-user copy (1046) and about an assembly that cannot be found (1045); <see langword="null"/> logs nothing.</param>
+    public ExtensionContributionRecorder(ILogger<ExtensionContributionRecorder>? logger = null) => this.logger = (ILogger?)logger ?? NullLogger.Instance;
 
     /// <summary>Gets the factory for <see cref="ExtensionLoaderOptions.EditorContributions"/>: it records the calls of the extension being loaded, replacing an earlier recording of the same id.</summary>
     public Func<ExtensionManifest, IEditorContributions> Factory => Record;
@@ -30,7 +39,7 @@ public sealed class ExtensionContributionRecorder
         Recording[] pending;
         lock (gate)
         {
-            pending = [.. recordings.Values.Where(recording => appliedToAppGroup.Add(recording.Manifest.Id))];
+            pending = [.. recordings.Values.Where(recording => appliedToAppGroup.TryAdd(recording.Manifest.Id, recording.Manifest))];
         }
 
         foreach (Recording recording in pending)
@@ -64,18 +73,20 @@ public sealed class ExtensionContributionRecorder
 
             bool fromProject = result.ManifestPath is { } path
                 && folders.Contains(Path.GetDirectoryName(Path.GetFullPath(path)) ?? string.Empty, StringComparer.Ordinal);
-            bool applied;
+            ExtensionManifest? userManifest;
             lock (gate)
             {
-                applied = appliedToAppGroup.Contains(result.Id);
+                appliedToAppGroup.TryGetValue(result.Id, out userManifest);
             }
 
-            if (fromProject && applied)
+            Assembly? assembly = ExtensionAssemblies.Find(result.ManifestPath, result.Manifest.Assembly, result.Id, logger);
+            if (fromProject && userManifest is not null)
             {
                 builder.Shadow(result.Id);
+                WarnWhenShadowingADifferentCopy(userManifest, result.Manifest, assembly);
             }
 
-            if (FindAssembly(result.ManifestPath, result.Manifest.Assembly) is { } assembly)
+            if (assembly is not null)
             {
                 builder.UseAssembly(result.Id, assembly);
             }
@@ -84,17 +95,47 @@ public sealed class ExtensionContributionRecorder
         }
     }
 
-    private static Assembly? FindAssembly(string? manifestPath, string assemblyFile)
+    private void WarnWhenShadowingADifferentCopy(ExtensionManifest user, ExtensionManifest project, Assembly? projectAssembly)
     {
-        if (manifestPath is null || Path.GetDirectoryName(Path.GetFullPath(manifestPath)) is not { } folder)
+        string? name = projectAssembly?.GetName().Name;
+        if (projectAssembly is null || name is null)
         {
-            return null;
+            return;
         }
 
-        string path = Path.Combine(folder, assemblyFile);
-        return AssemblyLoadContext.All
+        Assembly? userAssembly = AssemblyLoadContext.All
             .SelectMany(context => context.Assemblies)
-            .FirstOrDefault(assembly => !assembly.IsDynamic && string.Equals(assembly.Location, path, StringComparison.Ordinal));
+            .FirstOrDefault(candidate => !candidate.IsDynamic && candidate != projectAssembly && candidate.Location.Length > 0
+                && string.Equals(candidate.GetName().Name, name, StringComparison.Ordinal));
+        if (userAssembly is null || (user.Version == project.Version && SameContent(userAssembly.Location, projectAssembly.Location)))
+        {
+            return;
+        }
+
+        bool first;
+        lock (gate)
+        {
+            first = warnedShadows.Add(project.Id + "|" + projectAssembly.Location);
+        }
+
+        if (first)
+        {
+            Log.ExtensionCopyShadowed(logger, project.Id, project.Version, user.Version, userAssembly.Location);
+        }
+    }
+
+    private static bool SameContent(string left, string right)
+    {
+        try
+        {
+            using FileStream leftStream = File.OpenRead(left);
+            using FileStream rightStream = File.OpenRead(right);
+            return SHA256.HashData(leftStream).AsSpan().SequenceEqual(SHA256.HashData(rightStream));
+        }
+        catch (IOException)
+        {
+            return false;
+        }
     }
 
     private Recording Record(ExtensionManifest manifest)

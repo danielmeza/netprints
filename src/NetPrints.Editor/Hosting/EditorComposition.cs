@@ -156,7 +156,7 @@ internal sealed class EditorServices : IDisposable
     /// (dispose to uninstall).
     /// </summary>
     public IDisposable InstallUnhandledExceptionHandler() =>
-        new UnhandledExceptionHandler(Context.Dialogs, Context.Dispatcher, Context.LoggerFactory.CreateLogger<UnhandledExceptionHandler>());
+        new UnhandledExceptionHandler(Context.Dialogs, Context.Dispatcher, Context.LoggerFactory.CreateLogger<UnhandledExceptionHandler>(), ExtensionAttribution.For(Context.Extensions));
 
     /// <summary>
     /// Reports what went wrong before the window existed (a requested host channel that is not available, extensions

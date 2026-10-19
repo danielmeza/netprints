@@ -222,6 +222,14 @@
   <data name="Message.SampleNotFound" xml:space="preserve">
     <value>There is no bundled sample named '{0}'.</value>
   </data>
+  <data name="Dialog.ExtensionErrorTitle" xml:space="preserve">
+    <value>Extension error</value>
+  </data>
+  <data name="Message.ExtensionError" xml:space="preserve">
+    <value>The extension "{0}" ({1}) threw this error. You can disable it from the Extensions page.
+
+{2}</value>
+  </data>
   <data name="Message.UnsupportedProjectFile" xml:space="preserve">
     <value>'{0}' is not a NetPrints project: only '.csproj' projects are supported. Nothing was opened.</value>
   </data>

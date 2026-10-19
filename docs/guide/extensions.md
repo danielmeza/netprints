@@ -156,12 +156,16 @@ extension fail to load. The facet and its descriptors are experimental (`NPXE000
 | Dialogs | `Editor.AddDialog` | A dialog shown by id. |
 | Settings pages | `Editor.AddSettingsPage` | A page of the Settings document; without a view model it is generated from the section's schema. |
 | Tooltips and go-to | `Editor.AddTooltipProvider`, `Editor.AddGoToProvider` | Tooltip content and go-to-anything results. A tooltip provider gets a `TooltipTarget` whose subject is the model: a `NodePin` for a pin, a `TooltipConnection` (the two model pins) for a connection. |
-| View resources | `Editor.AddViewResources` | The templates, styles and icon geometries the extension's views use. |
+| View resources | `Editor.AddViewResources` | The templates, styles and icon geometries the extension's views use. Images and fonts (`avares://` assets) resolve by assembly name: while a per-user copy of your extension is loaded, a project's copy of it shows the per-user copy's assets (the editor logs event 1046 when the copies differ). |
 
 Every id an extension adds starts with its manifest id (`com.example.sample.openPanel`); a contribution without the prefix
 is rejected with `NPX013`, and a conflicting one is reported (`NPX004` or `NPX006`) with the first kept. Neither stops
 the extension's other contributions. A data template that throws while it builds its view shows a placeholder that names
-your extension, and the editor log has the exception (event 1044).
+your extension, and the editor log has the exception (event 1044). An exception your view throws while it is built or laid out
+through its holder gets the same placeholder; any other exception from your view code reaches the error dialog, which names your extension.
+
+The editor puts the root of each contributed view inside a holder element, so a child selector such as
+`ContentPresenter > local:MyView` no longer matches it. Style the view by its own type, or with a descendant selector.
 
 ### Settings pages
 

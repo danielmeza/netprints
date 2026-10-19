@@ -111,7 +111,7 @@ internal class ContainedDataTemplate : IDataTemplate
             Recycle((IRecyclingDataTemplate)Inner, data, existing);
     }
 
-    private class Typed(IDataTemplate inner, string extensionName, Action<Exception>? failed) : ContainedDataTemplate(inner, extensionName, failed), ITypedDataTemplate
+    private sealed class Typed(IDataTemplate inner, string extensionName, Action<Exception>? failed) : ContainedDataTemplate(inner, extensionName, failed), ITypedDataTemplate
     {
         public Type? DataType => ((ITypedDataTemplate)Inner).DataType;
     }

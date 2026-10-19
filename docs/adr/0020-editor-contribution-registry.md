@@ -131,3 +131,10 @@ project. `Freeze()` ends the initial registration of the app group; after it, ad
 app-group owner: when a project declares its own copy of an extension the user directories already loaded, the app group's
 items of that id are hidden while the project is open, so the project's copy serves the session (spec Clarifications,
 T112 DD-6).
+
+Known limit: Avalonia resolves every `avares://` asset (images, fonts) by assembly name and returns the first assembly of
+that name it saw. While a per-user copy with the same assembly name is loaded, a project copy's assets therefore resolve
+to the first-loaded copy, while its documents (templates, styles, icons) and its view models are the project copy's. The
+editor does not replace Avalonia's global asset loader. When a project copy shadows a per-user copy whose version or
+content hash differs, the editor logs one warning (event 1046) that names both copies and says the assets come from the
+per-user copy.

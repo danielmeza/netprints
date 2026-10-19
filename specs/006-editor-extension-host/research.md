@@ -135,7 +135,7 @@ ADR-0031, ADR-0033 to ADR-0040.
     DataAnnotations (`[Range]`, `[Required]`, `[RegularExpression]`, `[Length]`); `ValidateDataAnnotations` is not used.
   - The same attributes feed the exported schema: `JsonSchemaExporter.GetJsonSchemaAsNode(JsonTypeInfo, options)` with
     a `TransformSchemaNode` callback that reads the property's attribute provider and writes `minimum`, `maximum`,
-    `pattern`, `minLength`, `maxLength`, `description` (from `[Description]`) and three NetPrints keywords:
+    `pattern`, `required`, `minLength`, `maxLength`, `description` (from `[Description]`) and three NetPrints keywords:
     `x-netprints-restart` (`[RequiresRestart]`), `x-netprints-path` (`[SettingPath(PathKind.File|Folder)]`) and
     `x-netprints-choices` (a choices provider id for open string sets such as preset and language ids).
   - The built-in schema is published as `schemas/settings.v1.schema.json`, golden-tested, validated by the existing
@@ -538,8 +538,9 @@ ADR-0031, ADR-0033 to ADR-0040.
   Errors; a handler failure shows the error dialog naming the extension and the command; a provider failure drops
   that provider's results for that call and logs once per provider and session (NPX011); a view factory or template
   failure shows `ContributionErrorView` naming the extension. A contributed view sits in a `ContainedView`: a throw
-  while it is built, measured or arranged is reported once per view and the view is replaced by the same placeholder;
-  render-time exceptions and exceptions from the view's own handlers or bindings are out of scope. Registry issues map to extension diagnostics in Errors:
+  while it is built, or in a layout pass that runs through the holder, is reported once per view and the view is replaced by the same placeholder;
+  any other exception from the view's code (a later self-invalidated layout, attach, render, handlers, bindings) reaches the error
+  dialog, which names the extension by mapping the stack frames' assemblies to the loaded extensions (R3-1). Registry issues map to extension diagnostics in Errors:
   duplicate id (NPX004), gesture conflict (NPX009), unknown referenced id (NPX010).
 - **Rationale**: FR-034, FR-035, SC-004; AGENTS.md allows catching `Exception` only at such boundaries.
 - **Alternatives rejected**: isolating extensions in processes (out of scope; the host channel exists for that need).
