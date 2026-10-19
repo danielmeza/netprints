@@ -63,8 +63,9 @@ internal sealed class EffectiveKeyBindings
 /// <summary>Computes the effective gestures: user override, then built-in default, then extension default in load order (FR-050).</summary>
 internal static class KeyBindingResolver
 {
-    private const string GlobalScopeReason = "A single-key or Shift-only gesture is not allowed in the Global scope (function keys are).";
-    private const string UnparseableReason = "Not a gesture.";
+    private static string GlobalScopeReason => Strings.Settings_Keyboard_GlobalScopeRefusal;
+
+    private static string UnparseableReason => Strings.Settings_Keyboard_NotAGesture;
 
     /// <summary>Resolves the gestures of a snapshot's commands against the user's overrides.</summary>
     /// <param name="commands">The registered commands in registration order, built-in first and extensions in load order; their gestures are the defaults.</param>
@@ -117,7 +118,7 @@ internal static class KeyBindingResolver
                 }
                 else if (TakenByUser(byId, added, command, gesture) is { } other)
                 {
-                    issues.Add(new KeyBindingIssue(command.Id, text, $"Already bound to '{other}' by the user."));
+                    issues.Add(new KeyBindingIssue(command.Id, text, TextFormat.Of(Strings.Settings_Keyboard_TakenByUser, other)));
                 }
                 else if (!effective[command.Id].Contains(gesture))
                 {

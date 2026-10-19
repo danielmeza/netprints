@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using NetPrints.Core;
 using NetPrints.Extensibility.Settings;
 
 namespace NetPrints.Editor.Settings;
@@ -12,6 +13,9 @@ namespace NetPrints.Editor.Settings;
 /// </summary>
 internal abstract partial class SettingsFieldViewModel : SettingsItemViewModel
 {
+    private const string LabelPart = "Label";
+    private const string DescriptionPart = "Description";
+
     private readonly SettingsSection section;
 
     /// <summary>Creates the field of one key of a section.</summary>
@@ -19,7 +23,7 @@ internal abstract partial class SettingsFieldViewModel : SettingsItemViewModel
     /// <param name="key">The JSON name of the key.</param>
     /// <param name="schema">The schema of the key.</param>
     protected SettingsFieldViewModel(SettingsSection section, string key, JsonObject schema)
-        : base(LabelOf(key), schema["description"]?.GetValue<string>() ?? "")
+        : base(TextOf(section, key, LabelPart, LabelOf(key)), TextOf(section, key, DescriptionPart, schema["description"]?.GetValue<string>() ?? ""))
     {
         this.section = section;
         Key = key;
@@ -87,6 +91,9 @@ internal abstract partial class SettingsFieldViewModel : SettingsItemViewModel
 
     [RelayCommand]
     private Task CommitAsync(CancellationToken cancellationToken) => SaveAsync(cancellationToken);
+
+    private static string TextOf(SettingsSection section, string key, string part, string fallback) =>
+        new LocalizedText($"Settings.{section.Id}.{key}.{part}", fallback).Resolve(section.Resources, null);
 
     private static string LabelOf(string key)
     {

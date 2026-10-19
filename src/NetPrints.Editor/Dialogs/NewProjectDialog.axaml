@@ -17,10 +17,10 @@
   </Interaction.Behaviors>
   <Grid RowDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto" Margin="{StaticResource Space.M}" RowSpacing="8">
     <StackPanel Orientation="Horizontal" Spacing="12">
-      <TextBlock Text="Template" VerticalAlignment="Center" />
+      <TextBlock Text="{x:Static ed:Strings.NewProject_Template}" VerticalAlignment="Center" />
       <TextBlock Text="{Binding ProfileNote}" Classes="secondary" VerticalAlignment="Center" IsVisible="{Binding IsFiltered}"
                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NewProjectProfileNote}" />
-      <CheckBox Content="Show all templates" IsChecked="{Binding ShowAll}" IsVisible="{Binding IsFiltered}"
+      <CheckBox Content="{x:Static ed:Strings.NewProject_ShowAll}" IsChecked="{Binding ShowAll}" IsVisible="{Binding IsFiltered}"
                 AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NewProjectShowAll}" />
     </StackPanel>
     <ListBox Grid.Row="1" ItemsSource="{Binding Templates}" SelectedItem="{Binding SelectedTemplate}" MaxHeight="{StaticResource Dialog.ListMaxHeight}"

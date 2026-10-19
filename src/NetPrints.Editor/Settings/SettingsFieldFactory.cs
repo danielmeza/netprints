@@ -53,7 +53,7 @@ internal static class SettingsFieldFactory
             && provider.TryGetValue(out string? providerId)
             && services.Choices(providerId) is { } choices)
         {
-            return new ChoiceFieldViewModel(section, key, schema, choices);
+            return new ChoiceFieldViewModel(section, key, schema, choices, services.ChoiceLabels?.Invoke(providerId));
         }
 
         return PathOf(schema) is { } kind

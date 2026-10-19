@@ -92,6 +92,7 @@ NetPrints.Extensibility.Settings.NetPrintsSettings.TrustedProjects.get -> System
 NetPrints.Extensibility.Settings.NetPrintsSettings.TrustedProjects.init -> void
 abstract NetPrints.Extensibility.Loading.ExtensionLoadResult.<Clone>$() -> NetPrints.Extensibility.Loading.ExtensionLoadResult!
 const NetPrints.Extensibility.Nodes.BuiltInNodeLibrary.Id = "netprints" -> string!
+const NetPrints.Extensibility.Settings.NetPrintsSettings.LanguageChoices = "netprints.languages" -> string!
 const NetPrints.Extensibility.Settings.NetPrintsSettings.SectionId = "netprints" -> string!
 override NetPrints.Extensibility.Loading.ExtensionContributionIssue.Equals(object? obj) -> bool
 override NetPrints.Extensibility.Loading.ExtensionContributionIssue.GetHashCode() -> int

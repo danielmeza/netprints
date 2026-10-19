@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
@@ -102,6 +103,35 @@ public sealed class SettingsDocumentViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public void EveryBuiltInFieldTakesItsLabelAndHelpTextFromTheResources()
+    {
+        using SettingsDocumentViewModel document = Open(NewStore());
+
+        foreach (SettingsFieldViewModel field in document.Pages.SelectMany(page => page.Items).OfType<SettingsFieldViewModel>())
+        {
+            string? label = Strings.ResourceManager.GetString($"Settings.{field.QualifiedKey}.Label", CultureInfo.InvariantCulture);
+            string? description = Strings.ResourceManager.GetString($"Settings.{field.QualifiedKey}.Description", CultureInfo.InvariantCulture);
+            Assert.NotNull(label);
+            Assert.NotNull(description);
+            Assert.Equal(label, field.Label);
+            Assert.Equal(description, field.Description);
+        }
+    }
+
+    [Fact]
+    public void TheLanguageIsADropDownOfTheShippedCulturesAndSystem()
+    {
+        using SettingsDocumentViewModel document = Open(NewStore());
+        SettingsPageViewModel general = document.Pages.Single(page => page.Title == "General");
+
+        ChoiceFieldViewModel language = Assert.IsType<ChoiceFieldViewModel>(
+            general.Items.OfType<SettingsFieldViewModel>().Single(field => field.QualifiedKey == "netprints.language"));
+
+        Assert.Equal(["", "en"], language.Choices);
+        Assert.Equal(["System", "English"], language.Options.Select(option => option.Label));
+    }
+
+    [Fact]
     public void TheTestExtensionSectionGetsAGeneratedPageUnderExtensions()
     {
         using SettingsDocumentViewModel document = Open(NewStore(), withTestExtension: true);
@@ -176,11 +206,10 @@ public sealed class SettingsDocumentViewModelTests : IAsyncDisposable
     public async Task ARestartFieldShowsTheBarAndRestartNowTakesTheExitPath()
     {
         using SettingsDocumentViewModel document = Open(NewStore());
-        var language = Assert.IsType<TextFieldViewModel>(document.FindField("netprints.language"));
+        var language = Assert.IsType<ChoiceFieldViewModel>(document.FindField("netprints.language"));
         Assert.False(document.RestartPending);
 
-        language.Text = "es";
-        await language.CommitCommand.ExecuteAsync(null);
+        await language.ChooseCommand.ExecuteAsync("en");
 
         Assert.True(language.RequiresRestart);
         Assert.True(document.RestartPending);

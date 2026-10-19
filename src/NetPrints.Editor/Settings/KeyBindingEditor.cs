@@ -15,7 +15,7 @@ internal sealed record GestureAddResult(bool Added, string? Refusal, CommandDesc
 /// <param name="store">The settings store that keeps the <c>keyboard</c> section.</param>
 internal sealed class KeyBindingEditor(IContributionRegistry registry, ISettingsStore store)
 {
-    private const string NotAGestureReason = "Not a gesture.";
+    private static string NotAGestureReason => Strings.Settings_Keyboard_NotAGesture;
 
     /// <summary>Adds a gesture to a command unless it is refused or another command uses it.</summary>
     /// <param name="command">The command.</param>

@@ -144,9 +144,10 @@ public class SettingsDocumentTests
         await OpenAsync(app, "openSettings", () => 0);
         Assert.Empty(Visible(app, AutomationIds.SettingsRestartBar));
         Assert.Single(Visible(app, AutomationIds.SettingsRequiresRestart));
-        var language = Assert.IsType<TextBox>(Assert.Single(Find(app, AutomationIds.SettingsFieldInput, "Language")));
+        var language = Assert.IsType<ComboBox>(Assert.Single(Find(app, AutomationIds.SettingsFieldInput, "Language")));
 
-        await CommitAsync(app, language, "es");
+        language.SelectedIndex = 1;
+        HeadlessDriver.Pump();
         await UiWait.UntilAsync(app.Driver, () => Task.FromResult(Document(app).RestartPending), "restart pending", Token);
         HeadlessDriver.Pump();
 

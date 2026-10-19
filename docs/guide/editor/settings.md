@@ -19,7 +19,7 @@ right. Each field has a label, a help text and, when the setting needs a restart
 
 | Page | What is on it |
 |---|---|
-| General | `netprints.language` and `netprints.enableAnimations` |
+| General | `netprints.language` (a drop-down of **System** and the shipped languages — English for now — applied after a restart) and `netprints.enableAnimations` |
 | Appearance | `netprints.editor.theme`, the Dark and Light presets and a preview of them (see [Themes](./themes.md)) |
 | Keyboard shortcuts | every command with its shortcuts; stored in the `keyboard` section (see [Commands and shortcuts](./commands-and-shortcuts.md)) |
 | Run | `run.stopTimeoutSeconds` and `run.linuxTerminal` |
@@ -85,7 +85,7 @@ The table is generated from the schema; do not edit it by hand.
 | `netprints.extensionPaths` | list of string | empty | a folder path | Yes | Folders searched for extensions. Each subfolder that holds a manifest is loaded at the next start |
 | `netprints.trustedProjects` | list of string | empty | a file path |  | Project files whose extensions you allowed to load |
 | `netprints.enableAnimations` | boolean | `true` |  |  | Turns the interface animations on. Turn them off to reduce motion |
-| `netprints.language` | string | empty |  | Yes | The interface language as a culture name such as es-MX. Empty uses the system language |
+| `netprints.language` | string | empty | choices from `netprints.languages` | Yes | The interface language as a culture name such as es-MX. Empty uses the system language |
 | `run.stopTimeoutSeconds` | integer | `5` | 1 to 600 |  | Seconds a stopped program has to exit before its process tree is killed |
 | `run.linuxTerminal` | string | empty | up to 512 characters; matches `^[^\x00-\x1F\x7F]*$` |  | Linux only: the terminal command that hosts a run in an external terminal. Empty detects one |
 | `keyboard.bindings` | list of object | empty |  |  | Your changes to the default key bindings, one entry per changed command |

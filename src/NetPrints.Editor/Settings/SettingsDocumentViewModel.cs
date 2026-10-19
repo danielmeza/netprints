@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
+using System.Resources;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NetPrints.Editor.Contributions;
@@ -57,7 +58,7 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
         ArgumentNullException.ThrowIfNull(extensionPages);
         ArgumentNullException.ThrowIfNull(restart);
         this.restart = restart;
-        Pages = Build(store, registry, extensions.Current, extensionPages, new SettingsFieldServices(picker, ChoicesOf));
+        Pages = Build(store, registry, extensions.Current, extensionPages, new SettingsFieldServices(picker, ChoicesOf, ChoiceLabelsOf));
         foreach (SettingsFieldViewModel field in Pages.SelectMany(page => page.Items).OfType<SettingsFieldViewModel>())
         {
             field.Saved += OnFieldSaved;
@@ -164,8 +165,12 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
     {
         EditorSettings.DarkPresetChoices => ThemePresets.IdsFor(ThemeBase.Dark),
         EditorSettings.LightPresetChoices => ThemePresets.IdsFor(ThemeBase.Light),
+        NetPrintsSettings.LanguageChoices => LanguageChoices.Values,
         _ => null,
     };
+
+    private static Func<string, string>? ChoiceLabelsOf(string providerId) =>
+        providerId == NetPrintsSettings.LanguageChoices ? LanguageChoices.LabelOf : null;
 
     private static ImmutableArray<SettingsPageViewModel> Build(
         ISettingsStore store,
@@ -174,9 +179,10 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
         IReadOnlyList<SettingsPageDescriptor> extensionPages,
         SettingsFieldServices services)
     {
-        var host = new SettingsSection(NetPrintsSettings.Descriptor, store);
-        var appearance = new SettingsSection(EditorSettings.Descriptor, store);
-        var run = new SettingsSection(RunSettings.Descriptor, store);
+        IReadOnlyList<ResourceManager> resources = [.. registry.StringResources, Strings.ResourceManager];
+        var host = new SettingsSection(NetPrintsSettings.Descriptor, store, resources);
+        var appearance = new SettingsSection(EditorSettings.Descriptor, store, resources);
+        var run = new SettingsSection(RunSettings.Descriptor, store, resources);
         var builtInIds = new HashSet<string>([host.Id, appearance.Id, run.Id], StringComparer.Ordinal);
 
         List<SettingsItemViewModel> extensionItems = [.. host.CreateFields(services, [ExtensionPathsKey, TrustedProjectsKey])];
@@ -193,7 +199,7 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
 
         foreach ((string title, ExtensionSettingsDescriptor descriptor) in ExtensionSections(registry, extensionPages, builtInIds))
         {
-            var section = new SettingsSection(descriptor, store);
+            var section = new SettingsSection(descriptor, store, resources);
             pages.Add(new SettingsPageViewModel(ExtensionPagePrefix + section.Id, title, [.. section.CreateFields(services)], isChild: true));
         }
 

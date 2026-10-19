@@ -15,6 +15,9 @@ public sealed record NetPrintsSettings
     /// </summary>
     public const string SectionId = "netprints";
 
+    /// <summary>The id of the choices provider of <see cref="Language"/>: the cultures the editor ships, plus the system language.</summary>
+    public const string LanguageChoices = "netprints.languages";
+
     /// <summary>
     /// Directories searched for extensions; each immediate subfolder holding a manifest is loaded.
     /// </summary>
@@ -42,6 +45,7 @@ public sealed record NetPrintsSettings
     /// The UI language as a culture name such as <c>es-MX</c>; empty means the operating system's culture. A change applies after a restart.
     /// </summary>
     [CultureName]
+    [SettingChoices(LanguageChoices)]
     [RequiresRestart]
     [Description("The interface language as a culture name such as es-MX. Empty uses the system language")]
     public string Language { get; init; } = "";

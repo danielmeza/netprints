@@ -461,6 +461,28 @@ namespace NetPrints.Tests.Core
         private static AxamlFile LoadAxaml(string relativePath) =>
             LoadAxamlFiles().Single(file => file.RelativePath == relativePath);
 
+        /// <summary>FR-027: the Settings document's own text comes from <c>Strings.resx</c>, not from literals in the view.</summary>
+        [Fact]
+        public void SettingsViewTakesEveryTextFromResources()
+        {
+            AxamlFile view = LoadAxaml("src/NetPrints.Editor/Settings/SettingsView.axaml");
+            string[] textAttributes = ["Text", "Content", "PlaceholderText", "AutomationProperties.Name", "ToolTip.Tip"];
+            HashSet<string> glyphs = new(StringComparer.Ordinal) { "✕", "↑", "↓" };
+            var offenders = new List<string>();
+
+            foreach (XAttribute attribute in view.Document.Descendants().SelectMany(element => element.Attributes())
+                .Where(attribute => textAttributes.Contains(attribute.Name.LocalName)))
+            {
+                string value = attribute.Value.Trim();
+                if (!value.StartsWith('{') && !glyphs.Contains(value))
+                {
+                    offenders.Add($"{attribute.Name.LocalName}={value}");
+                }
+            }
+
+            Assert.True(offenders.Count == 0, "SettingsView text must come from Strings.resx (FR-027): " + string.Join(", ", offenders));
+        }
+
         private static XElement[] StyleSetters(AxamlFile file, string selector) =>
             [.. file.Document.Descendants().Where(e => e.Name.LocalName == "Style" && e.Attribute("Selector")?.Value == selector).Elements()];
 

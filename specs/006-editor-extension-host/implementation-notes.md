@@ -1604,6 +1604,7 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - **Decision (labels)**: the label is the property name in words, with no resource override.
 - **Decision (language)**: the language field is a text box.
 - **CI fix (4439d543)**: the invalid-value test now also waits for `field.HasError` to be false.
+- **Corrected (T112-1, DD-9)**: labels and help text read `Settings.<section>.<key>.Label`/`.Description` from the owner's resources, then the editor's, then the property name and the schema description; `language` is a drop-down of System and the shipped cultures (`LanguageChoices`); the Settings document's text comes from `Strings.resx`.
 
 ## Batch D1f (T092, T093, T094)
 

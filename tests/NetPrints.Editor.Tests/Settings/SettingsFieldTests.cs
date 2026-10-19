@@ -1,5 +1,7 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
+using System.Resources;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Editor.Settings;
@@ -112,6 +114,20 @@ public sealed class SettingsFieldTests : IDisposable
         Assert.Equal("Timeout seconds", fields["timeoutSeconds"].Label);
         Assert.Equal("Seconds to wait", fields["timeoutSeconds"].Description);
         Assert.Equal("", fields["orphan"].Description);
+    }
+
+    [Fact]
+    public void ALabelAndAHelpTextComeFromTheOwnersResourcesFirst()
+    {
+        var section = new SettingsSection(SampleSettings.Descriptor, NewStore(), [new SampleResources(), Strings.ResourceManager]);
+        var services = new SettingsFieldServices(picker, id => id == "sample.modes" ? ["fast", "slow"] : null);
+
+        IReadOnlyDictionary<string, SettingsFieldViewModel> fields = section.CreateFields(services).ToDictionary(field => field.Key);
+
+        Assert.Equal("Greeting text", fields["greeting"].Label);
+        Assert.Equal("Says hello", fields["greeting"].Description);
+        Assert.Equal("Timeout seconds", fields["timeoutSeconds"].Label);
+        Assert.Equal("Seconds to wait", fields["timeoutSeconds"].Description);
     }
 
     [Fact]
@@ -259,5 +275,23 @@ public sealed class SettingsFieldTests : IDisposable
         Assert.True(fields["timeoutSeconds"].Matches("seconds to"));
         Assert.False(fields["timeoutSeconds"].Matches("folder"));
         Assert.True(fields["greeting"].Matches(""));
+    }
+
+    private sealed class SampleResources : ResourceManager
+    {
+        private static readonly Dictionary<string, string> Entries = new(StringComparer.Ordinal)
+        {
+            ["Settings.sample.section.greeting.Label"] = "Greeting text",
+            ["Settings.sample.section.greeting.Description"] = "Says hello",
+        };
+
+        protected override ResourceSet? InternalGetResourceSet(CultureInfo culture, bool createIfNotExists, bool tryParents) => new FakeSet(Entries);
+    }
+
+    private sealed class FakeSet(Dictionary<string, string> entries) : ResourceSet
+    {
+        public override string? GetString(string name) => entries.GetValueOrDefault(name);
+
+        public override string? GetString(string name, bool ignoreCase) => entries.GetValueOrDefault(name);
     }
 }

@@ -399,4 +399,145 @@
   <data name="Settings.AllFiles" xml:space="preserve">
     <value>All files</value>
   </data>
+  <data name="Settings.Keyboard.FilterPlaceholder" xml:space="preserve">
+    <value>Filter by label, id or owner</value>
+  </data>
+  <data name="Settings.Keyboard.FilterName" xml:space="preserve">
+    <value>Filter shortcuts</value>
+  </data>
+  <data name="Settings.Keyboard.RecordFilter" xml:space="preserve">
+    <value>Record gesture</value>
+  </data>
+  <data name="Settings.Keyboard.ClearFilter" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="Settings.Keyboard.ResetAll" xml:space="preserve">
+    <value>Reset all</value>
+  </data>
+  <data name="Settings.Keyboard.ConflictAccept" xml:space="preserve">
+    <value>Move</value>
+  </data>
+  <data name="Settings.Keyboard.ConflictCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Settings.Keyboard.RemoveGesture" xml:space="preserve">
+    <value>Remove gesture</value>
+  </data>
+  <data name="Settings.Keyboard.Reset" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="Settings.Keyboard.NotLoaded" xml:space="preserve">
+    <value>Not loaded</value>
+  </data>
+  <data name="Settings.Keyboard.RemoveNotLoaded" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="Settings.Keyboard.GlobalScopeRefusal" xml:space="preserve">
+    <value>A single-key or Shift-only gesture is not allowed in the Global scope (function keys are).</value>
+  </data>
+  <data name="Settings.Keyboard.NotAGesture" xml:space="preserve">
+    <value>Not a gesture.</value>
+  </data>
+  <data name="Settings.Keyboard.TakenByUser" xml:space="preserve">
+    <value>Already bound to '{0}' by the user.</value>
+  </data>
+  <data name="Settings.Browse" xml:space="preserve">
+    <value>Browse…</value>
+  </data>
+  <data name="Settings.List.MoveUp" xml:space="preserve">
+    <value>Move up</value>
+  </data>
+  <data name="Settings.List.MoveDown" xml:space="preserve">
+    <value>Move down</value>
+  </data>
+  <data name="Settings.List.Remove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="Settings.List.NewItem" xml:space="preserve">
+    <value>Add an entry</value>
+  </data>
+  <data name="Settings.List.Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Settings.RequiresRestart" xml:space="preserve">
+    <value>Requires restart</value>
+  </data>
+  <data name="Settings.RestartNow" xml:space="preserve">
+    <value>Restart now</value>
+  </data>
+  <data name="Settings.RestartToApply" xml:space="preserve">
+    <value>Restart to apply</value>
+  </data>
+  <data name="Settings.Search" xml:space="preserve">
+    <value>Search settings</value>
+  </data>
+  <data name="Settings.Language.System" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="Shortcuts.EditShortcuts" xml:space="preserve">
+    <value>Edit shortcuts</value>
+  </data>
+  <data name="Shortcuts.Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="NewProject.Template" xml:space="preserve">
+    <value>Template</value>
+  </data>
+  <data name="NewProject.ShowAll" xml:space="preserve">
+    <value>Show all templates</value>
+  </data>
+  <data name="Settings.netprints.enableAnimations.Label" xml:space="preserve">
+    <value>Enable animations</value>
+  </data>
+  <data name="Settings.netprints.enableAnimations.Description" xml:space="preserve">
+    <value>Turns the interface animations on. Turn them off to reduce motion</value>
+  </data>
+  <data name="Settings.netprints.language.Label" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Settings.netprints.language.Description" xml:space="preserve">
+    <value>The interface language. System follows the operating system</value>
+  </data>
+  <data name="Settings.netprints.extensionPaths.Label" xml:space="preserve">
+    <value>Extension paths</value>
+  </data>
+  <data name="Settings.netprints.extensionPaths.Description" xml:space="preserve">
+    <value>Folders searched for extensions. Each subfolder that holds a manifest is loaded at the next start</value>
+  </data>
+  <data name="Settings.netprints.trustedProjects.Label" xml:space="preserve">
+    <value>Trusted projects</value>
+  </data>
+  <data name="Settings.netprints.trustedProjects.Description" xml:space="preserve">
+    <value>Project files whose extensions you allowed to load</value>
+  </data>
+  <data name="Settings.run.stopTimeoutSeconds.Label" xml:space="preserve">
+    <value>Stop timeout seconds</value>
+  </data>
+  <data name="Settings.run.stopTimeoutSeconds.Description" xml:space="preserve">
+    <value>Seconds a stopped program has to exit before its process tree is killed</value>
+  </data>
+  <data name="Settings.run.linuxTerminal.Label" xml:space="preserve">
+    <value>Linux terminal</value>
+  </data>
+  <data name="Settings.run.linuxTerminal.Description" xml:space="preserve">
+    <value>Linux only: the terminal command that hosts a run in an external terminal. Empty detects one</value>
+  </data>
+  <data name="Settings.netprints.editor.theme.Label" xml:space="preserve">
+    <value>Theme</value>
+  </data>
+  <data name="Settings.netprints.editor.theme.Description" xml:space="preserve">
+    <value>The theme variant the editor starts in</value>
+  </data>
+  <data name="Settings.netprints.editor.darkPreset.Label" xml:space="preserve">
+    <value>Dark preset</value>
+  </data>
+  <data name="Settings.netprints.editor.darkPreset.Description" xml:space="preserve">
+    <value>The preset the Dark variant uses</value>
+  </data>
+  <data name="Settings.netprints.editor.lightPreset.Label" xml:space="preserve">
+    <value>Light preset</value>
+  </data>
+  <data name="Settings.netprints.editor.lightPreset.Description" xml:space="preserve">
+    <value>The preset the Light variant uses</value>
+  </data>
 </root>

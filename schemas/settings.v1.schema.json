@@ -36,7 +36,8 @@
         "language": {
           "type": "string",
           "description": "The interface language as a culture name such as es-MX. Empty uses the system language",
-          "x-netprints-restart": true
+          "x-netprints-restart": true,
+          "x-netprints-choices": "netprints.languages"
         }
       }
     },

@@ -60,16 +60,16 @@
         </Interaction.Behaviors>
         <TextBlock Classes="secondary" Text="{Binding Description}" TextWrapping="Wrap" />
         <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto">
-          <TextBox Text="{Binding FilterText}" PlaceholderText="Filter by label, id or owner"
+          <TextBox Text="{Binding FilterText}" PlaceholderText="{x:Static ed:Strings.Settings_Keyboard_FilterPlaceholder}"
                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsFilter}"
-                   AutomationProperties.Name="Filter shortcuts" />
-          <Button Grid.Column="1" Content="Record gesture" Command="{Binding RecordFilterCommand}"
+                   AutomationProperties.Name="{x:Static ed:Strings.Settings_Keyboard_FilterName}" />
+          <Button Grid.Column="1" Content="{x:Static ed:Strings.Settings_Keyboard_RecordFilter}" Command="{Binding RecordFilterCommand}"
                   AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsRecordFilter}" />
           <TextBlock Grid.Column="2" Classes="secondary" Text="{Binding FilterGesture}" VerticalAlignment="Center" />
-          <Button Grid.Column="3" Content="Clear" Command="{Binding ClearFilterGestureCommand}"
+          <Button Grid.Column="3" Content="{x:Static ed:Strings.Settings_Keyboard_ClearFilter}" Command="{Binding ClearFilterGestureCommand}"
                   IsVisible="{Binding FilterGesture, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                   AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsClearFilter}" />
-          <Button Grid.Column="4" Content="Reset all" Command="{Binding ResetAllCommand}"
+          <Button Grid.Column="4" Content="{x:Static ed:Strings.Settings_Keyboard_ResetAll}" Command="{Binding ResetAllCommand}"
                   AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsResetAll}" />
         </Grid>
         <Border Classes="restartBar" IsVisible="{Binding Conflict, Converter={x:Static ObjectConverters.IsNotNull}}"
@@ -77,9 +77,9 @@
                 AutomationProperties.Name="{Binding Conflict.Message}">
           <DockPanel DataContext="{Binding Conflict}" x:DataType="edsettings:GestureConflictViewModel">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4">
-              <Button Content="Move" Command="{Binding AcceptCommand}"
+              <Button Content="{x:Static ed:Strings.Settings_Keyboard_ConflictAccept}" Command="{Binding AcceptCommand}"
                       AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsConflictAccept}" />
-              <Button Content="Cancel" Command="{Binding CancelCommand}"
+              <Button Content="{x:Static ed:Strings.Settings_Keyboard_ConflictCancel}" Command="{Binding CancelCommand}"
                       AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsConflictCancel}" />
             </StackPanel>
             <TextBlock Text="{Binding Message}" TextWrapping="Wrap" VerticalAlignment="Center" />
@@ -117,7 +117,7 @@
                         <TextBlock Text="{Binding Text}" VerticalAlignment="Center" />
                         <Button Classes="icon" Content="✕" Command="{Binding RemoveCommand}"
                                 AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsRemoveGesture}"
-                                AutomationProperties.Name="Remove gesture" />
+                                AutomationProperties.Name="{x:Static ed:Strings.Settings_Keyboard_RemoveGesture}" />
                       </StackPanel>
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
@@ -125,21 +125,21 @@
                 <StackPanel Grid.Column="1" Grid.RowSpan="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                   <Button Content="{Binding AddLabel}" Command="{Binding ToggleRecordingCommand}"
                           AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsAdd}" />
-                  <Button Content="Reset" Command="{Binding ResetCommand}"
+                  <Button Content="{x:Static ed:Strings.Settings_Keyboard_Reset}" Command="{Binding ResetCommand}"
                           AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsReset}" />
                 </StackPanel>
               </Grid>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>
-        <TextBlock Classes="groupTitle" Text="Not loaded" IsVisible="{Binding HasNotLoaded}" />
+        <TextBlock Classes="groupTitle" Text="{x:Static ed:Strings.Settings_Keyboard_NotLoaded}" IsVisible="{Binding HasNotLoaded}" />
         <ItemsControl ItemsSource="{Binding NotLoaded}" IsVisible="{Binding HasNotLoaded}">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="edsettings:NotLoadedRowViewModel">
               <Grid ColumnDefinitions="*,Auto" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsNotLoaded}"
                     AutomationProperties.Name="{Binding Summary}">
                 <TextBlock Text="{Binding Summary}" TextTrimming="CharacterEllipsis" />
-                <Button Grid.Column="1" Content="Remove" Command="{Binding RemoveCommand}"
+                <Button Grid.Column="1" Content="{x:Static ed:Strings.Settings_Keyboard_RemoveNotLoaded}" Command="{Binding RemoveCommand}"
                         AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsNotLoadedRemove}" />
               </Grid>
             </DataTemplate>
@@ -172,19 +172,24 @@
               </TextBox>
             </DataTemplate>
             <DataTemplate DataType="edsettings:ChoiceFieldViewModel" x:DataType="edsettings:ChoiceFieldViewModel">
-              <ComboBox x:Name="Chooser" ItemsSource="{Binding Choices}" SelectedItem="{Binding Selected, Mode=OneWay}"
+              <ComboBox x:Name="Chooser" ItemsSource="{Binding Options}" SelectedItem="{Binding SelectedOption, Mode=OneWay}"
                         AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsFieldInput}"
                         AutomationProperties.Name="{Binding Label}">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="edsettings:ChoiceOption">
+                    <TextBlock Text="{Binding Label}" />
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
                 <Interaction.Behaviors>
                   <EventTriggerBehavior EventName="SelectionChanged">
-                    <InvokeCommandAction Command="{Binding ChooseCommand}" CommandParameter="{Binding #Chooser.SelectedItem}" />
+                    <InvokeCommandAction Command="{Binding ChooseOptionCommand}" CommandParameter="{Binding #Chooser.SelectedItem}" />
                   </EventTriggerBehavior>
                 </Interaction.Behaviors>
               </ComboBox>
             </DataTemplate>
             <DataTemplate DataType="edsettings:PathFieldViewModel" x:DataType="edsettings:PathFieldViewModel">
               <DockPanel>
-                <Button DockPanel.Dock="Right" Content="Browse…" Command="{Binding BrowseCommand}"
+                <Button DockPanel.Dock="Right" Content="{x:Static ed:Strings.Settings_Browse}" Command="{Binding BrowseCommand}"
                         AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsBrowse}" />
                 <TextBox Text="{Binding Text}"
                          AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsFieldInput}"
@@ -219,13 +224,13 @@
                             AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsListItem}"
                             AutomationProperties.Name="{Binding Text}">
                         <TextBlock Text="{Binding Text}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Text}" />
-                        <Button Grid.Column="1" Classes="icon" Content="↑" AutomationProperties.Name="Move up"
+                        <Button Grid.Column="1" Classes="icon" Content="↑" AutomationProperties.Name="{x:Static ed:Strings.Settings_List_MoveUp}"
                                 Command="{Binding $parent[ItemsControl].((edsettings:StringListFieldViewModel)DataContext).MoveUpCommand}"
                                 CommandParameter="{Binding}" />
-                        <Button Grid.Column="2" Classes="icon" Content="↓" AutomationProperties.Name="Move down"
+                        <Button Grid.Column="2" Classes="icon" Content="↓" AutomationProperties.Name="{x:Static ed:Strings.Settings_List_MoveDown}"
                                 Command="{Binding $parent[ItemsControl].((edsettings:StringListFieldViewModel)DataContext).MoveDownCommand}"
                                 CommandParameter="{Binding}" />
-                        <Button Grid.Column="3" Classes="icon" Content="✕" AutomationProperties.Name="Remove"
+                        <Button Grid.Column="3" Classes="icon" Content="✕" AutomationProperties.Name="{x:Static ed:Strings.Settings_List_Remove}"
                                 Command="{Binding $parent[ItemsControl].((edsettings:StringListFieldViewModel)DataContext).RemoveCommand}"
                                 CommandParameter="{Binding}" />
                       </Grid>
@@ -233,16 +238,16 @@
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
                 <Grid ColumnDefinitions="*,Auto,Auto">
-                  <TextBox Text="{Binding NewItem}" PlaceholderText="Add an entry"
+                  <TextBox Text="{Binding NewItem}" PlaceholderText="{x:Static ed:Strings.Settings_List_NewItem}"
                            AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsListNewItem}"
                            AutomationProperties.Name="{Binding Label}">
                     <Interaction.Behaviors>
                       <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding AddCommand}" />
                     </Interaction.Behaviors>
                   </TextBox>
-                  <Button Grid.Column="1" Content="Add" Command="{Binding AddCommand}"
+                  <Button Grid.Column="1" Content="{x:Static ed:Strings.Settings_List_Add}" Command="{Binding AddCommand}"
                           AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsListAdd}" />
-                  <Button Grid.Column="2" Content="Browse…" Command="{Binding BrowseCommand}" IsVisible="{Binding CanBrowse}"
+                  <Button Grid.Column="2" Content="{x:Static ed:Strings.Settings_Browse}" Command="{Binding BrowseCommand}" IsVisible="{Binding CanBrowse}"
                           AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsBrowse}" />
                 </Grid>
               </StackPanel>
@@ -251,7 +256,7 @@
         </ContentControl>
         <TextBlock Classes="fieldError" Text="{Binding Error}" IsVisible="{Binding HasError}"
                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsFieldError}" />
-        <TextBlock Classes="secondary" Text="Requires restart" IsVisible="{Binding RequiresRestart}"
+        <TextBlock Classes="secondary" Text="{x:Static ed:Strings.Settings_RequiresRestart}" IsVisible="{Binding RequiresRestart}"
                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsRequiresRestart}" />
       </StackPanel>
     </DataTemplate>
@@ -260,16 +265,16 @@
     <Border DockPanel.Dock="Top" Classes="restartBar" IsVisible="{Binding RestartPending}"
             AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsRestartBar}">
       <DockPanel>
-        <Button DockPanel.Dock="Right" Content="Restart now" Command="{Binding RestartNowCommand}"
+        <Button DockPanel.Dock="Right" Content="{x:Static ed:Strings.Settings_RestartNow}" Command="{Binding RestartNowCommand}"
                 AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsRestartNow}" />
-        <TextBlock Text="Restart to apply" VerticalAlignment="Center" />
+        <TextBlock Text="{x:Static ed:Strings.Settings_RestartToApply}" VerticalAlignment="Center" />
       </DockPanel>
     </Border>
     <Grid ColumnDefinitions="240,*">
       <DockPanel>
-        <TextBox DockPanel.Dock="Top" Text="{Binding SearchText}" PlaceholderText="Search settings"
+        <TextBox DockPanel.Dock="Top" Text="{Binding SearchText}" PlaceholderText="{x:Static ed:Strings.Settings_Search}"
                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsSearch}"
-                 AutomationProperties.Name="Search settings" />
+                 AutomationProperties.Name="{x:Static ed:Strings.Settings_Search}" />
         <ListBox Classes="rows" ItemsSource="{Binding VisiblePages}" SelectedItem="{Binding SelectedPage}">
           <ListBox.ItemTemplate>
             <DataTemplate x:DataType="edsettings:SettingsPageViewModel">
