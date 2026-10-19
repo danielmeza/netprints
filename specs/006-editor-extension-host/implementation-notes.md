@@ -1657,3 +1657,37 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - **Decision (aggregate)**: `CiWorkflowTests` adds `godot-smoke` to `NotAggregated` (like `packages`): the Godot jobs are separate checks, not part of `Build and test (Linux)`. `godot-extension` has no steps, so the aggregate rule does not see it. Making them required is a branch-protection decision for the owner.
 - **Godot**: no Godot binary is downloaded or run; the extension and its tests need none. Godot.NET.Sdk 4.7.2 appears only in the generated project text (it exists on nuget.org).
 - **Not done**: the sample under `samples/` (P3c); docs for T110 (testing guide, `cli.md`, ADR-0041, ADR-0010).
+
+## Batch D2-CP (T110, Checkpoint D2)
+
+- Suite (Release, solution-wide, at fe5bb318): 5302 total, 5265 passed, 37 skipped, 0 failed (UITests 17 min 37 s, Editor.Tests 2 min 25 s,
+  Catalog.Tests 1 min 13 s, Cli.Tests 1 min 01 s, Core.Tests 54 s, Analyzers.Tests 6 s, Extensibility.Testing.Tests 2.7 s, Desktop.E2ETests 0.85 s with the always-on tests only). E2E
+  (`NETPRINTS_E2E=1`, `--fail-skips on`, display start 300, own `NETPRINTS_STATE_DIR` and `XDG_CONFIG_HOME`): 56 total, 55 passed, 1 skipped (`GuideScreenshotTests`, explicit filtering, as at C1),
+  0 failed, 10 min 09 s. `dotnet format --verify-no-changes` clean; trim ratchet 8 of 8. After the settings fix below the suite is 5304 total (the two new tests), 5267 passed, 37 skipped, 0 failed.
+- CI (run 39190961693, green at fe5bb318): UI shards 1/4 6 min 22 s, 2/4 6 min 12 s, 3/4 9 min 21 s, 4/4 5 min 18 s; longest job Performance budgets (non-blocking) 11 min 33 s, then Desktop E2E
+  10 min 48 s. `packages`, `godot-extension` and `godot-smoke` all passed. No UI shard is near 12 minutes, so no fifth shard (R28).
+- Gate D2. SC-003: `extensions/NetPrints.Godot` builds against the packed `local-packages` feed only (0 warnings), its kit tests pass (24 of 24), and `NetPrints.Editor.Tests.Hosting.GodotExtensionHostTests`
+  loads it from an unpacked `extension/` folder with `NETPRINTS_GODOT_EXTENSION_DIR` and no extension or contribution diagnostic (1 of 1). `scripts/verify-packages.sh` passes: package validation and the public API
+  checks of every packable project, and the template build. The Release build reports 0 warnings with `GenerateDocumentationFile` on (`CS1591` is an error in `.editorconfig`), so every public member is documented.
+- Gate D2. SC-011: the template builds with 0 edits in `verify-packages.sh` step 6 (`dotnet new netprints-extension`, build 0 warnings, `netprints extension verify` passes NPK001, NPK002, NPK003 and NPK017).
+  Each NPK check has a failing fixture under `tests/Fixtures/Extensions/Conformance/`: `Fx.Fail.Manifest` (NPK001), `Packaging` (NPK002), `TypeIdentity` (NPK003), `Registration` (NPK004), `RegistryIssues` (NPK005),
+  `RoundTrip` (NPK006), `Translation` (NPK007), `Determinism` (NPK008), `Settings` (NPK009), `HostChannel` (NPK010), `Coexistence` (NPK011), `Disposal` (NPK012), `Services` (NPK013), `Editor` (NPK015) and `Views`
+  (NPK016); `ConformanceSuiteTests.EachCheckFailsItsFixtureNamingTheCodeTheRuleAndTheItem` (one theory row per check) proves each fails, naming its code, rule and item. NPK017 has no fixture: `ExtensionVerifier`'s
+  own tests prove it (it is not in `ConformanceSuite`). NPK014 (graph rules) arrives with T138.
+- Quickstart §4 step 5: `settings.json` lives at `$XDG_CONFIG_HOME/NetPrints/settings.json` (`JsonFileSettingsStore.DefaultFilePath`), the built-in section under the top-level `netprints` key, so
+  `netprints.extensionPaths` (an `ExtensionLoaderOptions.SearchDirectories` entry: its immediate subfolders hold extensions) was set to the folder whose `extension/` subfolder holds the built extension.
+  `NetPrints.Desktop --profile godot` for 20 s: the log shows `Loaded extension netprints 1.0.0` and `Loaded extension netprints.godot 0.1.0`, the `godot` profile is applied (New project filtered),
+  and no NPX extension diagnostic, no unknown-profile message and no exception appeared. `--profile nope`: the automation `dump` showed `The profile 'nope' is not known, so New project shows every template. Known
+  profiles: netprints.default, godot.` and no NPX diagnostic.
+- Decision (settings read): a manual settings file that sets only `netprints.extensionPaths` crashed the editor — the source-generated deserializer synthesizes constructor parameters from init-only properties and
+  supplies `default(T)` for a member the file omits, so `ExtensionPaths`/`Language` came back `null` and the desktop threw an NRE in `GetExtensionSearchDirectories`/`ApplyLanguageSetting` (empty or complete
+  sections were unaffected, which is why the E2E run missed it). `JsonFileSettingsStore.Read` now overlays the stored section on the descriptor's default, so an omitted member keeps its default; a new test
+  (`APartialBuiltInSectionKeepsTheDefaultsOfItsMissingMembers`, `APartialExtensionSectionKeepsTheDefaultsOfItsMissingMembers`) pins it red first.
+- Dock check: the pin is 12.1.0.10 (`Dock.Avalonia`, `Dock.Model.Mvvm`, `Dock.Avalonia.Themes.Fluent`); 12.1.0.12 is the newest released version (per `https://api.nuget.org/v3-flatcontainer/dock.avalonia/index.json`).
+  Not changed here.
+- Open for the D1+D2 review: the Godot jobs `godot-extension` and `godot-smoke` are separate checks, not in the `Build and test (Linux)` aggregate (like `packages`); making them required is a branch-protection
+  decision for the owner. `ContrastCheck.Passed` rounds the ratio to 2 decimals (from D1, flagged). `NoPackageAnalysis` is set in the template projects and `NetPrints.Templates` (from D2c), because `extension/` and
+  `content/` are deliberately not `lib/` (NU5100/NU5120), while the repository forbids `NoWarn`.
+- Docs: `docs/guide/extension-testing.md` (every NPK check, NPK017, the reusable CI workflow), `docs/guide/cli.md` (`extension verify`), `docs/guide/diagnostics.md` (NPK rows), ADR-0041 and ADR-0010 with its
+  Amendment 1 already cover the D2 work; no gap was found, so no doc change was needed. `.github/release-notes.md` (Unreleased) gained the author kit, the template and package type, `extension verify`,
+  the reusable workflow and the NetPrints.Godot sample extension.

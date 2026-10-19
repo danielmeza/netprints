@@ -551,6 +551,15 @@ profiles and P3 extensions use, so custom emitters need no core changes.
     constructors, collection expressions, `var` and braces.
   - The default style comes from, in order: an `.editorconfig` preference, then the profile, then a per-class
     override (stored only when it differs).
+- **Generator-produced members in the editor** (owner, 2026-10-18). The editor's reflection compiles the project's
+  documents plus the translated graphs with no source-generator driver (`ReflectionHost`, `MsBuildProjectSystem` take
+  `Project.Documents`), so members that source generators add never reach node search. For Godot this hides
+  `SignalName.X`, `PropertyName.X` and the C# event generated from a `[Signal]` delegate, so a signal declared in a graph
+  cannot be connected or emitted from a graph. P3b runs the project's generators (a `GeneratorDriver` over the same
+  compilation, or the generated documents from the workspace) so their members appear in search and resolve in
+  translation. Related: the class's own hand-written partial members are also missing from "This Methods"
+  (`ThisMethodsProvider` queries only `BaseTypes`); fix both together. Tests: a fixture project with a source generator
+  whose generated member is found by node search and compiles in a graph.
 - **Events and subscriptions** (owner report, 2026-09-27):
   - Declare C# `event` members with a delegate type (built-in or a P3b `delegate` kind).
   - Bind an event-graph entry as the handler of an event on this class, a variable or a referenced type.

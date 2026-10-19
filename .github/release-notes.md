@@ -44,6 +44,16 @@
 
 **Added:** a call to a method with `out` or `ref` parameters has an output pin for each of them (keyed `out.data.<parameterName>`) that carries the value after the call, and a void method with an `out` parameter can be made pure. Saved graphs do not change. Node capabilities (`IPinListEditor`, `IOverloadableNode`, `IPinNameEditor`) are role interfaces the editor asks for.
 
+**Added:** the extension author kit, the packages `NetPrints.Extensibility.Testing` and `NetPrints.Extensibility.Testing.Xunit`. The kit loads an extension in a test and runs the conformance checks NPK001 to NPK016; a failed check names its code, the rule it enforces and the item that breaks it, and `ConformanceTests<T>` wires the whole suite into a test project from one base class.
+
+**Added:** the `netprints-extension` template and the `NetPrintsExtension` package type. `dotnet new netprints-extension` lays out an extension and its conformance test project, and `dotnet pack` produces a package with the extension under `extension/` that the editor loads from a folder or a package.
+
+**Added:** `netprints extension verify <folder|package.nupkg>` checks an extension against the host without loading it and reports NPK017 when the host lacks a type or member the extension references.
+
+**Added:** the reusable `.github/workflows/netprints-extension.yml` workflow builds an extension, runs its kit tests, packs it and verifies the package, so an extension's own CI reuses the same checks.
+
+**Added:** the NetPrints.Godot sample extension, built against the packed packages only, with the `godot` project profile, a project template, a setup command, a settings section and a status-bar item.
+
 ## Downloads
 
 | Platform | File |

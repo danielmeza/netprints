@@ -919,7 +919,7 @@ contracts/cli.md §2–§3. **Independent test**: US10's independent test. **Gat
   Godot extension job after `packages` calls `netprints-extension.yml` (record whether `CiWorkflowTests` makes it part
   of the "Build and test (Linux)" aggregate), and a smoke step shows the editor host loads the built extension from an
   extension directory with no extension diagnostic (SC-003; record how). Its own sample under `samples/` is P3c's.
-- [ ] T110 **Checkpoint D2**. Whole suite plus the E2E pass; CI green, including the `packages` and Godot jobs. Report
+- [x] T110 **Checkpoint D2**. Whole suite plus the E2E pass; CI green, including the `packages` and Godot jobs. Report
   the plan's gate D2: SC-003 (the Godot extension built from the packed packages, loaded in the editor, every kit check
   passing; validation and API checks; XML docs) and SC-011 (the template with 0 edits; each check's failing fixture);
   quickstart §4 step 5 with the Godot extension; the longest CI job; the Dock check. Docs updated: the extension
