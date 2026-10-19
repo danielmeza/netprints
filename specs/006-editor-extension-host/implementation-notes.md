@@ -1144,6 +1144,59 @@ to `src/` or `tests/` code in C1a to C2f.
 All 27 findings are resolved: fix batches C-F1 to C-F7, plus C-F2b and C-F2c. The last green CI is at eada8ad1 (CI 39032644596,
 CLI Windows 39032644523, Release 39032644552, Docs 39032644486); Batch C-F7 is on top of it.
 
+### Review D1+D2
+
+(T111, at 4308cf43, diff 450f91e2..4308cf43; PR #20 review 5567015546, one inline thread per finding.) 0 blocker, 8 major,
+10 minor, 5 nit. Evidence: CI green at 4308cf43 (CI 39196498345); a settings probe over the Release build (a `keyboard` binding
+without `remove` reaches the resolver with null lists); a recomputation of the 50 contrast checks per preset; `dotnet pack` of
+`NetPrints.Templates` and `NetPrints.Godot` with pack analysis on; the logs and artifacts of the two re-run CI attempts
+(39164167733, 39184254136); the Dock versions on nuget.org.
+
+- DD-1 major `src/NetPrints.Editor/Contributions/KeyBindingResolver.cs:96`: a `keyboard` binding that omits `remove` or `add`
+  deserializes with null lists and the resolver throws on the first registry snapshot; the D2-CP overlay is top-level only.
+- DD-2 major `src/NetPrints.Editor/Behaviors/ExecuteCommandOnItemDoubleClickBehavior.cs:59`: the ShellMainFlow failure at
+  142a178d is an unhandled `ArgumentException` (a `ToolDock` passed to `NavigateCommand`); it was re-run, not fixed (FR-088).
+- DD-3 major `tests/NetPrints.Desktop.E2ETests/Scenarios/RebindShortcutsTests.cs:45`: SC-007 is reported met, but the scenario
+  clicks and the Keyboard shortcuts page has no keyboard navigation.
+- DD-4 major `src/NetPrints.Editor/Theming/ThemeTokenCatalogue.cs:36`: sizes, spacing, radii, fonts and motion are not tokens
+  (FR-066, ADR-0035 decision 1); about 50 keyed resources are out of a theme's reach.
+- DD-5 major `src/NetPrints.Extensibility.Testing/Checks/ContributedViewsCheck.cs:23`: NPK016 skips whole `Styles` and
+  `ResourceDictionary` files, the exemption E2 dropped in R2-07.
+- DD-6 major `src/NetPrints.Editor/Hosting/ExtensionContributionRecorder.cs:64`: a project's copy of an extension does not serve
+  its session; the per-user copy's app-level items stay and win (spec Clarification, data-model §1).
+- DD-7 major `src/NetPrints.Editor/Theming/ContrastGates.cs:16`: rounding to two decimals lets Classic Dark's card (1.14998)
+  pass the 1.15 gate and weakens every gate; the FR-068 contradiction goes to the owner.
+- DD-8 major `src/NetPrints.Editor/Settings/SettingsDocumentViewModel.cs:212`: custom and page-only settings pages never render,
+  the built-in pages bypass the page kind, and the document does not rebuild; SC-004 checks the registry only.
+- DD-9 minor `src/NetPrints.Editor/Settings/SettingsView.axaml:63`: UI text added in D1 bypasses resources (FR-027); generated
+  labels skip the `Settings.<section>.<key>` resources; the language field is a text box, not the contract's drop-down.
+- DD-10 minor `src/NetPrints.Templates/NetPrints.Templates.csproj:11`: `NoPackageAnalysis` turns off all pack analysis outside
+  the ADR-0003 ledger and the hygiene gate cannot see it; only NU5100 fires, and only in extension projects.
+- DD-11 minor `tests/NetPrints.Editor.Tests/Docs/SettingsSchemaFile.cs:38`: the published settings schema has no `keyboard`
+  section (FR-040).
+- DD-12 minor `src/NetPrints.Extensibility/Settings/JsonFileSettingsStore.cs:233`: NPX014 is never reported for a `netprints.`
+  extension id, the Godot sample included.
+- DD-13 minor `extensions/NetPrints.Godot/Directory.Build.targets:3`: the Godot sample imports the repository's build logic for
+  the NPXE opt-in, so it is not built only from the packed packages (R26, FR-037).
+- DD-14 minor `tests/NetPrints.Editor.UITests/Snapshots/SnapshotTests.cs:72`: `ShellWithNoProjectOpen` waits for the focused
+  recent-projects search box's caret to stop blinking (the 17 px diff).
+- DD-15 minor `src/NetPrints.Editor/Settings/KeyboardShortcutsItemViewModel.cs:186`: leaving the page while recording keeps every
+  key binding disabled.
+- DD-16 minor `src/NetPrints.Extensibility.Abstractions/Editor/TooltipTarget.cs:10`: tooltip providers receive a
+  `ConnectionViewModel`, and D1 makes extension tooltip providers live (CD-22's class).
+- DD-17 minor `specs/006-editor-extension-host/implementation-notes.md:1478`: a contributed view template that throws is not
+  contained (FR-034, R27).
+- DD-18 minor `src/NetPrints.Extensibility.Testing/Checks/CheckContext.cs:30`: NPK006 to NPK008 pass with no node kind exercised,
+  NPK010 sends no message and NPK012 has no leak test, against contract §6.
+- DD-19 nit `docs/adr/0020-editor-contribution-registry.md:25`: ADR-0020 still says the registry is frozen.
+- DD-20 nit `src/NetPrints.Editor/Theming/Presets/classic.dark.nptheme.json:3`: preset ids and the High contrast shape differ
+  from data-model §5; High contrast in System mode drops Semi's variant.
+- DD-21 nit `docs/guide/extension-testing.md:143`: the reusable-workflow example points at `@master`.
+- DD-22 nit `src/NetPrints.Extensibility.Testing/PublicAPI.Unshipped.txt:1`: the kit's public API ships stable without an NPXE
+  id or an R16 entry.
+- DD-23 nit `specs/006-editor-extension-host/implementation-notes.md:1589`: test-after in T095 to T097, T101, T106, T107 and
+  T109 (the tests pin behaviour except DD-4 and DD-8's), and roadmap edits in 18d9934c and b3841ce5 against tasks.md:53.
+
 ## Batch C2f (T074-T076)
 
 Red/green. Every rule's tests were written against an analyzer stub that declares its descriptor and reports nothing, and failed on the
