@@ -19,6 +19,7 @@ namespace NetPrints.Tests.Core
     {
         private const string CiWorkflow = ".github/workflows/ci.yml";
         private const string CliWindowsWorkflow = ".github/workflows/cli-windows.yml";
+        private const string ExtensionWorkflow = ".github/workflows/netprints-extension.yml";
         private const string AggregateJobName = "Build and test (Linux)";
 
         private const string KitTestsProject = "NetPrints.Extensibility.Testing.Tests";
@@ -59,6 +60,31 @@ namespace NetPrints.Tests.Core
             string run = Text(Get(step, "run"));
             Assert.Contains("dotnet build " + path, run, StringComparison.Ordinal);
             Assert.Contains("dotnet test --project " + path, run, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void TheAuthorWorkflowIsReusableAndBuildsTestsPacksAndVerifiesAnExtension()
+        {
+            string path = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), ExtensionWorkflow);
+            Assert.True(File.Exists(path), $"{ExtensionWorkflow} does not exist.");
+
+            object? workflow = Read(path);
+            object? inputs = Get(workflow, "on", "workflow_call", "inputs");
+            Assert.Equal("true", Text(Get(inputs, "extension-folder", "required")));
+            Assert.Equal("false", Text(Get(inputs, "packages-artifact", "required")));
+
+            Dictionary<string, object?> jobs = Get(workflow, "jobs") as Dictionary<string, object?> ?? [];
+            string[] commands = [.. jobs.Values.SelectMany(job => Items(Get(job, "steps"))).Select(step => Text(Get(step, "run"))).Where(run => run.Length > 0)];
+            string all = string.Join('\n', commands);
+            int[] positions = [.. new[] { "dotnet restore", "dotnet build", "dotnet test", "dotnet pack", "extension verify" }.Select(command => all.IndexOf(command, StringComparison.Ordinal))];
+            Assert.DoesNotContain(-1, positions);
+            Assert.Equal(positions.Order(), positions);
+
+            string text = File.ReadAllText(path);
+            Assert.DoesNotContain("secrets.", text, StringComparison.Ordinal);
+            string[] uses = [.. Regex.Matches(text, @"uses:\s*(\S+)").Select(match => match.Groups[1].Value)];
+            Assert.NotEmpty(uses);
+            Assert.All(uses, action => Assert.Matches("@[0-9a-f]{40}$", action));
         }
 
         [Fact]

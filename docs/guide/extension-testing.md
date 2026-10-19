@@ -127,4 +127,29 @@ Editor contributions follow the editor's rules: ids start with the extension id,
 
 The extension's `.axaml` views hold no colour literal outside a theme dictionary and no `FontSize` or `FontFamily` literal, the E2 and E8 rules of the editor's own XAML tests. Use theme tokens (`{DynamicResource ...}`), style classes and the type ramp, so the views follow the theme. Files whose root is `Application`, `Styles` or `ResourceDictionary` are not scanned.
 
-Two more checks exist outside the suite's `NPK001` to `NPK016` run: NPK014 (graph rules) arrives with the graph rules, and NPK017 (API compatibility) belongs to [`netprints extension verify`](cli.md#extension-verify--check-an-extension-without-loading-it), which does not need a test project and also runs NPK001 to NPK003.
+### NPK017
+
+Every NetPrints type and member the extension references exists in the host. The suite does not run this check: [`netprints extension verify`](cli.md#extension-verify--check-an-extension-without-loading-it) does, by reading the extension assembly's metadata and looking each reference up in the host's assemblies by name and signature, so it needs no test project and loads nothing. `NpkDiagnosticCodes.ApiCompatibility` names it. The fix is to build the extension against the NetPrints packages of the host that will load it, or to stop using the member the report names.
+
+NPK014 (graph rules) arrives with the graph rules.
+
+## CI workflow
+
+`.github/workflows/netprints-extension.yml` is a reusable workflow (`workflow_call`) that builds an extension, runs its kit tests, packs it and runs `netprints extension verify` on the package. Call it from your extension's repository:
+
+```yaml
+jobs:
+  extension:
+    uses: danielmeza/netprints/.github/workflows/netprints-extension.yml@master
+    with:
+      extension-folder: .
+```
+
+| Input | Meaning |
+|---|---|
+| `extension-folder` | Required. The folder that holds the extension project (package type `NetPrintsExtension`) and its `*.Tests.csproj`, as the `netprints-extension` template lays them out. |
+| `packages-artifact` | The name of an artifact that holds the packed NetPrints packages (`*.nupkg`). They are used as a local feed for restore and for the `NetPrints.Cli` tool. Without it, the packages come from the configured NuGet sources. |
+| `netprints-version` | The version of the `NetPrints.Cli` tool that verifies the package; the latest release by default. |
+| `dotnet-version` | The .NET SDK to install; `10.0.x` by default. |
+
+The workflow uploads the extension package as the artifact named in its `package-artifact` output. Pin the `uses:` reference to a release tag or a commit once one exists.

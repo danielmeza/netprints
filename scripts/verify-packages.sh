@@ -314,4 +314,11 @@ grep -q '<packageType name="NetPrintsExtension" />' "$EXT_EXTRACT"/*.nuspec || f
 [[ ! -e "$EXT_EXTRACT/extension/NetPrints.Core.dll" ]] || fail "step 6 (extension package): the extension folder holds a host assembly"
 [[ ! -d "$EXT_EXTRACT/lib" ]] || fail "step 6 (extension package): the package has a lib/ folder"
 
+VERIFY_RC=0
+VERIFY_OUTPUT="$("$TOOL_PATH/netprints" extension verify "$PACKAGE" 2>&1)" || VERIFY_RC=$?
+[[ $VERIFY_RC -eq 0 ]] || fail "step 6 (netprints extension verify): exit code $VERIFY_RC, expected 0: $VERIFY_OUTPUT"
+for CODE in NPK001 NPK002 NPK003 NPK017; do
+    grep -q "^$CODE .*: passed" <<<"$VERIFY_OUTPUT" || fail "step 6 (netprints extension verify): $CODE did not pass: $VERIFY_OUTPUT"
+done
+
 echo "verify-packages.sh: all checks passed for $VERSION"
