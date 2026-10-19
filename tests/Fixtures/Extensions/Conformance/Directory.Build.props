@@ -1,17 +1,8 @@
 <Project>
-  <!-- Conformance fixtures: each Fx.Fail.* extension breaks exactly one rule of the kit (FR-078). The host contracts are referenced the way an extension does. -->
+  <!-- Conformance fixtures: each Fx.Fail.* extension breaks exactly one rule of the kit (FR-078). -->
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
-  <PropertyGroup>
-    <FxHostPrivate Condition="'$(FxHostPrivate)' == ''">false</FxHostPrivate>
-  </PropertyGroup>
-
   <ItemGroup>
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\..\..\..\src\NetPrints.Core\NetPrints.Core.csproj" Private="$(FxHostPrivate)" ExcludeAssets="runtime" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\..\..\..\src\NetPrints.Reflection\NetPrints.Reflection.csproj" Private="false" ExcludeAssets="runtime" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\..\..\..\src\NetPrints.Serialization\NetPrints.Serialization.csproj" Private="false" ExcludeAssets="runtime" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\..\..\..\src\NetPrints.Catalog\NetPrints.Catalog.csproj" Private="false" ExcludeAssets="runtime" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\..\..\..\src\NetPrints.Extensibility.Abstractions\NetPrints.Extensibility.Abstractions.csproj" Private="false" ExcludeAssets="runtime" />
     <Compile Include="$(MSBuildThisFileDirectory)..\Shared\FxKit.cs" Link="FxKit.cs" />
   </ItemGroup>
 </Project>

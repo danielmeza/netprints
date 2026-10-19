@@ -1583,3 +1583,20 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - Open for the D1+D2 review: `ContrastCheck.Passed` rounds the ratio to 2 decimals, so the mandated Classic card (`#AA202020` over `#000`, ratio 1.1497) passes the 1.15 gate. Flagged, not changed.
 - Docs: the settings, themes and shortcuts guides and the diagnostics guide (NPX014) were already current; the release notes (`.github/release-notes.md`, Unreleased) gained the Settings document,
   rebindable shortcuts and theme presets entries.
+
+## Batch D2a (T101, T102)
+
+- **Red**: the T101 tests (`ExtensionTestTests`, `ExtensionHarnessTests`) were written next to an `ExtensionTest` that already worked, because the harness is a move; they are green from the first run (5 of 5). The 8 `EachCheckFailsItsFixture...`
+  cases and `AGoodExtensionPassesEveryCheck` were red against a suite stub that skipped every check (9 of 15 failed), green after the checks (15 of 15).
+- **Layout**: `src/NetPrints.Extensibility.Testing` (harness, `ExtensionTest`, `TestState`, report types, `NpkDiagnosticCodes`, `Checks/`), `src/NetPrints.Extensibility.Testing.Xunit` (`ConformanceTests`), the tests in
+  `tests/NetPrints.Extensibility.Testing.Tests` and the fixtures in `tests/Fixtures/Extensions/Conformance/Fx.Fail.*`. They run as a second step of the Core leg of the test matrix (`Test (extension kit)`), so the matrix keeps one leg per project name.
+- **Decision (InMemoryHostChannel)**: it already lives in `NetPrints.Extensibility.Abstractions` (ADR-0030), so the kit does not repeat it.
+- **Decision (generator)**: `ExtensionHarness` no longer calls the generator, which is not a packable library; `GenerateAsync` stays in `tests/NetPrints.Testing` as an extension method on the harness.
+- **Decision (in-process manifest)**: `CreateWithManifestsAsync` loads an in-process extension under a manifest the caller gives, so the kinds it contributes can carry the manifest id as their prefix; `CreateAsync` keeps the synthetic `harness.inprocess.<n>` ids.
+- **Decision (folder)**: `ConformanceOptions.ExtensionFolder` is the extension's build output (manifest, assembly, no host assemblies). NPK001 to NPK003 are skipped without it and NPK004 is skipped without a `HarnessFactory`.
+  `ConformanceTests.ExtensionFolder` is `null` by default, because the folder next to a test assembly holds the host's assemblies; the template (T104) overrides it.
+- **Decision (NPK003)**: type identity is checked on metadata: every `NetPrints.*` assembly the extension references must be one of the contract assemblies (`Core`, `Reflection`, `Catalog`, `Serialization`, `Extensibility.Abstractions`, `Extensibility`, `Annotations`).
+- **Decision (NPK002)**: a copy of a contract assembly or of a platform assembly (from `TRUSTED_PLATFORM_ASSEMBLIES`) in the folder is a finding. The package type check belongs to `verify`.
+- **Decision (NPK006 to NPK008)**: they exercise the kinds of the extension under test that offer a node-search entry, one graph per kind; a kind without an entry is not exercised.
+- **Packages**: both are packable with API files, XML docs and READMEs, and `scripts/verify-packages.sh` lists them (pack and verify pass). The READMEs avoid generic angle brackets because the verifier rejects HTML in packed prose.
+- **Not done**: no NPXE id (the kit is not an experimental API); the Abstractions API and the `ExtensionApi` hash are unchanged.

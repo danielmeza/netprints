@@ -2,7 +2,14 @@
   <PropertyGroup>
     <AssemblyName>Fx.Fail.Packaging</AssemblyName>
     <OutputPath>bin/$(Configuration)/extensions/fx.fail.packaging/</OutputPath>
-    <!-- Copies NetPrints.Core.dll into the extension folder, which the host must supply. -->
-    <FxHostPrivate>true</FxHostPrivate>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Private: NetPrints.Core.dll is copied into the extension folder, which the host must supply. -->
+    <ProjectReference Include="..\..\..\..\..\src\NetPrints.Core\NetPrints.Core.csproj" />
+    <ProjectReference Include="..\..\..\..\..\src\NetPrints.Reflection\NetPrints.Reflection.csproj" Private="false" ExcludeAssets="runtime" />
+    <ProjectReference Include="..\..\..\..\..\src\NetPrints.Serialization\NetPrints.Serialization.csproj" Private="false" ExcludeAssets="runtime" />
+    <ProjectReference Include="..\..\..\..\..\src\NetPrints.Catalog\NetPrints.Catalog.csproj" Private="false" ExcludeAssets="runtime" />
+    <ProjectReference Include="..\..\..\..\..\src\NetPrints.Extensibility.Abstractions\NetPrints.Extensibility.Abstractions.csproj" Private="false" ExcludeAssets="runtime" />
+  </ItemGroup>
 </Project>

@@ -75,6 +75,8 @@
     <ProjectReference Include="..\..\src\NetPrints.Generator\NetPrints.Generator.csproj" />
     <ProjectReference Include="..\..\src\NetPrints.Workspace\NetPrints.Workspace.csproj" />
     <ProjectReference Include="..\NetPrints.Testing\NetPrints.Testing.csproj" />
+    <!-- The architecture tests load every packable library by name. -->
+    <ProjectReference Include="..\..\src\NetPrints.Extensibility.Testing.Xunit\NetPrints.Extensibility.Testing.Xunit.csproj" />
     <!-- Built first, never referenced: the loader and generator tests load it from its own output folder. -->
     <ProjectReference Include="..\NetPrints.TestExtension\NetPrints.TestExtension.csproj" ReferenceOutputAssembly="false" />
     <!-- Built first, never referenced: tests load the fx.catalog extension from its own output folder. -->
