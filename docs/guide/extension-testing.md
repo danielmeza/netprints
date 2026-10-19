@@ -125,7 +125,7 @@ Editor contributions follow the editor's rules: ids start with the extension id,
 
 ### NPK016
 
-The extension's `.axaml` views hold no colour literal outside a theme dictionary and no `FontSize` or `FontFamily` literal, the E2 and E8 rules of the editor's own XAML tests. Use theme tokens (`{DynamicResource ...}`), style classes and the type ramp, so the views follow the theme. Files whose root is `Application`, `Styles` or `ResourceDictionary` are not scanned.
+The extension's `.axaml` views hold no colour literal outside a theme dictionary and no `FontSize` or `FontFamily` literal, the E2 and E8 rules of the editor's own XAML tests. Use theme tokens (`{DynamicResource ...}`), style classes and the type ramp, so the views follow the theme. Every `.axaml` file is scanned, `Styles` and `ResourceDictionary` files included; only an element inside `ThemeDictionaries` may hold a colour.
 
 ### NPK017
 

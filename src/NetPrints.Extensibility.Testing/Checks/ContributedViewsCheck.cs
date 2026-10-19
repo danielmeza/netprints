@@ -4,7 +4,7 @@ using System.Xml.Linq;
 
 namespace NetPrints.Extensibility.Testing.Checks;
 
-/// <summary>NPK016: the <c>.axaml</c> views of the extension hold no colour literal outside a theme dictionary and no font size or family literal, as rules E2 and E8 of the editor's XAML hygiene tests.</summary>
+/// <summary>NPK016: the extension's <c>.axaml</c> files hold no colour literal outside a theme dictionary and no font size or family literal, as rules E2 and E8 of the editor's XAML hygiene tests, in every <c>.axaml</c> file, <c>Styles</c> and <c>ResourceDictionary</c> roots included.</summary>
 internal sealed partial class ContributedViewsCheck : ConformanceCheck
 {
     private const string Rule = "no colour or font literal a theme cannot reach";
@@ -19,8 +19,6 @@ internal sealed partial class ContributedViewsCheck : ConformanceCheck
     ];
 
     private static readonly HashSet<string> ColorTextElements = new(StringComparer.Ordinal) { "BoxShadows", "Color", "SolidColorBrush" };
-
-    private static readonly HashSet<string> NonViewRoots = new(StringComparer.Ordinal) { "Application", "Styles", "ResourceDictionary" };
 
     public override string Code => NpkDiagnosticCodes.ContributedViews;
 
@@ -56,7 +54,7 @@ internal sealed partial class ContributedViewsCheck : ConformanceCheck
                 continue;
             }
 
-            if (document.Root is not { } root || NonViewRoots.Contains(root.Name.LocalName))
+            if (document.Root is null)
             {
                 continue;
             }

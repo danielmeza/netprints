@@ -131,6 +131,28 @@ public sealed class ConformanceRuleTests
         }
     }
 
+    [Theory]
+    [InlineData("Styles.axaml", "<Styles xmlns=\"https://github.com/avaloniaui\"><Style Selector=\"Button\"><Setter Property=\"Background\" Value=\"#FF0000\" /></Style></Styles>", "Setter Background=#FF0000")]
+    [InlineData("Fonts.axaml", "<Styles xmlns=\"https://github.com/avaloniaui\"><Style Selector=\"TextBlock\"><Setter Property=\"FontSize\" Value=\"18\" /></Style></Styles>", "Setter FontSize=18")]
+    [InlineData("Brushes.axaml", "<ResourceDictionary xmlns=\"https://github.com/avaloniaui\" xmlns:x=\"http://schemas.microsoft.com/winfx/2006/xaml\"><SolidColorBrush x:Key=\"Mine\">#00FF00</SolidColorBrush></ResourceDictionary>", "SolidColorBrush holds the colour #00FF00")]
+    public async Task AStylesOrResourceDictionaryFileWithALiteralFails(string fileName, string content, string expected)
+    {
+        string directory = Directory.CreateTempSubdirectory("npk016").FullName;
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(directory, fileName), content, TestContext.Current.CancellationToken);
+
+            ConformanceCheckResult result = await RunAsync(new EditorExtension(Id + ".run", "Run", null, [], CommandScope.Global), NpkDiagnosticCodes.ContributedViews, new ConformanceOptions { SourceDirectory = directory });
+
+            Assert.Equal(ConformanceStatus.Failed, result.Status);
+            Assert.Contains(expected, Messages(result), StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
     [Fact]
     public async Task ASettingsSectionThatPassesIsExercised()
     {
