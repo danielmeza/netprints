@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Avalonia;
@@ -19,6 +20,7 @@ public static class ViewResourceLoader
 {
     private const string XamlLoaderType = "CompiledAvaloniaXaml.!XamlLoader";
     private const string TryLoadMethod = "TryLoad";
+    private const string LoadReason = "A view resource is a compiled XAML document looked up in an extension's assembly at run time.";
 
     private static readonly ConditionalWeakTable<Application, State> States = new();
 
@@ -83,6 +85,7 @@ public static class ViewResourceLoader
 
     private static string KeyOf(ViewResourceDeclaration declaration) => declaration.Scope + "|" + declaration.Uri;
 
+    [RequiresUnreferencedCode(LoadReason)]
     private static object Load(ViewResourceDeclaration declaration)
     {
         string uri = declaration.Uri;
@@ -94,6 +97,7 @@ public static class ViewResourceLoader
         return declaration.Source is { } source ? LoadFrom(source, uri) : AvaloniaXamlLoader.Load(EmptyServiceProvider.Instance, parsed);
     }
 
+    [RequiresUnreferencedCode(LoadReason)]
     private static object LoadFrom(Assembly source, string uri)
     {
         MethodInfo? tryLoad = source.GetType(XamlLoaderType)?.GetMethod(TryLoadMethod, [typeof(IServiceProvider), typeof(string)]);

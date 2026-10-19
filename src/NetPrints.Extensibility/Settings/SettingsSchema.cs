@@ -90,7 +90,8 @@ public static class SettingsSchema
 
             if (!required.Any(name => (string?)name == property.Name))
             {
-                required.Add(property.Name);
+                JsonNode? name = JsonValue.Create(property.Name);
+                required.Add(name);
             }
 
             MakeNonNull(member);
