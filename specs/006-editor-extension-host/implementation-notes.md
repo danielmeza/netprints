@@ -1829,3 +1829,20 @@ T076, Checkpoint C2, gate items measured on this head (Release).
   and ADR-0035 Amendment 2 records the High contrast behavior in System mode. Green.
 - Suite (Release, solution-wide, at 215da1da): 5440 total, 5403 passed, 37 skipped, 0 failed. `dotnet format --verify-no-changes` clean;
   trim ratchet 8 of 8. No packable surface change.
+
+## Batch CI-SMF (ShellMainFlow "activate the error" red on CI run 39219080592)
+
+- Evidence: the final screenshot of the failed run lists every diagnostic twice ("Errors (2) · Warnings (2)", CS0026 and CS0649 twice) while
+  the status bar counts 1 error and 1 warning; editor.log has no product exception. `ErrorListViewModel.Refresh` concatenated the live
+  analysis diagnostics with `Project.LastDiagnostics` (the build's), and the build and the Roslyn analysis report the same diagnostic with
+  different `SourcePath`/`Span`, so each showed twice. Confirmed product bug.
+- Second cause of churn (confirmed from the code): every live snapshot or build outcome ran `Rows.ReplaceRange` with new row view models even
+  when the diagnostics were identical, so the list's item containers were re-realized under a double-click. Whether that, rather than the
+  duplicates alone, made the double-tap fail on CI is NOT confirmed: the behavior walk of 37d4e529 is not at fault (the row was selected),
+  and the failure did not reproduce locally before or after.
+- Fix: the build's diagnostics that have a live counterpart (same severity, id, message, class, graph and node, counted so genuine repeats stay)
+  are dropped; `Rows` is replaced only when the diagnostic sequence changed. Red: `ADiagnosticReportedByTheLiveAnalysisAndTheBuildIsListedOnce`
+  (4 rows, expected 2) and `ASnapshotWithTheSameDiagnosticsKeepsTheRowInstances`; green with the fix, plus
+  `TwoGenuineDiagnosticsWithTheSameTextInOneSourceStayTwoRows` as a guard. The E2E is unchanged.
+- E2E: `ShellMainFlowTests` with NETPRINTS_E2E=1, own Xvfb from :300, fresh state and config dirs, 5 runs in a row: 5/5 passed (about 82 s each).
+  The error-list, panel, row and double-click behavior tests are green; `dotnet format` clean; trim ratchet 8 of 8.
