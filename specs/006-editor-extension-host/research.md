@@ -348,7 +348,7 @@ ADR-0031, ADR-0033 to ADR-0040.
   `PinRole`, `CSharpLanguageVersion`, the minimal `CSharpTarget` with `CSharpTarget.Resolve`, `CSharpFrameworkInput` and
   `CSharpTargetResolution` (a pure function over project-system data, no extension implements it), `INodeHintSource` and
   `NodeHint` (two read methods and a record, implemented by the catalog-backed providers), `LocalizedText`, `GraphPoint`,
-  the manifest's `themes` field and the existing stable surface. NPXE0001–NPXE0004 keep their meaning.
+  the manifest's `themes` field, the extension author kit (`NetPrints.Extensibility.Testing` and `NetPrints.Extensibility.Testing.Xunit`, test-time packages whose signatures name no experimental type, AP-T02) and the existing stable surface. NPXE0001–NPXE0004 keep their meaning.
 - **Rationale**: one id per surface an author opts into. Settings pages and custom views are part of the editor facet and
   share NPXE0005 with it, because a symbol must carry the id of every experimental type it mentions (AP-T02); a settings-only
   extension opts into NPXE0005 for its pages and NPXE0009 for the metadata attributes (ADR-0040 amendment 1).

@@ -1658,7 +1658,7 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - **Decision (NPK002)**: a copy of a contract assembly or of a platform assembly (from `TRUSTED_PLATFORM_ASSEMBLIES`) in the folder is a finding. The package type check belongs to `verify`.
 - **Decision (NPK006 to NPK008)**: they exercise the kinds of the extension under test that offer a node-search entry, one graph per kind; a kind without an entry is not exercised. **Corrected (T112-6, DD-18)**: a kind without an entry makes the check Skipped and is named; the contract rows say so.
 - **Packages**: both are packable with API files, XML docs and READMEs, and `scripts/verify-packages.sh` lists them (pack and verify pass). The READMEs avoid generic angle brackets because the verifier rejects HTML in packed prose.
-- **Not done**: no NPXE id (the kit is not an experimental API); the Abstractions API and the `ExtensionApi` hash are unchanged.
+- **Not done**: no NPXE id (the kit is not an experimental API); the Abstractions API and the `ExtensionApi` hash are unchanged. **Decided (T112-6, DD-22)**: the kit is stable from 0.4.0 (R16).
 
 ## Batch D2b (T103, T104, T105)
 

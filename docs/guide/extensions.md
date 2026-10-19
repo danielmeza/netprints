@@ -296,6 +296,8 @@ disappear in a minor release.
 | `NPXE0012` | Project templates with files: `TemplateFile`, `ProjectTemplateDescriptor`, `IExtensionBuilder.AddProjectTemplate`, `ExtensionRegistry.ProjectTemplates`. |
 | `NPXE0013` | Node-data migrations: `INodeDataMigration`, `NodeKindDescriptor.DataVersion`, `IExtensionBuilder.AddDocumentMigration`, `ExtensionRegistry.NodeMigrator`, `NodeDataMigrator`, the three-argument `JsonDocumentFormat` constructor. |
 
+The extension author kit (`NetPrints.Extensibility.Testing`, `NetPrints.Extensibility.Testing.Xunit`) is stable from 0.4.0 and carries no id.
+
 Stable since 0.4.0, with no opt-in: the typed pins and the pin attributes (`[NodeKind]`, `[NodeBase]`, `[Pin]`,
 `[PinType]`), `PinRole`, `CSharpLanguageVersion`, the minimal `CSharpTarget` with `CSharpTarget.Resolve`, `CSharpFrameworkInput` and
 `CSharpTargetResolution`, `INodeHintSource` and `NodeHint`, `LocalizedText`, `GraphPoint`, `Node.TitleIsFixed` and the surface that already shipped. Ids for the surfaces that land later in the 0.4.0 work
