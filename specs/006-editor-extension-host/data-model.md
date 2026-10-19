@@ -147,9 +147,9 @@ section; a log entry and a one-time message for a built-in one). The editor stil
 | Field | Rule |
 |---|---|
 | `command` | a command id; kept when the command is not loaded ("Not loaded" list) |
-| `scope` | `Global`, `Graph`, `ProjectTree` or a comma list; the command's declared scope when written |
-| `add` | gestures added; canonical form; each parsed at load, an unparseable one reported and ignored |
-| `remove` | default gestures removed |
+| `scope` | `Global`, `Graph`, `ProjectTree` or a comma list; the command's declared scope when written; Global when omitted |
+| `add` | gestures added; canonical form; each parsed at load, an unparseable one reported and ignored; none when omitted |
+| `remove` | default gestures removed; none when omitted |
 
 The effective binding of a command = (its defaults − `remove`) ∪ `add`. Precedence when two commands claim a gesture
 in overlapping scopes: user override, then built-in default, then extension default in load order. A gesture that
