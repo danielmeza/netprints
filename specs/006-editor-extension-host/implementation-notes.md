@@ -1981,7 +1981,7 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 
 ### R2-12
 
-- 42c2ef04: a built-in section now passes no resources to `SettingsSection`, so it reads the editor's resources alone and no extension can relabel it. An extension's page and section read the loaded extensions' string resources, then the editor's (`ExtensionResources`). The `netprints.language` description in `NetPrintsSettings`, the schema and the guide now names English as the only shipped language.
+- 93de8e39: a built-in section now passes no resources to `SettingsSection`, so it reads the editor's resources alone and no extension can relabel it. An extension's page and section read the loaded extensions' string resources, then the editor's (`ExtensionResources`). The `netprints.language` description in `NetPrintsSettings`, the schema and the guide now names English as the only shipped language.
 - Red: `AnExtensionResourceDoesNotRelabelABuiltInSetting` failed with `Expected: "Language"`, `Actual: "Relabelled"`; `TheLanguageDescriptionNamesTheLanguagesTheDropDownOffers` failed with `en (English)` not found in the description.
 - Green: the same two filtered runs, 76 and 17 total, 0 failed.
 - Decision (delegated): no per-extension `ExtensionRegistry.StringResourcesOf(id)`. The registry keeps one flat list, so this would add public API to the packed `NetPrints.Extensibility` for a collision that needs one extension to ship a key named after another extension's id.
@@ -2035,4 +2035,4 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 4. Whole suite (Release, solution-wide, `--ignore-exit-code 8`, fresh `NETPRINTS_STATE_DIR` and `XDG_CONFIG_HOME`): 5486 total, 5446 passed, 40 skipped, 0 failed, 14m 43s. The skips are the usual ones: 3 kit checks for `netprints.test/Legacy`, `GodotExtensionHostTests` (no `NETPRINTS_GODOT_EXTENSION_DIR`), 34 Desktop E2E without `NETPRINTS_E2E`, `SnapshotTests.ClassInspectorSnapshotRepeatedly` (explicit filtering) and `HeadlessSmokeTests.PanCursor`.
 5. Desktop E2E is not a gate for this batch: no finding changes the shell's UI flow. R2-4 is view-model code covered by the unit and Settings UI tests, R2-11 keeps the logo at 42 and only moves its size into the catalogue, and R2-5 changes which Errors rows are kept. Not run.
 6. `pack-local.sh` and `verify-packages.sh` are not gates: R2-8 changes only the test-side rule and the ADR text, and R2-12 changes a `[Description]` string that adds no API. Not run.
-- Slip: the first R2-4/R2-12 notes named the pre-amend sha 42c2ef04; the R2-5/R2-9 commit corrects it to 93de8e39, and the final tree has the right sha.
+- Slip: the first R2-4/R2-12 notes named the pre-amend sha 42c2ef04; 3592e6d7 corrected R2-4, and a sixth, docs-only commit corrects R2-12 to 93de8e39. The batch planned five commits.
