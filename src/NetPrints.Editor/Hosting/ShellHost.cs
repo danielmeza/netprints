@@ -151,7 +151,7 @@ internal sealed class ShellHost : IDisposable
                 context.Settings,
                 contributions,
                 context.Extensions,
-                contributions.SettingsPages,
+                page => new EditorContexts((shell.Commands ?? throw new InvalidOperationException("The shell has no commands.")).CreateContext() with { Owner = contributions.OwnerOf(page.Id), Contributions = contributions }),
                 context.FilePicker,
                 cancellationToken => shell.Projects?.ExitAsync(cancellationToken) ?? Task.CompletedTask);
         }

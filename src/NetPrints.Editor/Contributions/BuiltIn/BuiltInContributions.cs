@@ -9,7 +9,7 @@ public static class BuiltInContributions
     /// <summary>The id of the in-process extension that owns the built-in contributions.</summary>
     public const string OwnerId = "netprints.editor";
 
-    /// <summary>Registers the built-in commands, panels, tiles, menus, tooltips and views.</summary>
+    /// <summary>Registers the built-in commands, panels, tiles, menus, tooltips, settings pages and views.</summary>
     /// <param name="editor">The facet of the built-in extension.</param>
     public static void Register(IEditorContributions editor)
     {
@@ -25,6 +25,7 @@ public static class BuiltInContributions
         StartPageContributions.Register(editor);
         TooltipContributions.Register(editor);
         StatusBarContributions.Register(editor);
+        SettingsPageContributions.Register(editor);
         editor.AddViewResources(BuiltInViewsUri);
     }
 

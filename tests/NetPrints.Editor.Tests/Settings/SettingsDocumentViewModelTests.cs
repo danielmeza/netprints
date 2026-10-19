@@ -4,8 +4,10 @@ using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Settings;
+using NetPrints.Editor.Shell;
 using NetPrints.Editor.State;
 using NetPrints.Editor.Tests.Hosting;
+using NetPrints.Editor.Tests.Shell;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Testing;
@@ -15,6 +17,8 @@ namespace NetPrints.Editor.Tests.Settings;
 public sealed class SettingsDocumentViewModelTests : IAsyncDisposable
 {
     private const string TestExtensionId = "netprints.test";
+
+    private sealed record CustomPageState;
 
     private readonly string folder = Path.Combine(Path.GetTempPath(), "netprints-settings-document", Guid.NewGuid().ToString("N"));
     private readonly List<ExtensionHost> hosts = [];
@@ -44,12 +48,26 @@ public sealed class SettingsDocumentViewModelTests : IAsyncDisposable
         hosts.Add(host);
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         BuiltInContributions.Register(registry);
-        return new SettingsDocumentViewModel(store, registry, host, [], new FakeFilePicker(), _ =>
+        return Create(store, host, registry);
+    }
+
+    private (SettingsDocumentViewModel Document, ContributionRegistry Registry) OpenWith(JsonFileSettingsStore store, Action<ContributionRegistry> register)
+    {
+        var host = new ExtensionHost(new ExtensionLoaderOptions([], [], []), NullLoggerFactory.Instance);
+        hosts.Add(host);
+        var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
+        BuiltInContributions.Register(registry);
+        register(registry);
+        registry.Freeze();
+        return (Create(store, host, registry), registry);
+    }
+
+    private SettingsDocumentViewModel Create(JsonFileSettingsStore store, ExtensionHost host, ContributionRegistry registry) =>
+        new(store, registry, host, _ => new EditorContexts(new CommandContext(new FakeShell(), null, null, null, CommandSelection.None)), new FakeFilePicker(), _ =>
         {
             restarts++;
             return Task.CompletedTask;
         });
-    }
 
     [Fact]
     public void TheDocumentHasTheSettingsIdAndTheBuiltInPagesInOrder()
@@ -264,6 +282,101 @@ public sealed class SettingsDocumentViewModelTests : IAsyncDisposable
         string copy = Assert.Single(Directory.GetFiles(folder, "settings.json.unreadable-*"));
         Assert.Equal("{ not json", await File.ReadAllTextAsync(copy, TestContext.Current.CancellationToken));
         Assert.Equal(7, NewStore().Get(RunSettings.Descriptor).StopTimeoutSeconds);
+    }
+
+    [Fact]
+    public void TheBuiltInPagesComeFromTheSettingsPageKind()
+    {
+        var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
+
+        BuiltInContributions.Register(registry);
+
+        string[] ids =
+        [
+            SettingsPageContributions.GeneralId,
+            SettingsPageContributions.AppearanceId,
+            SettingsPageContributions.KeyboardId,
+            SettingsPageContributions.RunId,
+            SettingsPageContributions.ExtensionsId,
+        ];
+        Assert.Equal(ids, registry.SettingsPages.Select(page => page.Id));
+        Assert.Equal([0, 1, 2, 3, 4], registry.SettingsPages.Select(page => page.Order));
+
+        using SettingsDocumentViewModel document = Open(NewStore());
+        Assert.Equal(ids, document.Pages.Select(page => page.Id));
+    }
+
+    [Fact]
+    public void AnExtensionsOwnPageShowsItsViewModelUnderExtensions()
+    {
+        using SettingsDocumentViewModel document = OpenWith(NewStore(), registry => registry
+            .For("fx.pages", "Pages extension")
+            .AddSettingsPage(new SettingsPageDescriptor("fx.pages.custom", "Custom page", null, 0) { CreateViewModel = _ => new CustomPageState() })).Document;
+
+        SettingsPageViewModel page = document.Pages[^1];
+        Assert.Equal("fx.pages.custom", page.Id);
+        Assert.Equal("Custom page", page.Title);
+        Assert.True(page.IsChild);
+        CustomSettingsPageItemViewModel item = Assert.IsType<CustomSettingsPageItemViewModel>(Assert.Single(page.Items));
+        Assert.IsType<CustomPageState>(item.Content);
+    }
+
+    [Fact]
+    public void APageWhoseFactoryThrowsShowsThePlaceholderNamingTheExtension()
+    {
+        using SettingsDocumentViewModel document = OpenWith(NewStore(), registry => registry
+            .For("fx.pages", "Pages extension")
+            .AddSettingsPage(new SettingsPageDescriptor("fx.pages.custom", "Custom page", null, 0) { CreateViewModel = _ => throw new InvalidOperationException("page factory") })).Document;
+
+        SettingsPageViewModel page = document.Pages[^1];
+        var item = Assert.IsType<CustomSettingsPageItemViewModel>(Assert.Single(page.Items));
+        var error = Assert.IsType<ContributionErrorViewModel>(item.Content);
+        Assert.Equal("Pages extension", error.ExtensionName);
+        Assert.Equal("page factory", error.Message);
+    }
+
+    [Fact]
+    public void APageNamingAParentIsListedUnderIt()
+    {
+        using SettingsDocumentViewModel document = OpenWith(NewStore(), registry => registry
+            .For("fx.pages", "Pages extension")
+            .AddSettingsPage(new SettingsPageDescriptor("fx.pages.child", "Child page", null, 0)
+            {
+                ParentPageId = SettingsPageContributions.AppearanceId,
+                CreateViewModel = _ => new CustomPageState(),
+            })).Document;
+
+        Assert.Equal(
+            [
+                SettingsPageContributions.GeneralId,
+                SettingsPageContributions.AppearanceId,
+                "fx.pages.child",
+                SettingsPageContributions.KeyboardId,
+                SettingsPageContributions.RunId,
+                SettingsPageContributions.ExtensionsId,
+            ],
+            document.Pages.Select(page => page.Id));
+        Assert.True(document.Pages[2].IsChild);
+    }
+
+    [Fact]
+    public void APageOfASessionGroupComesAndGoesWhileTheDocumentIsOpen()
+    {
+        var (document, registry) = OpenWith(NewStore(), _ => { });
+        using (document)
+        {
+            Assert.DoesNotContain(document.Pages, page => page.Id == "fx.late.page");
+
+            registry.AddSessionGroup("project", group => group
+                .For("fx.late", "Late")
+                .AddSettingsPage(new SettingsPageDescriptor("fx.late.page", "Late page", null, 0) { CreateViewModel = _ => new CustomPageState() }));
+
+            Assert.Contains(document.Pages, page => page.Id == "fx.late.page");
+
+            registry.RemoveSessionGroup("project");
+
+            Assert.DoesNotContain(document.Pages, page => page.Id == "fx.late.page");
+        }
     }
 
     private static string[] Keys(SettingsDocumentViewModel document, string page) =>

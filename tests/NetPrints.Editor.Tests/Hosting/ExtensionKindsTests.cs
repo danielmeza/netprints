@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Hosting;
+using NetPrints.Editor.Settings;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Shell;
 using NetPrints.Extensibility;
@@ -140,9 +141,12 @@ public sealed class ExtensionKindsTests : IAsyncDisposable
             found.Add("status bar item");
         }
 
-        if (registry.SettingsPages.Any(page => page.Id == TestEditorIds.SettingsPage))
+        using (var settings = new SettingsDocumentViewModel(editor.Settings, registry, editor.Extensions, _ => new EditorContexts(new Contexts().Create()), null, _ => Task.CompletedTask))
         {
-            found.Add("settings page");
+            if (settings.Pages.Any(page => page.Id == TestEditorIds.SettingsPage && page.Items.OfType<SettingsFieldViewModel>().Any()))
+            {
+                found.Add("settings page");
+            }
         }
 
         if (registry.Dialogs.Any(dialog => dialog.Id == TestEditorIds.Dialog))

@@ -1,9 +1,12 @@
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Resources;
+using System.Runtime.CompilerServices;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NetPrints.Editor.Contributions;
+using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.State;
@@ -14,40 +17,45 @@ using NetPrints.Extensibility.Settings;
 namespace NetPrints.Editor.Settings;
 
 /// <summary>
-/// The Settings document (FR-039): the built-in pages General, Appearance, Run and Extensions, and one generated page per
-/// settings section of a loaded extension listed under Extensions. A search filters the fields of every page; a field that
-/// needs a restart raises the "Restart to apply" bar.
+/// The Settings document (FR-039): the pages of the settings page kind (the built-in General, Appearance, Keyboard shortcuts,
+/// Run and Extensions, then the extensions' pages under Extensions or under the page they name), and a generated page for
+/// every loaded extension section no page claims. It rebuilds the extension pages when the registry changes. A search filters
+/// the fields of every page; a field that needs a restart raises the "Restart to apply" bar.
 /// </summary>
 internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
 {
-    private const string GeneralPageId = "netprints.settings.general";
-    private const string AppearancePageId = "netprints.settings.appearance";
-    private const string RunPageId = "netprints.settings.run";
-
     /// <summary>The id of the Keyboard shortcuts page.</summary>
-    public const string KeyboardPageId = "netprints.settings.keyboard";
+    public const string KeyboardPageId = SettingsPageContributions.KeyboardId;
 
-    private const string ExtensionsPageId = "netprints.settings.extensions";
     private const string ExtensionPagePrefix = "netprints.settings.extension.";
     private const string EnableAnimationsKey = "enableAnimations";
     private const string LanguageKey = "language";
     private const string ExtensionPathsKey = "extensionPaths";
     private const string TrustedProjectsKey = "trustedProjects";
 
+    private readonly ISettingsStore store;
+    private readonly IContributionRegistry registry;
+    private readonly IExtensionHost extensions;
+    private readonly Func<SettingsPageDescriptor, ISettingsPageContext> pageContexts;
+    private readonly SettingsFieldServices services;
     private readonly Func<CancellationToken, Task> restart;
+    private readonly List<SettingsPageViewModel> builtInPages = [];
+    private readonly List<SettingsPageViewModel> extensionPages = [];
+    private readonly Dictionary<string, string?> extensionParents = new(StringComparer.Ordinal);
+    private string shownExtensionKey = "";
 
     /// <summary>Builds the pages over a store and the loaded extensions.</summary>
     /// <param name="store">The settings store every field reads and writes.</param>
-    /// <param name="registry">The registry whose commands the Keyboard shortcuts page lists and whose key bindings it changes.</param>
+    /// <param name="registry">The registry whose settings pages are listed, whose commands the Keyboard shortcuts page lists and whose key bindings it changes.</param>
     /// <param name="extensions">The extension host whose loaded extensions and settings sections are listed.</param>
-    /// <param name="extensionPages">The settings pages the extensions contributed; they give a section's page its title.</param>
+    /// <param name="pageContexts">Gives the context an extension page's view model factory is given.</param>
     /// <param name="picker">The file and folder picker of the path fields, or <see langword="null"/> when there is none.</param>
     /// <param name="restart">Runs the normal exit path for "Restart now".</param>
     public SettingsDocumentViewModel(
         ISettingsStore store,
         IContributionRegistry registry,
         IExtensionHost extensions,
-        IReadOnlyList<SettingsPageDescriptor> extensionPages,
+        Func<SettingsPageDescriptor, ISettingsPageContext> pageContexts,
         IFilePickerService? picker,
         Func<CancellationToken, Task> restart)
         : base(DocumentId.Settings, Strings.Settings_Title)
@@ -55,25 +63,23 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(registry);
         ArgumentNullException.ThrowIfNull(extensions);
-        ArgumentNullException.ThrowIfNull(extensionPages);
+        ArgumentNullException.ThrowIfNull(pageContexts);
         ArgumentNullException.ThrowIfNull(restart);
+        this.store = store;
+        this.registry = registry;
+        this.extensions = extensions;
+        this.pageContexts = pageContexts;
         this.restart = restart;
-        Pages = Build(store, registry, extensions.Current, extensionPages, new SettingsFieldServices(picker, ChoicesOf, ChoiceLabelsOf));
-        foreach (SettingsFieldViewModel field in Pages.SelectMany(page => page.Items).OfType<SettingsFieldViewModel>())
-        {
-            field.Saved += OnFieldSaved;
-        }
-
-        foreach (SettingsPageViewModel page in Pages)
-        {
-            VisiblePages.Add(page);
-        }
-
+        services = new SettingsFieldServices(picker, ChoicesOf, ChoiceLabelsOf);
+        builtInPages.AddRange(BuildBuiltInPages());
+        registry.Changed += OnRegistryChanged;
+        RebuildExtensionPages(force: true);
         SelectedPage = Pages.FirstOrDefault();
     }
 
     /// <summary>Gets every page in list order, the pages of extensions directly after Extensions.</summary>
-    public ImmutableArray<SettingsPageViewModel> Pages { get; }
+    [ObservableProperty]
+    public partial ImmutableArray<SettingsPageViewModel> Pages { get; private set; }
 
     /// <summary>Gets the pages that pass the search, in list order.</summary>
     public ObservableCollection<SettingsPageViewModel> VisiblePages { get; } = [];
@@ -111,7 +117,235 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
         }
     }
 
-    partial void OnSearchTextChanged(string value)
+    partial void OnSearchTextChanged(string value) => ApplySearch(value);
+
+    /// <summary>Shows a page.</summary>
+    /// <param name="pageId">The id of a page, such as <see cref="KeyboardPageId"/>.</param>
+    /// <returns><see langword="true"/> when the page exists and passes the search.</returns>
+    public bool SelectPage(string pageId)
+    {
+        SettingsPageViewModel? page = VisiblePages.FirstOrDefault(candidate => candidate.Id == pageId);
+        if (page is null)
+        {
+            return false;
+        }
+
+        SelectedPage = page;
+        return true;
+    }
+
+    /// <inheritdoc/>
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            registry.Changed -= OnRegistryChanged;
+            DisposeItems(Pages);
+        }
+
+        base.Dispose(disposing);
+    }
+
+    private static IReadOnlyList<string>? ChoicesOf(string providerId) => providerId switch
+    {
+        EditorSettings.DarkPresetChoices => ThemePresets.IdsFor(ThemeBase.Dark),
+        EditorSettings.LightPresetChoices => ThemePresets.IdsFor(ThemeBase.Light),
+        NetPrintsSettings.LanguageChoices => LanguageChoices.Values,
+        _ => null,
+    };
+
+    private static Func<string, string>? ChoiceLabelsOf(string providerId) =>
+        providerId == NetPrintsSettings.LanguageChoices ? LanguageChoices.LabelOf : null;
+
+    private static void DisposeItems(IReadOnlyList<SettingsPageViewModel> pages)
+    {
+        foreach (IDisposable item in pages.SelectMany(page => page.Items).OfType<IDisposable>())
+        {
+            item.Dispose();
+        }
+    }
+
+    private static int CompareExtensionPages(ExtensionPage left, ExtensionPage right)
+    {
+        int byOwner = StringComparer.CurrentCultureIgnoreCase.Compare(left.OwnerName, right.OwnerName);
+        if (byOwner != 0)
+        {
+            return byOwner;
+        }
+
+        int byOrder = left.Order.CompareTo(right.Order);
+        return byOrder != 0 ? byOrder : StringComparer.CurrentCultureIgnoreCase.Compare(left.Page.Title, right.Page.Title);
+    }
+
+    private static List<LoadedExtensionRow> LoadedRows(ExtensionRegistry registry) =>
+    [
+        .. registry.Results
+            .OfType<ExtensionLoadResult.Loaded>()
+            .Select(result => new LoadedExtensionRow(
+                result.Manifest.Id,
+                result.Manifest.Name,
+                result.Manifest.Version,
+                result.ManifestPath is { } path && Path.GetDirectoryName(path) is { Length: > 0 } folder ? folder : Strings.Settings_BuiltInSource))
+            .OrderBy(row => row.Name, StringComparer.CurrentCultureIgnoreCase),
+    ];
+
+    private List<SettingsPageViewModel> BuildBuiltInPages()
+    {
+        List<SettingsPageViewModel> pages = [];
+        foreach (SettingsPageDescriptor descriptor in registry.Snapshot.SettingsPages
+            .Where(candidate => registry.Snapshot.OwnerNameOf(candidate.Id) is null)
+            .OrderBy(candidate => candidate.Order))
+        {
+            if (BuiltInItems(descriptor.Id) is not { } items)
+            {
+                continue;
+            }
+
+            pages.Add(new SettingsPageViewModel(descriptor.Id, descriptor.Title.Resolve(Strings.ResourceManager, null), items, isChild: false));
+        }
+
+        foreach (SettingsFieldViewModel field in pages.SelectMany(page => page.Items).OfType<SettingsFieldViewModel>())
+        {
+            field.Saved += OnFieldSaved;
+        }
+
+        return pages;
+    }
+
+    private IReadOnlyList<SettingsItemViewModel>? BuiltInItems(string pageId)
+    {
+        IReadOnlyList<ResourceManager> resources = Resources();
+        return pageId switch
+        {
+            SettingsPageContributions.GeneralId => [.. new SettingsSection(NetPrintsSettings.Descriptor, store, resources).CreateFields(services, [EnableAnimationsKey, LanguageKey])],
+            SettingsPageContributions.AppearanceId => [.. new SettingsSection(EditorSettings.Descriptor, store, resources).CreateFields(services), new ThemePreviewItemViewModel(store)],
+            SettingsPageContributions.KeyboardId => [new KeyboardShortcutsItemViewModel(registry, store)],
+            SettingsPageContributions.RunId => [.. new SettingsSection(RunSettings.Descriptor, store, resources).CreateFields(services)],
+            SettingsPageContributions.ExtensionsId => [.. new SettingsSection(NetPrintsSettings.Descriptor, store, resources).CreateFields(services, [ExtensionPathsKey, TrustedProjectsKey]), new LoadedExtensionsItemViewModel(LoadedRows(extensions.Current))],
+            _ => null,
+        };
+    }
+
+    private IReadOnlyList<ResourceManager> Resources() => [.. extensions.Current.StringResources, Strings.ResourceManager];
+
+    private void RebuildExtensionPages(bool force)
+    {
+        IContributionSnapshot snapshot = registry.Snapshot;
+        ExtensionRegistry loaded = extensions.Current;
+        SettingsPageDescriptor[] descriptors = [.. snapshot.SettingsPages.Where(page => snapshot.OwnerNameOf(page.Id) is not null)];
+        HashSet<string> builtInSections = [NetPrintsSettings.SectionId, RunSettings.SectionId, EditorSettings.SectionId, KeyboardSettings.SectionId];
+        HashSet<string> claimed = [.. descriptors.Select(page => page.SectionKey).OfType<string>()];
+        ExtensionSettingsDescriptor[] sections = [.. loaded.Settings.Where(section => !builtInSections.Contains(section.ExtensionId) && !claimed.Contains(section.ExtensionId))];
+        string key = string.Join('|', descriptors.Select(page => page.Id).Concat(sections.Select(section => section.ExtensionId)))
+            + "@" + RuntimeHelpers.GetHashCode(loaded).ToString(CultureInfo.InvariantCulture);
+        if (!force && key == shownExtensionKey)
+        {
+            return;
+        }
+
+        shownExtensionKey = key;
+        DisposeItems(extensionPages);
+        extensionPages.Clear();
+        extensionParents.Clear();
+
+        IReadOnlyList<ResourceManager> resources = Resources();
+        List<ExtensionPage> created = [];
+        foreach (SettingsPageDescriptor page in descriptors)
+        {
+            string title = page.Title.Resolve(resources, null);
+            IReadOnlyList<SettingsItemViewModel>? items = null;
+            if (page.CreateViewModel is { } create)
+            {
+                items = [new CustomSettingsPageItemViewModel(title, create(pageContexts(page)))];
+            }
+            else if (page.SectionKey is { } sectionKey && loaded.Settings.FirstOrDefault(candidate => candidate.ExtensionId == sectionKey) is { } section)
+            {
+                items = [.. new SettingsSection(section, store, resources).CreateFields(services)];
+            }
+
+            if (items is null)
+            {
+                continue;
+            }
+
+            created.Add(new ExtensionPage(new SettingsPageViewModel(page.Id, title, items, isChild: true), snapshot.OwnerNameOf(page.Id) ?? "", page.Order, page.ParentPageId));
+        }
+
+        foreach (ExtensionSettingsDescriptor section in sections)
+        {
+            string title = loaded.Loaded.FirstOrDefault(manifest => manifest.Id == section.ExtensionId)?.Name ?? section.ExtensionId;
+            created.Add(new ExtensionPage(
+                new SettingsPageViewModel(ExtensionPagePrefix + section.ExtensionId, title, [.. new SettingsSection(section, store, resources).CreateFields(services)], isChild: true),
+                title,
+                0,
+                null));
+        }
+
+        created.Sort(CompareExtensionPages);
+        foreach (ExtensionPage entry in created)
+        {
+            extensionPages.Add(entry.Page);
+            extensionParents[entry.Page.Id] = entry.ParentId;
+        }
+
+        foreach (SettingsFieldViewModel field in extensionPages.SelectMany(page => page.Items).OfType<SettingsFieldViewModel>())
+        {
+            field.Saved += OnFieldSaved;
+        }
+
+        string? selectedId = SelectedPage?.Id;
+        Pages = [.. Compose()];
+        ApplySearch(SearchText);
+        SelectedPage = VisiblePages.FirstOrDefault(page => page.Id == selectedId) ?? VisiblePages.FirstOrDefault();
+    }
+
+    private List<SettingsPageViewModel> Compose()
+    {
+        HashSet<string> known = [.. builtInPages.Select(page => page.Id), .. extensionPages.Select(page => page.Id)];
+        List<SettingsPageViewModel> pages = [];
+        HashSet<string> placed = new(StringComparer.Ordinal);
+        foreach (SettingsPageViewModel page in builtInPages)
+        {
+            AddWithChildren(page, pages, placed);
+            if (page.Id != SettingsPageContributions.ExtensionsId)
+            {
+                continue;
+            }
+
+            foreach (SettingsPageViewModel candidate in extensionPages)
+            {
+                if (extensionParents.GetValueOrDefault(candidate.Id) is { } parent && known.Contains(parent))
+                {
+                    continue;
+                }
+
+                AddWithChildren(candidate, pages, placed);
+            }
+        }
+
+        foreach (SettingsPageViewModel candidate in extensionPages.Where(candidate => !placed.Contains(candidate.Id)))
+        {
+            AddWithChildren(candidate, pages, placed);
+        }
+
+        return pages;
+    }
+
+    private void AddWithChildren(SettingsPageViewModel page, List<SettingsPageViewModel> pages, HashSet<string> placed)
+    {
+        if (!placed.Add(page.Id))
+        {
+            return;
+        }
+
+        pages.Add(page);
+        foreach (SettingsPageViewModel child in extensionPages.Where(candidate => extensionParents.GetValueOrDefault(candidate.Id) == page.Id))
+        {
+            AddWithChildren(child, pages, placed);
+        }
+    }
+
+    private void ApplySearch(string value)
     {
         foreach (SettingsPageViewModel page in Pages)
         {
@@ -142,105 +376,7 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
         SelectedPage = previous is { IsVisible: true } ? previous : VisiblePages.FirstOrDefault();
     }
 
-    /// <summary>Shows a page.</summary>
-    /// <param name="pageId">The id of a page, such as <see cref="KeyboardPageId"/>.</param>
-    /// <returns><see langword="true"/> when the page exists and passes the search.</returns>
-    public bool SelectPage(string pageId)
-    {
-        SettingsPageViewModel? page = VisiblePages.FirstOrDefault(candidate => candidate.Id == pageId);
-        if (page is null)
-        {
-            return false;
-        }
-
-        SelectedPage = page;
-        return true;
-    }
-
-    /// <inheritdoc/>
-    protected override void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            foreach (IDisposable item in Pages.SelectMany(page => page.Items).OfType<IDisposable>())
-            {
-                item.Dispose();
-            }
-        }
-
-        base.Dispose(disposing);
-    }
-
-    private static IReadOnlyList<string>? ChoicesOf(string providerId) => providerId switch
-    {
-        EditorSettings.DarkPresetChoices => ThemePresets.IdsFor(ThemeBase.Dark),
-        EditorSettings.LightPresetChoices => ThemePresets.IdsFor(ThemeBase.Light),
-        NetPrintsSettings.LanguageChoices => LanguageChoices.Values,
-        _ => null,
-    };
-
-    private static Func<string, string>? ChoiceLabelsOf(string providerId) =>
-        providerId == NetPrintsSettings.LanguageChoices ? LanguageChoices.LabelOf : null;
-
-    private static ImmutableArray<SettingsPageViewModel> Build(
-        ISettingsStore store,
-        IContributionRegistry contributions,
-        ExtensionRegistry registry,
-        IReadOnlyList<SettingsPageDescriptor> extensionPages,
-        SettingsFieldServices services)
-    {
-        IReadOnlyList<ResourceManager> resources = [.. registry.StringResources, Strings.ResourceManager];
-        var host = new SettingsSection(NetPrintsSettings.Descriptor, store, resources);
-        var appearance = new SettingsSection(EditorSettings.Descriptor, store, resources);
-        var run = new SettingsSection(RunSettings.Descriptor, store, resources);
-        var builtInIds = new HashSet<string>([host.Id, appearance.Id, run.Id], StringComparer.Ordinal);
-
-        List<SettingsItemViewModel> extensionItems = [.. host.CreateFields(services, [ExtensionPathsKey, TrustedProjectsKey])];
-        extensionItems.Add(new LoadedExtensionsItemViewModel(LoadedRows(registry)));
-
-        var pages = new List<SettingsPageViewModel>
-        {
-            new(GeneralPageId, Strings.Settings_Page_General, [.. host.CreateFields(services, [EnableAnimationsKey, LanguageKey])], isChild: false),
-            new(AppearancePageId, Strings.Settings_Page_Appearance, [.. appearance.CreateFields(services), new ThemePreviewItemViewModel(store)], isChild: false),
-            new(KeyboardPageId, Strings.Settings_Page_Keyboard, [new KeyboardShortcutsItemViewModel(contributions, store)], isChild: false),
-            new(RunPageId, Strings.Settings_Page_Run, [.. run.CreateFields(services)], isChild: false),
-            new(ExtensionsPageId, Strings.Settings_Page_Extensions, extensionItems, isChild: false),
-        };
-
-        foreach ((string title, ExtensionSettingsDescriptor descriptor) in ExtensionSections(registry, extensionPages, builtInIds))
-        {
-            var section = new SettingsSection(descriptor, store, resources);
-            pages.Add(new SettingsPageViewModel(ExtensionPagePrefix + section.Id, title, [.. section.CreateFields(services)], isChild: true));
-        }
-
-        return [.. pages];
-    }
-
-    private static IEnumerable<(string Title, ExtensionSettingsDescriptor Descriptor)> ExtensionSections(
-        ExtensionRegistry registry,
-        IReadOnlyList<SettingsPageDescriptor> extensionPages,
-        HashSet<string> builtInIds) =>
-        registry.Settings
-            .Where(descriptor => !builtInIds.Contains(descriptor.ExtensionId))
-            .Select(descriptor => (Title: TitleOf(descriptor.ExtensionId, registry, extensionPages), Descriptor: descriptor))
-            .OrderBy(entry => entry.Title, StringComparer.CurrentCultureIgnoreCase);
-
-    private static string TitleOf(string sectionId, ExtensionRegistry registry, IReadOnlyList<SettingsPageDescriptor> extensionPages) =>
-        extensionPages.FirstOrDefault(page => page.SectionKey == sectionId)?.Title.Text
-        ?? registry.Loaded.FirstOrDefault(manifest => manifest.Id == sectionId)?.Name
-        ?? sectionId;
-
-    private static List<LoadedExtensionRow> LoadedRows(ExtensionRegistry registry) =>
-    [
-        .. registry.Results
-            .OfType<ExtensionLoadResult.Loaded>()
-            .Select(result => new LoadedExtensionRow(
-                result.Manifest.Id,
-                result.Manifest.Name,
-                result.Manifest.Version,
-                result.ManifestPath is { } path && Path.GetDirectoryName(path) is { Length: > 0 } folder ? folder : Strings.Settings_BuiltInSource))
-            .OrderBy(row => row.Name, StringComparer.CurrentCultureIgnoreCase),
-    ];
+    private void OnRegistryChanged(object? sender, ContributionSnapshot snapshot) => RebuildExtensionPages(force: false);
 
     private void OnFieldSaved(object? sender, EventArgs e)
     {
@@ -249,4 +385,6 @@ internal sealed partial class SettingsDocumentViewModel : DocumentViewModel
             RestartPending = true;
         }
     }
+
+    private sealed record ExtensionPage(SettingsPageViewModel Page, string OwnerName, int Order, string? ParentId);
 }

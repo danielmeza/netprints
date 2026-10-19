@@ -159,6 +159,10 @@
         </ItemsControl>
       </StackPanel>
     </DataTemplate>
+    <DataTemplate DataType="edsettings:CustomSettingsPageItemViewModel" x:DataType="edsettings:CustomSettingsPageItemViewModel">
+      <ContentControl Content="{Binding Content}" IsVisible="{Binding IsVisible}"
+                      AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsCustomPage}" />
+    </DataTemplate>
     <DataTemplate DataType="edsettings:SettingsFieldViewModel" x:DataType="edsettings:SettingsFieldViewModel">
       <StackPanel Classes="settingsField" IsVisible="{Binding IsVisible}">
         <TextBlock Classes="groupTitle" Text="{Binding Label}" />

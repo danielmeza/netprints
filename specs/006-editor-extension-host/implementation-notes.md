@@ -1603,7 +1603,7 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - **Settings document**: General, Appearance, Run and Extensions pages. Fields are generated from the exported schema, validated on Enter or focus loss and saved at once. Restart fields raise a "Restart to apply" bar, and search filters the pages.
   `CommandKey.OemComma` gives Ctrl+,. `SetThemeAsync` no longer resets the presets.
 - **Decision (Keyboard page)**: left to T093.
-- **Decision (custom pages)**: custom `CreateViewModel` pages are not rendered yet.
+- **Decision (custom pages)**: custom `CreateViewModel` pages are not rendered yet. **Corrected (T112-5, DD-8)**: the Settings document renders the settings page kind: the built-in pages are registered through it, custom view models and page-only contributions render (with the ContributionErrorView fallback), `ParentPageId` places a page, and the extension pages rebuild on `Changed`; ExtensionKindsTests looks in the document.
 - **Decision (labels)**: the label is the property name in words, with no resource override.
 - **Decision (language)**: the language field is a text box.
 - **CI fix (4439d543)**: the invalid-value test now also waits for `field.HasError` to be false.

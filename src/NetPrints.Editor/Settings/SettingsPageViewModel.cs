@@ -6,7 +6,7 @@ namespace NetPrints.Editor.Settings;
 /// <param name="id">The id of the page.</param>
 /// <param name="title">The title in the page list.</param>
 /// <param name="items">The entries, top to bottom.</param>
-/// <param name="isChild">Whether the page is listed under Extensions.</param>
+/// <param name="isChild">Whether the page is listed under another page (an extension page under Extensions or under the page it names as its parent).</param>
 internal sealed partial class SettingsPageViewModel(string id, string title, IReadOnlyList<SettingsItemViewModel> items, bool isChild) : ObservableObject
 {
     /// <summary>Gets the id of the page.</summary>
@@ -18,7 +18,7 @@ internal sealed partial class SettingsPageViewModel(string id, string title, IRe
     /// <summary>Gets the entries, top to bottom.</summary>
     public IReadOnlyList<SettingsItemViewModel> Items { get; } = items;
 
-    /// <summary>Gets a value indicating whether the page is listed under Extensions.</summary>
+    /// <summary>Gets a value indicating whether the page is listed under another page (an extension page under Extensions or under the page it names as its parent).</summary>
     public bool IsChild { get; } = isChild;
 
     /// <summary>Gets a value indicating whether the page has an entry that passes the search.</summary>

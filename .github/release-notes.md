@@ -38,6 +38,8 @@
 
 **Added:** a Settings document (File › Settings, `Ctrl+,`) with the pages General, Appearance, Keyboard shortcuts, Run and Extensions. `settings.json` is described by a published schema, a value out of range falls back to its default (NPX014 for an extension's section), and an unreadable file is copied to `settings.json.unreadable-<timestamp>` before the first write.
 
+**Added:** an extension's settings page can show its own view model (`SettingsPageDescriptor.CreateViewModel`) and sit under a page of its choice; the Settings document follows extensions that load or unload while it is open.
+
 **Added:** every command can be rebound on the Keyboard shortcuts page, with conflict resolution; your changes are stored as differences from the defaults in the `keyboard` section.
 
 **Added:** theme presets per variant (NetPrints Dark, NetPrints Light, High contrast) chosen on Settings › Appearance with `darkPreset` and `lightPreset`, applied without a restart. Every theme token is in a catalogue, and a preset that fails the contrast gate is reported.

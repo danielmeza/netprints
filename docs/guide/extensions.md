@@ -163,6 +163,15 @@ is rejected with `NPX013`, and a conflicting one is reported (`NPX004` or `NPX00
 the extension's other contributions. A data template that throws while it builds its view shows a placeholder that names
 your extension, and the editor log has the exception (event 1044).
 
+### Settings pages
+
+`Editor.AddSettingsPage` adds a page to the Settings document. A page with `CreateViewModel` shows the view model your
+factory builds, through your own data template in the view resources you added; the factory receives an
+`ISettingsPageContext`. By default the page is listed under Extensions, and `ParentPageId` puts it under another page
+instead. A page with a `SectionKey` and no factory shows the fields generated from that section's schema, with the page's
+title. A loaded section that no page names gets a generated page titled with the extension's name. Pages come and go with
+their project while the Settings document is open.
+
 ### Typed contexts
 
 A command handler, a view model factory or an `AppliesTo` predicate receives the context of its own surface:
