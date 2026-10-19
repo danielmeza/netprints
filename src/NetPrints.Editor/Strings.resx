@@ -226,7 +226,7 @@
     <value>Extension error</value>
   </data>
   <data name="Message.ExtensionError" xml:space="preserve">
-    <value>The extension "{0}" ({1}) threw this error. You can disable it from the Extensions page.
+    <value>The extension "{0}" ({1}) threw this error. The details are in the log. To stop loading it, remove its folder from the extension folders on the Extensions page, or, for a project's copy, stop trusting the project there.
 
 {2}</value>
   </data>

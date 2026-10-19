@@ -4,7 +4,7 @@ using NetPrints.Editor.Hosting;
 namespace NetPrints.Editor.Tests.Hosting;
 
 /// <summary>R3-4: the assembly of a loaded extension is found by the normalised path of its manifest's <c>assembly</c>.</summary>
-public class ExtensionAssembliesTests
+public sealed class ExtensionAssembliesTests
 {
     private static readonly string EditorAssemblyPath = typeof(ExtensionAssemblies).Assembly.Location;
 

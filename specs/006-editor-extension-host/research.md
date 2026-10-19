@@ -539,8 +539,8 @@ ADR-0031, ADR-0033 to ADR-0040.
   that provider's results for that call and logs once per provider and session (NPX011); a view factory or template
   failure shows `ContributionErrorView` naming the extension. A contributed view sits in a `ContainedView`: a throw
   while it is built, or in a layout pass that runs through the holder, is reported once per view and the view is replaced by the same placeholder;
-  any other exception from the view's code (a later self-invalidated layout, attach, render, handlers, bindings) reaches the error
-  dialog, which names the extension by mapping the stack frames' assemblies to the loaded extensions (R3-1). Registry issues map to extension diagnostics in Errors:
+  any other exception from the view's code (a later self-invalidated layout, attach, render, handlers) reaches the error
+  dialog, which names the extension (a binding exception becomes a binding error in the log, as Avalonia reports it, and does not reach the dialog) by mapping the stack frames' assemblies to the loaded extensions (R3-1). Registry issues map to extension diagnostics in Errors:
   duplicate id (NPX004), gesture conflict (NPX009), unknown referenced id (NPX010).
 - **Rationale**: FR-034, FR-035, SC-004; AGENTS.md allows catching `Exception` only at such boundaries.
 - **Alternatives rejected**: isolating extensions in processes (out of scope; the host channel exists for that need).

@@ -151,6 +151,9 @@ section; a log entry and a one-time message for a built-in one). The editor stil
 | `add` | gestures added; canonical form; each parsed at load, an unparseable one reported and ignored; none when omitted |
 | `remove` | default gestures removed; none when omitted |
 
+`"bindings": null` is a lenient form: the loader accepts it silently and reads it as the empty list, while the published
+schema (`schemas/settings.v1.schema.json`) still describes a valid file as an array.
+
 The effective binding of a command = (its defaults − `remove`) ∪ `add`. Precedence when two commands claim a gesture
 in overlapping scopes: user override, then built-in default, then extension default in load order. A gesture that
 breaks ADR-0020's scope rules (a single-key or Shift-only gesture in `Global`; function keys exempt) is refused.

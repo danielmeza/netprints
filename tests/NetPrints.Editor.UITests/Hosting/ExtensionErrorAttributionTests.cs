@@ -11,7 +11,7 @@ using NetPrints.Testing.Ui.Driving;
 namespace NetPrints.Editor.UITests.Hosting;
 
 /// <summary>R3-1: a layout that an extension's view triggers itself bypasses the holder, so the error dialog names the extension.</summary>
-public class ExtensionErrorAttributionTests
+public sealed class ExtensionErrorAttributionTests
 {
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task AViewThatThrowsOnALaterMeasureReachesTheErrorDialogNamingTheExtension()

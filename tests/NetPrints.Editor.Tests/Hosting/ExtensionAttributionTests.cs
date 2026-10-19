@@ -4,7 +4,7 @@ using NetPrints.Editor.Hosting;
 namespace NetPrints.Editor.Tests.Hosting;
 
 /// <summary>R3-1: an exception thrown from an extension's code is attributed to the extension by the assembly of its stack frames.</summary>
-public class ExtensionAttributionTests
+public sealed class ExtensionAttributionTests
 {
     private static readonly string ThisAssembly = typeof(ExtensionAttributionTests).Assembly.GetName().Name ?? string.Empty;
 
@@ -76,13 +76,16 @@ public class ExtensionAttributionTests
     }
 
     [Fact]
-    public void TheMessageNamesTheExtensionAndTellsToDisableIt()
+    public void TheMessageNamesTheExtensionAndWhatTheUserCanDoNow()
     {
         string text = ExtensionAttribution.Describe(Origin(ThisAssembly), new InvalidOperationException("boom"));
 
         Assert.Contains("Fixture one", text, StringComparison.Ordinal);
         Assert.Contains("fx.one", text, StringComparison.Ordinal);
-        Assert.Contains("Extensions page", text, StringComparison.Ordinal);
+        Assert.Contains("log", text, StringComparison.Ordinal);
+        Assert.Contains("extension folders", text, StringComparison.Ordinal);
+        Assert.Contains("trusting the project", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("disable", text, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("boom", text, StringComparison.Ordinal);
     }
 }
