@@ -223,21 +223,23 @@ namespace NetPrints.Tests.Core
                 $"{BuildFileRules.OptInTargetsFile} must contain exactly <NoWarn>{BuildFileRules.OptInNoWarnValue}</NoWarn>");
         }
 
-        /// <summary>ADR-0003 "Build-property allowances": the projects <see cref="BuildFileRules"/> lets hold their own <c>NoWarn</c> are exactly the <c>NoWarn</c> rows of the ADR's table, apart from the opt-in line.</summary>
+        /// <summary>ADR-0003 "Build-property allowances": the projects <see cref="BuildFileRules"/> lets hold their own <c>NoWarn</c> are exactly the <c>NoWarn</c> rows of the ADR's table, with the codes each row names, apart from the opt-in line.</summary>
         [Fact]
         public void EveryExtensionNoWarnAllowanceIsARowOfAdr0003()
         {
             string adr = File.ReadAllText(Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "docs", "adr", "0003-analyzer-promotion-and-string-literal-discipline.md"));
-            string[] rows =
+            (string File, bool PackLayout, bool OptIn)[] rows =
             [
                 .. adr.Split('\n')
                     .Where(line => line.StartsWith("| `", StringComparison.Ordinal) && line.Contains(" | `NoWarn` | ", StringComparison.Ordinal))
-                    .Select(line => line.Split('`')[1])
-                    .Where(file => file != BuildFileRules.OptInTargetsFile)
-                    .Order(StringComparer.Ordinal),
+                    .Select(line => line.Split('|'))
+                    .Select(cells => (File: cells[1].Split('`')[1], Codes: cells[3]))
+                    .Where(row => row.File != BuildFileRules.OptInTargetsFile)
+                    .Select(row => (row.File, PackLayout: row.Codes.Contains("NU5100", StringComparison.Ordinal), OptIn: row.Codes.Contains("NPXE", StringComparison.Ordinal)))
+                    .OrderBy(row => row.File, StringComparer.Ordinal),
             ];
 
-            Assert.Equal([.. BuildFileRules.ExtensionProjectNoWarnFiles.Order(StringComparer.Ordinal)], rows);
+            Assert.Equal([.. BuildFileRules.ExtensionProjectNoWarnRows.OrderBy(row => row.File, StringComparer.Ordinal)], rows);
         }
 
         /// <summary>ADR-0017: opt-ins are per project, so an item in a props or targets file (a repo-wide or inherited opt-in) is rejected.</summary>

@@ -42,8 +42,9 @@ namespace NetPrints.Tests.Core
             [GodotTestsProject] = (PackLayout: false, OptIn: true),
         };
 
-        /// <summary>The projects of <see cref="ExtensionProjectNoWarns"/>, for the test that keeps them equal to ADR-0003's table.</summary>
-        internal static IEnumerable<string> ExtensionProjectNoWarnFiles => ExtensionProjectNoWarns.Keys;
+        /// <summary>The rows of <see cref="ExtensionProjectNoWarns"/>, for the test that keeps them equal to ADR-0003's table.</summary>
+        internal static IEnumerable<(string File, bool PackLayout, bool OptIn)> ExtensionProjectNoWarnRows =>
+            ExtensionProjectNoWarns.Select(row => (row.Key, row.Value.PackLayout, row.Value.OptIn));
 
         /// <summary>The build files matching <paramref name="patterns"/>, except build output and <c>legacy/</c> (kept for reference, not built).</summary>
         internal static IEnumerable<string> EnumeratePaths(string root, params string[] patterns) =>

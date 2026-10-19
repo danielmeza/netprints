@@ -16,9 +16,17 @@ public class ThemeCatalogueTests
 
     private static readonly Regex StaticResourcePattern = new(@"\{StaticResource\s+(?:ResourceKey=)?(?<key>[\w.]+)\}|<StaticResource\b[^>]*?\bResourceKey=""(?<key>[\w.]+)""");
 
-    private static readonly string[] ValueElements = ["Double", "Thickness", "CornerRadius", "GridLength", "Color", "SolidColorBrush"];
+    private static readonly string[] ValueElements = ["Double", "Thickness", "CornerRadius", "GridLength", "Color", "SolidColorBrush", "LinearGradientBrush", "RadialGradientBrush", "ConicGradientBrush"];
 
     internal static IReadOnlyList<string> StaticResourceKeys(string xaml) => [.. StaticResourcePattern.Matches(xaml).Select(match => match.Groups["key"].Value)];
+
+    internal static IReadOnlyList<string> ViewLocalValueKeys(XDocument view) =>
+        [.. view.Descendants()
+            .Where(element => ValueElements.Contains(element.Name.LocalName, StringComparer.Ordinal))
+            .Where(element => element.Attribute(Xaml + "Key") is not null)
+            .Where(element => element.Ancestors().Any(ancestor => ancestor.Name.LocalName.EndsWith(".Resources", StringComparison.Ordinal)))
+            .Select(element => (string?)element.Attribute(Xaml + "Key"))
+            .OfType<string>()];
 
     private static IEnumerable<string> SourceViews(string root) =>
         Directory.EnumerateFiles(Path.Combine(root, "src"), "*.axaml", SearchOption.AllDirectories)
@@ -137,6 +145,35 @@ public class ThemeCatalogueTests
             """;
 
         Assert.Equal(["Font.Body", "Font.Title", "Space.S"], StaticResourceKeys(Sample));
+    }
+
+    [Fact]
+    public void ViewLocalValueKeysSeesEveryResourceForm()
+    {
+        const string Sample = """
+            <UserControl xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+              <UserControl.Resources>
+                <ResourceDictionary>
+                  <x:Double x:Key="A">4</x:Double>
+                </ResourceDictionary>
+              </UserControl.Resources>
+              <Grid>
+                <Grid.Resources>
+                  <Thickness x:Key="B">2</Thickness>
+                </Grid.Resources>
+                <Border>
+                  <Border.Resources>
+                    <LinearGradientBrush x:Key="C" />
+                  </Border.Resources>
+                  <Border.Background>
+                    <SolidColorBrush Color="Red" />
+                  </Border.Background>
+                </Border>
+              </Grid>
+            </UserControl>
+            """;
+
+        Assert.Equal(["A", "B", "C"], ViewLocalValueKeys(XDocument.Parse(Sample)));
     }
 
     [Fact]

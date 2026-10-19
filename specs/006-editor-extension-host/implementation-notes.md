@@ -2090,3 +2090,31 @@ Commits: ee48f34e (R3-1, R3-3, R3-4, R3-5, R3-10, R3-11), 410f992f (R3-2, R3-6, 
 - Slip: the first `dotnet format` run found a missing space I introduced in `UnhandledExceptionHandler.cs`; fixed in the third commit.
 - Slip: I ran one `cat >> implementation-notes.md` heredoc that appended nothing (empty body) before switching to Edit; no content was written that way.
 - Slip: the red phase for new-API tests used stub types (compile-clean, behaviour wrong), so the red runs are test failures, not compile errors.
+
+## Batch R3-F2 (round-3 review fixes, test guards)
+
+Commit: this batch's one commit (R3-8, R3-9).
+
+### R3-8
+
+- Changed: `BuildFileRules.ExtensionProjectNoWarnFiles` is replaced by `ExtensionProjectNoWarnRows`, which keeps each row's file, `PackLayout` and `OptIn`. `EveryExtensionNoWarnAllowanceIsARowOfAdr0003` parses each ADR `NoWarn` row into the same triple from the file cell and the codes cell (`NU5100` for `PackLayout`, `NPXE` for `OptIn`), drops the opt-in row, orders both sides by file (`StringComparer.Ordinal`) and asserts the two arrays are equal. The test's summary now says it compares each row's file and codes.
+- Red (temporary mutation, never committed): with `GodotTestsProject` at `(PackLayout: true, OptIn: true)`, the test failed with `Assert.Equal() Failure: Collections differ`, position 1: expected `("extensions/NetPrints.Godot/tests/NetPrints.Godot.T"…, True, True)`, actual `(…, False, True)`.
+- Green: mutation reverted, `SourceHygieneTests` 17 total, 0 failed.
+
+### R3-9
+
+- Changed: `ValueElements` adds `LinearGradientBrush`, `RadialGradientBrush` and `ConicGradientBrush`. `ViewLocalValueKeys(XDocument)` returns the `x:Key` of every value element that has one and an ancestor whose local name ends with `.Resources`, so any control's resources and a `ResourceDictionary` wrapper at any depth are seen. `ViewLocalValueKeysSeesEveryResourceForm` parses a sample view holding a nested `UserControl.Resources` dictionary with `x:Double` A, `Grid.Resources` with `Thickness` B, `Border.Resources` with a `LinearGradientBrush` C and an unkeyed `SolidColorBrush` in `Border.Background`, and expects `A, B, C`.
+- Red: `dotnet build tests/NetPrints.Editor.UITests` failed with `error CS0103: The name 'ViewLocalValueKeys' does not exist in the current context` at the sample test. Green after the helper: `ThemeCatalogueTests` 245 total, 0 failed.
+- Held (batch fallback): wiring `NoViewKeepsASizeOrColourOfItsOwn` to the helper reports three resource-definition documents, not views: `src/NetPrints.Editor/EditorStyles.axaml` (the token catalogue itself), `src/NetPrints.Editor/Icons/AppMark.axaml` (brand colours) and `src/NetPrints.Editor/Shell/Docking/DockStyles.axaml` (dock surface tokens), all under `Styles.Resources`. No view was changed and the guard rewrite is not committed; the original direct-children guard stays in place. A follow-up must decide the scope before wiring the helper, for example only `UserControl`/`Window` documents, or excluding a root `Styles`.
+- Decision (delegated): the helper and its sample test are committed although the guard does not call the helper yet; the batch asks for the sample test to pass and only withholds the guard change. This keeps the red/green evidence and the unit test for the next round.
+- Decision (delegated): `ViewLocalValueKeys` returns keys in document order without sorting, like `StaticResourceKeys`.
+
+### Gates and slips
+
+1. Release build (`dotnet build NetPrints.slnx -c Release -v q -tl:off --nologo`): 0 warnings, 0 errors.
+2. `dotnet format NetPrints.slnx --verify-no-changes --no-restore`: exit 0 (workspace load warnings only).
+3. `tests/NetPrints.Core.Tests` (Release, `--no-build`, fresh `NETPRINTS_STATE_DIR` and `XDG_CONFIG_HOME`): 1073 total, 1073 passed, 0 skipped, 0 failed.
+4. `tests/NetPrints.Editor.UITests` (same): 1107 total, 1105 passed, 2 skipped, 0 failed. The two skips are the usual ones (`HeadlessSmokeTests.PanCursor` and `SnapshotTests.ClassInspectorSnapshotRepeatedly`).
+- The whole suite, Desktop E2E, pack and trim are not gates for this batch: only tests and these notes changed. Not run.
+- Slip: the first filtered run through the in-process runner passed `--no-progress`, which that runner rejects (`unknown option: --no-progress`); rerun without the flag.
+- Slip: none else. The R3-8 mutation was reverted with the edit tool and `git diff` before the commit shows it is gone.
