@@ -92,13 +92,13 @@ and green on the repository (red/green). VSTHRD002 and VSTHRD103 go to `error` i
 | NPK003 | Type identity: contracts resolve to the host's assemblies, not private copies | yes | yes |
 | NPK004 | Registration is pure and repeatable (twice gives the same registry) | yes | — |
 | NPK005 | No registry issues (NPX004, NPX006, NPX009, NPX010, NPX013) | yes | — |
-| NPK006 | Node round trip: every node kind saves and loads byte-identically | yes | — |
-| NPK007 | Translation compiles: generated C# for each node kind compiles | yes | — |
-| NPK008 | Deterministic emitters: two runs write identical bytes | yes | — |
+| NPK006 | Node round trip: every node kind with a node-search entry saves and loads byte-identically; a kind without one makes the check Skipped and is named | yes | — |
+| NPK007 | Translation compiles: generated C# for each node kind with a node-search entry compiles; a kind without one makes the check Skipped and is named | yes | — |
+| NPK008 | Deterministic emitters: two runs write identical bytes, over the same kinds as NPK007 | yes | — |
 | NPK009 | Settings: sections serialize, validate and export a schema | yes | — |
-| NPK010 | Host channel lifecycle: open, message, close, dispose | yes | — |
+| NPK010 | Host channel lifecycle: open, subscribe, close, dispose twice, messages complete, a message on the closed channel is refused | yes | — |
 | NPK011 | Coexistence with the built-ins and a noisy neighbour | yes | — |
-| NPK012 | Disposal: no exception, idempotent, no leak of the load context | yes | — |
+| NPK012 | Disposal: no exception, idempotent; the load-context leak test waits for collectible load contexts (ADR-0010, research: not in P3) | yes | — |
 | NPK013 | Service providers: builds, validates, only allowed host exports, capture and leak test | yes | — |
 | NPK014 | Graph rules: deterministic, graph unchanged, cancellation honoured, isolated when throwing (G, with graph rules) | yes | — |
 | NPK015 | Editor contributions: ids prefixed, labels resolvable, gestures parse and follow scope rules, icon ids resolve | yes | — |

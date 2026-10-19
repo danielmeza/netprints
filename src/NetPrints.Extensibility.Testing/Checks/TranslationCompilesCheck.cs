@@ -20,9 +20,12 @@ internal sealed class TranslationCompilesCheck : ConformanceCheck
     public override Task<CheckOutcome> RunAsync(CheckContext context, CancellationToken cancellationToken)
     {
         IReadOnlyList<NodeKindDescriptor> kinds = context.SubjectKinds;
+        IReadOnlyList<NodeKindDescriptor> unexercised = context.UnexercisedKinds;
         if (kinds.Count == 0)
         {
-            return Task.FromResult(CheckOutcome.Passed("no node kind with a node-search entry"));
+            return Task.FromResult(unexercised.Count > 0
+                ? CheckOutcome.Skip(CheckContext.NotExercised(unexercised))
+                : CheckOutcome.Passed("the extension declares no node kind"));
         }
 
         var findings = new List<ConformanceFinding>();
@@ -47,7 +50,9 @@ internal sealed class TranslationCompilesCheck : ConformanceCheck
             }
         }
 
-        return Task.FromResult(CheckOutcome.FromFindings(findings));
+        return Task.FromResult(findings.Count == 0 && unexercised.Count > 0
+            ? CheckOutcome.Skip(CheckContext.NotExercised(unexercised))
+            : CheckOutcome.FromFindings(findings));
     }
 
     private static List<MetadataReference> LoadReferences()

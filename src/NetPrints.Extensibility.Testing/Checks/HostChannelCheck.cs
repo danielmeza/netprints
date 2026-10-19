@@ -1,11 +1,15 @@
+using System.Text.Json;
 using NetPrints.Extensibility.Hosting;
 
 namespace NetPrints.Extensibility.Testing.Checks;
 
-/// <summary>NPK010: each host channel of the extension is created in a live state, takes and releases a subscriber, and is closed by disposal that can repeat.</summary>
+/// <summary>NPK010: each host channel of the extension is created in a live state, takes and releases a subscriber, is closed by disposal that can repeat, completes its messages and refuses a message once closed (the IHostChannel contract).</summary>
 internal sealed class HostChannelCheck : ConformanceCheck
 {
     private const string Rule = "a host channel closes when it is disposed";
+    private const string ProbeType = "netprints.conformance-probe";
+
+    private static readonly JsonElement ProbePayload = JsonDocument.Parse("{}").RootElement.Clone();
 
     public override string Code => NpkDiagnosticCodes.HostChannel;
 
@@ -55,11 +59,27 @@ internal sealed class HostChannelCheck : ConformanceCheck
                     return "the channel is closed when it is created";
                 }
 
-                using IDisposable subscription = channel.Messages.Subscribe(new IgnoringObserver());
+                var observer = new IgnoringObserver();
+                using IDisposable subscription = channel.Messages.Subscribe(observer);
                 await dispose().ConfigureAwait(false);
                 if (stateOf() != HostChannelState.Closed)
                 {
                     return $"the channel is {stateOf()} after it is disposed";
+                }
+
+                if (!observer.Completed)
+                {
+                    return "Messages did not complete when the channel closed";
+                }
+
+                try
+                {
+                    await channel.SendAsync(new HostMessage(ProbeType, ProbePayload), cancellationToken).ConfigureAwait(false);
+                    return "SendAsync on a closed channel did not throw InvalidOperationException";
+                }
+                catch (InvalidOperationException)
+                {
+                    // IHostChannel documents a closed channel as refusing a message.
                 }
             }
 
@@ -75,8 +95,11 @@ internal sealed class HostChannelCheck : ConformanceCheck
 
     private sealed class IgnoringObserver : IObserver<HostMessage>
     {
+        public bool Completed { get; private set; }
+
         public void OnCompleted()
         {
+            Completed = true;
         }
 
         public void OnError(Exception error)

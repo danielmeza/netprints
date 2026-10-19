@@ -29,6 +29,18 @@ internal sealed class CheckContext
             && kind.Kind.StartsWith(SubjectId + "/", StringComparison.Ordinal)
             && kind.Suggestions.Count > 0)];
 
+    /// <summary>Gets the node kinds of the extension under test that offer no node-search entry, so no graph can be built with them.</summary>
+    public IReadOnlyList<NodeKindDescriptor> UnexercisedKinds =>
+        [.. Harness.Registry.NodeKinds.Where(kind => SubjectId is not null
+            && kind.Kind.StartsWith(SubjectId + "/", StringComparison.Ordinal)
+            && kind.Suggestions.Count == 0)];
+
+    /// <summary>Gets the reason a node check gives for kinds it could not exercise.</summary>
+    /// <param name="kinds">The kinds.</param>
+    /// <returns>The text naming them.</returns>
+    public static string NotExercised(IReadOnlyList<NodeKindDescriptor> kinds) =>
+        "not exercised (no node-search entry): " + string.Join(", ", kinds.Select(kind => kind.Kind));
+
     /// <summary>Reads the manifest in <see cref="ConformanceOptions.ExtensionFolder"/>.</summary>
     /// <param name="manifest">The manifest, or <see langword="null"/> when it could not be read.</param>
     /// <param name="problem">Why it could not be read, or <see langword="null"/>.</param>

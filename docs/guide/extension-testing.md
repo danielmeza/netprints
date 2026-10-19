@@ -89,11 +89,11 @@ The extension loads and its contributions raise no registry issue (duplicate ids
 
 ### NPK006
 
-Every node kind that offers a node-search entry is written to a document, read back and written again to the same bytes. Fix: make the node's document converter keep everything it writes.
+Every node kind that offers a node-search entry is written to a document, read back and written again to the same bytes. Fix: make the node's document converter keep everything it writes. A kind without a node-search entry cannot be built, so the check is Skipped and names it; give the kind an entry to have it checked.
 
 ### NPK007
 
-The C# generated for each node kind compiles. The kit puts one node of the kind in a class, gives input pins without a connection a literal, and compiles the translation. Fix: the translator must emit valid C#.
+The C# generated for each node kind compiles. The kit puts one node of the kind in a class, gives input pins without a connection a literal, and compiles the translation. Fix: the translator must emit valid C#. A kind without a node-search entry cannot be built, so the check is Skipped and names it; give the kind an entry to have it checked.
 
 ### NPK008
 
@@ -105,7 +105,7 @@ Each settings section serializes its default, accepts it as valid, writes it bac
 
 ### NPK010
 
-Each host channel is open or connecting when it is created, takes and releases a subscriber, and is closed after disposal, which can be repeated. Fix: set the state to closed in `DisposeAsync` and make a second call do nothing.
+Each host channel is open or connecting when it is created, takes and releases a subscriber, and is closed after disposal, which can be repeated. It then checks that `Messages` completed and that `SendAsync` on the closed channel throws `InvalidOperationException`, as `IHostChannel` documents. Fix: set the state to closed in `DisposeAsync` and make a second call do nothing.
 
 ### NPK011
 
@@ -113,7 +113,7 @@ Loading the extension changes nothing outside it, and nothing a neighbour does c
 
 ### NPK012
 
-A freshly loaded extension is disposed with a session still open, and then disposed again; nothing it contributed may throw. Needs a `HarnessFactory`. Fix: make `Dispose` of a contribution idempotent and free of exceptions.
+A freshly loaded extension is disposed with a session still open, and then disposed again; nothing it contributed may throw. Needs a `HarnessFactory`. Fix: make `Dispose` of a contribution idempotent and free of exceptions. Load contexts are not collectible yet, so the kit does not test that the context is released.
 
 ### NPK013
 

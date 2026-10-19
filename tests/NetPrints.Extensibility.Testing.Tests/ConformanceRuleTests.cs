@@ -1,7 +1,11 @@
+using System.Text.Json;
+using Fx.Kit;
 using Microsoft.Extensions.DependencyInjection;
 using NetPrints.Core;
 using NetPrints.Extensibility.Editor;
+using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
+using NetPrints.Extensibility.Nodes;
 
 namespace NetPrints.Extensibility.Testing.Tests;
 
@@ -153,6 +157,30 @@ public sealed class ConformanceRuleTests
         }
     }
 
+    [Theory]
+    [InlineData(NpkDiagnosticCodes.NodeRoundTrip, false)]
+    [InlineData(NpkDiagnosticCodes.NodeRoundTrip, true)]
+    [InlineData(NpkDiagnosticCodes.TranslationCompiles, false)]
+    [InlineData(NpkDiagnosticCodes.TranslationCompiles, true)]
+    [InlineData(NpkDiagnosticCodes.DeterministicEmitters, false)]
+    [InlineData(NpkDiagnosticCodes.DeterministicEmitters, true)]
+    public async Task AKindWithoutANodeSearchEntryMakesTheNodeChecksSkipAndNamesIt(string code, bool withEntry)
+    {
+        ConformanceCheckResult result = await RunAsync(new KindsExtension(withEntry), code);
+
+        Assert.Equal(ConformanceStatus.Skipped, result.Status);
+        Assert.Contains(Id + "/Hidden", result.Note, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AChannelThatTakesAMessageAfterItClosedFails()
+    {
+        ConformanceCheckResult result = await RunAsync(new LenientChannelExtension(), NpkDiagnosticCodes.HostChannel);
+
+        Assert.Equal(ConformanceStatus.Failed, result.Status);
+        Assert.Contains("did not throw InvalidOperationException", Messages(result), StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task ASettingsSectionThatPassesIsExercised()
     {
@@ -163,6 +191,50 @@ public sealed class ConformanceRuleTests
 
         Assert.Equal(ConformanceStatus.Passed, result.Status);
         Assert.Empty(result.Note);
+    }
+
+    private sealed class KindsExtension(bool withEntry) : INetPrintsExtension
+    {
+        public void Register(IExtensionBuilder builder)
+        {
+            ArgumentNullException.ThrowIfNull(builder);
+            builder.AddNodeLibrary(new FxNodeLibrary(Id + ".hidden", FxKit.Kind(Id + "/Hidden", () => "hidden") with { Suggestions = [] }));
+            if (withEntry)
+            {
+                builder.AddNodeLibrary(new FxNodeLibrary(Id + ".shown", FxKit.Kind(Id + "/Shown", () => "shown")));
+            }
+
+            builder.AddJsonTypeInfoResolver(FxKitJsonContext.Default);
+        }
+    }
+
+    private sealed class LenientChannelExtension : INetPrintsExtension
+    {
+        public void Register(IExtensionBuilder builder)
+        {
+            ArgumentNullException.ThrowIfNull(builder);
+            builder.AddHostChannel(new LenientFactory());
+        }
+    }
+
+    private sealed class LenientFactory : IHostChannelFactory
+    {
+        public string Id => "lenient";
+
+        public IHostChannel Create(HostLaunchContext context) => new LenientChannel(InMemoryHostChannel.CreatePair("lenient").Editor);
+    }
+
+    private sealed class LenientChannel(IHostChannel inner) : IHostChannel
+    {
+        public string Id => inner.Id;
+
+        public HostChannelState State => inner.State;
+
+        public IObservable<HostMessage> Messages => inner.Messages;
+
+        public ValueTask SendAsync(HostMessage message, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+
+        public ValueTask DisposeAsync() => inner.DisposeAsync();
     }
 }
 
