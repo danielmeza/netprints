@@ -8,6 +8,9 @@
   <DataTemplate DataType="{x:Type sys:Uri}">
     <local:ThrowingView />
   </DataTemplate>
+  <DataTemplate DataType="{x:Type sys:Guid}">
+    <local:MeasureThrowingView />
+  </DataTemplate>
   <TreeDataTemplate DataType="{x:Type local:Model}" ItemsSource="{Binding Children}">
     <TextBlock Text="fx.views model" />
   </TreeDataTemplate>

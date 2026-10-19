@@ -63,24 +63,52 @@ internal class ContainedDataTemplate : IDataTemplate
 
     private protected Control? Contain(Func<Control?> build, object? param)
     {
+        Control? view;
         try
         {
-            return build();
+            view = build();
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            failed?.Invoke(ex);
-            return new ContributionErrorView
-            {
-                DataContext = new ContributionErrorViewModel(ExtensionName, "the view of " + (param?.GetType().Name ?? "nothing"), ex.Message),
-            };
+            return Placeholder(ex, param);
         }
+
+        return view is null ? null : new ContainedView(view, ex => Placeholder(ex, param));
+    }
+
+    private protected Control? Recycle(IRecyclingDataTemplate inner, object? data, Control? existing)
+    {
+        if (existing is not ContainedView { HasFailed: false } held)
+        {
+            return Contain(() => inner.Build(data, null), data);
+        }
+
+        Control? view;
+        try
+        {
+            view = inner.Build(data, held.Child);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return Placeholder(ex, data);
+        }
+
+        return ReferenceEquals(view, held.Child) ? held : view is null ? null : new ContainedView(view, ex => Placeholder(ex, data));
+    }
+
+    private ContributionErrorView Placeholder(Exception ex, object? param)
+    {
+        failed?.Invoke(ex);
+        return new ContributionErrorView
+        {
+            DataContext = new ContributionErrorViewModel(ExtensionName, "the view of " + (param?.GetType().Name ?? "nothing"), ex.Message),
+        };
     }
 
     private class Recycling(IDataTemplate inner, string extensionName, Action<Exception>? failed) : ContainedDataTemplate(inner, extensionName, failed), IRecyclingDataTemplate
     {
         public Control? Build(object? data, Control? existing) =>
-            Contain(() => ((IRecyclingDataTemplate)Inner).Build(data, existing), data);
+            Recycle((IRecyclingDataTemplate)Inner, data, existing);
     }
 
     private class Typed(IDataTemplate inner, string extensionName, Action<Exception>? failed) : ContainedDataTemplate(inner, extensionName, failed), ITypedDataTemplate
@@ -107,7 +135,7 @@ internal class ContainedDataTemplate : IDataTemplate
     private class TreeRecycling(IDataTemplate inner, string extensionName, Action<Exception>? failed) : Tree(inner, extensionName, failed), IRecyclingDataTemplate
     {
         public Control? Build(object? data, Control? existing) =>
-            Contain(() => ((IRecyclingDataTemplate)Inner).Build(data, existing), data);
+            Recycle((IRecyclingDataTemplate)Inner, data, existing);
     }
 
     private sealed class TreeRecyclingTyped(IDataTemplate inner, string extensionName, Action<Exception>? failed) : TreeRecycling(inner, extensionName, failed), ITypedDataTemplate

@@ -727,7 +727,10 @@ preset lists while the extension is loaded.
   to the built-in ones, and the palette and the shortcuts sheet MUST show each item's owner.
 - **FR-034**: An extension that throws while registering MUST contribute nothing, and Errors MUST show an extension
   diagnostic with its id; a handler, provider or view that throws later MUST be contained: the error dialog or a
-  placeholder names the extension, the failure is logged, and the editor keeps working.
+  placeholder names the extension, the failure is logged, and the editor keeps working. For a view, "later" covers
+  its construction, its measure and its arrange (a failure there is reported once per view and the view is replaced by
+  the placeholder); an exception thrown while a view renders, or from an event handler or binding of the view, is not
+  contained and reaches the editor's unexpected-error dialog.
 - **FR-035**: Registry issues (duplicate ids, gesture conflicts in a scope, a contribution naming an unknown id) MUST
   become extension diagnostics shown in Errors and logged; the first registration wins and built-in contributions
   always register first (ADR-0020).

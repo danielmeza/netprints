@@ -43,7 +43,7 @@ public class ViewResourceLoaderTests
 
         IReadOnlyList<ViewResourceFailure> failures = ViewResourceLoader.Sync(App, registry.ViewResources);
 
-        Assert.Equal(templates + 3, App.DataTemplates.Count);
+        Assert.Equal(templates + 4, App.DataTemplates.Count);
         Assert.Equal(styles + 1, App.Styles.Count);
         Assert.True(App.TryFindResource(IconKey, out object? icon));
         Assert.NotNull(icon);
@@ -150,6 +150,37 @@ public class ViewResourceLoaderTests
         }
     }
 
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task AViewThatThrowsWhenMeasuredShowsThePlaceholderOnceAndNothingEscapes()
+    {
+        (ContributionRegistry registry, ExtensionHost host) = LoadGroup();
+        await using ExtensionHost _ = host;
+        List<ViewResourceDeclaration> reported = [];
+        ViewResourceLoader.Sync(App, registry.ViewResources, (declaration, _) => reported.Add(declaration));
+        var content = new ContentControl { Content = Guid.NewGuid() };
+        var window = new Window { Width = 200, Height = 100, Content = content };
+        try
+        {
+            window.Show();
+            window.UpdateLayout();
+            HeadlessDriver.Pump();
+            window.UpdateLayout();
+
+            Decorator contained = Assert.IsAssignableFrom<Decorator>(content.Presenter?.Child);
+            ContributionErrorView view = Assert.IsType<ContributionErrorView>(contained.Child);
+            ContributionErrorViewModel model = Assert.IsType<ContributionErrorViewModel>(view.DataContext);
+            Assert.Equal("NetPrints view resources fixture extension", model.ExtensionName);
+            Assert.Equal("view measure", model.Message);
+            Assert.Single(reported);
+        }
+        finally
+        {
+            window.Close();
+            registry.RemoveSessionGroup(GroupKey);
+            ViewResourceLoader.Sync(App, registry.ViewResources);
+        }
+    }
+
     private sealed class PlainTemplate : IDataTemplate
     {
         public bool Match(object? data) => true;
@@ -202,7 +233,7 @@ public class ViewResourceLoaderTests
         ViewResourceLoader.Sync(App, registry.ViewResources);
         ViewResourceLoader.Sync(App, registry.ViewResources);
 
-        Assert.Equal(templates + 3, App.DataTemplates.Count);
+        Assert.Equal(templates + 4, App.DataTemplates.Count);
 
         registry.RemoveSessionGroup(GroupKey);
         ViewResourceLoader.Sync(App, registry.ViewResources);

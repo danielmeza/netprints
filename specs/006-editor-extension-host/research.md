@@ -537,7 +537,9 @@ ADR-0031, ADR-0033 to ADR-0040.
   with the extension id, and converts it: a `Register` failure drops the extension's whole group and adds NPX005 to
   Errors; a handler failure shows the error dialog naming the extension and the command; a provider failure drops
   that provider's results for that call and logs once per provider and session (NPX011); a view factory or template
-  failure shows `ContributionErrorView` naming the extension. Registry issues map to extension diagnostics in Errors:
+  failure shows `ContributionErrorView` naming the extension. A contributed view sits in a `ContainedView`: a throw
+  while it is built, measured or arranged is reported once per view and the view is replaced by the same placeholder;
+  render-time exceptions and exceptions from the view's own handlers or bindings are out of scope. Registry issues map to extension diagnostics in Errors:
   duplicate id (NPX004), gesture conflict (NPX009), unknown referenced id (NPX010).
 - **Rationale**: FR-034, FR-035, SC-004; AGENTS.md allows catching `Exception` only at such boundaries.
 - **Alternatives rejected**: isolating extensions in processes (out of scope; the host channel exists for that need).
