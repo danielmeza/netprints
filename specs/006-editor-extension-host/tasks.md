@@ -927,7 +927,7 @@ contracts/cli.md §2–§3. **Independent test**: US10's independent test. **Gat
 
 ### Batch D2-R — model: opus — T111 (checkpoint D1+D2 review)
 
-- [ ] T111 Review sub-phases D1 and D2 (the D1+D2 checkpoint) against their decision corpus (constitution I, III, V and
+- [x] T111 Review sub-phases D1 and D2 (the D1+D2 checkpoint) against their decision corpus (constitution I, III, V and
   VII, ADR-0006, ADR-0007, ADR-0010, ADR-0015, ADR-0017, ADR-0020, ADR-0033, ADR-0035, ADR-0036, ADR-0037, ADR-0040,
   ADR-0041, spec US4–US6, US8, US10, FR-037 and FR-088, research R20, R21, R24–R28, contracts/settings-and-keybindings.md,
   contracts/extension-api.md §10, contracts/analyzer-diagnostics.md §6, contracts/cli.md §2–§4, data-model §2–§3, §5, the
@@ -936,7 +936,7 @@ contracts/cli.md §2–§3. **Independent test**: US10's independent test. **Gat
 
 ### Batch D2-F — model: sonnet — T112 (checkpoint D1+D2 fixes)
 
-- [ ] T112 Fix every finding of T111 (test first for behaviour findings), reply on each thread, whole suite plus the
+- [x] T112 Fix every finding of T111 (test first for behaviour findings), reply on each thread, whole suite plus the
   E2E pass, push; "no findings" if there were none. Sub-phase E starts only after this batch is pushed and green on CI
   (the coordinator checks).
 

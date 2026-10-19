@@ -1197,6 +1197,34 @@ without `remove` reaches the resolver with null lists); a recomputation of the 5
 - DD-23 nit `specs/006-editor-extension-host/implementation-notes.md:1589`: test-after in T095 to T097, T101, T106, T107 and
   T109 (the tests pin behaviour except DD-4 and DD-8's), and roadmap edits in 18d9934c and b3841ce5 against tasks.md:53.
 
+#### Review D1+D2 fixes
+
+All 23 findings are resolved in batches T112-1 to T112-6 (the owner decided DD-7).
+
+- DD-1 (0a4517aa, T112-1): a keyboard binding that omits `scope`, `add` or `remove` loads as `Global` with empty lists, and the section's validator replaces a null entry or one without a command with the defaults.
+- DD-2 (37d4e529, T112-2): the item double-click walk stops at its own list, so a press outside the rows no longer reaches a Dock container's `ToolDock`.
+- DD-3 (a2528b3d, T112-2): the Keyboard shortcuts page has a full keyboard path (search, page list, filter, recording, conflicts), and the E2E rebinds with keys only.
+- DD-4 (7b29496f, T112-3): about 50 size, spacing, thickness, radius, font and motion resources are catalogue tokens over `DynamicResource`, so a preset applies at once.
+- DD-5 (e7cfd121, T112-6): NPK016 scans every `.axaml` file, `Styles` and `ResourceDictionary` roots included; only `ThemeDictionaries` may hold a colour, and the font rule reaches style setters.
+- DD-6 (f2a157ff, T112-4): a project's copy of an extension shadows the per-user copy's app-level items and serves its session.
+- DD-7 (532abef3, T112-3): the Classic Dark preset is gone and `ContrastCheck` compares the exact ratio, so the card no longer passes the 1.15 gate at 1.14998.
+- DD-8 (1c2cd5bf, T112-5): the Settings document renders the settings page kind, custom and parented pages show, and the document rebuilds when the page or section set changes.
+- DD-9 (a7511319, T112-1): the Settings and shortcuts text comes from resources, generated labels and help texts read the owner's resources, and the language is a drop-down.
+- DD-10 (d1ae5ad9, T112-6): `NoPackageAnalysis` is gone; the template's extension project suppresses NU5100 alone, `NetPrints.Templates` needs nothing, and the build-file gate reports `NoPackageAnalysis`.
+- DD-11 (fd0ea48d, T112-1): the published settings schema, the guide's table and the example carry the `keyboard` section.
+- DD-12 (71014859, T112-1): NPX014 is reported for every extension section, whatever its id, because only the host's and the editor's sections count as built-in.
+- DD-13 (d1ae5ad9, T112-6): the Godot sample imports no repository build logic, opts in with `NoWarn` as authors do (ADR-0017 Amendment 1), and packs its own README and icon.
+- DD-14 (c6a90576, T112-2): the start-page snapshots mask the focused recent-projects search box.
+- DD-15 (466c2a10, T112-2): leaving the Keyboard shortcuts page ends gesture recording, so the bindings work again.
+- DD-16 (7ce5c3b6, T112-4): `TooltipConnection` is the subject of a connection tooltip and the built-in provider reads it through the internal provider interface.
+- DD-17 (1dd5275e, T112-4): a contributed data template that throws shows the placeholder naming the extension.
+- DD-18 (366c8268, T112-6): NPK006 to NPK008 report Skipped and name every kind without a node-search entry, NPK010 requires completed messages and a refused message after closing, and the contract records NPK012's deferred leak test.
+- DD-19 (30f272cb, T112-4): ADR-0020 records the app and session contribution groups and their shadowing.
+- DD-20 (215da1da, T112-3): data-model §5 lists the shipped preset ids and ADR-0035 Amendment 2 records the High contrast behaviour in System mode.
+- DD-21 (25afad18, T112-6): the guide's reusable-workflow example pins `@v0.4.0` with the matching `netprints-version`, and a test keeps it on a release tag.
+- DD-22 (86c47c64, T112-6): the extension author kit is stable from 0.4.0, as research R16 and the extensions guide's API stability section record.
+- DD-23 (T112-6): test-after in T095–T097, T101, T106, T107 and T109 is recorded in those batches' notes; their tests pin behaviour, and the two that did not (ThemeCatalogueTests, the settings-page row of ExtensionKindsTests) were fixed by DD-4 and DD-8. Roadmap: b3841ce5's entry was directed by the coordinator's T110 batch (§4, an owner request); 18d9934c's Dock line is for the coordinator to confirm. Rule: an implementer does not edit .specify/memory/roadmap.md unless its task says so (T112-3 did, for the Classic preset).
+
 ## Batch C2f (T074-T076)
 
 Red/green. Every rule's tests were written against an analyzer stub that declares its descriptor and reports nothing, and failed on the
