@@ -30,7 +30,7 @@ public static class ThemeTokenCatalogue
 
     private static readonly string[] SizeNames =
     [
-        "StartPage.RecentTileSize", "Font.Caption", "Font.Body", "Font.Subtitle", "Font.Title", "Font.Watermark",
+        "StartPage.RecentTileSize", "StartPage.LogoSize", "Font.Caption", "Font.Body", "Font.Subtitle", "Font.Title", "Font.Watermark",
         "Space.XS.Size", "Space.S.Size", "Space.M.Size", "Space.L.Size", "Space.XL.Size", "Icon.Small", "Icon.Medium",
         "Icon.Large", "Tab.Height", "Tab.CloseButtonSize", "Tab.InactiveOpacity", "Density.RowHeight",
         "Density.CommandBarHeight", "VariableChip.Size", "Dialog.MinWidth", "Dialog.MaxWidth", "Dialog.ListMaxHeight",

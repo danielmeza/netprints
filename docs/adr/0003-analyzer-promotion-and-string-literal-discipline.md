@@ -274,6 +274,8 @@ it needs the same per-entry ledger, enforced by `SourceHygieneTests.NoUnlistedBu
 | `extensions/NetPrints.Godot/src/NetPrints.Godot/NetPrints.Godot.csproj` | `NoWarn` | `NU5100`, NPXE ids | NU5100 as above; the NPXE ids are the author's opt-in (ADR-0017), because the sample builds only from the packed packages (research R26). |
 | `extensions/NetPrints.Godot/tests/NetPrints.Godot.Tests/NetPrints.Godot.Tests.csproj` | `NoWarn` | NPXE ids | The author's opt-in (ADR-0017). |
 
+`BuildFileRules` keeps the three project rows above as its own list, file by file, with the codes each row names: a `<NoWarn>` in any other project, or a code its row does not name, fails `SourceHygieneTests.TheOnlyNoWarnsAreTheOptInLineAndExtensionProjects`, and `SourceHygieneTests.EveryExtensionNoWarnAllowanceIsARowOfAdr0003` fails when that list and this table differ. A project that needs a `NoWarn` adds its row here and to `BuildFileRules` in the same commit.
+
 ### BannedApiAnalyzers scoping, and the XML-documentation promotion
 
 `src/Directory.Build.props` references `Microsoft.CodeAnalysis.BannedApiAnalyzers` (RS0030) for every

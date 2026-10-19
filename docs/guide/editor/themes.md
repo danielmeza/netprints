@@ -155,6 +155,7 @@ The list is generated from the token catalogue. Update it with `NETPRINTS_UPDATE
 | `Pin.TypeShape` | Shape | no |
 | `Pin.OutlineThickness` | Number | no |
 | `StartPage.RecentTileSize` | Number | no |
+| `StartPage.LogoSize` | Number | no |
 | `Font.Caption` | Number | no |
 | `Font.Body` | Number | no |
 | `Font.Subtitle` | Number | no |

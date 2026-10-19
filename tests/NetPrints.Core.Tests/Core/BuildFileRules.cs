@@ -18,9 +18,11 @@ namespace NetPrints.Tests.Core
 
         internal const string OptInItem = "NetPrintsExperimentalOptIn";
 
-        internal const string ExtensionsFolder = "extensions/";
-
         internal const string TemplateExtensionProject = "src/NetPrints.Templates/content/netprints-extension/MyExtension/MyExtension.csproj";
+
+        internal const string GodotProject = "extensions/NetPrints.Godot/src/NetPrints.Godot/NetPrints.Godot.csproj";
+
+        internal const string GodotTestsProject = "extensions/NetPrints.Godot/tests/NetPrints.Godot.Tests/NetPrints.Godot.Tests.csproj";
 
         internal const string PackLayoutWarning = "NU5100";
 
@@ -31,6 +33,17 @@ namespace NetPrints.Tests.Core
             // contract §1 requires the build to stay green in that case.
             ("Directory.Build.props", "MINVER1001"),
         };
+
+        /// <summary>ADR-0003 "Build-property allowances": the projects that may hold their own <c>NoWarn</c>, and whether their row allows NU5100 and NPXE ids.</summary>
+        private static readonly Dictionary<string, (bool PackLayout, bool OptIn)> ExtensionProjectNoWarns = new(StringComparer.Ordinal)
+        {
+            [TemplateExtensionProject] = (PackLayout: true, OptIn: false),
+            [GodotProject] = (PackLayout: true, OptIn: true),
+            [GodotTestsProject] = (PackLayout: false, OptIn: true),
+        };
+
+        /// <summary>The projects of <see cref="ExtensionProjectNoWarns"/>, for the test that keeps them equal to ADR-0003's table.</summary>
+        internal static IEnumerable<string> ExtensionProjectNoWarnFiles => ExtensionProjectNoWarns.Keys;
 
         /// <summary>The build files matching <paramref name="patterns"/>, except build output and <c>legacy/</c> (kept for reference, not built).</summary>
         internal static IEnumerable<string> EnumeratePaths(string root, params string[] patterns) =>
@@ -62,18 +75,18 @@ namespace NetPrints.Tests.Core
             && noWarn.Value.Trim() == OptInNoWarnValue
             && Named(document, "NoWarn").Count() == 1;
 
-        /// <summary>ADR-0003 allowances and ADR-0017: an extension project's own <c>NoWarn</c> (a project file under <c>extensions/</c>, or the template's extension project): <c>$(NoWarn)</c> followed only by NPXE ids and NU5100.</summary>
+        /// <summary>ADR-0003 "Build-property allowances" and ADR-0017: an extension project's own <c>NoWarn</c>, only in a project that table lists: <c>$(NoWarn)</c> followed only by the codes its row allows (NU5100 for a packed extension, NPXE ids for the author's opt-in).</summary>
         internal static bool IsExtensionProjectNoWarn(string relativePath, XElement noWarn)
         {
-            if (noWarn.HasAttributes || !relativePath.EndsWith(".csproj", StringComparison.Ordinal)
-                || !(relativePath.StartsWith(ExtensionsFolder, StringComparison.Ordinal) || relativePath == TemplateExtensionProject))
+            if (noWarn.HasAttributes || !ExtensionProjectNoWarns.TryGetValue(relativePath, out (bool PackLayout, bool OptIn) allowed))
             {
                 return false;
             }
 
             string[] tokens = noWarn.Value.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             return tokens.Length >= 2 && tokens[0] == "$(NoWarn)"
-                && tokens.Skip(1).All(token => token == PackLayoutWarning || System.Text.RegularExpressions.Regex.IsMatch(token, @"^NPXE\d{4}$"));
+                && tokens.Skip(1).All(token => (allowed.PackLayout && token == PackLayoutWarning)
+                    || (allowed.OptIn && System.Text.RegularExpressions.Regex.IsMatch(token, @"^NPXE\d{4}$")));
         }
 
         /// <summary>Every <c>&lt;NoWarn&gt;</c> element of a file, whatever its attributes.</summary>

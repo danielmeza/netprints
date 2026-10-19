@@ -50,8 +50,10 @@
       <StreamGeometry x:Key="Pin.TypeShape.Diamond">M8,0 L16,8 L8,16 L0,8 Z</StreamGeometry>
       <StaticResource x:Key="Pin.TypeShape" ResourceKey="Pin.TypeShape.Diamond" />
       <x:Double x:Key="Pin.OutlineThickness">2</x:Double>
-      <!-- Start page recent row: a left-anchor icon tile (FR-110). -->
-      <x:Double x:Key="StartPage.RecentTileSize">32</x:Double>      <!-- Type ramp, spacing scale and shared widths (FR-080, research R11); none of these vary by theme. -->
+      <!-- Start page: the recent row's left-anchor icon tile (FR-110) and the logo beside the title. -->
+      <x:Double x:Key="StartPage.RecentTileSize">32</x:Double>
+      <x:Double x:Key="StartPage.LogoSize">42</x:Double>
+      <!-- Type ramp, spacing scale and shared widths (FR-080, research R11); none of these vary by theme. -->
       <x:Double x:Key="Font.Caption">12</x:Double>
       <x:Double x:Key="Font.Body">14</x:Double>
       <x:Double x:Key="Font.Subtitle">16</x:Double>

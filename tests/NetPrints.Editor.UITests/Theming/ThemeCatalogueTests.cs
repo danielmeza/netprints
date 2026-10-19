@@ -14,6 +14,17 @@ public class ThemeCatalogueTests
 {
     private static readonly XNamespace Xaml = "http://schemas.microsoft.com/winfx/2006/xaml";
 
+    private static readonly Regex StaticResourcePattern = new(@"\{StaticResource\s+(?:ResourceKey=)?(?<key>[\w.]+)\}|<StaticResource\b[^>]*?\bResourceKey=""(?<key>[\w.]+)""");
+
+    private static readonly string[] ValueElements = ["Double", "Thickness", "CornerRadius", "GridLength", "Color", "SolidColorBrush"];
+
+    internal static IReadOnlyList<string> StaticResourceKeys(string xaml) => [.. StaticResourcePattern.Matches(xaml).Select(match => match.Groups["key"].Value)];
+
+    private static IEnumerable<string> SourceViews(string root) =>
+        Directory.EnumerateFiles(Path.Combine(root, "src"), "*.axaml", SearchOption.AllDirectories)
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                && !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal));
+
     public static TheoryData<string, string> TokensByVariant()
     {
         TheoryData<string, string> data = [];
@@ -106,18 +117,41 @@ public class ThemeCatalogueTests
     public void NoCatalogueTokenIsLookedUpWithStaticResource()
     {
         string root = LocalSdkLayout.FindRepositoryRoot();
-        var pattern = new Regex(@"\{StaticResource\s+(?<key>[\w.]+)\}");
         List<string> offenders = [];
-        foreach (string file in Directory.EnumerateFiles(Path.Combine(root, "src"), "*.axaml", SearchOption.AllDirectories)
-                     .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-                         && !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)))
+        foreach (string file in SourceViews(root))
         {
-            offenders.AddRange(pattern.Matches(File.ReadAllText(file))
-                .Select(match => match.Groups["key"].Value)
+            offenders.AddRange(StaticResourceKeys(File.ReadAllText(file))
                 .Where(key => ThemeTokenCatalogue.Find(key) is not null)
                 .Select(key => $"{Path.GetRelativePath(root, file)}: {key}"));
         }
 
         Assert.True(offenders.Count == 0, "Catalogue tokens looked up with StaticResource: " + string.Join(", ", offenders));
+    }
+
+    [Fact]
+    public void TheStaticResourceGuardReadsTheMarkupAndTheElementSyntax()
+    {
+        const string Sample = """
+            <StaticResource x:Key="Probe.Size" ResourceKey="Font.Body" />
+            <TextBlock FontSize="{StaticResource Font.Title}" Margin="{StaticResource ResourceKey=Space.S}" />
+            """;
+
+        Assert.Equal(["Font.Body", "Font.Title", "Space.S"], StaticResourceKeys(Sample));
+    }
+
+    [Fact]
+    public void NoViewKeepsASizeOrColourOfItsOwn()
+    {
+        string root = LocalSdkLayout.FindRepositoryRoot();
+        List<string> offenders = [];
+        foreach (string file in SourceViews(root))
+        {
+            offenders.AddRange(XDocument.Load(file).Descendants()
+                .Where(element => element.Parent?.Name.LocalName is "UserControl.Resources" or "Window.Resources")
+                .Where(element => ValueElements.Contains(element.Name.LocalName, StringComparer.Ordinal))
+                .Select(element => $"{Path.GetRelativePath(root, file)}: {(string?)element.Attribute(Xaml + "Key")}"));
+        }
+
+        Assert.True(offenders.Count == 0, "Views that keep their own size or colour instead of a catalogue token: " + string.Join(", ", offenders));
     }
 }

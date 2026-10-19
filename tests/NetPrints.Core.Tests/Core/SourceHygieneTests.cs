@@ -194,7 +194,7 @@ namespace NetPrints.Tests.Core
             Assert.Empty(offenders);
         }
 
-        /// <summary>ADR-0017 and ADR-0003: the opt-in line exists exactly once, in <c>Directory.Build.targets</c>, and the only other <c>&lt;NoWarn&gt;</c> holders are extension projects that name NPXE ids and NU5100.</summary>
+        /// <summary>ADR-0017 and ADR-0003: the opt-in line exists exactly once, in <c>Directory.Build.targets</c>, and the only other <c>&lt;NoWarn&gt;</c> holders are the projects of ADR-0003's build-property allowances, each with only the codes its row names.</summary>
         [Fact]
         public void TheOnlyNoWarnsAreTheOptInLineAndExtensionProjects()
         {
@@ -214,13 +214,30 @@ namespace NetPrints.Tests.Core
                 XDocument document = XDocument.Load(Path.Combine(root, holder));
                 Assert.True(
                     BuildFileRules.NoWarnElements(document).All(noWarn => BuildFileRules.IsExtensionProjectNoWarn(holder, noWarn)),
-                    $"{holder} may only opt in to NPXE ids and suppress NU5100");
+                    $"{holder} holds a <NoWarn> that ADR-0003's build-property allowances do not list");
             }
 
             XDocument targets = XDocument.Load(Path.Combine(root, BuildFileRules.OptInTargetsFile));
             Assert.True(
                 BuildFileRules.NoWarnElements(targets).All(noWarn => BuildFileRules.IsOptInNoWarn(BuildFileRules.OptInTargetsFile, targets, noWarn)),
                 $"{BuildFileRules.OptInTargetsFile} must contain exactly <NoWarn>{BuildFileRules.OptInNoWarnValue}</NoWarn>");
+        }
+
+        /// <summary>ADR-0003 "Build-property allowances": the projects <see cref="BuildFileRules"/> lets hold their own <c>NoWarn</c> are exactly the <c>NoWarn</c> rows of the ADR's table, apart from the opt-in line.</summary>
+        [Fact]
+        public void EveryExtensionNoWarnAllowanceIsARowOfAdr0003()
+        {
+            string adr = File.ReadAllText(Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "docs", "adr", "0003-analyzer-promotion-and-string-literal-discipline.md"));
+            string[] rows =
+            [
+                .. adr.Split('\n')
+                    .Where(line => line.StartsWith("| `", StringComparison.Ordinal) && line.Contains(" | `NoWarn` | ", StringComparison.Ordinal))
+                    .Select(line => line.Split('`')[1])
+                    .Where(file => file != BuildFileRules.OptInTargetsFile)
+                    .Order(StringComparer.Ordinal),
+            ];
+
+            Assert.Equal([.. BuildFileRules.ExtensionProjectNoWarnFiles.Order(StringComparer.Ordinal)], rows);
         }
 
         /// <summary>ADR-0017: opt-ins are per project, so an item in a props or targets file (a repo-wide or inherited opt-in) is rejected.</summary>
