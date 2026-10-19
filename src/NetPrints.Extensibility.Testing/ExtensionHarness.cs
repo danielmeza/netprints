@@ -111,6 +111,7 @@ public sealed class ExtensionHarness : IAsyncDisposable
             NodeSuggestion suggestion = descriptor.Suggestions.FirstOrDefault()
                 ?? throw new InvalidOperationException($"Node kind '{kind}' offers no node-search entry.");
             Node node = suggestion.Create(method);
+            Checks.ConformanceGraphs.FillInputs(node, method);
             if (node.InputExecPins.Count > 0 && node.OutputExecPins.Count > 0)
             {
                 GraphUtil.ConnectExecPins(previous, node.InputExecPins[0]);

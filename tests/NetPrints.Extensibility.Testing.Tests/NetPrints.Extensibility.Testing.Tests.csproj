@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <NetPrintsExperimentalOptIn Include="NPXE0002" />
     <NetPrintsExperimentalOptIn Include="NPXE0005" />
     <NetPrintsExperimentalOptIn Include="NPXE0008" />
   </ItemGroup>
@@ -22,6 +23,7 @@
     <ProjectReference Include="..\..\src\NetPrints.Extensibility.Testing.Xunit\NetPrints.Extensibility.Testing.Xunit.csproj" />
     <ProjectReference Include="..\..\src\NetPrints.Core\NetPrints.Core.csproj" />
     <ProjectReference Include="..\NetPrints.Testing\NetPrints.Testing.csproj" />
+    <ProjectReference Include="..\NetPrints.TestExtension\NetPrints.TestExtension.csproj" />
   </ItemGroup>
 
   <ItemGroup>

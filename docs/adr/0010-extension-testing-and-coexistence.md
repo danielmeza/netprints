@@ -90,3 +90,18 @@ not packable yet (P3 publishes them).
 - The suite adds about a dozen small fixture projects and one test category to the Core job. Unload testing
   stays deferred until collectible contexts are adopted.
 - The kit's public surface is designed once, in P3, against the harness that P2 already exercises.
+
+## Amendment 1: the P3 conformance suite (T101 to T105, spec `specs/006-editor-extension-host/`)
+
+Decision 1's "twelve-check" suite grows to sixteen checks, NPK001 to NPK016, plus NPK017 in `netprints extension verify`:
+
+- NPK009 settings (sections serialize, validate and export a schema), NPK010 host channel lifecycle, NPK011 coexistence with the
+  built-ins and a noisy neighbour, NPK012 disposal.
+- NPK013 service providers: the provider builds and validates, holds only the extension's own types, and a scoped or transient
+  service is released with its session (a leak test over the registered descriptors).
+- NPK014 graph rules (deterministic, graph unchanged, cancellation honoured, isolated when throwing) lands with the graph rules in T138.
+- NPK015 editor contributions: ids prefixed with the extension id, resolvable labels, gestures that parse and follow the scope
+  rules, icon ids that resolve; NPK016 contributed views: the E2 and E8 rules over the extension's `.axaml` sources.
+
+`NetPrints.TestExtension` is now tested through the kit: `ConformanceTests<TestExtension>` and kit-based tests. The loader contract
+tests that load it with `ExtensionLoader` directly stay in Core.Tests, because they test the loader and not the extension.
