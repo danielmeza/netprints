@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NetPrints.Core;
@@ -251,7 +252,7 @@ public sealed class JsonFileSettingsStore : ISettingsStore, ISettingsChangeSourc
 
         try
         {
-            T? value = section.Deserialize(descriptor.TypeInfo);
+            T? value = OverlayOnDefaults(descriptor.Default, section, descriptor.TypeInfo).Deserialize(descriptor.TypeInfo);
             if (value is null)
             {
                 Report(descriptor.ExtensionId, NullSectionReason, null);
@@ -272,6 +273,46 @@ public sealed class JsonFileSettingsStore : ISettingsStore, ISettingsChangeSourc
         }
 
         return descriptor.Default;
+    }
+
+    /// <summary>
+    /// Overlays the stored section on the descriptor's default, so a member the file omits keeps the default. The
+    /// source-generated deserializer synthesizes constructor parameters from init-only properties and supplies
+    /// <c>default(T)</c> for a missing member, which would erase a collection or string initializer.
+    /// </summary>
+    /// <typeparam name="T">The section type.</typeparam>
+    /// <param name="default">The descriptor's default section.</param>
+    /// <param name="section">The stored section.</param>
+    /// <param name="typeInfo">The section's JSON metadata.</param>
+    /// <returns>The stored section with the default filling its missing members.</returns>
+    private static JsonNode OverlayOnDefaults<T>(T @default, JsonNode section, JsonTypeInfo<T> typeInfo)
+    {
+        if (section is not JsonObject stored)
+        {
+            return section;
+        }
+
+        JsonNode? defaultsNode;
+        try
+        {
+            defaultsNode = JsonSerializer.SerializeToNode(@default, typeInfo);
+        }
+        catch (Exception ex) when (ex is JsonException or NotSupportedException or InvalidOperationException)
+        {
+            return section;
+        }
+
+        if (defaultsNode is not JsonObject defaults)
+        {
+            return section;
+        }
+
+        foreach (KeyValuePair<string, JsonNode?> property in stored)
+        {
+            defaults[property.Key] = property.Value?.DeepClone();
+        }
+
+        return defaults;
     }
 
     private State Load()

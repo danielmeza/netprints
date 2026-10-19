@@ -121,6 +121,29 @@ public class JsonFileSettingsStoreTests : IDisposable
     }
 
     [Fact]
+    public void APartialBuiltInSectionKeepsTheDefaultsOfItsMissingMembers()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(FilePath) ?? directory);
+        File.WriteAllText(FilePath, """{ "netprints": { "extensionPaths": ["/ext"] } }""");
+
+        NetPrintsSettings read = NewStore().Get(NetPrintsSettings.Descriptor);
+
+        Assert.Equal(["/ext"], read.ExtensionPaths);
+        Assert.Empty(read.TrustedProjects);
+        Assert.True(read.EnableAnimations);
+        Assert.Equal("", read.Language);
+    }
+
+    [Fact]
+    public void APartialExtensionSectionKeepsTheDefaultsOfItsMissingMembers()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(FilePath) ?? directory);
+        File.WriteAllText(FilePath, """{ "extensions": { "test.sample": { "name": "x" } } }""");
+
+        Assert.Equal(new SampleSettings("x", 1), NewStore().Get(Sample));
+    }
+
+    [Fact]
     public async Task UnknownSectionsSurviveAWriteByteForByte()
     {
         JsonFileSettingsStore first = NewStore();
