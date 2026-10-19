@@ -2123,3 +2123,48 @@ Commit: 4ce7eb76 (R3-8 and the R3-9 helper and sample test), then a422cb88 that 
 - Slip: the first completion stopped at `RESULT: partial` and withheld the R3-9 guard wiring under the batch's fallback; a422cb88 applies the delegated view-root scope and completes it.
 - Slip: the batch planned one commit; the partial stop and this continuation split the work into two (4ce7eb76 and a422cb88), which cannot be squashed without a force push.
 - The R3-8 mutation and the guard probe in `ContributionErrorView.axaml` were reverted with the edit tool; `git status` shows no view change.
+
+## Batch R4-F (round-4 review fixes)
+
+Commits: a4791c8a (R4-1, R4-4, R4-7, R4-8), 0d0a6b91 (R4-2), 89c25577 (R4-3), ecc1e1c7 (R4-5), 384f1ca0 (R4-6).
+
+### R4-1 error dialog text
+- Changed: `Message.ExtensionError` names the extension (display name and id), says the details are in the log, and says the user can stop loading it by removing its folder from the extension folders on the Extensions page or, for a project's copy, by stopping to trust the project there. FR-034 says the same and points at FR-098 for disabling (P3c).
+- Red: `TheMessageNamesTheExtensionAndWhatTheUserCanDoNow` (renamed from `...TellsToDisableIt`) failed with `Not found: "log"` against the old resource (resource reverted temporarily to show it). Green: 11 attribution and assemblies tests pass.
+- Decision (delegated): the test also asserts the text no longer contains "disable".
+
+### R4-2 kept-as-written keyboard entry
+- Changed: the "Not loaded" row of an entry with a `Problem` shows that text (index, command, reason). Every Not loaded row now removes through the new `KeyBindingEditor.RemoveEntryAsync(entry)`, which deletes the entry matched by instance (`ReferenceEquals` against the store's list; the registry holds the store's instances) and keeps all others. `RemoveNotLoadedAsync(commandId)` is gone.
+- Red: `AnEntryKeptAsWrittenShowsItsProblemInTheNotLoadedList` (summary was ` (add: ; remove: )`) and `RemovingOneEntryKeptAsWrittenLeavesTheOtherEntriesInTheFile` (no row named `ext.a`). Green: `KeyboardShortcutsPageTests` 16 pass, including the existing not-loaded removal.
+- Decision (delegated): a command-less valid entry is a "Not loaded" row too; its removal is by instance as well. A duplicate entry for the same unloaded command is removed one at a time (before, both went).
+
+### R4-3 attribution of dependencies
+- Changed: `ExtensionOrigin` carries the extension's `AssemblyLoadContext`; a frame belongs to the extension when its assembly is the main one or is in `Context.Assemblies` when the exception is attributed (late-loaded dependencies count). The trim-safe `DiagnosticMethodInfo` path is kept.
+- Decision (delegated): the context of an extension in the Default context (in-process) is not used, so every host assembly is not attributed to it.
+- Red: `AnExceptionFromADependencyLoadedInTheExtensionsContextIsAttributedToIt` (a second copy of the test assembly loaded into its own context supplies the throwing frame; main-assembly name `Fx.Main` has no frame) failed with Expected `"fx.one"`, Actual `null`. Green: passes; the same test asserts a different context and no context give null. No new fixture assembly was needed.
+
+### R4-4 bindings wording
+- Changed: FR-034 and R27 say a binding exception becomes a binding error in the log, as Avalonia reports it, and does not reach the dialog. Wording only.
+
+### R4-5 branch tests (temporary mutations, reverted)
+- `AllowEmptyStrings`: `ARequiredStringNeedsAtLeastOneCharacterUnlessEmptyIsAllowed` (Core.Tests). Mutation: `!allowEmpty` replaced by `true` in `MakeNonNull`. Failure: `Assert.Null() Failure: Value is not null, Expected: null, Actual: 1`.
+- Same version, different content: `AProjectCopyOfTheSameVersionWithDifferentContentIsWarnedAbout` (one byte appended to the project copy's dll). Mutation: `SameContent(...)` replaced by `true`. Failure: `Assert.Single() Failure: The collection did not contain any matching items, Collection: []`.
+- Once-only: `AProjectCopyThatReopensIsWarnedAboutOnlyOnce` (session group removed and added twice more). Mutation: `first = true` in place of `warnedShadows.Add(...)`. Failure: `The collection contained 3 matching items, Collection: [1046, 1046, 1046]`.
+- Green after reverting all three with the edit tool: 7 and 14 tests pass; `git status` shows no source change.
+
+### R4-6 guard
+- Changed: the guard also scans `DataTemplates` roots. No offenders: the guard is green. Probe: a `Grid.Resources` double in `BuiltInViews.axaml` made it fail with `...BuiltInViews.axaml: Probe`; reverted. Nothing is left out of the guard.
+
+### R4-7
+- data-model.md (key binding override) records that `"bindings": null` loads silently as the empty list while the schema describes an array.
+
+### R4-8
+- `ExtensionAttributionTests`, `ExtensionAssembliesTests`, `ExtensionErrorAttributionTests` are sealed.
+
+### Gates and slips
+1. Release build: 0 warnings, 0 errors. `dotnet format --verify-no-changes`: clean. `bash eng/trim-warnings.sh`: 8 of 8.
+2. Whole suite (Release, `--ignore-exit-code 8`, fresh state and config dirs): 5519 total, 0 failed, 40 skipped.
+3. Desktop E2E (`NETPRINTS_E2E=1`, `--fail-skips on`): 56 total, 55 passed, 1 skipped (GuideScreenshotTests, by design), 0 failed.
+- Slip: for R4-1 I edited the resource before running the new test; I reverted the resource to show the red, then reapplied it.
+- Slip: the first red build for R4-5 passed two projects to one `dotnet build`, which failed (MSB1008), so stale binaries ran green; rebuilt each project separately before reading any result.
+- Slip: my first edit of `KeyBindingEditor.cs` was denied by the skill hook; I loaded the three Avalonia skills and retried.
