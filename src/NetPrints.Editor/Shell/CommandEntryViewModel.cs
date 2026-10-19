@@ -101,16 +101,26 @@ public sealed partial class CommandEntryViewModel : ObservableObject
     public string BadgeName => BadgeCount == 1 ? "1 error" : $"{BadgeText} errors";
 
     /// <summary>Re-queries the handler for the label and the enabled state.</summary>
-    public void Refresh()
+    public void Refresh() => Refresh(null);
+
+    /// <summary>Re-queries the handler; an entry of the global scope without a parameter reads the context of the whole pulse instead of building its own.</summary>
+    /// <param name="pulse">The context built once for the pulse, or null to build one.</param>
+    internal void Refresh(CommandContext? pulse)
     {
         if (descriptor is null || invoker is null)
         {
             return;
         }
 
-        CommandContext context = invoker.CreateContext(scope, parameter);
-        Label = descriptor.Handler.DynamicLabel(context) ?? descriptor.DisplayLabel;
-        Tooltip = FirstGesture.Length > 0 ? $"{Label} ({FirstGesture})" : Label;
+        CommandContext context = pulse is not null && scope == CommandScope.Global && parameter is null ? pulse : invoker.CreateContext(scope, parameter);
+        string label = descriptor.Handler.DynamicLabel(context) ?? descriptor.DisplayLabel;
+        bool labelChanged = !string.Equals(Label, label, StringComparison.Ordinal);
+        Label = label;
+        if (labelChanged || Tooltip.Length == 0)
+        {
+            Tooltip = FirstGesture.Length > 0 ? $"{label} ({FirstGesture})" : label;
+        }
+
         IsEnabled = descriptor.Handler.CanExecute(context);
         bool? chosen = descriptor.Handler.IsChecked(context);
         IsChoice = chosen is not null;

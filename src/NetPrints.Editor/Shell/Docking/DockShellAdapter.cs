@@ -564,9 +564,10 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
 
     private void SyncPanels()
     {
+        HashSet<string> shown = [.. ShellDockFactory.Walk(Layout).OfType<ShellTool>().Select(tool => tool.Id)];
         foreach (PanelViewModel panel in shell.Panels)
         {
-            panel.IsVisible = IsPanelVisible(panel.Id);
+            panel.IsVisible = shown.Contains(panel.Id);
         }
 
         shell.NotifyLayoutChanged();

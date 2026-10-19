@@ -75,9 +75,10 @@ public sealed class CommandBarViewModel : IDisposable
 
     private void OnCommandStatesChanged(object? sender, EventArgs e)
     {
+        CommandContext pulse = invoker.CreateContext();
         foreach (CommandBarSlotViewModel slot in Slots)
         {
-            slot.Refresh();
+            slot.Refresh(pulse);
         }
 
         RefreshBadge();

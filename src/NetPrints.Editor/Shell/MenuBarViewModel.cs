@@ -95,5 +95,9 @@ public sealed class MenuBarViewModel : IDisposable
         return entry;
     }
 
-    private void OnCommandStatesChanged(object? sender, EventArgs e) => entries.ForEach(entry => entry.Refresh());
+    private void OnCommandStatesChanged(object? sender, EventArgs e)
+    {
+        CommandContext pulse = invoker.CreateContext();
+        entries.ForEach(entry => entry.Refresh(pulse));
+    }
 }

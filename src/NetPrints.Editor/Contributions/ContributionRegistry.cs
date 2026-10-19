@@ -335,8 +335,23 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
     private IEnumerable<string> Ids(Func<ContributionGroup, IEnumerable<string>> select) =>
         AllGroups().SelectMany(group => select(group).Where(id => !IsShadowed(group, id)));
 
-    private bool IsShadowed(ContributionGroup group, string id) =>
-        ReferenceEquals(group, appGroup) && group.Owners.TryGetValue(id, out string? owner) && sessions.Exists(session => session.ShadowedOwners.Contains(owner));
+    private bool IsShadowed(ContributionGroup group, string id)
+    {
+        if (!ReferenceEquals(group, appGroup) || !group.Owners.TryGetValue(id, out string? owner))
+        {
+            return false;
+        }
+
+        foreach (ContributionGroup session in sessions)
+        {
+            if (session.ShadowedOwners.Contains(owner))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private void Publish(bool always = false)
     {
