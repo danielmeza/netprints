@@ -213,8 +213,8 @@ Unloading a project while an `Executable` run is alive asks whether to leave it 
 
 | Entity | Fields | Rule |
 |---|---|---|
-| Token (catalogue entry) | key, kind (colour, brush, thickness, size, radius, opacity, font, shape), Dark default, Light default, contrast partners | every visual element of the editor is a token (ADR-0035 decision 1) |
-| Preset | id, label, variant (`dark`, `light` or both), base Semi variant, token values | built-in: `netprints.dark`, `netprints.light`, `netprints.classicDark`, `netprints.highContrast`; gated by the contrast tests |
+| Token (catalogue entry) | key, kind (Color, Brush, Number, Shadow, Shape, Thickness, CornerRadius, GridLength, FontFamily, Duration, Easing), one value per variant or one shared value | every visual element of the editor is a token (ADR-0035 decision 1) |
+| Preset | id, label, `base` (`dark` or `light`), optional `semiVariant`, token values | built-in: `netprints.dark`, `netprints.light`, `high-contrast.dark` (Semi `Aquatic`) and `high-contrast.light` (Semi `Desert`), one file per variant; the ids are stored in `darkPreset` and `lightPreset`, so they are part of the settings format; gated by the contrast tests |
 | Theme file (`*.nptheme.json`; user files in `<config>/NetPrints/themes/` and extension themes land in G) | `schemaVersion`, `id`, `label`, `base`, `tokens` (sparse), Semi keys | the same format as the embedded presets; unknown token: ignored with a warning; bad value: keeps the base value with a warning; newer schema: skipped; contrast failure: applied with a warning naming the pairs; size capped; no URLs, fonts or images; a Semi key is checked against the resources loaded at runtime |
 
 A preset applies as an overlay into `ThemeDictionaries[Dark]` or `[Light]`, so a Dark preset changes no Light value.

@@ -113,3 +113,10 @@ Light and High contrast for each variant. The contrast gates compare the exact r
 let Classic's card (1.14998:1) pass the 1.15:1 gate. A stored `darkPreset` of `classic.dark` is an unknown id: the variant's
 default applies with a log entry (decision 7). The contact sheet's Classic Dark tiles are gone. Anything that exists only to
 mimic the legacy editor is removed, not fixed.
+
+## Amendment 2 (2026-10-18, T112): High contrast in System mode
+
+In System mode the editor follows the operating system's Dark or Light variant and uses no custom `ThemeVariant` (decision 9),
+so Semi's high-contrast variant (Aquatic, Desert) is not selected: the High contrast preset's tuned NetPrints tokens apply on the
+plain variant. Choosing the Dark or Light mode with a High contrast preset selects Semi's variant as well. High contrast is two
+files, `high-contrast.dark` and `high-contrast.light`, each naming its Semi variant in `semiVariant`.
