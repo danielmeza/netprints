@@ -24,7 +24,7 @@ namespace NetPrints.Tests.Core
 
         private const string KitTestsProject = "NetPrints.Extensibility.Testing.Tests";
 
-        private static readonly string[] NotAggregated = ["build-test", "e2e", "godot-smoke", "packages", "perf"];
+        private static readonly string[] NotAggregated = ["build-test", "e2e", "packages", "perf"];
 
         [Fact]
         public void TestMatrixCoversEveryTestProjectExactlyOnce()
@@ -104,7 +104,8 @@ namespace NetPrints.Tests.Core
             Assert.Contains(Items(Get(smoke, "steps")), step => Text(Get(step, "env", "NETPRINTS_GODOT_EXTENSION_DIR")).Length > 0);
             Assert.Contains("GodotExtensionHostTests", script, StringComparison.Ordinal);
             Assert.Contains("--fail-skips on", script, StringComparison.Ordinal);
-            Assert.DoesNotContain("godot-smoke", Needs(jobs["build-test"]));
+            Assert.Contains("godot-smoke", Needs(jobs["build-test"]));
+            Assert.Contains("godot-extension", Needs(jobs["build-test"]));
         }
 
         [Fact]
@@ -242,7 +243,8 @@ namespace NetPrints.Tests.Core
             string[] expectedNeeds =
             [
                 .. jobs.Where(job => !NotAggregated.Contains(job.Key, StringComparer.Ordinal))
-                    .Where(job => Items(Get(job.Value, "steps")).Any(step => Text(Get(step, "run")).Contains("dotnet test", StringComparison.Ordinal)))
+                    .Where(job => Items(Get(job.Value, "steps")).Any(step => Text(Get(step, "run")).Contains("dotnet test", StringComparison.Ordinal))
+                        || Text(Get(job.Value, "uses")) == "./" + ExtensionWorkflow)
                     .Select(job => job.Key)
                     .Order(StringComparer.Ordinal),
             ];
@@ -255,6 +257,11 @@ namespace NetPrints.Tests.Core
             Assert.DoesNotContain("||", script, StringComparison.Ordinal);
             Assert.Null(Get(step, "continue-on-error"));
             Assert.Null(Get(aggregate, "continue-on-error"));
+
+            foreach (string id in needs)
+            {
+                Assert.Contains("needs." + id + ".result", script, StringComparison.Ordinal);
+            }
 
             string[] checks = [.. script.Split('\n').Select(line => line.Trim()).Where(line => line.StartsWith('['))];
             string check = Assert.Single(checks);

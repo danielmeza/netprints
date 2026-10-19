@@ -346,7 +346,7 @@ jobs:
   build-test:
     name: Build and test (Linux)
     if: always()
-    needs: [checks, test]
+    needs: [checks, test, godot-extension, godot-smoke]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -354,7 +354,9 @@ jobs:
         run: |
           echo "checks: ${{ needs.checks.result }}"
           echo "test: ${{ needs.test.result }}"
-          [ "${{ needs.checks.result }}" = "success" ] && [ "${{ needs.test.result }}" = "success" ]
+          echo "godot-extension: ${{ needs.godot-extension.result }}"
+          echo "godot-smoke: ${{ needs.godot-smoke.result }}"
+          [ "${{ needs.checks.result }}" = "success" ] && [ "${{ needs.test.result }}" = "success" ] && [ "${{ needs.godot-extension.result }}" = "success" ] && [ "${{ needs.godot-smoke.result }}" = "success" ]
 
   e2e:
     name: Desktop E2E (Linux, Xvfb)
@@ -475,8 +477,8 @@ jobs:
           path: local-packages/*.nupkg
           if-no-files-found: error
 
-  # The sample Godot extension (research R26) is built against the packed packages only. Not in the "Build and test (Linux)" aggregate,
-  # like packages: it needs the packed feed, and godot-smoke runs one editor test class against the built extension.
+  # The sample Godot extension (research R26) is built against the packed packages only; godot-smoke runs one editor test class
+  # against the built extension. Both are in the "Build and test (Linux)" aggregate (owner, 2026-10-18).
   godot-extension:
     name: Godot extension (packed packages)
     needs: packages

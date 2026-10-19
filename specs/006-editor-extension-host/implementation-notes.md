@@ -1657,6 +1657,7 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - **Decision (aggregate)**: `CiWorkflowTests` adds `godot-smoke` to `NotAggregated` (like `packages`): the Godot jobs are separate checks, not part of `Build and test (Linux)`. `godot-extension` has no steps, so the aggregate rule does not see it. Making them required is a branch-protection decision for the owner.
 - **Godot**: no Godot binary is downloaded or run; the extension and its tests need none. Godot.NET.Sdk 4.7.2 appears only in the generated project text (it exists on nuget.org).
 - **Not done**: the sample under `samples/` (P3c); docs for T110 (testing guide, `cli.md`, ADR-0041, ADR-0010).
+- **Decision (owner, 2026-10-18)**: `godot-extension` and `godot-smoke` joined the "Build and test (Linux)" aggregate, so the sample extension built from the packed packages is a required check. CiWorkflowTests also counts reusable-workflow callers and checks that the aggregate script reads every need.
 
 ## Batch D2-CP (T110, Checkpoint D2)
 

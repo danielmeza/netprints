@@ -131,9 +131,10 @@ Runs on every pull request to `master`, every push to `master` and on demand.
 |---|---|---|
 | `checks` | Repository checks (Linux) | Builds `NetPrints.slnx` in Release, runs the graph checks (`regen --check`, `format --check`), `dotnet format --verify-no-changes`, the Desktop E2E smoke step (no display, always-on tests only), the CLI smoke and the sample compile and run, and fails on any changed generated file. |
 | `test` | Test (Core), Test (Catalog), Test (CLI), Test (Editor), Test (Editor UI (headless) 1/4) to 4/4 | One matrix leg per test project, run in parallel (`fail-fast: false`); the headless UI project runs in four shards split by namespace (shard 4 is the complement of the `--filter-namespace` lists of shards 1 to 3). Each leg builds only its own project in Release and runs it with `--report-xunit-trx` and static code coverage ([ADR-0008](../adr/0008-static-only-code-coverage.md)). |
-| `build-test` | **Build and test (Linux)** | The aggregate. It runs even when a job it needs failed and fails unless `checks` and every `test` leg succeeded. |
+| `build-test` | **Build and test (Linux)** | The aggregate. It runs even when a job it needs failed and fails unless `checks`, every `test` leg, `godot-extension` and `godot-smoke` succeeded. |
 | `e2e` | **Desktop E2E (Linux, Xvfb)** | The Desktop E2E project on Xvfb with `NETPRINTS_E2E=1` and `--fail-skips on`. |
 | `packages`, `desktop-publish`, `jsonschema` | Packages (local feed), Self-contained editor smoke (linux-x64), JSON Schema (metaschema, lint, validate) | Packaging and schema checks; they run no tests. |
+| `godot-extension`, `godot-smoke` | Godot extension (packed packages), Godot extension loads in the editor host | The sample extension built, tested, packed and verified against the packed packages through `netprints-extension.yml`, then loaded by the editor host (`GodotExtensionHostTests`). Both are in the aggregate. |
 
 Branch protection requires two checks, `Build and test (Linux)` and `Desktop E2E (Linux, Xvfb)`. Do not rename them.
 A new test leg is covered by the aggregate without touching branch protection.
