@@ -104,13 +104,13 @@ public sealed class SettingsValidationTests : IDisposable
     {
         await File.WriteAllTextAsync(
             SettingsFile,
-            """{"extensions":{"netprints.editor":{"darkPreset":"com.acme.midnight","lightPreset":"netprints.classic-light"}}}""",
+            """{"extensions":{"netprints.editor":{"darkPreset":"com.acme.midnight","lightPreset":"com.acme.dawn"}}}""",
             TestContext.Current.CancellationToken);
 
         EditorSettings settings = CreateStore().Get(EditorSettings.Descriptor);
 
         Assert.Equal("com.acme.midnight", settings.DarkPreset);
-        Assert.Equal("netprints.classic-light", settings.LightPreset);
+        Assert.Equal("com.acme.dawn", settings.LightPreset);
         Assert.Empty(messages);
     }
 

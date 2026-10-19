@@ -36,11 +36,11 @@ public sealed class ThemePreviewItemViewModelTests : IDisposable
     public async Task APresetTokenOverridesTheBaseInItsSwatch()
     {
         JsonFileSettingsStore store = NewStore();
-        await store.SetAsync(EditorSettings.Descriptor, new EditorSettings { DarkPreset = "classic.dark" }, TestContext.Current.CancellationToken);
+        await store.SetAsync(EditorSettings.Descriptor, new EditorSettings { DarkPreset = "high-contrast.dark" }, TestContext.Current.CancellationToken);
 
         using var preview = new ThemePreviewItemViewModel(store, (name, _) => Grey(name), action => action());
 
-        Assert.Equal("Classic Dark", preview.Rows[0].PresetLabel);
+        Assert.Equal("High contrast", preview.Rows[0].PresetLabel);
         ThemeSwatch canvas = preview.Rows[0].Swatches.Single(swatch => swatch.Token == "Canvas.Background");
         Assert.Equal(Color.Parse("#FF000000"), Assert.IsAssignableFrom<ISolidColorBrush>(canvas.Brush).Color);
     }

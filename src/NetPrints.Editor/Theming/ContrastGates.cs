@@ -10,10 +10,8 @@ namespace NetPrints.Editor.Theming;
 /// <param name="Minimum">The ratio the gate requires.</param>
 public sealed record ContrastCheck(string Gate, string Pair, double Ratio, double Minimum)
 {
-    private const int RatioDigits = 2;
-
-    /// <summary>Gets a value indicating whether the pair reaches the minimum, comparing the ratio at the two decimals the gates are written in.</summary>
-    public bool Passed => Math.Round(Ratio, RatioDigits) >= Minimum;
+    /// <summary>Gets a value indicating whether the measured ratio reaches the minimum; it is not rounded (WCAG thresholds are exact).</summary>
+    public bool Passed => Ratio >= Minimum;
 }
 
 /// <summary>The contrast gates every built-in preset passes (FR-068, SC-009); a user theme that fails them is applied with a warning (ADR-0035 decision 4).</summary>

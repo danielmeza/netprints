@@ -119,9 +119,9 @@ local version `scripts/pack-local.sh --print-version` prints; package validation
 
 ## 8. Theme presets (US8)
 
-1. Appearance › Dark preset: Classic Dark. The canvas is `#000`, pins are triangles, nothing restarts. Switch to
-   Light: NetPrints Light, with no Classic Dark value.
-2. High contrast for Dark: Semi's high-contrast variant with NetPrints' tuned tokens.
+1. Appearance › Dark preset: High contrast. Semi's high-contrast variant with NetPrints' tuned tokens: the canvas is
+   `#000`, nodes have a solid border, nothing restarts.
+2. Switch to Light: NetPrints Light, with no High contrast Dark value.
 3. Write `"darkPreset": "nope"`: the default Dark preset, a log entry, the other appearance keys kept.
 
 ## 9. C# target (US9)

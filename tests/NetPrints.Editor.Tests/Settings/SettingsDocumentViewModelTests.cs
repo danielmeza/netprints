@@ -71,7 +71,7 @@ public sealed class SettingsDocumentViewModelTests : IAsyncDisposable
 
         ChoiceFieldViewModel dark = appearance.Items.OfType<ChoiceFieldViewModel>().Single(field => field.QualifiedKey.EndsWith("darkPreset", StringComparison.Ordinal));
         ChoiceFieldViewModel light = appearance.Items.OfType<ChoiceFieldViewModel>().Single(field => field.QualifiedKey.EndsWith("lightPreset", StringComparison.Ordinal));
-        Assert.Equal(["netprints.dark", "classic.dark", "high-contrast.dark"], dark.Choices);
+        Assert.Equal(["netprints.dark", "high-contrast.dark"], dark.Choices);
         Assert.Equal(["netprints.light", "high-contrast.light"], light.Choices);
         Assert.Single(appearance.Items.OfType<ThemePreviewItemViewModel>());
     }

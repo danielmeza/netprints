@@ -20,13 +20,11 @@ token of the Light variant.
 |---|---|---|
 | NetPrints Dark | Dark | `netprints.dark` |
 | NetPrints Light | Light | `netprints.light` |
-| Classic Dark | Dark | `classic.dark` |
 | High contrast | Dark | `high-contrast.dark` |
 | High contrast | Light | `high-contrast.light` |
 
 - **NetPrints Dark** and **NetPrints Light** are the defaults: diamond type pins, a `#262626` canvas and a `#D9141414` card
   in Dark.
-- **Classic Dark** is the first look of the editor: triangle type pins, a `#000` canvas and a `#AA202020` card.
 - **High contrast** runs on Semi's own high-contrast variant of its slot (Aquatic for Dark, Desert for Light) with NetPrints
   tokens tuned for it: a solid border on every node, yellow or dark-blue focus and selection, stronger grid lines and
   an opaque, thicker wire. In `system` mode the tuned tokens apply, and Semi's variant is not selected.
@@ -50,6 +48,8 @@ user themes arrive, applies even if it fails them; the editor warns and names th
 | Wire | each wire, drawn at its opacity, against the canvas and the node body | 3:1 |
 | Card | the node body against the canvas | 1.15:1 |
 
+The ratio is compared as measured, with no rounding.
+
 ## The theme file
 
 A preset is a `*.nptheme.json` file with `schemaVersion` 1, an `id`, a `label`, a `base` (`dark` or `light`), an
@@ -58,13 +58,13 @@ optional `semiVariant` and a `tokens` map from a token name to a value written a
 ```json
 {
   "schemaVersion": 1,
-  "id": "classic.dark",
-  "label": "Classic Dark",
+  "id": "my.dark",
+  "label": "My Dark",
   "base": "dark",
   "tokens": {
-    "Pin.TypeShape": "triangle",
-    "Canvas.Background": "#FF000000",
-    "Node.CardBackground": "#AA202020"
+    "Canvas.Background": "#FF101010",
+    "Node.CardBackground": "#E0181818",
+    "Wire.Thickness": "5"
   }
 }
 ```

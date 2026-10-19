@@ -4,7 +4,7 @@ using NetPrints.Editor.State;
 
 namespace NetPrints.Editor.Theming;
 
-/// <summary>The presets embedded in the editor (FR-068): NetPrints Dark, NetPrints Light, Classic Dark and High contrast for each variant.</summary>
+/// <summary>The presets embedded in the editor (FR-068): NetPrints Dark, NetPrints Light and High contrast for each variant.</summary>
 public static class ThemePresets
 {
     private const string ResourcePrefix = "NetPrints.Editor.Theming.Presets.";

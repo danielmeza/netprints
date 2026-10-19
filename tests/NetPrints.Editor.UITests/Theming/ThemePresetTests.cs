@@ -75,24 +75,11 @@ public class ThemePresetTests
         object?[] lightBefore = Snapshot(ThemeBase.Light);
         object? darkCanvas = Resolve("Canvas.Background", ThemeVariant.Dark);
 
-        overlay.Apply(ThemeBase.Dark, ThemePresets.Resolve(ThemeBase.Dark, "classic.dark", out _));
+        overlay.Apply(ThemeBase.Dark, ThemePresets.Resolve(ThemeBase.Dark, "high-contrast.dark", out _));
 
         Assert.Equal(lightBefore, Snapshot(ThemeBase.Light));
         Assert.NotEqual(darkCanvas, Resolve("Canvas.Background", ThemeVariant.Dark));
         Assert.Equal(Color.Parse("#FF000000"), Assert.IsType<Color>(Resolve("Canvas.Background", ThemeVariant.Dark)));
-    }
-
-    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
-    public void ClassicDarkGivesTheBlackCanvasTheTrianglePinsAndTheTranslucentCard()
-    {
-        var overlay = new ThemeOverlay(App);
-        using IDisposable restore = new ThemeOverlayScope(App);
-
-        overlay.Apply(ThemeBase.Dark, ThemePresets.Resolve(ThemeBase.Dark, "classic.dark", out _));
-
-        Assert.Equal(Color.Parse("#FF000000"), Assert.IsType<Color>(Resolve("Canvas.Background", ThemeVariant.Dark)));
-        Assert.Equal(Color.Parse("#AA202020"), Assert.IsAssignableFrom<ISolidColorBrush>(Resolve("Node.CardBackground", ThemeVariant.Dark)).Color);
-        Assert.Same(Resolve("Pin.TypeShape.Triangle", ThemeVariant.Dark), Resolve("Pin.TypeShape", ThemeVariant.Dark));
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
@@ -102,7 +89,7 @@ public class ThemePresetTests
         using IDisposable restore = new ThemeOverlayScope(App);
         object?[] before = Snapshot(ThemeBase.Dark);
 
-        overlay.Apply(ThemeBase.Dark, ThemePresets.Resolve(ThemeBase.Dark, "classic.dark", out _));
+        overlay.Apply(ThemeBase.Dark, ThemePresets.Resolve(ThemeBase.Dark, "high-contrast.dark", out _));
         overlay.Apply(ThemeBase.Dark, ThemePresets.Resolve(ThemeBase.Dark, EditorSettings.DefaultDarkPreset, out _));
 
         Assert.Equal(before, Snapshot(ThemeBase.Dark));
@@ -144,10 +131,10 @@ public class ThemePresetTests
         using IDisposable restore = new ThemeOverlayScope(App);
         try
         {
-            applier.Apply(new EditorSettings { Theme = EditorTheme.Dark, DarkPreset = "classic.dark", LightPreset = "high-contrast.light" });
+            applier.Apply(new EditorSettings { Theme = EditorTheme.Dark, DarkPreset = "high-contrast.dark", LightPreset = "high-contrast.light" });
             Assert.Equal(Color.Parse("#FF000000"), Assert.IsType<Color>(Resolve("Canvas.Background", ThemeVariant.Dark)));
             Assert.Equal(Color.Parse("#FFFFFFFF"), Assert.IsType<Color>(Resolve("Canvas.Background", ThemeVariant.Light)));
-            Assert.Equal(ThemeVariant.Dark, App.RequestedThemeVariant);
+            Assert.Equal(ThemeVariant.Dark, App.RequestedThemeVariant?.InheritVariant);
 
             applier.Apply(new EditorSettings { Theme = EditorTheme.Light });
             Assert.Equal(Color.Parse("#FF262626"), Assert.IsType<Color>(Resolve("Canvas.Background", ThemeVariant.Dark)));

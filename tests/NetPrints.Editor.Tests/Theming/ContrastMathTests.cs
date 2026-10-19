@@ -52,4 +52,13 @@ public class ContrastMathTests
 
         Assert.Equal(Color.FromArgb(100, 10, 20, 30), faded);
     }
+
+    [Theory]
+    [InlineData(1.14998, 1.15, false)]
+    [InlineData(1.15, 1.15, true)]
+    [InlineData(4.4999, 4.5, false)]
+    [InlineData(2.9999, 3.0, false)]
+    [InlineData(3.137, 3.0, true)]
+    public void ACheckPassesOnlyWhenTheExactRatioReachesTheMinimum(double ratio, double minimum, bool passed) =>
+        Assert.Equal(passed, new ContrastCheck(ContrastGates.CardGate, "a / b", ratio, minimum).Passed);
 }

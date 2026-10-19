@@ -1623,6 +1623,7 @@ T076, Checkpoint C2, gate items measured on this head (Release).
 - **Decision (high contrast)**: one file per variant, with an optional `semiVariant`. In system mode the high-contrast tokens apply without the Semi variant.
 - **Decision (plain resources)**: sizes and fonts stay plain resources.
 - **Decision (aliases)**: there is no alias table yet.
+- **Corrected (T112-3, DD-7; owner 2026-10-18)**: Classic Dark is removed and `ContrastCheck.Passed` compares the exact ratio.
 
 ## Batch D1-CP (T098, Checkpoint D1)
 

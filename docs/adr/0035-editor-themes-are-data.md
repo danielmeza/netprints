@@ -45,7 +45,7 @@ It takes the first free number after 0034.
      - a per-variant overlay loader that writes into `Application.Resources.ThemeDictionaries[Dark|Light]`, so a
        `darkPreset` never leaks into Light (a flat key in `Resources` beats its theme dictionaries);
      - the embedded presets: **NetPrints Dark** (the new defaults), **NetPrints Light**, **Classic Dark** (triangle pins,
-       `#000` canvas, `#AA202020` card) and **High contrast**, built on Semi's own high-contrast variants (Aquatic,
+       `#000` canvas, `#AA202020` card) (removed by Amendment 1) and **High contrast**, built on Semi's own high-contrast variants (Aquatic,
        Desert, Dusk, NightSky; Aquatic derives from Dark and Desert from Light) plus NetPrints tokens tuned for them;
      - wire opacity and thickness as per-variant tokens, and the inspector tokens that ADR-0036 needs;
      - a theme settings page, and the reserved `themes` field in the extension manifest, before the Extensibility
@@ -103,3 +103,13 @@ It takes the first free number after 0034.
 - The extension conformance kit gains a check that a declared theme loads no code (ADR-0010 amendment).
 - Related: the product mark is approved for now and will be redesigned later (roadmap candidate); the details panel's
   editors use these tokens ([ADR-0036](0036-member-defaults-and-editor-metadata.md)).
+
+## Amendment 1 (owner, 2026-10-18): the Classic preset is removed; it only mimicked the legacy editor
+
+The owner: "Este producto nunca salió o se usó, no creo que valga la pena mantener el classic … que sea el último error o
+esfuerzo que le dedicamos a algo del editor anterior" (this product never shipped or was used; the classic is not worth
+keeping; let it be the last effort spent on anything of the old editor). The embedded presets are NetPrints Dark, NetPrints
+Light and High contrast for each variant. The contrast gates compare the exact ratio, without the two-decimal rounding that
+let Classic's card (1.14998:1) pass the 1.15:1 gate. A stored `darkPreset` of `classic.dark` is an unknown id: the variant's
+default applies with a log entry (decision 7). The contact sheet's Classic Dark tiles are gone. Anything that exists only to
+mimic the legacy editor is removed, not fixed.

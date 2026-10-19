@@ -368,14 +368,13 @@ expected folder; `netprints run -lp` starts the same process request.
 
 ### User Story 8 - Theme presets (Priority: P2)
 
-A user chooses a preset for Dark and one for Light (NetPrints Dark, Classic Dark or High contrast; NetPrints Light or
-High contrast) on the Appearance page and sees it applied at once. Every visual element of the editor is a theme
+A user chooses a preset for Dark and one for Light (NetPrints Dark or High contrast; NetPrints Light or High contrast)
+on the Appearance page and sees it applied at once. Every visual element of the editor is a theme
 token, so presets can change any of them.
 
 **Why this priority**: B0 of ADR-0035 (owner, 2026-10-13); the presets are embedded data and need the settings page.
 
-**Independent Test**: Choose Classic Dark: the canvas turns `#000`, pins become triangles, nothing restarts; switch to
-Light: the Light preset applies and Classic Dark does not leak into it.
+**Independent Test**: Choose High contrast for Dark: the canvas turns `#000` and every node gets a solid border, nothing restarts; switch to Light: the Light preset applies and the Dark preset does not leak into it.
 
 **Acceptance Scenarios**:
 
@@ -830,9 +829,7 @@ preset lists while the extension is loaded.
   docs MUST list the tokens from the catalogue.
 - **FR-067**: Presets MUST be applied as a per-variant overlay in the application's Dark and Light theme dictionaries,
   so a Dark preset never affects Light; a test MUST pin the overlay precedence.
-- **FR-068**: The embedded presets MUST be NetPrints Dark, NetPrints Light, Classic Dark (triangle pins, `#000`
-  canvas, `#AA202020` card) and High contrast (on Semi's high-contrast variants with tuned NetPrints tokens); each MUST
-  pass the contrast gates.
+- **FR-068**: The embedded presets MUST be NetPrints Dark, NetPrints Light and High contrast (on Semi's high-contrast variants with tuned NetPrints tokens; in System mode the tuned tokens apply on the plain variant, ADR-0035 Amendment 2); each MUST pass the contrast gates on the exact ratio. (Owner, 2026-10-18: the Classic Dark preset is removed; it only mimicked the legacy editor.)
 - **FR-069**: The Appearance page MUST offer the mode (Dark, Light, System) and the `darkPreset` and `lightPreset`
   choices, applied at once; the preset settings MUST be strings parsed at the boundary, and an unknown value falls back
   to the variant's default with a log entry (ADR-0035 decision 7).
@@ -1039,7 +1036,7 @@ These IDs moved to roadmap phase P3c on 2026-10-16 and are not reused in P3.
   paths, a bare name on `PATH`), the editor and `netprints run` build the identical process request (program, argument
   list, working directory, environment); the argument round-trip test covers at least 30 cases, including quotes,
   backslashes, spaces and empty arguments.
-- **SC-009**: Each of the 4 built-in presets passes 100% of the contrast gates; switching presets needs 0 restarts; a
+- **SC-009**: Each built-in preset passes 100% of the contrast gates, measured on the exact ratio; switching presets needs 0 restarts; a
   Dark preset changes 0 Light token values (overlay test).
 - **SC-010**: For all 6 C# target workspace fixtures, the editor, `netprints regen` and the SDK generate target write
   byte-identical files.

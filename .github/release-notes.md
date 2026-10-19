@@ -38,7 +38,7 @@
 
 **Added:** every command can be rebound on the Keyboard shortcuts page, with conflict resolution; your changes are stored as differences from the defaults in the `keyboard` section.
 
-**Added:** theme presets per variant (NetPrints Dark, NetPrints Light, Classic Dark, High contrast) chosen on Settings › Appearance with `darkPreset` and `lightPreset`, applied without a restart. Every theme token is in a catalogue, and a preset that fails the contrast gate is reported.
+**Added:** theme presets per variant (NetPrints Dark, NetPrints Light, High contrast) chosen on Settings › Appearance with `darkPreset` and `lightPreset`, applied without a restart. Every theme token is in a catalogue, and a preset that fails the contrast gate is reported.
 
 **Added:** the status bar shows the error and warning counts, the number of selected nodes and the zoom level of the open graph. Their texts, with one form for a single item and one for several, are in the resx.
 
