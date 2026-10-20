@@ -18,7 +18,7 @@ internal sealed record ExtensionOrigin(string Id, string Name, string AssemblyNa
 /// <summary>Who holds one assembly identity in the process.</summary>
 /// <param name="Listed">The listed extensions whose load context holds it, in list order.</param>
 /// <param name="Editor">Whether the editor's own load context holds it too, and no listed extension without a context of its own claims it.</param>
-/// <param name="Unknown">Whether another load context that belongs to no listed extension holds it too.</param>
+/// <param name="Unknown">Whether another load context that belongs to no listed extension holds it too, other than a context named after the id of a listed extension whose own context holds it (an earlier copy of that extension).</param>
 internal sealed record AssemblyHolders(IReadOnlyList<ExtensionOrigin> Listed, bool Editor, bool Unknown);
 
 /// <summary>

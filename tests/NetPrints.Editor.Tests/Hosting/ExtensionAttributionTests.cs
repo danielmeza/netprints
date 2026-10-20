@@ -223,6 +223,17 @@ public sealed class ExtensionAttributionTests
     }
 
     [Fact]
+    public void AnUncertainMainFrameStopsBeforeACertainCallerFurtherOut()
+    {
+        ExtensionOrigin dep = Origin("DepMain", "dep");
+        ExtensionOrigin user = Origin("UserMain", "user");
+
+        ExtensionOrigin? decided = ExtensionAttribution.Decide([Full("UserMain"), Full("DepMain")], Holdings((Full("UserMain"), new AssemblyHolders([user], false, true)), (Full("DepMain"), Held(dep))));
+
+        Assert.Null(decided);
+    }
+
+    [Fact]
     public void ACopyOfALibraryTheDefaultContextAlsoHoldsNamesNone()
     {
         var context = new AssemblyLoadContext("fx.copy", isCollectible: true);
@@ -639,6 +650,48 @@ public sealed class ExtensionAttributionTests
             retired.Unload();
             other.Unload();
             elsewhere.Unload();
+        }
+    }
+
+    [Fact]
+    public void ASameIdContextHoldingAnotherLibraryVersionNamesNone()
+    {
+        var served = new AssemblyLoadContext("x", isCollectible: true);
+        var sameId = new AssemblyLoadContext("x", isCollectible: true);
+        try
+        {
+            LoadLib(served);
+            Exception exception = ThrownBy(LoadLib(sameId, "2.0.0.0"));
+            var x = new ExtensionOrigin("x", "Fixture x", "Fx.Main", Path.Combine("extensions", "x"), Context: served);
+            var attribution = new ExtensionAttribution(() => [x]);
+
+            Assert.Null(attribution.Find(exception));
+        }
+        finally
+        {
+            served.Unload();
+            sameId.Unload();
+        }
+    }
+
+    [Fact]
+    public void ASameIdContextHoldingAMainAssemblyTheServedCopyLacksNamesNone()
+    {
+        var served = new AssemblyLoadContext("x", isCollectible: true);
+        var sameId = new AssemblyLoadContext("x", isCollectible: true);
+        try
+        {
+            LoadLib(served, "1.0.0.0", "Fx.Main");
+            Exception exception = ThrownBy(LoadLib(sameId, "2.0.0.0", "Fx.Main"));
+            var x = new ExtensionOrigin("x", "Fixture x", "Fx.Main", Path.Combine("extensions", "x"), Context: served);
+            var attribution = new ExtensionAttribution(() => [x]);
+
+            Assert.Null(attribution.Find(exception));
+        }
+        finally
+        {
+            served.Unload();
+            sameId.Unload();
         }
     }
 
