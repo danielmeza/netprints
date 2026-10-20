@@ -731,7 +731,8 @@ preset lists while the extension is loaded.
   and the layout passes that run through its holder, are contained (a failure there is reported once per view and the
   view is replaced by the placeholder); any other exception from an extension's view code, such as a later
   self-invalidated layout, attach, render or an event handler, reaches the editor's error dialog, which names the
-  extension (display name and id) whose code threw, says the details are in the log, shows the extension's folder and
+  extension (display name and id) whose code threw (when the stack does not identify one extension for certain, it
+  names none and shows the generic text), says the details are in the log, shows the extension's folder and
   says how to stop loading it: for a per-user copy, by moving or deleting that folder and restarting; for a project's
   own copy, which the project's build needs, by removing the project from Trusted projects on the Extensions page and
   choosing Don't load when it is opened again (disabling an extension is FR-098, P3c). An exception from a

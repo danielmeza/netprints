@@ -163,9 +163,10 @@ is rejected with `NPX013`, and a conflicting one is reported (`NPX004` or `NPX00
 the extension's other contributions. A data template that throws while it builds its view shows a placeholder that names
 your extension, and the editor log has the exception (event 1044). An exception your view throws while it is built or laid
 out through its holder gets the same placeholder; any other exception from your view code reaches the error dialog, which names
-your extension and shows its folder (an exception in a binding is logged as a binding error instead). An exception
-thrown inside a library your extension ships names your extension only when neither the editor nor another extension
-loads a library with the same name; otherwise the dialog names no extension.
+your extension and shows its folder (an exception in a binding is logged as a binding error instead). The dialog names
+your extension when your main assembly's code is on the stack and no other loaded copy of that assembly version could be
+the one that ran. When the exception comes only from a library your extension ships, it names your extension only if
+neither the editor nor another extension loads the same version of that library; otherwise it names none.
 
 The editor puts the root of each contributed view inside a holder element, so a child selector such as
 `ContentPresenter > local:MyView` no longer matches it. Style the view by its own type, or with a descendant selector.
