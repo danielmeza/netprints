@@ -731,10 +731,10 @@ preset lists while the extension is loaded.
   and the layout passes that run through its holder, are contained (a failure there is reported once per view and the
   view is replaced by the placeholder); any other exception from an extension's view code, such as a later
   self-invalidated layout, attach, render or an event handler, reaches the editor's error dialog, which names the
-  extension (display name and id) whose code threw, says the details are in the log and says the user can stop
-  loading it by removing its folder from the extension folders on the Extensions page or, for a project's copy, by
-  no longer trusting the project there (disabling an extension is FR-098, P3c). An exception from a binding is not
-  one of these: Avalonia turns it into a binding error in the log, and it does not reach the dialog.
+  extension (display name and id) whose code threw, says the details are in the log, shows the extension's folder and
+  says the user can stop loading it by moving or deleting that folder or, for a project's copy, by no longer trusting
+  the project on the Extensions page, then restarting (disabling an extension is FR-098, P3c). An exception from a
+  binding is not one of these: Avalonia turns it into a binding error in the log, and it does not reach the dialog.
 - **FR-035**: Registry issues (duplicate ids, gesture conflicts in a scope, a contribution naming an unknown id) MUST
   become extension diagnostics shown in Errors and logged; the first registration wins and built-in contributions
   always register first (ADR-0020).

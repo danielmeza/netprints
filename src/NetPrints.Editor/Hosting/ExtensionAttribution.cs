@@ -10,8 +10,9 @@ namespace NetPrints.Editor.Hosting;
 /// <param name="Id">The extension id.</param>
 /// <param name="Name">The display name.</param>
 /// <param name="AssemblyName">The simple name of the extension's main assembly.</param>
+/// <param name="Folder">The folder that holds the extension's manifest.</param>
 /// <param name="Context">The load context of the extension; every assembly loaded in it, when the exception is attributed, belongs to the extension. <see langword="null"/> when only the main assembly counts.</param>
-internal sealed record ExtensionOrigin(string Id, string Name, string AssemblyName, AssemblyLoadContext? Context = null);
+internal sealed record ExtensionOrigin(string Id, string Name, string AssemblyName, string Folder, AssemblyLoadContext? Context = null);
 
 /// <summary>
 /// Finds the extension whose code threw an exception, by the assembly of the stack frames (FR-034): the first frame whose
@@ -32,7 +33,12 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
                 .. host.Current.Results.OfType<ExtensionLoadResult.Loaded>()
                     .Select(result => (Result: result, Main: ExtensionAssemblies.Find(result.ManifestPath, result.Manifest.Assembly, result.Id, NullLogger.Instance)))
                     .Where(found => found.Main?.GetName().Name is not null)
-                    .Select(found => new ExtensionOrigin(found.Result.Id, found.Result.Manifest.Name, found.Main?.GetName().Name ?? string.Empty, OwnContext(found.Main))),
+                    .Select(found => new ExtensionOrigin(
+                        found.Result.Id,
+                        found.Result.Manifest.Name,
+                        found.Main?.GetName().Name ?? string.Empty,
+                        Path.GetDirectoryName(found.Result.ManifestPath ?? string.Empty) ?? string.Empty,
+                        OwnContext(found.Main))),
             ]);
     }
 
@@ -110,12 +116,12 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
     /// <summary>Builds the text of the error dialog for an exception an extension threw.</summary>
     /// <param name="origin">The extension.</param>
     /// <param name="exception">The exception.</param>
-    /// <returns>The text: who threw, what the user can do, then the exception.</returns>
+    /// <returns>The text: who threw, its folder, what the user can do, then the exception.</returns>
     public static string Describe(ExtensionOrigin origin, Exception exception)
     {
         ArgumentNullException.ThrowIfNull(origin);
         ArgumentNullException.ThrowIfNull(exception);
-        return TextFormat.Of(Strings.Message_ExtensionError, origin.Name, origin.Id, exception.ToString());
+        return TextFormat.Of(Strings.Message_ExtensionError, origin.Name, origin.Id, origin.Folder, exception.ToString());
     }
 
     private static IEnumerable<Exception> Visit(Exception exception)

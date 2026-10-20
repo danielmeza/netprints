@@ -10,7 +10,8 @@ public sealed class ExtensionAttributionTests
 {
     private static readonly string ThisAssembly = typeof(ExtensionAttributionTests).Assembly.GetName().Name ?? string.Empty;
 
-    private static ExtensionOrigin Origin(string assemblyName, string id = "fx.one") => new(id, "Fixture one", assemblyName);
+    private static ExtensionOrigin Origin(string assemblyName, string id = "fx.one") =>
+        new(id, "Fixture one", assemblyName, Path.Combine("extensions", id));
 
     private static Func<ExtensionOrigin, string, bool> Held(Dictionary<string, string[]> held) =>
         (origin, name) => held.TryGetValue(origin.Id, out string[]? names) && names.Contains(name, StringComparer.Ordinal);
@@ -82,8 +83,8 @@ public sealed class ExtensionAttributionTests
             MethodInfo thrown = dependency.GetType(typeof(ExtensionAttributionTests).FullName ?? string.Empty)?.GetMethod(nameof(Thrown), BindingFlags.NonPublic | BindingFlags.Static)
                 ?? throw new InvalidOperationException("The copy has no Thrown method.");
             Exception exception = Assert.IsAssignableFrom<Exception>(thrown.Invoke(null, [new InvalidOperationException("boom")]));
-            var inContext = new ExtensionAttribution(() => [new ExtensionOrigin("fx.one", "Fixture one", "Fx.Main", context)]);
-            var elsewhere = new ExtensionAttribution(() => [new ExtensionOrigin("fx.one", "Fixture one", "Fx.Main", new AssemblyLoadContext("fx.empty", isCollectible: true))]);
+            var inContext = new ExtensionAttribution(() => [new ExtensionOrigin("fx.one", "Fixture one", "Fx.Main", Path.Combine("extensions", "fx.one"), context)]);
+            var elsewhere = new ExtensionAttribution(() => [new ExtensionOrigin("fx.one", "Fixture one", "Fx.Main", Path.Combine("extensions", "fx.one"), new AssemblyLoadContext("fx.empty", isCollectible: true))]);
 
             Assert.Equal("fx.one", inContext.Find(exception)?.Id);
             Assert.Null(elsewhere.Find(exception));
@@ -161,13 +162,17 @@ public sealed class ExtensionAttributionTests
     [Fact]
     public void TheMessageNamesTheExtensionAndWhatTheUserCanDoNow()
     {
-        string text = ExtensionAttribution.Describe(Origin(ThisAssembly), new InvalidOperationException("boom"));
+        ExtensionOrigin origin = Origin(ThisAssembly);
+        string text = ExtensionAttribution.Describe(origin, new InvalidOperationException("boom"));
 
         Assert.Contains("Fixture one", text, StringComparison.Ordinal);
         Assert.Contains("fx.one", text, StringComparison.Ordinal);
         Assert.Contains("log", text, StringComparison.Ordinal);
-        Assert.Contains("extension folders", text, StringComparison.Ordinal);
+        Assert.Contains(origin.Folder, text, StringComparison.Ordinal);
+        Assert.Contains("move or delete that folder", text, StringComparison.Ordinal);
+        Assert.Contains("restart NetPrints", text, StringComparison.Ordinal);
         Assert.Contains("trusting the project", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("extension folders", text, StringComparison.Ordinal);
         Assert.DoesNotContain("disable", text, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("boom", text, StringComparison.Ordinal);
     }

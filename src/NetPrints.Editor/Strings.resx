@@ -226,9 +226,9 @@
     <value>Extension error</value>
   </data>
   <data name="Message.ExtensionError" xml:space="preserve">
-    <value>The extension "{0}" ({1}) threw this error. The details are in the log. To stop loading it, remove its folder from the extension folders on the Extensions page, or, for a project's copy, stop trusting the project there.
+    <value>The extension "{0}" ({1}) threw this error. The details are in the log. Its folder is {2}. To stop loading it, move or delete that folder, or, for a project's copy, stop trusting the project on the Extensions page, then restart NetPrints.
 
-{2}</value>
+{3}</value>
   </data>
   <data name="Message.UnsupportedProjectFile" xml:space="preserve">
     <value>'{0}' is not a NetPrints project: only '.csproj' projects are supported. Nothing was opened.</value>

@@ -161,8 +161,9 @@ extension fail to load. The facet and its descriptors are experimental (`NPXE000
 Every id an extension adds starts with its manifest id (`com.example.sample.openPanel`); a contribution without the prefix
 is rejected with `NPX013`, and a conflicting one is reported (`NPX004` or `NPX006`) with the first kept. Neither stops
 the extension's other contributions. A data template that throws while it builds its view shows a placeholder that names
-your extension, and the editor log has the exception (event 1044). An exception your view throws while it is built or laid out
-through its holder gets the same placeholder; any other exception from your view code reaches the error dialog, which names your extension.
+your extension, and the editor log has the exception (event 1044). An exception your view throws while it is built or laid
+out through its holder gets the same placeholder; any other exception from your view code reaches the error dialog, which names
+your extension and shows its folder (an exception in a binding is logged as a binding error instead).
 
 The editor puts the root of each contributed view inside a holder element, so a child selector such as
 `ContentPresenter > local:MyView` no longer matches it. Style the view by its own type, or with a descendant selector.
