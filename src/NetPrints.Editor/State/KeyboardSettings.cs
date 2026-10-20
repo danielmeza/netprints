@@ -76,7 +76,12 @@ internal sealed class KeyBindingListConverter : JsonConverter<IReadOnlyList<KeyB
             string command = element.ValueKind == JsonValueKind.Object && element.TryGetProperty("command", out JsonElement named) && named.ValueKind == JsonValueKind.String
                 ? TextFormat.Of(Strings.Settings_Keyboard_EntryCommand, named.GetString())
                 : "";
-            return new KeyBindingOverride { RawJson = element.GetRawText(), Problem = TextFormat.Of(Strings.Settings_Keyboard_EntryProblem, index, command, ex.Message) };
+            return new KeyBindingOverride
+            {
+                RawJson = element.GetRawText(),
+                Problem = TextFormat.Of(Strings.Settings_Keyboard_EntryProblem, index, command, ex.Message),
+                ProblemSummary = TextFormat.Of(Strings.Settings_Keyboard_EntryProblemSummary, command, ex.Message),
+            };
         }
     }
 
@@ -131,6 +136,10 @@ public sealed record KeyBindingOverride
     /// <summary>Gets why the entry could not be read, naming its index and command; <see langword="null"/> for a readable entry.</summary>
     [JsonIgnore]
     public string? Problem { get; init; }
+
+    /// <summary>Gets why the entry could not be read, naming its command but not its position, for the "Not loaded" row; <see langword="null"/> for a readable entry.</summary>
+    [JsonIgnore]
+    public string? ProblemSummary { get; init; }
 
     /// <summary>Gets the name of the command's scope when the entry was written; it is kept for the "Not loaded" list.</summary>
     [Description("The scope of the command when the entry was written")]

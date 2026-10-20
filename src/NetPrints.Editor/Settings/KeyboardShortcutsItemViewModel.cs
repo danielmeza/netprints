@@ -9,11 +9,11 @@ using NetPrints.Extensibility.Settings;
 namespace NetPrints.Editor.Settings;
 
 /// <summary>An override of a command that is not loaded, kept in the file and listed under "Not loaded".</summary>
-/// <param name="summary">The command id with the gestures the entry adds and removes.</param>
+/// <param name="summary">The command id with the gestures the entry adds and removes, or, for an entry kept as written, why it was not loaded.</param>
 /// <param name="remove">Deletes the entry.</param>
 internal sealed partial class NotLoadedRowViewModel(string summary, Func<Task> remove) : ObservableObject
 {
-    /// <summary>Gets the command id with the gestures the entry adds and removes.</summary>
+    /// <summary>Gets the command id with the gestures the entry adds and removes, or, for an entry kept as written, why it was not loaded.</summary>
     public string Summary { get; } = summary;
 
     [RelayCommand]
@@ -314,7 +314,7 @@ internal sealed partial class KeyboardShortcutsItemViewModel : SettingsItemViewM
         foreach (KeyBindingOverride entry in bindings.NotLoaded)
         {
             NotLoaded.Add(new NotLoadedRowViewModel(
-                entry.Problem ?? string.Format(CultureInfo.CurrentCulture, Strings.Settings_Keyboard_NotLoadedSummary, entry.Command, string.Join(", ", entry.Add), string.Join(", ", entry.Remove)),
+                entry.ProblemSummary ?? string.Format(CultureInfo.CurrentCulture, Strings.Settings_Keyboard_NotLoadedSummary, entry.Command, string.Join(", ", entry.Add), string.Join(", ", entry.Remove)),
                 () => editor.RemoveEntryAsync(entry, CancellationToken.None)));
         }
 

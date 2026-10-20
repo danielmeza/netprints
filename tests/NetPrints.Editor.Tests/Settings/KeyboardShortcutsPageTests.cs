@@ -273,9 +273,29 @@ public sealed class KeyboardShortcutsPageTests : IDisposable
 
         NotLoadedRowViewModel row = Assert.Single(page.NotLoaded);
 
-        Assert.Contains("entry 0", row.Summary, StringComparison.Ordinal);
+        Assert.Contains("Kept as written and not loaded", row.Summary, StringComparison.Ordinal);
         Assert.Contains("ext.a", row.Summary, StringComparison.Ordinal);
+        Assert.DoesNotContain("entry ", row.Summary, StringComparison.Ordinal);
         Assert.DoesNotContain("(add: ;", row.Summary, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task RemovingAKeptEntryLeavesNoStalePositionOnTheOthers()
+    {
+        Directory.CreateDirectory(folder);
+        await File.WriteAllTextAsync(
+            FilePath,
+            """{"keyboard":{"bindings":[{"command":"ext.a","add":"Ctrl+Alt+J"},{"command":"ext.b","add":"Ctrl+Alt+K"}]}}""",
+            TestContext.Current.CancellationToken);
+        JsonFileSettingsStore store = NewStore();
+        KeyboardShortcutsItemViewModel page = Open(NewRegistry(store), store);
+        NotLoadedRowViewModel first = page.NotLoaded.Single(row => row.Summary.Contains("ext.a", StringComparison.Ordinal));
+
+        await first.RemoveCommand.ExecuteAsync(null);
+
+        NotLoadedRowViewModel remaining = Assert.Single(page.NotLoaded);
+        Assert.Contains("ext.b", remaining.Summary, StringComparison.Ordinal);
+        Assert.DoesNotContain("entry ", remaining.Summary, StringComparison.Ordinal);
     }
 
     [Fact]
