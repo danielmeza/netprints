@@ -1,6 +1,8 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using NetPrints.Editor.Hosting;
 
 namespace NetPrints.Editor.Tests.Hosting;
@@ -13,8 +15,8 @@ public sealed class ExtensionAttributionTests
     private static ExtensionOrigin Origin(string assemblyName, string id = "fx.one") =>
         new(id, "Fixture one", assemblyName, Path.Combine("extensions", id));
 
-    private static Func<ExtensionOrigin, string, bool> Held(Dictionary<string, string[]> held) =>
-        (origin, name) => held.TryGetValue(origin.Id, out string[]? names) && names.Contains(name, StringComparer.Ordinal);
+    private static Func<string, ExtensionOrigin?> SoleHolder(params (string Name, ExtensionOrigin Origin)[] holders) =>
+        name => holders.Where(holder => holder.Name == name).Select(holder => holder.Origin).Distinct().ToList() is [var only] ? only : null;
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static Exception Thrown(Exception exception)
@@ -77,14 +79,12 @@ public sealed class ExtensionAttributionTests
     public void AnExceptionFromADependencyLoadedInTheExtensionsContextIsAttributedToIt()
     {
         var context = new AssemblyLoadContext("fx.dependency", isCollectible: true);
+        var empty = new AssemblyLoadContext("fx.empty", isCollectible: true);
         try
         {
-            Assembly dependency = context.LoadFromAssemblyPath(typeof(ExtensionAttributionTests).Assembly.Location);
-            MethodInfo thrown = dependency.GetType(typeof(ExtensionAttributionTests).FullName ?? string.Empty)?.GetMethod(nameof(Thrown), BindingFlags.NonPublic | BindingFlags.Static)
-                ?? throw new InvalidOperationException("The copy has no Thrown method.");
-            Exception exception = Assert.IsAssignableFrom<Exception>(thrown.Invoke(null, [new InvalidOperationException("boom")]));
+            Exception exception = ThrownBy(LoadLib(context));
             var inContext = new ExtensionAttribution(() => [new ExtensionOrigin("fx.one", "Fixture one", "Fx.Main", Path.Combine("extensions", "fx.one"), context)]);
-            var elsewhere = new ExtensionAttribution(() => [new ExtensionOrigin("fx.one", "Fixture one", "Fx.Main", Path.Combine("extensions", "fx.one"), new AssemblyLoadContext("fx.empty", isCollectible: true))]);
+            var elsewhere = new ExtensionAttribution(() => [new ExtensionOrigin("fx.one", "Fixture one", "Fx.Main", Path.Combine("extensions", "fx.one"), empty)]);
 
             Assert.Equal("fx.one", inContext.Find(exception)?.Id);
             Assert.Null(elsewhere.Find(exception));
@@ -93,7 +93,96 @@ public sealed class ExtensionAttributionTests
         finally
         {
             context.Unload();
+            empty.Unload();
         }
+    }
+
+    [Fact]
+    public void ALibraryAnUnlistedContextAlsoHoldsNamesNone()
+    {
+        var listed = new AssemblyLoadContext("fx.listed", isCollectible: true);
+        var unlisted = new AssemblyLoadContext("fx.unlisted", isCollectible: true);
+        try
+        {
+            LoadLib(listed);
+            Exception exception = ThrownBy(LoadLib(unlisted));
+            var attribution = new ExtensionAttribution(() => [new ExtensionOrigin("a", "Fixture a", "Fx.Main", Path.Combine("extensions", "a"), listed)]);
+
+            Assert.Null(attribution.Find(exception));
+        }
+        finally
+        {
+            listed.Unload();
+            unlisted.Unload();
+        }
+    }
+
+    [Fact]
+    public void AMainFrameOfAnInnerExceptionBeatsALibraryFrameOfTheOuterOneThroughFind()
+    {
+        var context = new AssemblyLoadContext("fx.listed", isCollectible: true);
+        try
+        {
+            Exception outer = ThrownBy(LoadLib(context), Thrown(new ArgumentException("inner")));
+            var a = new ExtensionOrigin("a", "Fixture a", "Fx.Main", Path.Combine("extensions", "a"), context);
+            var attribution = new ExtensionAttribution(() => [a, Origin(ThisAssembly, "b")]);
+
+            Assert.Equal("b", attribution.Find(outer)?.Id);
+        }
+        finally
+        {
+            context.Unload();
+        }
+    }
+
+    private static Assembly LoadLib(AssemblyLoadContext context)
+    {
+        SyntaxTree tree = CSharpSyntaxTree.ParseText("namespace Fx { public static class Lib { public static void Throw(System.Exception inner) { throw new System.InvalidOperationException(\"boom\", inner); } } }");
+        var compilation = CSharpCompilation.Create(
+            "Fx.Lib",
+            [tree],
+            [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)],
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        using var stream = new MemoryStream();
+        Assert.True(compilation.Emit(stream).Success);
+        stream.Position = 0;
+        return context.LoadFromStream(stream);
+    }
+
+    private static Exception ThrownBy(Assembly lib, Exception? inner = null)
+    {
+        MethodInfo method = lib.GetType("Fx.Lib")?.GetMethod("Throw") ?? throw new InvalidOperationException("The library has no Throw method.");
+        try
+        {
+            method.Invoke(null, [inner]);
+        }
+        catch (TargetInvocationException failure) when (failure.InnerException is not null)
+        {
+            return failure.InnerException;
+        }
+
+        throw new InvalidOperationException("The library did not throw.");
+    }
+
+    [Fact]
+    public void LibraryFramesThatNameTwoExtensionsNameNone()
+    {
+        ExtensionOrigin a = Origin("AMain", "a");
+        ExtensionOrigin dep = Origin("DepMain", "dep");
+
+        ExtensionOrigin? decided = ExtensionAttribution.Decide(["Lib", "AViews"], [a, dep], SoleHolder(("Lib", dep), ("AViews", a)));
+
+        Assert.Null(decided);
+    }
+
+    [Fact]
+    public void LibraryFramesThatAllNameOneExtensionNameIt()
+    {
+        ExtensionOrigin a = Origin("AMain", "a");
+
+        ExtensionOrigin? decided = ExtensionAttribution.Decide(["Lib", "AViews"], [a], SoleHolder(("Lib", a), ("AViews", a)));
+
+        Assert.Equal("a", decided?.Id);
     }
 
     [Fact]
@@ -110,7 +199,7 @@ public sealed class ExtensionAttributionTests
         ExtensionOrigin a = Origin("AMain", "a");
         ExtensionOrigin b = Origin("BMain", "b");
 
-        ExtensionOrigin? decided = ExtensionAttribution.Decide(["Lib", "BMain"], [a, b], Held(new() { ["a"] = ["AMain", "Lib"], ["b"] = ["BMain", "Lib"] }));
+        ExtensionOrigin? decided = ExtensionAttribution.Decide(["Lib", "BMain"], [a, b], SoleHolder(("AMain", a), ("Lib", a), ("BMain", b), ("Lib", b)));
 
         Assert.Equal("b", decided?.Id);
     }
@@ -121,7 +210,7 @@ public sealed class ExtensionAttributionTests
         ExtensionOrigin dep = Origin("DepMain", "dep");
         ExtensionOrigin user = Origin("UserMain", "user");
 
-        ExtensionOrigin? decided = ExtensionAttribution.Decide(["Lib", "UserMain"], [dep, user], Held(new() { ["dep"] = ["DepMain", "Lib"], ["user"] = ["UserMain"] }));
+        ExtensionOrigin? decided = ExtensionAttribution.Decide(["Lib", "UserMain"], [dep, user], SoleHolder(("DepMain", dep), ("Lib", dep), ("UserMain", user)));
 
         Assert.Equal("user", decided?.Id);
     }
@@ -132,7 +221,7 @@ public sealed class ExtensionAttributionTests
         ExtensionOrigin a = Origin("AMain", "a");
         ExtensionOrigin b = Origin("BMain", "b");
 
-        ExtensionOrigin? decided = ExtensionAttribution.Decide(["Lib", "Host"], [a, b], Held(new() { ["a"] = ["AMain", "Lib"], ["b"] = ["BMain"] }));
+        ExtensionOrigin? decided = ExtensionAttribution.Decide(["Lib", "Host"], [a, b], SoleHolder(("AMain", a), ("Lib", a), ("BMain", b)));
 
         Assert.Equal("a", decided?.Id);
     }
@@ -143,7 +232,7 @@ public sealed class ExtensionAttributionTests
         ExtensionOrigin a = Origin("AMain", "a");
         ExtensionOrigin b = Origin("BMain", "b");
 
-        ExtensionOrigin? decided = ExtensionAttribution.Decide(["Lib", "Host"], [a, b], Held(new() { ["a"] = ["AMain", "Lib"], ["b"] = ["BMain", "Lib"] }));
+        ExtensionOrigin? decided = ExtensionAttribution.Decide(["Lib", "Host"], [a, b], SoleHolder(("AMain", a), ("Lib", a), ("BMain", b), ("Lib", b)));
 
         Assert.Null(decided);
     }
@@ -154,7 +243,7 @@ public sealed class ExtensionAttributionTests
         ExtensionOrigin a = Origin("AMain", "a");
         ExtensionOrigin b = Origin("BMain", "b");
 
-        ExtensionOrigin? decided = ExtensionAttribution.Decide(["Lib", "Host", "BMain"], [a, b], Held(new() { ["a"] = ["AMain", "Lib"], ["b"] = ["BMain"] }));
+        ExtensionOrigin? decided = ExtensionAttribution.Decide(["Lib", "Host", "BMain"], [a, b], SoleHolder(("AMain", a), ("Lib", a), ("BMain", b)));
 
         Assert.Equal("b", decided?.Id);
     }

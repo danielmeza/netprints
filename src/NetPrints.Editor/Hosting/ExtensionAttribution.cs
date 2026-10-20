@@ -16,8 +16,9 @@ internal sealed record ExtensionOrigin(string Id, string Name, string AssemblyNa
 
 /// <summary>
 /// Finds the extension whose code threw an exception, by the assembly of the stack frames (FR-034): the first frame whose
-/// assembly is an extension's main assembly decides. When there is none, the first frame whose assembly exactly one
-/// extension's load context holds decides, and a library that several extensions hold is skipped.
+/// assembly is an extension's main assembly decides. When there is none, a frame counts only when its library is held by
+/// exactly one load context in the whole process and that context is a listed extension's; the counting frames must all name
+/// the same extension, else none is named. Naming an innocent extension is worse than naming none, because the user then removes the wrong one.
 /// </summary>
 /// <param name="origins">The loaded extensions now; the first listed of two sharing a main assembly name wins, so list the copy serving the session first.</param>
 internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> origins)
@@ -70,15 +71,15 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
             }
         }
 
-        return Decide(frames, known, Holds);
+        return Decide(frames, known, SoleHolders(known));
     }
 
     /// <summary>Decides which loaded extension, if any, the frames belong to.</summary>
     /// <param name="frames">The simple assembly names, innermost frame first, exception by exception.</param>
     /// <param name="known">The loaded extensions, in the order they are listed.</param>
-    /// <param name="holds">Says whether an extension's load context holds an assembly with the simple name.</param>
+    /// <param name="soleHolder">Returns, for a simple assembly name, the listed extension whose load context is the only one in the process holding it, or <see langword="null"/>.</param>
     /// <returns>The extension, or <see langword="null"/> when no frame belongs to one.</returns>
-    internal static ExtensionOrigin? Decide(IReadOnlyList<string> frames, IReadOnlyList<ExtensionOrigin> known, Func<ExtensionOrigin, string, bool> holds)
+    internal static ExtensionOrigin? Decide(IReadOnlyList<string> frames, IReadOnlyList<ExtensionOrigin> known, Func<string, ExtensionOrigin?> soleHolder)
     {
         foreach (string frame in frames)
         {
@@ -89,28 +90,24 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
             }
         }
 
+        ExtensionOrigin? counted = null;
         foreach (string frame in frames)
         {
-            ExtensionOrigin? holder = null;
-            int holders = 0;
-            foreach (ExtensionOrigin candidate in known)
+            ExtensionOrigin? holder = soleHolder(frame);
+            if (holder is null)
             {
-                if (!holds(candidate, frame))
-                {
-                    continue;
-                }
-
-                holder = candidate;
-                holders++;
+                continue;
             }
 
-            if (holders == 1)
+            if (counted is not null && !ReferenceEquals(counted, holder))
             {
-                return holder;
+                return null;
             }
+
+            counted = holder;
         }
 
-        return null;
+        return counted;
     }
 
     /// <summary>Builds the text of the error dialog for an exception an extension threw.</summary>
@@ -146,6 +143,19 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
     private static AssemblyLoadContext? OwnContext(Assembly? main) =>
         main is not null && AssemblyLoadContext.GetLoadContext(main) is { } context && context != AssemblyLoadContext.Default ? context : null;
 
-    private static bool Holds(ExtensionOrigin origin, string simpleName) =>
-        origin.Context?.Assemblies.Any(assembly => string.Equals(assembly.GetName().Name, simpleName, StringComparison.Ordinal)) ?? false;
+    private static Func<string, ExtensionOrigin?> SoleHolders(IReadOnlyList<ExtensionOrigin> known)
+    {
+        Dictionary<string, AssemblyLoadContext?> holders = new(StringComparer.Ordinal);
+        foreach (AssemblyLoadContext context in AssemblyLoadContext.All)
+        {
+            foreach (string name in context.Assemblies.Select(assembly => assembly.GetName().Name).OfType<string>().Distinct(StringComparer.Ordinal))
+            {
+                holders[name] = holders.ContainsKey(name) ? null : context;
+            }
+        }
+
+        return name => holders.TryGetValue(name, out AssemblyLoadContext? only) && only is not null
+            ? known.FirstOrDefault(origin => ReferenceEquals(origin.Context, only))
+            : null;
+    }
 }
