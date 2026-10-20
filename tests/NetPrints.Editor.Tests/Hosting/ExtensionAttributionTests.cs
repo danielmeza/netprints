@@ -297,4 +297,18 @@ public sealed class ExtensionAttributionTests
         Assert.True(origins.Single(origin => origin.Id == "fx.editor").ProjectCopy);
         Assert.False(origins.Single(origin => origin.Id == "netprints.test").ProjectCopy);
     }
+
+    [Fact]
+    public async Task ForMarksAProjectFolderWrittenWithATrailingSeparatorAsTheProjectsCopy()
+    {
+        string userFolder = TestExtensionFolder.Folder;
+        string projectFolder = TestExtensionFolder.FixtureFolder("Fx.Editor", "fx.editor") + Path.DirectorySeparatorChar;
+        await using var host = new ExtensionHost(ExtensionLoaderOptions.BuiltInOnly with { ExtensionFolders = [userFolder] }, NullLoggerFactory.Instance);
+        await host.LoadForProjectAsync([projectFolder], TestContext.Current.CancellationToken);
+        var attribution = ExtensionAttribution.For(host, () => [projectFolder]);
+
+        IReadOnlyList<ExtensionOrigin> origins = attribution.Origins();
+
+        Assert.True(origins.Single(origin => origin.Id == "fx.editor").ProjectCopy);
+    }
 }

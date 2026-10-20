@@ -57,7 +57,7 @@ public sealed class ExtensionContributionRecorder
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(loaded);
         ArgumentNullException.ThrowIfNull(projectFolders);
-        string[] folders = [.. projectFolders.Select(Path.GetFullPath)];
+        string[] folders = [.. projectFolders.Select(ExtensionPaths.Normalize)];
         foreach (ExtensionLoadResult.Loaded result in loaded.Results.OfType<ExtensionLoadResult.Loaded>())
         {
             Recording? recording;
@@ -71,8 +71,9 @@ public sealed class ExtensionContributionRecorder
                 continue;
             }
 
-            bool fromProject = result.ManifestPath is { } path
-                && folders.Contains(Path.GetDirectoryName(Path.GetFullPath(path)) ?? string.Empty, StringComparer.Ordinal);
+            string? manifestFolder = result.ManifestPath is { } path ? Path.GetDirectoryName(Path.GetFullPath(path)) : null;
+            bool fromProject = manifestFolder is { Length: > 0 } folder
+                && folders.Contains(ExtensionPaths.Normalize(folder), ExtensionPaths.Comparer);
             ExtensionManifest? userManifest;
             lock (gate)
             {

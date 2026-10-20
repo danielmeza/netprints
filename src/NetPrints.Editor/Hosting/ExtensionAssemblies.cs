@@ -22,10 +22,9 @@ internal static class ExtensionAssemblies
         }
 
         string path = Path.GetFullPath(assemblyFile, folder);
-        StringComparison comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         Assembly? found = AssemblyLoadContext.All
             .SelectMany(context => context.Assemblies)
-            .FirstOrDefault(assembly => !assembly.IsDynamic && assembly.Location.Length > 0 && string.Equals(Path.GetFullPath(assembly.Location), path, comparison));
+            .FirstOrDefault(assembly => !assembly.IsDynamic && assembly.Location.Length > 0 && ExtensionPaths.Same(assembly.Location, path));
         if (found is null)
         {
             Log.ExtensionAssemblyNotFound(logger, extensionId, path);

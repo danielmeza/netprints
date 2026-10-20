@@ -34,7 +34,7 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
         ArgumentNullException.ThrowIfNull(projectFolders);
         return new ExtensionAttribution(() =>
         {
-            HashSet<string> project = [.. projectFolders().Select(Path.GetFullPath)];
+            HashSet<string> project = new(projectFolders().Select(ExtensionPaths.Normalize), ExtensionPaths.Comparer);
             return
             [
                 .. host.Current.Results.OfType<ExtensionLoadResult.Loaded>()
@@ -46,7 +46,7 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
                         found.Result.Manifest.Name,
                         found.Main?.GetName().Name ?? string.Empty,
                         found.Folder,
-                        found.Folder.Length > 0 && project.Contains(Path.GetFullPath(found.Folder)),
+                        found.Folder.Length > 0 && project.Contains(ExtensionPaths.Normalize(found.Folder)),
                         OwnContext(found.Main))),
             ];
         });
