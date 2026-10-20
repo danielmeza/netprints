@@ -2241,3 +2241,47 @@ Commits: 7d1a0a9a (R5-1), ce59b7a5 (R5-2, R5-3), d9769ae4 (R5-4).
 3. `bash eng/trim-warnings.sh`: 8, baseline 8.
 - Slip: the first edit of `ExtensionAttribution.cs` was denied by the skill-path hook before the three Avalonia skills were loaded; it was redone after loading them, and the other edits of that call had already applied.
 - Slip: for R6-2 the red run used a scaffold (`ProjectCopy` and the `For` parameter present, never set) so the tests compiled, then the logic and resource followed.
+
+## Batch R7-F (round-7 review fixes)
+
+Commits: d4e52f83 (R7-1), a0005a34 (R7-2, R7-3), 77b8d109 (R7-4, R7-5).
+
+### R7-1
+- Changed: new `src/NetPrints.Editor/Hosting/ExtensionPaths.cs` with `Comparer` (case-insensitive on Windows, ordinal elsewhere), `Normalize` (full path without a trailing separator) and `Same`. `ExtensionAttribution.For` builds its project set from normalized folders and normalizes the manifest folder before the lookup; `ExtensionContributionRecorder.PopulateSessionGroup` normalizes the project folders and the manifest folder and compares them with the same comparer; `ExtensionAssemblies.Find` compares `assembly.Location` with the path through `Same`, so its local `comparison` is gone.
+- Red: `ExtensionPathsTests` did not compile against the missing type (3 CS0103 errors in `ExtensionPathsTests.cs`). With the class present, `ForMarksAProjectFolderWrittenWithATrailingSeparatorAsTheProjectsCopy` failed with `Assert.True() Failure`, `Expected: True`, `Actual: False` (23 total, 1 failed).
+- Green: `ExtensionAttributionTests`, `ExtensionPathsTests`, `ExtensionAssembliesTests` and `ExtensionContributionRecorderTests` 30 of 30.
+- Decision (delegated): the new `For` test passes the trailing separator to both the host load and the `For` folders, as the review's fix suggested, so it pins the one input end to end.
+- Slip: the implementation was applied before the `For` red run. The two `For` lines were temporarily reverted to `Path.GetFullPath` to record the failure above, then reapplied.
+
+### R7-2, R7-3 and R7-5a
+- Identity pinned first: the Roslyn helper `LoadLib` gained a version parameter that emits `[assembly: System.Reflection.AssemblyVersion("...")]`, and `AFrameNamesItsAssemblyByFullNameWithTheVersion` showed that a `Fx.Lib` frame compiled for `1.2.3.0` carries that version in `DeclaringAssemblyName`, whose normalized form equals the loaded assembly's normalized `FullName`. The assumption held, so the batch went on.
+- Changed: `ExtensionAttribution` has an `AssemblyHolders(Listed, Other)` record and `Decide(IReadOnlyList<string> frames, Func<string, AssemblyHolders> holders)`, with frames normalized as `new AssemblyName(text).FullName` (a parse failure skips the frame) and the simple name taken from the same text. `Find` walks `AssemblyLoadContext.All` once per call into a map from identity to holding contexts; `Holders` builds `Listed` (context-bound origins in list order, and a null-context origin when Default holds the identity and its `AssemblyName` is the simple name) and `Other` (a holding context no listed origin maps to). Pass 1 names the first frame whose holders have a listed origin with that simple name when `Other` is false and every listed origin shares one id; a frame that fails those conditions is skipped. Pass 2, only when pass 1 named none, counts frames with exactly one listed origin and `Other` false, and names the first when every counting frame has the same id, else none. `SoleHolders` is removed. The class summary states the rule, and `origins` no longer says the first of two sharing a main assembly name wins.
+- Shape first: the `Decide` signature, `AssemblyHolders`, the identity map and the adapted existing tests went in together with today's pass-1 behaviour (`FirstOrDefault` on a simple-name match) and the new pass 2. The first run of the adapted class was therefore the one below: 27 total, the 3 failures all new tests, the adapted ones green.
+- Red after the new tests (27 total, 3 failed):
+  - `AMainFrameAnUnlistedContextAlsoHoldsNamesNone`: `Assert.Null() Failure: Value is not null`, actual `ExtensionOrigin { Id = a, ... }`.
+  - `TwoExtensionsSharingAMainAssemblyNameNameNone`: `Assert.Null() Failure: Value is not null`, actual `ExtensionOrigin { Id = fx.p, ... }`.
+  - `AMainFrameTwoExtensionsWithDifferentIdsHoldNamesNone`: `Assert.Null() Failure: Value is not null`, actual `ExtensionOrigin { Id = a, ... }`.
+  - `TwoVersionsOfALibraryNameTheExtensionWhoseVersionThrew`, `ACopyOfALibraryTheDefaultContextAlsoHoldsNamesNone` and `AMainFrameTwoCopiesOfOneExtensionHoldNamesTheFirstListed` passed before the final pass-1 conditions, as expected.
+- Green: `ExtensionAttributionTests` 27 of 27.
+- Mutation (R7-5a): with `AssemblyLoadContext.All.Where(context => context != AssemblyLoadContext.Default)` in the walk, `ACopyOfALibraryTheDefaultContextAlsoHoldsNamesNone` failed (`Expected: null`, actual origin `a`), together with `AnExceptionThrownFromAnExtensionsAssemblyIsAttributedToIt` (`Expected: "fx.one"`, actual null), `AnInnerExceptionIsChecked` (same), and `AMainFrameOfAnInnerExceptionBeatsALibraryFrameOfTheOuterOneThroughFind` (`Expected: "b"`, actual `"a"`). The mutation was never committed and was reverted before the next build.
+- Docs: the guide sentence now states when the dialog names the extension for main-assembly frames and for library-only frames; FR-034 gained "(when the stack does not identify one extension for certain, it names none and shows the generic text)".
+- Decision (delegated): `Identity` catches `ArgumentException` and `FileLoadException` from `new AssemblyName` and skips the frame; any other failure keeps propagating.
+- Decision (delegated): the process-wide rule made the existing UI dialog test order-dependent. `ViewResourceLoaderTests` loads `Fx.Views` into a non-collectible context that stays in `AssemblyLoadContext.All`, so the dialog test's `Fx.Views` frames then had a second holder and named none. The rule was kept as settled and the test now compiles its own uniquely named `Fx.Late` extension (same manifest id and display name) at test time. This keeps the assertion the same without weakening it and removes the dependence on which class ran first.
+- Slip: the first compile-at-test-time version failed with CS0012 (`System.Runtime`, `System.Private.CoreLib`'s `Object`) because only the output folder and corelib were referenced; adding the runtime directory's assemblies fixed it.
+- Slip: the first full UI run failed `AViewThatThrowsOnALaterMeasureReachesTheErrorDialogNamingTheExtension` with `Assert.Contains() Failure: Sub-string not found`, `Not found: "NetPrints view resources fixture extension"` (the generic exception text was shown). The class passed alone, and failed again when run after `ViewResourceLoaderTests`, which confirmed the stale holder. The adapted test passes both alone and after `ViewResourceLoaderTests` (16 of 16).
+
+### R7-4 and R7-5b
+- Changed: `data-model.md` now says a wrong-typed keyboard entry is "reported with its command and the reason".
+- R7-5b: `UnhandledExceptionHandler` exposes its attribution internally, `HeadlessApp` exposes it to the UI tests, and `TheHandlerReadsTheOpenProjectsExtensionFolders` opens a trusted HelloWorld copy whose project declares `<NetPrintsExtension Include="ext/" />`, holding the `netprints.test` fixture, then asserts through the installed handler's attribution that the origin is a project copy.
+- Red/green: the new test was green at once (2 of 2 in the class). With `EditorComposition.InstallUnhandledExceptionHandler` temporarily passing `() => []`, it failed with `Assert.True() Failure`, `Expected: True`, `Actual: False`; the mutation was never committed, and the reverted line was green again (2 of 2).
+- Decision (delegated): no seam reaches the composition's wiring without a real project load. `shellHost` exists only after `CreateShellWindow`, and `ProjectLoader.ActiveExtensionFolders` has no setter (a test-only hook would be the ED-T14 kind the project avoids). The nearest seam is therefore `HeadlessApp` plus a real project load, which also pins R7-1's trailing separator end to end.
+
+### Gates and slips
+1. Release build: 0 warnings, 0 errors. `dotnet format --verify-no-changes --no-restore`: exit 0 (workspace load warning only).
+2. `tests/NetPrints.Editor.Tests` (Release, `--no-build`, fresh state and config folders, node reuse and MSBuild server off): 2294 total, 2293 passed, 1 skipped, 0 failed.
+3. `tests/NetPrints.Core.Tests` (same): 1074 total, 1074 passed, 0 skipped, 0 failed.
+4. `tests/NetPrints.Editor.UITests` (same): 1110 total, 1108 passed, 2 skipped, 0 failed (14m 55s).
+5. `bash eng/trim-warnings.sh`: 8, baseline 8.
+- Slip: the R7-1 implementation was applied before its `For` red run; the lines were temporarily reverted to record the failure and then reapplied.
+- Slip: after the first `bg-run.sh` slice returned 124, the next call created new temp folders and was rejected as "already used by a different command" (exit 2); re-issuing the exact original line attached correctly.
+- Slip: the first full UI run before the adaptation failed one existing test (R7-2's stale holder); the failure and its diagnosis are recorded above.
