@@ -56,6 +56,9 @@ public sealed class UnhandledExceptionHandler : IDisposable
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
     }
 
+    /// <summary>Gets the attribution the handler names an extension with, or <see langword="null"/> when it names none.</summary>
+    internal ExtensionAttribution? Attribution => attribution;
+
     private void OnDispatcherUnhandledException(object? sender, DispatcherUnhandledExceptionEventArgs e)
     {
         e.Handled = true;

@@ -4,6 +4,7 @@ using NetPrints.Core;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
+using NetPrints.Editor.Hosting.Avalonia;
 using NetPrints.Editor.References;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.UITests.Driving;
@@ -91,6 +92,9 @@ public sealed class HeadlessApp : IAsyncDisposable
     public Actor Actor { get; }
 
     public ProjectSessionViewModel? Session => Composition.Shell?.Session;
+
+    /// <summary>The attribution the installed error handler uses, for tests that pin the editor's wiring.</summary>
+    internal ExtensionAttribution? Attribution => (exceptionHandler as UnhandledExceptionHandler)?.Attribution;
 
     public static HeadlessApp Start() => new([]);
 
