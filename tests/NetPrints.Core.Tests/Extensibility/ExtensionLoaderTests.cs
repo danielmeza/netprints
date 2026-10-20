@@ -538,6 +538,45 @@ public class ExtensionLoaderTests : IDisposable
         Assert.Contains(registry.NodeKinds, kind => kind.Kind == "fx.libv1/Describe");
     }
 
+    // R8-1: the error attribution trusts a context's name as the id of the extension that created it.
+    [Fact]
+    public async Task EveryContextHoldingAnExtensionsMainAssemblyIsNamedAfterItsManifestId()
+    {
+        const string Source = """
+            using NetPrints.Extensibility;
+            public class Ext : INetPrintsExtension
+            {
+                public void Register(IExtensionBuilder builder) { }
+            }
+            """;
+        string search = Path.Combine(root, "search");
+        string baseUser = Path.Combine(search, "base-user");
+        string baseProject = Path.Combine(root, "base-project");
+        string user = Path.Combine(search, "user");
+        WriteManifest(baseUser, ManifestJson("test.base", "test.base.dll"));
+        Compile(baseUser, "test.base", Source);
+        WriteManifest(baseProject, ManifestJson("test.base", "test.base.dll"));
+        Compile(baseProject, "test.base", Source);
+        WriteManifest(user, ManifestJson("test.user", "test.user.dll", dependsOn: "test.base"));
+        string userAssembly = Compile(user, "test.user", Source);
+        await using var host = new ExtensionHost(Options(searchDirectories: [search]), new CollectingLoggerFactory());
+
+        string[] first = ContextNamesHolding(userAssembly);
+        await host.LoadForProjectAsync([baseProject], TestContext.Current.CancellationToken);
+        string[] afterReplacement = ContextNamesHolding(userAssembly);
+
+        Assert.Equal(["test.user"], first);
+        Assert.Equal(["test.user", "test.user"], afterReplacement);
+    }
+
+    private static string[] ContextNamesHolding(string assemblyPath) =>
+    [
+        .. AssemblyLoadContext.All
+            .Where(context => context.Assemblies.Any(assembly => !assembly.IsDynamic && assembly.Location.Length > 0 && Path.GetFullPath(assembly.Location) == Path.GetFullPath(assemblyPath)))
+            .Select(context => context.Name)
+            .OfType<string>(),
+    ];
+
     [Fact]
     public void ACancelledTokenThrowsOperationCanceled()
     {

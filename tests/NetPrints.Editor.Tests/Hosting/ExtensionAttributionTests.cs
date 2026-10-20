@@ -424,6 +424,131 @@ public sealed class ExtensionAttributionTests
     }
 
     [Fact]
+    public async Task ARetiredCopyOfTheSameExtensionVersionStillNamesTheExtension()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "netprints-attr-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            string search = Path.Combine(root, "search");
+            string project = Path.Combine(root, "project");
+            WriteExtension(Path.Combine(search, "fx.twin"));
+            WriteExtension(project);
+            await using var host = new ExtensionHost(ExtensionLoaderOptions.BuiltInOnly with { SearchDirectories = [search] }, NullLoggerFactory.Instance);
+            await host.LoadForProjectAsync([project], TestContext.Current.CancellationToken);
+            var attribution = ExtensionAttribution.For(host, () => [project]);
+            ExtensionOrigin served = Assert.Single(attribution.Origins(), origin => origin.Id == "fx.twin");
+            Assembly assembly = served.Context?.Assemblies.Single(candidate => candidate.GetName().Name == "Fx.Twin") ?? throw new InvalidOperationException("The served copy has no context.");
+
+            Assert.Equal("fx.twin", attribution.Find(ThrownFrom(assembly, "Fx.Twin.Boom"))?.Id);
+        }
+        finally
+        {
+            TestPaths.TryDelete(root);
+        }
+    }
+
+    private static void WriteExtension(string folder)
+    {
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(
+            Path.Combine(folder, "netprints-extension.json"),
+            """{ "id": "fx.twin", "name": "Twin", "version": "1.0.0", "assembly": "Fx.Twin.dll", "netprintsApi": "0.4", "dependsOn": [] }""");
+        string trusted = (string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") ?? string.Empty;
+        var compilation = CSharpCompilation.Create(
+            "Fx.Twin",
+            [CSharpSyntaxTree.ParseText("""
+                [assembly: System.Reflection.AssemblyVersion("1.0.0.0")]
+
+                namespace Fx.Twin
+                {
+                    public sealed class Ext : NetPrints.Extensibility.INetPrintsExtension
+                    {
+                        public void Register(NetPrints.Extensibility.IExtensionBuilder builder) { }
+                    }
+
+                    public static class Boom
+                    {
+                        public static void Throw(System.Exception inner) { throw new System.InvalidOperationException("boom", inner); }
+                    }
+                }
+                """)],
+            trusted.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries).Select(path => MetadataReference.CreateFromFile(path)),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        Assert.True(compilation.Emit(Path.Combine(folder, "Fx.Twin.dll")).Success);
+    }
+
+    private static Exception ThrownFrom(Assembly assembly, string typeName)
+    {
+        MethodInfo method = assembly.GetType(typeName)?.GetMethod("Throw") ?? throw new InvalidOperationException("The type has no Throw method.");
+        try
+        {
+            method.Invoke(null, [null]);
+        }
+        catch (TargetInvocationException failure) when (failure.InnerException is not null)
+        {
+            return failure.InnerException;
+        }
+
+        throw new InvalidOperationException("The method did not throw.");
+    }
+
+    [Fact]
+    public void AContextNamedAfterAListedExtensionIsARetiredCopyOnlyForAnIdentityTheServedCopyHolds()
+    {
+        var served = new AssemblyLoadContext("x", isCollectible: true);
+        var retired = new AssemblyLoadContext("x", isCollectible: true);
+        var other = new AssemblyLoadContext("y", isCollectible: true);
+        var elsewhere = new AssemblyLoadContext("z", isCollectible: true);
+        try
+        {
+            Assembly servedCopy = LoadLib(served);
+            Assembly retiredCopy = LoadLib(retired);
+            Assembly otherVersion = LoadLib(elsewhere, "2.0.0.0");
+            var x = new ExtensionOrigin("x", "Fixture x", "Fx.Main", Path.Combine("extensions", "x"), Context: served);
+            var attribution = new ExtensionAttribution(() => [x]);
+
+            Assert.Equal("x", attribution.Find(ThrownBy(servedCopy))?.Id);
+            Assert.Equal("x", attribution.Find(ThrownBy(retiredCopy))?.Id);
+            Assert.Null(attribution.Find(ThrownBy(otherVersion)));
+
+            Assembly unlistedCopy = LoadLib(other);
+            Assert.Null(attribution.Find(ThrownBy(unlistedCopy)));
+        }
+        finally
+        {
+            served.Unload();
+            retired.Unload();
+            other.Unload();
+            elsewhere.Unload();
+        }
+    }
+
+    [Fact]
+    public void ARetiredCopyNamedAfterAnExtensionWhoseCopyLacksTheIdentityDoesNotHideAnotherHolder()
+    {
+        var servedX = new AssemblyLoadContext("x", isCollectible: true);
+        var servedY = new AssemblyLoadContext("y", isCollectible: true);
+        var retired = new AssemblyLoadContext("x", isCollectible: true);
+        try
+        {
+            LoadLib(servedX, "2.0.0.0");
+            LoadLib(servedY);
+            Exception exception = ThrownBy(LoadLib(retired));
+            var x = new ExtensionOrigin("x", "Fixture x", "Fx.Main", Path.Combine("extensions", "x"), Context: servedX);
+            var y = new ExtensionOrigin("y", "Fixture y", "Fx.Other", Path.Combine("extensions", "y"), Context: servedY);
+            var attribution = new ExtensionAttribution(() => [x, y]);
+
+            Assert.Null(attribution.Find(exception));
+        }
+        finally
+        {
+            servedX.Unload();
+            servedY.Unload();
+            retired.Unload();
+        }
+    }
+
+    [Fact]
     public void TheMessageNamesTheExtensionAndWhatTheUserCanDoNow()
     {
         ExtensionOrigin origin = Origin(ThisAssembly);

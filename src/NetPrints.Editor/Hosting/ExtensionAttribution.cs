@@ -219,9 +219,12 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
             string simple = Simple(identity);
             List<ExtensionOrigin> listed = [.. known.Where(origin => Holds(origin, contexts, simple))];
             List<AssemblyLoadContext> others = [.. contexts.Where(context => !listed.Any(origin => Owns(origin, context, simple)))];
-            return new AssemblyHolders(listed, others.Contains(AssemblyLoadContext.Default), others.Any(context => context != AssemblyLoadContext.Default));
+            return new AssemblyHolders(listed, others.Contains(AssemblyLoadContext.Default), others.Any(context => context != AssemblyLoadContext.Default && !IsRetiredCopy(context, listed)));
         };
     }
+
+    private static bool IsRetiredCopy(AssemblyLoadContext context, IReadOnlyList<ExtensionOrigin> listed) =>
+        context.Name is { } name && listed.Any(origin => origin.Context is not null && string.Equals(origin.Id, name, StringComparison.Ordinal));
 
     private static bool Holds(ExtensionOrigin origin, IReadOnlyList<AssemblyLoadContext> contexts, string simple) =>
         origin.Context is null
