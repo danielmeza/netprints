@@ -2207,3 +2207,37 @@ Commits: 7d1a0a9a (R5-1), ce59b7a5 (R5-2, R5-3), d9769ae4 (R5-4).
 - Slip: while narrowing the hang, the namespace sweep and the class sweep used per-run `timeout` bounds, so the failing group was killed rather than reported; no tracked file changed.
 - Slip: for R5-2 the resource was edited before the red run; it was temporarily reverted to produce the failure, then reapplied.
 - Slip: this section was first appended with a shell here-document instead of the edit tool; the content is the same and later edits used the tool.
+
+## Batch R6-F (round-6 review fixes)
+
+### R6-1
+- Changed: `ExtensionAttribution.Decide` takes `soleHolder`, a function from a simple assembly name to the listed origin whose context is the only one in the process holding it. Pass 1 is unchanged. Pass 2 counts a frame only when `soleHolder` returns an origin; counting frames that name two different origins give `null`, none give `null`. `Find` builds `soleHolder` once per call from one walk of `AssemblyLoadContext.All`. The class summary and `docs/guide/extensions.md` state the rule.
+- Signature step first: `Decide` changed with today's behaviour kept (first counting frame wins), the five pure tests adapted, 13 of 13 green.
+- Red: `ALibraryAnUnlistedContextAlsoHoldsNamesNone` failed with `Assert.Null() Failure: Value is not null`, actual origin `a`; `LibraryFramesThatNameTwoExtensionsNameNone` failed with `Assert.Null() Failure: Value is not null`, actual origin `dep`. The other new tests (`LibraryFramesThatAllNameOneExtensionNameIt`, the rewritten dependency test, `AMainFrameOfAnInnerExceptionBeatsALibraryFrameOfTheOuterOneThroughFind`) passed before the change.
+- Green: `ExtensionAttributionTests` 17 of 17.
+- `AnExceptionFromADependencyLoadedInTheExtensionsContextIsAttributedToIt` now uses `Fx.Lib`, compiled in memory with Roslyn and loaded with `LoadFromStream`; its old fixture, a copy of the test assembly, is R6-1's case 1 (the default context also holds that name), so it could no longer name the extension.
+- Decision (delegated): `Microsoft.CodeAnalysis.CSharp` was already usable from `tests/NetPrints.Editor.Tests`; no package reference was added.
+- Decision (delegated): the pure tests build `soleHolder` from a list of (name, origin) pairs and return the origin only when exactly one distinct origin holds the name.
+- Decision (delegated): the through-`Find` R6-4 test has a different name from the pure R5-F test with the same intent (`...ThroughFind`).
+
+### R6-2
+- Changed: `ExtensionOrigin` gains `ProjectCopy` (default `false`, after `Folder`, before `Context`). `ExtensionAttribution.For(host, projectFolders)` marks an origin as a project copy when its manifest folder is one of the project's extension folders. `Message.ExtensionError` loses the trust advice; `Message.ExtensionErrorProjectCopy` is new and `Describe` picks by `ProjectCopy`. FR-034 reworded as the batch gives. `ExtensionErrorAttributionTests` asserts the fixture's folder.
+- Verified from the code: "Trusted projects" is the Extensions page label (`Settings.netprints.trustedProjects.Label`); `ProjectLoader.IsTrusted` reads the settings on each open, so after removing the entry the next open of the project shows the trust dialog, whose button is "Don't load" (`TrustDialog.axaml`), with no restart. The text keeps "then open the project again".
+- Red: `TheMessageForAProjectsCopyKeepsTheFolderAndPointsAtTrust` failed with `Assert.Contains() Failure: Sub-string not found`, `Not found: "keep it"`; `ForMarksTheExtensionsLoadedFromAProjectFolderAsProjectCopies` failed with `Assert.True() Failure`, `Expected: True`, `Actual: False`.
+- Green: `ExtensionAttributionTests` 19 of 19.
+- Decision (delegated): `IExtensionHost` is public and `ExtensionHost` keeps the project folders privately with no internal access from the editor, so the folders come from the editor's own `ProjectLoader` (new internal `ActiveExtensionFolders`) through a function passed to `For`; no public API changed. Project folders are the manifest folders themselves, so the match is on the full path of the manifest folder.
+- Decision (delegated): `ExtensionAttribution` gets an internal `Origins()` so the `For` test can read what `For` built without throwing from a real extension.
+- Decision (delegated): `TheMessageNamesTheExtensionAndWhatTheUserCanDoNow` now asserts the per-user text has no "Trusted projects" instead of the old "trusting the project"; the three test constructions of `ExtensionOrigin` that passed `Context` positionally use `Context:`.
+
+### R6-3 and R5-4 residual
+- Changed: `KeyboardSettings.ReadEntry` has no index; `Settings.Keyboard.EntryProblem` is "Kept as written and not loaded{0}: {1}", used for both the issue list and the "Not loaded" row; `EntryProblemSummary` and `ProblemSummary` are removed and the row uses `Problem`. The reason is "the value of '{path}' is not valid" when the `JsonException` has a path other than `$`, otherwise its message (NetPrints' own `EntryNotObject`). The `Problem` doc is back to "why the entry could not be read, naming its command".
+- Red: all 7 cases of `AWrongTypedEntryIsKeptRawAndListedWhileTheOthersLoad` failed with `Assert.Contains() Failure: Sub-string not found`, `Not found: "Kept as written and not loaded"` (actual text began "entry 1 (command 'probe.bad') was kept as written").
+- Green: `KeyboardSettingsLoadTests` 14 of 14; `KeyboardShortcutsPageTests` 17 of 17 unchanged.
+- Decision (delegated): the non-object cases carry NetPrints' own "an entry must be an object." text, which contains "entry ", so the test asserts no `entry \d` (no index) rather than no "entry ".
+
+### Gates and slips
+1. Release build: 0 warnings, 0 errors. `dotnet format --verify-no-changes --no-restore`: exit 0.
+2. `tests/NetPrints.Editor.Tests`: 2283 total, 2282 passed, 1 skipped, 0 failed. `tests/NetPrints.Core.Tests`: 1074 of 1074. `tests/NetPrints.Editor.UITests`: 1109 total, 1107 passed, 2 skipped, 0 failed (15m 12s). All Release, `--no-build`, fresh state and config folders, node reuse and MSBuild server off.
+3. `bash eng/trim-warnings.sh`: 8, baseline 8.
+- Slip: the first edit of `ExtensionAttribution.cs` was denied by the skill-path hook before the three Avalonia skills were loaded; it was redone after loading them, and the other edits of that call had already applied.
+- Slip: for R6-2 the red run used a scaffold (`ProjectCopy` and the `For` parameter present, never set) so the tests compiled, then the logic and resource followed.
