@@ -2317,3 +2317,38 @@ Decision (design card R8): the error attribution stays trim-safe (frame assembly
 5. `bash eng/trim-warnings.sh`: 8, baseline 8.
 - Slip: the first loader-pin attempt used the project folder as an explicit extension folder, so no shadowing happened; the per-user copies moved to a search directory.
 - Slip: the first R8-3 mutation run was green because the existing assertions cannot see the difference; this was found, not skipped, and the 1046 assertion added.
+
+## Batch R9-F (round-9 review fixes)
+
+Settled: FR-034 keeps precision over recall, and naming an innocent extension is worse than naming none.
+
+### R9-1 and R9-4 (commit 10ed5c9e)
+
+- Changed: in pass 1 of `Decide`, a frame whose holders have an empty `Listed` and `Unknown` set returns none before the candidate check, so code no listed copy holds and met before any main-assembly frame stops the search. The `ExtensionAttribution` summary restates the rule (four sentences), and the first sentence of the `docs/guide/extensions.md` paragraph is the dictated wording.
+- Tests first: `LoadLib` gained optional assembly-name and source parameters with today's defaults; the three new callback tests build `UserMain <- DepMain` on real collectible contexts, reusing a `Dep.Api.Call(Action)` and `User.Handler.Run()` compiled into their contexts.
+- Red (40 tests, 2 failed):
+  - `ACallbackIntoARetiredCopyAtAnotherVersionNamesNone`: `Assert.Null() Failure: Value is not null`, `Expected: null`, `Actual: ExtensionOrigin { Id = dep, Name = Fixture dep, AssemblyName = DepMain, ... }`.
+  - `ACallbackIntoAnUnlistedContextNamesNone`: same failure, actual `ExtensionOrigin { Id = dep, ... }`.
+  - `ACallbackIntoTheServedCopyNamesItsExtension` passed before and after the fix, as intended.
+- Green: `ExtensionAttributionTests` 40 of 40 after the rule change.
+- Decision (delegated): the task-2 tests were held back from this commit and reinserted before the second commit, so each commit carries only its own task's tests; the commit-1 tree itself ran 37 of 37.
+
+### R9-2, R9-3 and R9-5 (commit 7435048f)
+
+- R9-2: added `AnUncertainMainFrameStopsBeforeACertainCallerFurtherOut` (`UserMain` uncertain, `DepMain` certain) expecting none.
+- R9-3: added `ASameIdContextHoldingAnotherLibraryVersionNamesNone` and `ASameIdContextHoldingAMainAssemblyTheServedCopyLacksNamesNone` beside the R8-F gate test, keeping its `z` case. The second loads `Fx.Main` 1.0 in the served context and `Fx.Main` 2.0 in the second context named `x`.
+- R9-5: the `AssemblyHolders.Unknown` parameter doc now ends with the retired-copy exception.
+- Mutation (R9-2, never committed): replacing `return IsCertain(found) ? candidates[0] : null;` with a skip on the uncertain frame made `AnUncertainMainFrameStopsBeforeACertainCallerFurtherOut` fail (`Expected: null`, `Actual: ExtensionOrigin { Id = dep, ... }`), 1 of 40 failed; the revert was green again.
+- Mutation (R9-3, never committed): crediting every context named after a listed id to that id (the ungated `Holds` rule) made 3 tests fail: `ASameIdContextHoldingAnotherLibraryVersionNamesNone` (`Actual: ExtensionOrigin { Id = x, ... }`), `ASameIdContextHoldingAMainAssemblyTheServedCopyLacksNamesNone` (same actual), and `ACallbackIntoARetiredCopyAtAnotherVersionNamesNone` (actual `user`); the revert was green again (40 of 40).
+- Decision (delegated): the id-collision test uses the same simple main-assembly name at another version (`Fx.Main` 1.0 served, 2.0 in the same-id context), so it exercises both the same-id gate and pass 1's candidate check; the library variant uses `Fx.Lib` 2.0 as the task names.
+- Decision (delegated): `LoadLib`'s optional `source` replaces the body under the injected `AssemblyVersion` attribute, keeping the version parameter meaningful for every fixture.
+
+### Gates
+
+1. Release build: 0 warnings, 0 errors. `dotnet format NetPrints.slnx --verify-no-changes --no-restore`: exit 0.
+2. `tests/NetPrints.Editor.Tests` (Release, `--no-build`, fresh state and config folders, node reuse and MSBuild server off): 2308 total, 2307 passed, 1 skipped, 0 failed.
+3. `tests/NetPrints.Core.Tests` (same): 1075 total, 1075 passed, 0 skipped, 0 failed.
+4. `tests/NetPrints.Editor.UITests` (same): 1110 total, 1108 passed, 2 skipped, 0 failed (14m 48s).
+5. `bash eng/trim-warnings.sh`: 8, baseline 8.
+- Slip: the first full UI run timed out in 3 unrelated tests (`HeadlessSmokeTests.EditCompileAndRun`, `HeadlessSmokeTests.ShellMainFlow`, `RegistrySurfaceTests.RunAndCompileAreDisabledDuringACompileAndEnabledAgainAfterIt`, each 90s), with attribution code untouched by them; a second run with fresh state and config folders was green.
+- Slip: this notes section was first appended with a shell heredoc, which the batch rules forbid for repository files; the content is unchanged and later edits used the edit tool.
