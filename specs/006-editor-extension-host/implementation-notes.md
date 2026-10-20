@@ -2285,3 +2285,35 @@ Commits: d4e52f83 (R7-1), a0005a34 (R7-2, R7-3), 77b8d109 (R7-4, R7-5).
 - Slip: the R7-1 implementation was applied before its `For` red run; the lines were temporarily reverted to record the failure and then reapplied.
 - Slip: after the first `bg-run.sh` slice returned 124, the next call created new temp folders and was rejected as "already used by a different command" (exit 2); re-issuing the exact original line attached correctly.
 - Slip: the first full UI run before the adaptation failed one existing test (R7-2's stale holder); the failure and its diagnosis are recorded above.
+
+## Batch R8-F (round-8 review fixes)
+
+Decision (design card R8): the error attribution stays trim-safe (frame assembly identities, no `StackFrame.GetMethod`). `Holders` reports `Listed`, `Editor` and `Unknown`. A frame is neutral (nothing listed or unknown holds it), certain for one extension (listed copies of one id, no other holder) or uncertain. The main-assembly frame nearest the throw decides, and an uncertain one names none and stops. Without a main frame, library frames count when certain, and an uncertain one names none. A context named after a listed id is a retired copy, and ignored, only for an identity that listed origin's own context also holds. Rejected: exact provenance through `GetMethod` and `GetLoadContext` (not trim-safe, the ratchet is at 8 of 8, suppressions are banned) and documenting the loss (the per-user plus project copy coexistence is documented). Residual risk: when a retired copy of the same assembly version threw, the right extension is named with the served copy's folder and advice.
+
+### R8-2 (commit c83c208b)
+- Changed: `AssemblyHolders(Listed, Editor, Unknown)`; `Decide` stops with none on an uncertain main frame and, in pass 2, returns none on an uncertain frame; the existing pure tests got the new record shape with unchanged expectations.
+- Red (record adapted, old `Decide` logic): `AnUncertainMainFrameNearestTheThrowStopsTheSearchForADependencyLibrary`, `AMainFrameTwoExtensionsHoldStopsTheSearchForADependencyLibrary` and `AnUnlistedCallerFrameBesideACertainLibraryFrameNamesNone` each failed with `Assert.Null() Failure: Value is not null`, actual `ExtensionOrigin { Id = dep, ... }` (31 tests, 3 failed).
+- Green: `ExtensionAttributionTests` 31 of 31.
+
+### R8-1 (commit 7c70532f)
+- Changed: `Holders` ignores a context whose `Name` is the id of a listed origin whose own `Context` holds the identity.
+- Red: `ARetiredCopyOfTheSameExtensionVersionStillNamesTheExtension` (real host, search folder plus project folder with the same compiled extension) failed with `Expected: "fx.twin"`, `Actual: null`; `AContextNamedAfterAListedExtensionIsARetiredCopyOnlyForAnIdentityTheServedCopyHolds` failed with `Expected: "x"`, `Actual: null`.
+- Loader pin (`EveryContextHoldingAnExtensionsMainAssemblyIsNamedAfterItsManifestId`, Core tests): green at once, as it pins existing behaviour; it covers the first load and the replacement of a dependent's context after a project ships its own copy of the dependency.
+- Mutation (never committed): passing the whole list of loaded origins instead of those whose context holds the identity (the ungated rule) made `ARetiredCopyNamedAfterAnExtensionWhoseCopyLacksTheIdentityDoesNotHideAnotherHolder` fail with `Expected: null`, actual `ExtensionOrigin { Id = y, ... }`. Green again after the revert (34 of 34).
+- Decision (delegated): the card's second case (another version in the retired context) cannot tell the gate apart, because a retired context holding an identity no listed origin holds is unknown either way. The gate test therefore uses two listed extensions: the retired context named `x` holds an identity only `y` serves, and `x`'s own copy lacks it; the ungated rule then names `y`, the gated one names none.
+
+### R8-3 to R8-6 (commit 87c993d8)
+- R8-3: the shadowing case of `ExtensionContributionRecorderTests` is a theory over a project folder written with and without a trailing separator, and asserts the shadow warning (1046) that only the project's copy path reaches.
+- Mutation (never committed): reverting `ExtensionContributionRecorder.cs:60, 74-76` to exact string comparison failed only the trailing-separator case with `Assert.Single() Failure: The collection did not contain any matching items`. The existing assertions passed under the mutation, so the 1046 assertion was added.
+- R8-4: the `ExtensionAttribution` summary, the `Find` and `Decide` returns and `research.md` R27 state the rule.
+- R8-5: `docs/guide/extensions.md` carries the dictated two sentences.
+- R8-6: `LateThrowingView.cs` removed with `git rm` after `git grep` found no use.
+
+### Gates
+1. Release build: 0 warnings, 0 errors. `dotnet format --verify-no-changes --no-restore`: exit 0.
+2. `tests/NetPrints.Editor.Tests` (Release, `--no-build`, fresh state and config folders): 2302 total, 2301 passed, 1 skipped, 0 failed.
+3. `tests/NetPrints.Core.Tests` (same): 1075 total, 1075 passed.
+4. `tests/NetPrints.Editor.UITests` (same): 1110 total, 1108 passed, 2 skipped, 0 failed (15m 20s).
+5. `bash eng/trim-warnings.sh`: 8, baseline 8.
+- Slip: the first loader-pin attempt used the project folder as an explicit extension folder, so no shadowing happened; the per-user copies moved to a search directory.
+- Slip: the first R8-3 mutation run was green because the existing assertions cannot see the difference; this was found, not skipped, and the 1046 assertion added.
