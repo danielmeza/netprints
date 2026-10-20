@@ -164,10 +164,12 @@ the extension's other contributions. A data template that throws while it builds
 your extension, and the editor log has the exception (event 1044). An exception your view throws while it is built or laid
 out through its holder gets the same placeholder; any other exception from your view code reaches the error dialog, which names
 your extension and shows its folder (an exception in a binding is logged as a binding error instead). The dialog names
-your extension when the extension code nearest the throw is your main assembly's and nothing else loads that assembly
-version, apart from an earlier copy of your own extension the editor loaded in the same session (for example your per-user
-copy beside the project's copy). When the exception comes only from libraries your extension ships, it names your extension
-only if neither the editor nor another extension loads the same version of any of them; otherwise it names none.
+your extension when the nearest extension main assembly on the stack is yours (a library of an extension you depend on may
+be nearer the throw), nothing else loads that assembly version apart from an earlier copy of your own extension the editor
+loaded in the same session (for example your per-user copy beside the project's copy), and no code loaded outside the editor
+and its loaded extensions (for example by a load context your extension creates) is nearer the throw. When the exception
+comes only from libraries your extension ships, it names your extension only if neither the editor nor another extension
+loads the same version of any of them; otherwise it names none.
 
 The editor puts the root of each contributed view inside a holder element, so a child selector such as
 `ContentPresenter > local:MyView` no longer matches it. Style the view by its own type, or with a descendant selector.

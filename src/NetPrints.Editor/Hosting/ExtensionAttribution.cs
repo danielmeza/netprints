@@ -24,9 +24,10 @@ internal sealed record AssemblyHolders(IReadOnlyList<ExtensionOrigin> Listed, bo
 /// <summary>
 /// Finds the extension whose code threw an exception, by the full assembly name of the stack frames (FR-034). The main-assembly
 /// frame nearest the throw decides: it names its extension only when every context holding that identity belongs to listed copies
-/// of one extension, apart from an earlier copy of that extension's own version, and otherwise names none. When no main-assembly
-/// frame is on the stack, the library frames decide: each must be held by one extension only, all by the same one, and an
-/// uncertain frame names none. Naming an innocent extension is worse than naming none, because the user then removes the wrong one.
+/// of one extension, apart from an earlier copy of that extension's own version, and otherwise names none; a frame no listed copy
+/// holds, met before any main-assembly frame, also names none, so a caller is not named for code an unlisted context ran. When no
+/// main-assembly frame is on the stack, the library frames decide: each must be held by one extension only, all by the same one, and
+/// an uncertain frame names none. Naming an innocent extension is worse than naming none, because the user then removes the wrong one.
 /// </summary>
 /// <param name="origins">The loaded extensions now, in the order the session lists them.</param>
 internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> origins)
@@ -100,6 +101,11 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
         {
             string simple = Simple(frame);
             AssemblyHolders found = holders(frame);
+            if (found.Listed.Count == 0 && found.Unknown)
+            {
+                return null;
+            }
+
             ExtensionOrigin[] candidates = [.. found.Listed.Where(origin => string.Equals(origin.AssemblyName, simple, StringComparison.Ordinal))];
             if (candidates.Length == 0)
             {

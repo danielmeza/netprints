@@ -151,6 +151,78 @@ public sealed class ExtensionAttributionTests
     }
 
     [Fact]
+    public void ACallbackIntoARetiredCopyAtAnotherVersionNamesNone()
+    {
+        var depContext = new AssemblyLoadContext("dep", isCollectible: true);
+        var served = new AssemblyLoadContext("user", isCollectible: true);
+        var retired = new AssemblyLoadContext("user", isCollectible: true);
+        try
+        {
+            Assembly depMain = LoadLib(depContext, "1.0.0.0", "DepMain", DepSource);
+            LoadLib(served, "1.0.0.0", "UserMain", UserSource);
+            Assembly retiredMain = LoadLib(retired, "2.0.0.0", "UserMain", UserSource);
+            var dep = new ExtensionOrigin("dep", "Fixture dep", "DepMain", Path.Combine("extensions", "dep"), Context: depContext);
+            var user = new ExtensionOrigin("user", "Fixture user", "UserMain", Path.Combine("extensions", "user"), Context: served);
+            var attribution = new ExtensionAttribution(() => [dep, user]);
+
+            Assert.Null(attribution.Find(CallbackFrom(depMain, retiredMain)));
+        }
+        finally
+        {
+            depContext.Unload();
+            served.Unload();
+            retired.Unload();
+        }
+    }
+
+    [Fact]
+    public void ACallbackIntoAnUnlistedContextNamesNone()
+    {
+        var depContext = new AssemblyLoadContext("dep", isCollectible: true);
+        var served = new AssemblyLoadContext("user", isCollectible: true);
+        var unlisted = new AssemblyLoadContext("q", isCollectible: true);
+        try
+        {
+            Assembly depMain = LoadLib(depContext, "1.0.0.0", "DepMain", DepSource);
+            LoadLib(served, "1.0.0.0", "UserMain", UserSource);
+            Assembly unlistedMain = LoadLib(unlisted, "2.0.0.0", "UserMain", UserSource);
+            var dep = new ExtensionOrigin("dep", "Fixture dep", "DepMain", Path.Combine("extensions", "dep"), Context: depContext);
+            var user = new ExtensionOrigin("user", "Fixture user", "UserMain", Path.Combine("extensions", "user"), Context: served);
+            var attribution = new ExtensionAttribution(() => [dep, user]);
+
+            Assert.Null(attribution.Find(CallbackFrom(depMain, unlistedMain)));
+        }
+        finally
+        {
+            depContext.Unload();
+            served.Unload();
+            unlisted.Unload();
+        }
+    }
+
+    [Fact]
+    public void ACallbackIntoTheServedCopyNamesItsExtension()
+    {
+        var depContext = new AssemblyLoadContext("dep", isCollectible: true);
+        var served = new AssemblyLoadContext("user", isCollectible: true);
+        try
+        {
+            Assembly depMain = LoadLib(depContext, "1.0.0.0", "DepMain", DepSource);
+            Assembly servedMain = LoadLib(served, "1.0.0.0", "UserMain", UserSource);
+            var dep = new ExtensionOrigin("dep", "Fixture dep", "DepMain", Path.Combine("extensions", "dep"), Context: depContext);
+            var user = new ExtensionOrigin("user", "Fixture user", "UserMain", Path.Combine("extensions", "user"), Context: served);
+            var attribution = new ExtensionAttribution(() => [dep, user]);
+
+            Assert.Equal("user", attribution.Find(CallbackFrom(depMain, servedMain))?.Id);
+        }
+        finally
+        {
+            depContext.Unload();
+            served.Unload();
+        }
+    }
+
+    [Fact]
     public void ACopyOfALibraryTheDefaultContextAlsoHoldsNamesNone()
     {
         var context = new AssemblyLoadContext("fx.copy", isCollectible: true);
@@ -200,15 +272,39 @@ public sealed class ExtensionAttributionTests
         }
     }
 
-    private static Assembly LoadLib(AssemblyLoadContext context, string version = "1.0.0.0")
+    private const string LibSource = """namespace Fx { public static class Lib { public static void Throw(System.Exception inner) { throw new System.InvalidOperationException("boom", inner); } } }""";
+
+    private const string DepSource = """
+        namespace Dep
+        {
+            public static class Api
+            {
+                [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+                public static void Call(System.Action callback) { callback(); }
+            }
+        }
+        """;
+
+    private const string UserSource = """
+        namespace User
+        {
+            public static class Handler
+            {
+                [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+                public static void Run() { throw new System.InvalidOperationException("user boom"); }
+            }
+        }
+        """;
+
+    private static Assembly LoadLib(AssemblyLoadContext context, string version = "1.0.0.0", string assemblyName = "Fx.Lib", string? source = null)
     {
         SyntaxTree tree = CSharpSyntaxTree.ParseText($$"""
             [assembly: System.Reflection.AssemblyVersion("{{version}}")]
 
-            namespace Fx { public static class Lib { public static void Throw(System.Exception inner) { throw new System.InvalidOperationException("boom", inner); } } }
+            {{source ?? LibSource}}
             """);
         var compilation = CSharpCompilation.Create(
-            "Fx.Lib",
+            assemblyName,
             [tree],
             [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)],
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
@@ -216,6 +312,29 @@ public sealed class ExtensionAttributionTests
         Assert.True(compilation.Emit(stream).Success);
         stream.Position = 0;
         return context.LoadFromStream(stream);
+    }
+
+    private static Exception CallbackFrom(Assembly caller, Assembly callee)
+    {
+        MethodInfo target = callee.GetType("User.Handler")?.GetMethod("Run")
+            ?? throw new InvalidOperationException("The callee has no Run method.");
+        if (Delegate.CreateDelegate(typeof(Action), target) is not Action callback)
+        {
+            throw new InvalidOperationException("The callee's Run method is not an Action.");
+        }
+
+        MethodInfo call = caller.GetType("Dep.Api")?.GetMethod("Call")
+            ?? throw new InvalidOperationException("The caller has no Call method.");
+        try
+        {
+            call.Invoke(null, [callback]);
+        }
+        catch (TargetInvocationException failure) when (failure.InnerException is not null)
+        {
+            return failure.InnerException;
+        }
+
+        throw new InvalidOperationException("The callback did not throw.");
     }
 
     private static Exception ThrownBy(Assembly lib, Exception? inner = null)
