@@ -15,9 +15,10 @@ internal sealed record ExtensionOrigin(string Id, string Name, string AssemblyNa
 
 /// <summary>
 /// Finds the extension whose code threw an exception, by the assembly of the stack frames (FR-034): the first frame whose
-/// assembly belongs to a loaded extension decides. The outer exception is checked first, then the inner ones in order.
+/// assembly is an extension's main assembly decides. When there is none, the first frame whose assembly exactly one
+/// extension's load context holds decides, and a library that several extensions hold is skipped.
 /// </summary>
-/// <param name="origins">The loaded extensions now; the first of two sharing an assembly name wins, so list the copy serving the session first.</param>
+/// <param name="origins">The loaded extensions now; the first listed of two sharing a main assembly name wins, so list the copy serving the session first.</param>
 internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> origins)
 {
     /// <summary>Gets the attribution for the extensions the host has loaded now.</summary>
@@ -42,7 +43,68 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
     {
         ArgumentNullException.ThrowIfNull(exception);
         IReadOnlyList<ExtensionOrigin> known = origins();
-        return known.Count == 0 ? null : Visit(exception).Select(candidate => Match(candidate, known)).FirstOrDefault(origin => origin is not null);
+        if (known.Count == 0)
+        {
+            return null;
+        }
+
+        List<string> frames = [];
+        foreach (Exception candidate in Visit(exception))
+        {
+            foreach (StackFrame frame in new StackTrace(candidate, false).GetFrames())
+            {
+                string? assembly = DiagnosticMethodInfo.Create(frame)?.DeclaringAssemblyName;
+                if (assembly is null)
+                {
+                    continue;
+                }
+
+                int comma = assembly.IndexOf(',', StringComparison.Ordinal);
+                frames.Add((comma < 0 ? assembly : assembly[..comma]).Trim());
+            }
+        }
+
+        return Decide(frames, known, Holds);
+    }
+
+    /// <summary>Decides which loaded extension, if any, the frames belong to.</summary>
+    /// <param name="frames">The simple assembly names, innermost frame first, exception by exception.</param>
+    /// <param name="known">The loaded extensions, in the order they are listed.</param>
+    /// <param name="holds">Says whether an extension's load context holds an assembly with the simple name.</param>
+    /// <returns>The extension, or <see langword="null"/> when no frame belongs to one.</returns>
+    internal static ExtensionOrigin? Decide(IReadOnlyList<string> frames, IReadOnlyList<ExtensionOrigin> known, Func<ExtensionOrigin, string, bool> holds)
+    {
+        foreach (string frame in frames)
+        {
+            ExtensionOrigin? origin = known.FirstOrDefault(candidate => string.Equals(candidate.AssemblyName, frame, StringComparison.Ordinal));
+            if (origin is not null)
+            {
+                return origin;
+            }
+        }
+
+        foreach (string frame in frames)
+        {
+            ExtensionOrigin? holder = null;
+            int holders = 0;
+            foreach (ExtensionOrigin candidate in known)
+            {
+                if (!holds(candidate, frame))
+                {
+                    continue;
+                }
+
+                holder = candidate;
+                holders++;
+            }
+
+            if (holders == 1)
+            {
+                return holder;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>Builds the text of the error dialog for an exception an extension threw.</summary>
@@ -78,29 +140,6 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
     private static AssemblyLoadContext? OwnContext(Assembly? main) =>
         main is not null && AssemblyLoadContext.GetLoadContext(main) is { } context && context != AssemblyLoadContext.Default ? context : null;
 
-    private static bool Owns(ExtensionOrigin origin, string simpleName) =>
-        string.Equals(origin.AssemblyName, simpleName, StringComparison.Ordinal)
-        || (origin.Context?.Assemblies.Any(assembly => string.Equals(assembly.GetName().Name, simpleName, StringComparison.Ordinal)) ?? false);
-
-    private static ExtensionOrigin? Match(Exception exception, IReadOnlyList<ExtensionOrigin> known)
-    {
-        foreach (StackFrame frame in new StackTrace(exception, false).GetFrames())
-        {
-            string? assembly = DiagnosticMethodInfo.Create(frame)?.DeclaringAssemblyName;
-            if (assembly is null)
-            {
-                continue;
-            }
-
-            int comma = assembly.IndexOf(',', StringComparison.Ordinal);
-            string simple = (comma < 0 ? assembly : assembly[..comma]).Trim();
-            ExtensionOrigin? origin = known.FirstOrDefault(candidate => Owns(candidate, simple));
-            if (origin is not null)
-            {
-                return origin;
-            }
-        }
-
-        return null;
-    }
+    private static bool Holds(ExtensionOrigin origin, string simpleName) =>
+        origin.Context?.Assemblies.Any(assembly => string.Equals(assembly.GetName().Name, simpleName, StringComparison.Ordinal)) ?? false;
 }

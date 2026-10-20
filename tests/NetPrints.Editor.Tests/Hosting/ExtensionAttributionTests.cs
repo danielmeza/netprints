@@ -12,6 +12,9 @@ public sealed class ExtensionAttributionTests
 
     private static ExtensionOrigin Origin(string assemblyName, string id = "fx.one") => new(id, "Fixture one", assemblyName);
 
+    private static Func<ExtensionOrigin, string, bool> Held(Dictionary<string, string[]> held) =>
+        (origin, name) => held.TryGetValue(origin.Id, out string[]? names) && names.Contains(name, StringComparer.Ordinal);
+
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static Exception Thrown(Exception exception)
     {
@@ -98,6 +101,61 @@ public sealed class ExtensionAttributionTests
         var attribution = new ExtensionAttribution(() => [Origin(ThisAssembly, "fx.current"), Origin(ThisAssembly, "fx.stale")]);
 
         Assert.Equal("fx.current", attribution.Find(Thrown(new InvalidOperationException("boom")))?.Id);
+    }
+
+    [Fact]
+    public void AMainAssemblyFrameDecidesBeforeALibraryAnotherExtensionAlsoHolds()
+    {
+        ExtensionOrigin a = Origin("AMain", "a");
+        ExtensionOrigin b = Origin("BMain", "b");
+
+        ExtensionOrigin? decided = ExtensionAttribution.Decide(["Lib", "BMain"], [a, b], Held(new() { ["a"] = ["AMain", "Lib"], ["b"] = ["BMain", "Lib"] }));
+
+        Assert.Equal("b", decided?.Id);
+    }
+
+    [Fact]
+    public void TheCallerIsNamedWhenItsLibraryComesFromADependency()
+    {
+        ExtensionOrigin dep = Origin("DepMain", "dep");
+        ExtensionOrigin user = Origin("UserMain", "user");
+
+        ExtensionOrigin? decided = ExtensionAttribution.Decide(["Lib", "UserMain"], [dep, user], Held(new() { ["dep"] = ["DepMain", "Lib"], ["user"] = ["UserMain"] }));
+
+        Assert.Equal("user", decided?.Id);
+    }
+
+    [Fact]
+    public void ALibraryOnlyOneExtensionHoldsNamesItWhenNoMainFrameIsOnTheStack()
+    {
+        ExtensionOrigin a = Origin("AMain", "a");
+        ExtensionOrigin b = Origin("BMain", "b");
+
+        ExtensionOrigin? decided = ExtensionAttribution.Decide(["Lib", "Host"], [a, b], Held(new() { ["a"] = ["AMain", "Lib"], ["b"] = ["BMain"] }));
+
+        Assert.Equal("a", decided?.Id);
+    }
+
+    [Fact]
+    public void ALibrarySeveralExtensionsHoldNamesNoneWhenNoMainFrameIsOnTheStack()
+    {
+        ExtensionOrigin a = Origin("AMain", "a");
+        ExtensionOrigin b = Origin("BMain", "b");
+
+        ExtensionOrigin? decided = ExtensionAttribution.Decide(["Lib", "Host"], [a, b], Held(new() { ["a"] = ["AMain", "Lib"], ["b"] = ["BMain", "Lib"] }));
+
+        Assert.Null(decided);
+    }
+
+    [Fact]
+    public void AMainFrameOfAnInnerExceptionBeatsALibraryFrameOfTheOuterOne()
+    {
+        ExtensionOrigin a = Origin("AMain", "a");
+        ExtensionOrigin b = Origin("BMain", "b");
+
+        ExtensionOrigin? decided = ExtensionAttribution.Decide(["Lib", "Host", "BMain"], [a, b], Held(new() { ["a"] = ["AMain", "Lib"], ["b"] = ["BMain"] }));
+
+        Assert.Equal("b", decided?.Id);
     }
 
     [Fact]
