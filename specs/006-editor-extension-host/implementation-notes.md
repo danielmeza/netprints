@@ -2168,3 +2168,42 @@ Commits: a4791c8a (R4-1, R4-4, R4-7, R4-8), 0d0a6b91 (R4-2), 89c25577 (R4-3), ec
 - Slip: for R4-1 I edited the resource before running the new test; I reverted the resource to show the red, then reapplied it.
 - Slip: the first red build for R4-5 passed two projects to one `dotnet build`, which failed (MSB1008), so stale binaries ran green; rebuilt each project separately before reading any result.
 - Slip: my first edit of `KeyBindingEditor.cs` was denied by the skill hook; I loaded the three Avalonia skills and retried.
+
+## Batch R5-F (round-5 review fixes)
+
+Commits: 7d1a0a9a (R5-1), ce59b7a5 (R5-2, R5-3), d9769ae4 (R5-4).
+
+### R5-1
+- Changed: `Find` builds one frame list (each exception in `Visit` order, innermost frame first, simple assembly names cut at the first comma) and hands it to the new pure `ExtensionAttribution.Decide`. `Decide` has two passes: the first frame whose simple name equals an origin's main assembly name (first origin listed wins), then, only when pass 1 found nothing, the first frame whose simple name exactly one origin's context holds; a name that two or more contexts hold is skipped. `Owns` and `Match` are gone; the private `Holds` supplies the context half.
+- Red (step 1's unchanged-behaviour `Decide`): `AMainAssemblyFrameDecidesBeforeALibraryAnotherExtensionAlsoHolds` Expected `"b"`, Actual `"a"`; `TheCallerIsNamedWhenItsLibraryComesFromADependency` Expected `"user"`, Actual `"dep"`; `ALibrarySeveralExtensionsHoldNamesNoneWhenNoMainFrameIsOnTheStack` `Assert.Null()` failure, Actual `ExtensionOrigin { Id = a, ... }`; `AMainFrameOfAnInnerExceptionBeatsALibraryFrameOfTheOuterOne` Expected `"b"`, Actual `"a"`. `ALibraryOnlyOneExtensionHoldsNamesItWhenNoMainFrameIsOnTheStack` passed on both versions, as expected.
+- Green: `ExtensionAttributionTests` 13 of 13, `ExtensionErrorAttributionTests` 1 of 1.
+- Decision (delegated): pass 2 counts the holders of one name in a single walk and returns it only when the count is exactly one; a name held by none or by several moves on to the next frame.
+- Decision (delegated): the class `<summary>` keeps the FR-034 reference and states the two passes in two sentences; `Decide` gets its own XML doc.
+
+### R5-2 and R5-3
+- Changed: `ExtensionOrigin` carries `Folder` before `Context`, computed in `For` as `Path.GetDirectoryName(found.Result.ManifestPath ?? string.Empty) ?? string.Empty`. `Describe` passes name, id, folder and the exception. `Message.ExtensionError` now gives the folder and says to move or delete it (or stop trusting the project on the Extensions page), then restart NetPrints. `TheMessageNamesTheExtensionAndWhatTheUserCanDoNow` asserts the folder, "move or delete that folder" and "restart NetPrints", and that "extension folders" is gone. FR-034 and the extension guide were reworded to match; the guide also notes that a binding exception is logged as a binding error.
+- Red: `TheMessageNamesTheExtensionAndWhatTheUserCanDoNow` failed with `Assert.Contains() Failure: Sub-string not found`, `Not found: "move or delete that folder"`, against the old resource value (temporarily reverted, then reapplied).
+- Green: `ExtensionAttributionTests` 13 of 13; `ExtensionErrorAttributionTests` 1 of 1.
+- Decision (delegated): `Origin(...)` in the tests uses `Path.Combine("extensions", id)` as its folder, so the message test asserts a relative path rather than a machine path.
+- Decision (delegated): no other test asserted the old wording; `ExtensionErrorAttributionTests` checks only the display name, id and exception text.
+- Grep after the change: "extension folders on the Extensions page" and "trusting the project there" remain only in this file's R4-F history above.
+
+### R5-4
+- Changed: `KeyBindingOverride.ProblemSummary` (same `[JsonIgnore]`) is set by `ReadEntry` from the new `Settings.Keyboard.EntryProblemSummary` ("Kept as written and not loaded{0}: {1}", command then reason, no index). The "Not loaded" row shows `ProblemSummary ??` the old add/remove summary; `Problem` keeps the index for the issue list. `NotLoadedRowViewModel`'s `<param>` and `Summary` docs now cover both shapes.
+- Red: `RemovingAKeptEntryLeavesNoStalePositionOnTheOthers` failed with `Assert.DoesNotContain() Failure: Sub-string found` ("entry "); `AnEntryKeptAsWrittenShowsItsProblemInTheNotLoadedList` failed with `Assert.Contains() Failure: Sub-string not found`, `Not found: "Kept as written and not loaded"`.
+- Green: `KeyboardShortcutsPageTests` 17 of 17; `KeyboardSettingsLoadTests` 14 of 14 (the issue list still names the index).
+- Decision (delegated): the `Problem` text and the issue list are untouched; only the row's text loses the position.
+
+### Gates and slips
+1. Release build (`dotnet build NetPrints.slnx -c Release -v q -tl:off --nologo`): 0 warnings, 0 errors.
+2. `dotnet format NetPrints.slnx --verify-no-changes --no-restore`: exit 0 (workspace load warning only).
+3. `tests/NetPrints.Editor.Tests` (Release, `--no-build`, fresh `NETPRINTS_STATE_DIR` and `XDG_CONFIG_HOME`): 2277 total, 2276 passed, 1 skipped, 0 failed.
+4. `tests/NetPrints.Editor.UITests` (same): 1109 total, 1107 passed, 2 skipped, 0 failed (13m 49s).
+5. `tests/NetPrints.Core.Tests` (same): 1074 total, 1074 passed, 0 skipped, 0 failed (30.8s), with `MSBUILDDISABLENODEREUSE=1` and `DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER=1`; run directly from the Release binary.
+- Decision (delegated): `KeyBindingOverride` is public and `ProblemSummary` is a new public member, but `src/NetPrints.Editor` has no `PublicAPI.*.txt` (the PublicApiAnalyzers files exist only for Extensibility and Serialization), so there is no unshipped API file to update.
+- Slip: the first full `tests/NetPrints.Editor.UITests` run hit the tool's 900 s foreground limit with no summary; the log ended after the two usual skips. Rerun in the background with a 2400 s bound; it took 13m 49s.
+- Slip: the first full `tests/NetPrints.Core.Tests` run hit the same 900 s limit with only the runner's first line logged; rerun in the background with a 2400 s bound also hit its 2400 s bound. A namespace sweep narrowed the hang to `NetPrints.Tests.Projects.SdkPackageTests`: its `dotnet pack` stopped at "Determining projects to restore..." / "Enabled loggers: CentralForwardingLogger". A manual `dotnet restore` reproduced it, and `MSBUILDDISABLENODEREUSE=1 DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER=1` made it finish at once, so the cause was stale MSBuild nodes, not the code. The full suite then ran in 30.8 s.
+- Decision (delegated): to report the Core gate, the suite ran from the Release test binary directly (the same runner `dotnet test` starts) with the two node-reuse variables set; the first full run after that change is the number above.
+- Slip: while narrowing the hang, the namespace sweep and the class sweep used per-run `timeout` bounds, so the failing group was killed rather than reported; no tracked file changed.
+- Slip: for R5-2 the resource was edited before the red run; it was temporarily reverted to produce the failure, then reapplied.
+- Slip: this section was first appended with a shell here-document instead of the edit tool; the content is the same and later edits used the tool.
