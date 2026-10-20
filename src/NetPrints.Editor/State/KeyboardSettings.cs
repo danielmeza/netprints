@@ -45,22 +45,19 @@ internal sealed class KeyBindingListConverter : JsonConverter<IReadOnlyList<KeyB
         }
 
         List<KeyBindingOverride> entries = [];
-        int index = 0;
         while (reader.Read() && reader.TokenType != JsonTokenType.EndArray)
         {
             JsonElement element = JsonElement.ParseValue(ref reader);
             if (element.ValueKind != JsonValueKind.Null)
             {
-                entries.Add(ReadEntry(element, index));
+                entries.Add(ReadEntry(element));
             }
-
-            index++;
         }
 
         return entries;
     }
 
-    private static KeyBindingOverride ReadEntry(JsonElement element, int index)
+    private static KeyBindingOverride ReadEntry(JsonElement element)
     {
         try
         {
@@ -76,11 +73,13 @@ internal sealed class KeyBindingListConverter : JsonConverter<IReadOnlyList<KeyB
             string command = element.ValueKind == JsonValueKind.Object && element.TryGetProperty("command", out JsonElement named) && named.ValueKind == JsonValueKind.String
                 ? TextFormat.Of(Strings.Settings_Keyboard_EntryCommand, named.GetString())
                 : "";
+            string reason = ex.Path is { } path && path != "$"
+                ? TextFormat.Of(Strings.Settings_Keyboard_EntryValueInvalid, path.StartsWith("$.", StringComparison.Ordinal) ? path[2..] : path)
+                : ex.Message;
             return new KeyBindingOverride
             {
                 RawJson = element.GetRawText(),
-                Problem = TextFormat.Of(Strings.Settings_Keyboard_EntryProblem, index, command, ex.Message),
-                ProblemSummary = TextFormat.Of(Strings.Settings_Keyboard_EntryProblemSummary, command, ex.Message),
+                Problem = TextFormat.Of(Strings.Settings_Keyboard_EntryProblem, command, reason),
             };
         }
     }
@@ -133,13 +132,9 @@ public sealed record KeyBindingOverride
     [JsonIgnore]
     public string? RawJson { get; init; }
 
-    /// <summary>Gets why the entry could not be read, naming its index and command; <see langword="null"/> for a readable entry.</summary>
+    /// <summary>Gets why the entry could not be read, naming its command; <see langword="null"/> for a readable entry.</summary>
     [JsonIgnore]
     public string? Problem { get; init; }
-
-    /// <summary>Gets why the entry could not be read, naming its command but not its position, for the "Not loaded" row; <see langword="null"/> for a readable entry.</summary>
-    [JsonIgnore]
-    public string? ProblemSummary { get; init; }
 
     /// <summary>Gets the name of the command's scope when the entry was written; it is kept for the "Not loaded" list.</summary>
     [Description("The scope of the command when the entry was written")]

@@ -124,7 +124,15 @@ public sealed class KeyboardSettingsLoadTests : IDisposable
         Assert.Equal(["Ctrl+L"], settings.Bindings[2].Remove);
         Assert.Single(result.NotLoaded);
         KeyBindingIssue issue = Assert.Single(result.Issues);
-        Assert.Contains("entry 1", issue.Reason, StringComparison.Ordinal);
+        Assert.Contains("Kept as written and not loaded", issue.Reason, StringComparison.Ordinal);
+        Assert.DoesNotMatch(@"entry \d", issue.Reason);
+        Assert.DoesNotContain("LineNumber", issue.Reason, StringComparison.Ordinal);
+        Assert.DoesNotContain("System.", issue.Reason, StringComparison.Ordinal);
+        if (bad.StartsWith('{'))
+        {
+            Assert.Contains(bad.Contains("\"remove\"", StringComparison.Ordinal) ? "'remove'" : bad.Contains("\"add\"", StringComparison.Ordinal) && command is not null ? "'add" : "'command'", issue.Reason, StringComparison.Ordinal);
+        }
+
         Assert.Equal(command is null, !issue.Reason.Contains("probe.bad", StringComparison.Ordinal));
         Assert.Empty(store.Issues);
     }

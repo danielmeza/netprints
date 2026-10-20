@@ -314,7 +314,7 @@ internal sealed partial class KeyboardShortcutsItemViewModel : SettingsItemViewM
         foreach (KeyBindingOverride entry in bindings.NotLoaded)
         {
             NotLoaded.Add(new NotLoadedRowViewModel(
-                entry.ProblemSummary ?? string.Format(CultureInfo.CurrentCulture, Strings.Settings_Keyboard_NotLoadedSummary, entry.Command, string.Join(", ", entry.Add), string.Join(", ", entry.Remove)),
+                entry.Problem ?? string.Format(CultureInfo.CurrentCulture, Strings.Settings_Keyboard_NotLoadedSummary, entry.Command, string.Join(", ", entry.Add), string.Join(", ", entry.Remove)),
                 () => editor.RemoveEntryAsync(entry, CancellationToken.None)));
         }
 
