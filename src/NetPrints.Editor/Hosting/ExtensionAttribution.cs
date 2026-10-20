@@ -22,12 +22,11 @@ internal sealed record ExtensionOrigin(string Id, string Name, string AssemblyNa
 internal sealed record AssemblyHolders(IReadOnlyList<ExtensionOrigin> Listed, bool Editor, bool Unknown);
 
 /// <summary>
-/// Finds the extension whose code threw an exception, by the full assembly name of the stack frames (FR-034). A
-/// main-assembly frame names an extension only when every load context holding that identity belongs to a listed extension,
-/// all of them share one id, and one of them has the frame's simple name as its main assembly; otherwise the frame is skipped.
-/// When no main-assembly frame names one, a library frame counts only when exactly one listed extension's context holds its
-/// identity and no other context does, and the counting frames must all name the same extension; else none is named. Naming an
-/// innocent extension is worse than naming none, because the user then removes the wrong one.
+/// Finds the extension whose code threw an exception, by the full assembly name of the stack frames (FR-034). The main-assembly
+/// frame nearest the throw decides: it names its extension only when every context holding that identity belongs to listed copies
+/// of one extension, apart from an earlier copy of that extension's own version, and otherwise names none. When no main-assembly
+/// frame is on the stack, the library frames decide: each must be held by one extension only, all by the same one, and an
+/// uncertain frame names none. Naming an innocent extension is worse than naming none, because the user then removes the wrong one.
 /// </summary>
 /// <param name="origins">The loaded extensions now, in the order the session lists them.</param>
 internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> origins)
@@ -66,7 +65,7 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
 
     /// <summary>Finds the extension that threw <paramref name="exception"/>.</summary>
     /// <param name="exception">The exception.</param>
-    /// <returns>The extension, or <see langword="null"/> when no frame belongs to a loaded extension.</returns>
+    /// <returns>The extension, or <see langword="null"/> when no frame belongs to a loaded extension or the stack does not identify one extension for certain.</returns>
     public ExtensionOrigin? Find(Exception exception)
     {
         ArgumentNullException.ThrowIfNull(exception);
@@ -91,10 +90,10 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
         return Decide(frames, Holders(known));
     }
 
-    /// <summary>Decides which loaded extension, if any, the frames belong to. The extension code nearest the throw decides: an uncertain main-assembly frame names none, and so does an uncertain library frame when no main-assembly frame is on the stack.</summary>
+    /// <summary>Decides which loaded extension, if any, the frames belong to.</summary>
     /// <param name="frames">The normalized assembly identities, innermost frame first, exception by exception.</param>
     /// <param name="holders">Gives who holds one assembly identity in the process.</param>
-    /// <returns>The extension, or <see langword="null"/> when no frame belongs to one.</returns>
+    /// <returns>The extension, or <see langword="null"/> when no frame belongs to a loaded extension or the stack does not identify one extension for certain.</returns>
     internal static ExtensionOrigin? Decide(IReadOnlyList<string> frames, Func<string, AssemblyHolders> holders)
     {
         foreach (string frame in frames)
