@@ -38,6 +38,7 @@ public sealed class ExtensionErrorAttributionTests
             Assert.Contains("NetPrints view resources fixture extension", message, StringComparison.Ordinal);
             Assert.Contains("fx.views", message, StringComparison.Ordinal);
             Assert.Contains("late measure", message, StringComparison.Ordinal);
+            Assert.Contains(folder, message, StringComparison.Ordinal);
         }
         finally
         {

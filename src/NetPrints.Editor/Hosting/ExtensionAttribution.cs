@@ -11,8 +11,9 @@ namespace NetPrints.Editor.Hosting;
 /// <param name="Name">The display name.</param>
 /// <param name="AssemblyName">The simple name of the extension's main assembly.</param>
 /// <param name="Folder">The folder that holds the extension's manifest.</param>
+/// <param name="ProjectCopy"><see langword="true"/> when the extension was loaded from one of the open project's extension folders, which the project's build needs.</param>
 /// <param name="Context">The load context of the extension; every assembly loaded in it, when the exception is attributed, belongs to the extension. <see langword="null"/> when only the main assembly counts.</param>
-internal sealed record ExtensionOrigin(string Id, string Name, string AssemblyName, string Folder, AssemblyLoadContext? Context = null);
+internal sealed record ExtensionOrigin(string Id, string Name, string AssemblyName, string Folder, bool ProjectCopy = false, AssemblyLoadContext? Context = null);
 
 /// <summary>
 /// Finds the extension whose code threw an exception, by the assembly of the stack frames (FR-034): the first frame whose
@@ -25,23 +26,35 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
 {
     /// <summary>Gets the attribution for the extensions the host has loaded now.</summary>
     /// <param name="host">The extension host whose current registry names the loaded extensions.</param>
+    /// <param name="projectFolders">Gives the extension folders of the open project, read each time the attribution is built; an extension loaded from one of them is the project's own copy.</param>
     /// <returns>The attribution.</returns>
-    public static ExtensionAttribution For(IExtensionHost host)
+    public static ExtensionAttribution For(IExtensionHost host, Func<IReadOnlyList<string>> projectFolders)
     {
         ArgumentNullException.ThrowIfNull(host);
+        ArgumentNullException.ThrowIfNull(projectFolders);
         return new ExtensionAttribution(() =>
+        {
+            HashSet<string> project = [.. projectFolders().Select(Path.GetFullPath)];
+            return
             [
                 .. host.Current.Results.OfType<ExtensionLoadResult.Loaded>()
                     .Select(result => (Result: result, Main: ExtensionAssemblies.Find(result.ManifestPath, result.Manifest.Assembly, result.Id, NullLogger.Instance)))
                     .Where(found => found.Main?.GetName().Name is not null)
+                    .Select(found => (found.Result, found.Main, Folder: Path.GetDirectoryName(found.Result.ManifestPath ?? string.Empty) ?? string.Empty))
                     .Select(found => new ExtensionOrigin(
                         found.Result.Id,
                         found.Result.Manifest.Name,
                         found.Main?.GetName().Name ?? string.Empty,
-                        Path.GetDirectoryName(found.Result.ManifestPath ?? string.Empty) ?? string.Empty,
+                        found.Folder,
+                        found.Folder.Length > 0 && project.Contains(Path.GetFullPath(found.Folder)),
                         OwnContext(found.Main))),
-            ]);
+            ];
+        });
     }
+
+    /// <summary>Gets the loaded extensions as the attribution sees them now.</summary>
+    /// <returns>The extensions, in the order they are listed.</returns>
+    internal IReadOnlyList<ExtensionOrigin> Origins() => origins();
 
     /// <summary>Finds the extension that threw <paramref name="exception"/>.</summary>
     /// <param name="exception">The exception.</param>
@@ -118,7 +131,8 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
     {
         ArgumentNullException.ThrowIfNull(origin);
         ArgumentNullException.ThrowIfNull(exception);
-        return TextFormat.Of(Strings.Message_ExtensionError, origin.Name, origin.Id, origin.Folder, exception.ToString());
+        string template = origin.ProjectCopy ? Strings.Message_ExtensionErrorProjectCopy : Strings.Message_ExtensionError;
+        return TextFormat.Of(template, origin.Name, origin.Id, origin.Folder, exception.ToString());
     }
 
     private static IEnumerable<Exception> Visit(Exception exception)

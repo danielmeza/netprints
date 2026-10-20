@@ -43,6 +43,9 @@ internal sealed class ProjectLoader : IDisposable
     /// <summary>The extension folders currently loaded: restored when a load fails after the new project's extensions were swapped in.</summary>
     private IReadOnlyList<string> activeExtensionFolders = [];
 
+    /// <summary>Gets the extension folders of the open project that the host has loaded; empty when none is open or the project is not trusted.</summary>
+    internal IReadOnlyList<string> ActiveExtensionFolders => activeExtensionFolders;
+
     /// <summary>Creates the loader.</summary>
     /// <param name="context">Host services shared across the editor.</param>
     /// <param name="shell">The shell state whose session this loader replaces.</param>

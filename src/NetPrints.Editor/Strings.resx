@@ -226,7 +226,12 @@
     <value>Extension error</value>
   </data>
   <data name="Message.ExtensionError" xml:space="preserve">
-    <value>The extension "{0}" ({1}) threw this error. The details are in the log. Its folder is {2}. To stop loading it, move or delete that folder, or, for a project's copy, stop trusting the project on the Extensions page, then restart NetPrints.
+    <value>The extension "{0}" ({1}) threw this error. The details are in the log. Its folder is {2}. To stop loading it, move or delete that folder, then restart NetPrints.
+
+{3}</value>
+  </data>
+  <data name="Message.ExtensionErrorProjectCopy" xml:space="preserve">
+    <value>The extension "{0}" ({1}) threw this error. The details are in the log. It is this project's own copy, in {2}; the project's build needs that folder, so keep it. To stop loading it in the editor, remove the project from Trusted projects on the Extensions page, then open the project again and choose Don't load.
 
 {3}</value>
   </data>

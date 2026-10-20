@@ -3,7 +3,9 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Editor.Hosting;
+using NetPrints.Extensibility.Loading;
 
 namespace NetPrints.Editor.Tests.Hosting;
 
@@ -83,8 +85,8 @@ public sealed class ExtensionAttributionTests
         try
         {
             Exception exception = ThrownBy(LoadLib(context));
-            var inContext = new ExtensionAttribution(() => [new ExtensionOrigin("fx.one", "Fixture one", "Fx.Main", Path.Combine("extensions", "fx.one"), context)]);
-            var elsewhere = new ExtensionAttribution(() => [new ExtensionOrigin("fx.one", "Fixture one", "Fx.Main", Path.Combine("extensions", "fx.one"), empty)]);
+            var inContext = new ExtensionAttribution(() => [new ExtensionOrigin("fx.one", "Fixture one", "Fx.Main", Path.Combine("extensions", "fx.one"), Context: context)]);
+            var elsewhere = new ExtensionAttribution(() => [new ExtensionOrigin("fx.one", "Fixture one", "Fx.Main", Path.Combine("extensions", "fx.one"), Context: empty)]);
 
             Assert.Equal("fx.one", inContext.Find(exception)?.Id);
             Assert.Null(elsewhere.Find(exception));
@@ -106,7 +108,7 @@ public sealed class ExtensionAttributionTests
         {
             LoadLib(listed);
             Exception exception = ThrownBy(LoadLib(unlisted));
-            var attribution = new ExtensionAttribution(() => [new ExtensionOrigin("a", "Fixture a", "Fx.Main", Path.Combine("extensions", "a"), listed)]);
+            var attribution = new ExtensionAttribution(() => [new ExtensionOrigin("a", "Fixture a", "Fx.Main", Path.Combine("extensions", "a"), Context: listed)]);
 
             Assert.Null(attribution.Find(exception));
         }
@@ -124,7 +126,7 @@ public sealed class ExtensionAttributionTests
         try
         {
             Exception outer = ThrownBy(LoadLib(context), Thrown(new ArgumentException("inner")));
-            var a = new ExtensionOrigin("a", "Fixture a", "Fx.Main", Path.Combine("extensions", "a"), context);
+            var a = new ExtensionOrigin("a", "Fixture a", "Fx.Main", Path.Combine("extensions", "a"), Context: context);
             var attribution = new ExtensionAttribution(() => [a, Origin(ThisAssembly, "b")]);
 
             Assert.Equal("b", attribution.Find(outer)?.Id);
@@ -260,9 +262,39 @@ public sealed class ExtensionAttributionTests
         Assert.Contains(origin.Folder, text, StringComparison.Ordinal);
         Assert.Contains("move or delete that folder", text, StringComparison.Ordinal);
         Assert.Contains("restart NetPrints", text, StringComparison.Ordinal);
-        Assert.Contains("trusting the project", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("Trusted projects", text, StringComparison.Ordinal);
         Assert.DoesNotContain("extension folders", text, StringComparison.Ordinal);
         Assert.DoesNotContain("disable", text, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("boom", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheMessageForAProjectsCopyKeepsTheFolderAndPointsAtTrust()
+    {
+        ExtensionOrigin origin = Origin(ThisAssembly) with { ProjectCopy = true };
+        string text = ExtensionAttribution.Describe(origin, new InvalidOperationException("boom"));
+
+        Assert.Contains("Fixture one", text, StringComparison.Ordinal);
+        Assert.Contains(origin.Folder, text, StringComparison.Ordinal);
+        Assert.Contains("keep it", text, StringComparison.Ordinal);
+        Assert.Contains("Trusted projects", text, StringComparison.Ordinal);
+        Assert.Contains("Don't load", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("move or delete", text, StringComparison.Ordinal);
+        Assert.Contains("boom", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ForMarksTheExtensionsLoadedFromAProjectFolderAsProjectCopies()
+    {
+        string userFolder = TestExtensionFolder.Folder;
+        string projectFolder = TestExtensionFolder.FixtureFolder("Fx.Editor", "fx.editor");
+        await using var host = new ExtensionHost(ExtensionLoaderOptions.BuiltInOnly with { ExtensionFolders = [userFolder] }, NullLoggerFactory.Instance);
+        await host.LoadForProjectAsync([projectFolder], TestContext.Current.CancellationToken);
+        var attribution = ExtensionAttribution.For(host, () => [projectFolder]);
+
+        IReadOnlyList<ExtensionOrigin> origins = attribution.Origins();
+
+        Assert.True(origins.Single(origin => origin.Id == "fx.editor").ProjectCopy);
+        Assert.False(origins.Single(origin => origin.Id == "netprints.test").ProjectCopy);
     }
 }
