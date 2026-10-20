@@ -21,12 +21,12 @@ public sealed class ExtensionAttributionTests
     private static string Full(string simple, string version = "1.0.0.0") =>
         $"{simple}, Version={version}, Culture=neutral, PublicKeyToken=null";
 
-    private static AssemblyHolders Held(params ExtensionOrigin[] listed) => new(listed, false);
+    private static AssemblyHolders Held(params ExtensionOrigin[] listed) => new(listed, false, false);
 
     private static Func<string, AssemblyHolders> Holdings(params (string Identity, AssemblyHolders Holders)[] entries)
     {
         Dictionary<string, AssemblyHolders> map = entries.ToDictionary(entry => entry.Identity, entry => entry.Holders, StringComparer.Ordinal);
-        return identity => map.TryGetValue(identity, out AssemblyHolders? found) ? found : new AssemblyHolders([], false);
+        return identity => map.TryGetValue(identity, out AssemblyHolders? found) ? found : new AssemblyHolders([], false, false);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -375,7 +375,50 @@ public sealed class ExtensionAttributionTests
     {
         ExtensionOrigin a = Origin("AMain", "a");
 
-        ExtensionOrigin? decided = ExtensionAttribution.Decide([Full("AMain")], Holdings((Full("AMain"), new AssemblyHolders([a], true))));
+        ExtensionOrigin? decided = ExtensionAttribution.Decide([Full("AMain")], Holdings((Full("AMain"), new AssemblyHolders([a], false, true))));
+
+        Assert.Null(decided);
+    }
+
+    [Fact]
+    public void AMainFrameTheEditorAlsoHoldsNamesNone()
+    {
+        ExtensionOrigin a = Origin("AMain", "a");
+
+        ExtensionOrigin? decided = ExtensionAttribution.Decide([Full("AMain")], Holdings((Full("AMain"), new AssemblyHolders([a], true, false))));
+
+        Assert.Null(decided);
+    }
+
+    [Fact]
+    public void AnUncertainMainFrameNearestTheThrowStopsTheSearchForADependencyLibrary()
+    {
+        ExtensionOrigin dep = Origin("DepMain", "dep");
+        ExtensionOrigin user = Origin("UserMain", "user");
+
+        ExtensionOrigin? decided = ExtensionAttribution.Decide([Full("DepLib"), Full("UserMain")], Holdings((Full("DepLib"), Held(dep)), (Full("UserMain"), new AssemblyHolders([user], false, true))));
+
+        Assert.Null(decided);
+    }
+
+    [Fact]
+    public void AMainFrameTwoExtensionsHoldStopsTheSearchForADependencyLibrary()
+    {
+        ExtensionOrigin dep = Origin("DepMain", "dep");
+        ExtensionOrigin p = Origin("BMain", "p");
+        ExtensionOrigin r = Origin("BMain", "r");
+
+        ExtensionOrigin? decided = ExtensionAttribution.Decide([Full("DepLib"), Full("BMain")], Holdings((Full("DepLib"), Held(dep)), (Full("BMain"), Held(p, r))));
+
+        Assert.Null(decided);
+    }
+
+    [Fact]
+    public void AnUnlistedCallerFrameBesideACertainLibraryFrameNamesNone()
+    {
+        ExtensionOrigin dep = Origin("DepMain", "dep");
+
+        ExtensionOrigin? decided = ExtensionAttribution.Decide([Full("DepLib"), Full("RetiredMain")], Holdings((Full("DepLib"), Held(dep)), (Full("RetiredMain"), new AssemblyHolders([], false, true))));
 
         Assert.Null(decided);
     }

@@ -17,8 +17,9 @@ internal sealed record ExtensionOrigin(string Id, string Name, string AssemblyNa
 
 /// <summary>Who holds one assembly identity in the process.</summary>
 /// <param name="Listed">The listed extensions whose load context holds it, in list order.</param>
-/// <param name="Other">Whether a load context that belongs to no listed extension holds it too.</param>
-internal sealed record AssemblyHolders(IReadOnlyList<ExtensionOrigin> Listed, bool Other);
+/// <param name="Editor">Whether the editor's own load context holds it too, and no listed extension without a context of its own claims it.</param>
+/// <param name="Unknown">Whether another load context that belongs to no listed extension holds it too.</param>
+internal sealed record AssemblyHolders(IReadOnlyList<ExtensionOrigin> Listed, bool Editor, bool Unknown);
 
 /// <summary>
 /// Finds the extension whose code threw an exception, by the full assembly name of the stack frames (FR-034). A
@@ -90,7 +91,7 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
         return Decide(frames, Holders(known));
     }
 
-    /// <summary>Decides which loaded extension, if any, the frames belong to.</summary>
+    /// <summary>Decides which loaded extension, if any, the frames belong to. The extension code nearest the throw decides: an uncertain main-assembly frame names none, and so does an uncertain library frame when no main-assembly frame is on the stack.</summary>
     /// <param name="frames">The normalized assembly identities, innermost frame first, exception by exception.</param>
     /// <param name="holders">Gives who holds one assembly identity in the process.</param>
     /// <returns>The extension, or <see langword="null"/> when no frame belongs to one.</returns>
@@ -106,21 +107,21 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
                 continue;
             }
 
-            if (found.Other || found.Listed.Any(origin => !string.Equals(origin.Id, found.Listed[0].Id, StringComparison.Ordinal)))
-            {
-                continue;
-            }
-
-            return candidates[0];
+            return IsCertain(found) ? candidates[0] : null;
         }
 
         ExtensionOrigin? counted = null;
         foreach (string frame in frames)
         {
             AssemblyHolders found = holders(frame);
-            if (found.Other || found.Listed.Count != 1)
+            if (found.Listed.Count == 0 && !found.Unknown)
             {
                 continue;
+            }
+
+            if (!IsCertain(found))
+            {
+                return null;
             }
 
             if (counted is not null && !string.Equals(counted.Id, found.Listed[0].Id, StringComparison.Ordinal))
@@ -133,6 +134,12 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
 
         return counted;
     }
+
+    private static bool IsCertain(AssemblyHolders found) =>
+        found.Listed.Count > 0
+        && !found.Editor
+        && !found.Unknown
+        && found.Listed.All(origin => string.Equals(origin.Id, found.Listed[0].Id, StringComparison.Ordinal));
 
     /// <summary>Builds the text of the error dialog for an exception an extension threw.</summary>
     /// <param name="origin">The extension.</param>
@@ -211,8 +218,8 @@ internal sealed class ExtensionAttribution(Func<IReadOnlyList<ExtensionOrigin>> 
             IReadOnlyList<AssemblyLoadContext> contexts = held.TryGetValue(identity, out List<AssemblyLoadContext>? found) ? found : [];
             string simple = Simple(identity);
             List<ExtensionOrigin> listed = [.. known.Where(origin => Holds(origin, contexts, simple))];
-            bool other = contexts.Any(context => !listed.Any(origin => Owns(origin, context, simple)));
-            return new AssemblyHolders(listed, other);
+            List<AssemblyLoadContext> others = [.. contexts.Where(context => !listed.Any(origin => Owns(origin, context, simple)))];
+            return new AssemblyHolders(listed, others.Contains(AssemblyLoadContext.Default), others.Any(context => context != AssemblyLoadContext.Default));
         };
     }
 
