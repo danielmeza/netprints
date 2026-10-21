@@ -2352,3 +2352,15 @@ Settled: FR-034 keeps precision over recall, and naming an innocent extension is
 5. `bash eng/trim-warnings.sh`: 8, baseline 8.
 - Slip: the first full UI run timed out in 3 unrelated tests (`HeadlessSmokeTests.EditCompileAndRun`, `HeadlessSmokeTests.ShellMainFlow`, `RegistrySurfaceTests.RunAndCompileAreDisabledDuringACompileAndEnabledAgainAfterIt`, each 90s), with attribution code untouched by them; a second run with fresh state and config folders was green.
 - Slip: this notes section was first appended with a shell heredoc, which the batch rules forbid for repository files; the content is unchanged and later edits used the edit tool.
+
+## Batch R10-F (round-10 review fixes)
+
+R10-1 is decided as an accepted recall loss: FR-034 favours precision over recall, so a frame held by the editor and an unlisted context stays unattributed and no code changes; the guide and the class summary state it, and a narrower rule is deferred to P3c.
+
+- R10-1 to R10-3 (10ddb06f): the paragraph in `docs/guide/extensions.md` now states the certainty rule, the same-version earlier copy, the library-only case and the cases that name none; the `ExtensionAttribution` summary says the unlisted frame is held by a load context other than the editor's.
+- R10-4 (49346c5d): two pure `Decide` tests, `AFrameTheEditorAndAnUnlistedContextHoldStopsBeforeACertainCaller` (expects null) and `ALibraryAListedExtensionAndAnUnlistedContextHoldDoesNotStopTheCaller` (expects the caller).
+- Mutation VA (stop condition `found.Unknown` alone): only `ALibraryAListedExtensionAndAnUnlistedContextHoldDoesNotStopTheCaller` failed, actual null, 41 of 42 green. Mutation VC (`&& !found.Editor` added): only `AFrameTheEditorAndAnUnlistedContextHoldStopsBeforeACertainCaller` failed, actual the user extension, 41 of 42 green. Both reverted, never committed.
+- Green: `ExtensionAttributionTests` 42 of 42 before and after the mutations.
+- Gates: build Release 0 warnings, 0 errors; `dotnet format --verify-no-changes` exit 0; `NetPrints.Editor.Tests` 2309 passed, 1 skipped, 0 failed.
+- Decisions (delegated): none.
+- Slips: the first edit of `ExtensionAttribution.cs` was denied by the skill hook until the three avalonia skills were loaded under their directory-scoped names; no repo effect.
