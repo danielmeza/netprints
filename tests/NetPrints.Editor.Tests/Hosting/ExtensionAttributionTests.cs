@@ -234,6 +234,27 @@ public sealed class ExtensionAttributionTests
     }
 
     [Fact]
+    public void AFrameTheEditorAndAnUnlistedContextHoldStopsBeforeACertainCaller()
+    {
+        ExtensionOrigin user = Origin("UserMain", "user");
+
+        ExtensionOrigin? decided = ExtensionAttribution.Decide([Full("SharedLib"), Full("UserMain")], Holdings((Full("SharedLib"), new AssemblyHolders([], true, true)), (Full("UserMain"), Held(user))));
+
+        Assert.Null(decided);
+    }
+
+    [Fact]
+    public void ALibraryAListedExtensionAndAnUnlistedContextHoldDoesNotStopTheCaller()
+    {
+        ExtensionOrigin dep = Origin("DepMain", "dep");
+        ExtensionOrigin user = Origin("UserMain", "user");
+
+        ExtensionOrigin? decided = ExtensionAttribution.Decide([Full("DepLib"), Full("UserMain")], Holdings((Full("DepLib"), new AssemblyHolders([dep], false, true)), (Full("UserMain"), Held(user))));
+
+        Assert.Same(user, decided);
+    }
+
+    [Fact]
     public void ACopyOfALibraryTheDefaultContextAlsoHoldsNamesNone()
     {
         var context = new AssemblyLoadContext("fx.copy", isCollectible: true);
