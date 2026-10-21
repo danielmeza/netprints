@@ -2355,7 +2355,7 @@ Settled: FR-034 keeps precision over recall, and naming an innocent extension is
 
 ## Batch R10-F (round-10 review fixes)
 
-R10-1 is decided as an accepted recall loss: FR-034 favours precision over recall, so a frame held by the editor and an unlisted context stays unattributed and no code changes; the guide and the class summary state it, and a narrower rule is deferred to P3c.
+R10-1 is decided as an accepted recall loss, because FR-034 favours precision over recall. When a project ships its own copy of an extension's dependency, the dependent extension gets a new load context, but its origin keeps the first context loaded from the manifest's path (the startup one); a library the served copy first loads after that swap is then held only by a context no origin owns, so pass 1's stop names none even with the extension's own main frame further out (case I). No code changes; the guide and the class summary state it, and taking the served copy's context from the host is deferred to P3c (`.specify/memory/roadmap.md`).
 
 - R10-1 to R10-3 (10ddb06f): the paragraph in `docs/guide/extensions.md` now states the certainty rule, the same-version earlier copy, the library-only case and the cases that name none; the `ExtensionAttribution` summary says the unlisted frame is held by a load context other than the editor's.
 - R10-4 (49346c5d): two pure `Decide` tests, `AFrameTheEditorAndAnUnlistedContextHoldStopsBeforeACertainCaller` (expects null) and `ALibraryAListedExtensionAndAnUnlistedContextHoldDoesNotStopTheCaller` (expects the caller).

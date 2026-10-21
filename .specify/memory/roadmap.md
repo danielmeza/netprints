@@ -510,6 +510,11 @@ P3c follows the same process: one spec, one branch, one PR.
     install` (for B15; not needed for v1), and local-feed `packageType` filtering (recorded by P3's B7 NuGet spike). If
     P3c is tight, screenshots, `localized` and the update badge move to v1.1.
   - Design and prior art: `.agent-archive/2026-10-14-samples-remote/` (outside this repo).
+- **Carried from P3's review** (PR #20, round 10): the error dialog's attribution (FR-034) takes an extension's load
+  context from the first copy loaded from its manifest's path. After a project's copy of a dependency makes the host
+  reload the dependent extension in a new context, a library the served copy first loads later names no extension (an
+  accepted recall loss). The extension manager changes how the host loads extensions; it also makes the context the
+  host serves now available to the editor (on the load result or the host), so that case names the extension.
 Done when: the phase's features work end to end and the docs are updated (the extensions and samples guides, the CLI
 reference, ADRs as applicable).
 
