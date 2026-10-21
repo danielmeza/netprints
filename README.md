@@ -69,6 +69,7 @@ Annotations are optional. Any library works in NetPrints without them; the edito
 - Editor: [the window](docs/guide/editor/shell.md), [the start page](docs/guide/editor/start-page.md), [saving and recovery](docs/guide/editor/saving-and-recovery.md), [commands and shortcuts](docs/guide/editor/commands-and-shortcuts.md), [navigation](docs/guide/editor/navigation.md) and [event graphs](docs/guide/editor/event-graphs.md).
 - [Graph file format](docs/guide/graph-format.md) — the `*.netpc.json` format, version control and what a diff looks like.
 - [Extensions](docs/guide/extensions.md) — loading extensions, environment variables, and writing your own.
+- [Testing an extension](docs/guide/extension-testing.md) — the test kit, the xUnit adapter and what each `NPK` conformance check enforces.
 - [Type catalogs](docs/guide/catalogs.md) — the `netprints catalog` tool, profiles, and contributing a catalog from an extension.
 
 ## Project layout

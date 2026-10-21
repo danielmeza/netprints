@@ -1,0 +1,8 @@
+{
+  "id": "fx.fail.typeidentity",
+  "name": "Fails NPK003: references a NetPrints assembly outside the contract",
+  "version": "1.0.0",
+  "assembly": "Fx.Fail.TypeIdentity.dll",
+  "netprintsApi": "0.4",
+  "dependsOn": []
+}

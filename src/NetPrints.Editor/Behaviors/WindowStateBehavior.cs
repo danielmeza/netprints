@@ -81,7 +81,8 @@ internal sealed class WindowStateBehavior : StyledElementBehavior<Window>
 
         restored = true;
         IReadOnlyList<ScreenBounds> areas = [.. screens.All.Select(ToBounds)];
-        ScreenBounds? primary = screens.Primary is { } main ? ToBounds(main) : areas.FirstOrDefault();
+        ScreenBounds? primary = screens.Primary is { } main ? ToBounds(main) : null;
+        primary ??= areas.Count > 0 ? areas[0] : null;
         if (primary is null || service.Restore(areas, primary) is not { } placement)
         {
             return;

@@ -1,0 +1,8 @@
+{
+  "id": "fx.fail.editor",
+  "name": "Fails NPK015: a command id does not start with the extension id",
+  "version": "1.0.0",
+  "assembly": "Fx.Fail.Editor.dll",
+  "netprintsApi": "0.4",
+  "dependsOn": []
+}

@@ -64,6 +64,9 @@ earlier plan of a hand-written composition root with no container, which was the
    - Disposal order: sessions first, then the provider, then the load context's `Unload()`. Each extension's
      disposal is wrapped so one throwing `Dispose` does not stop the rest, including host services (MS.DI aborts the
      remaining disposals otherwise).
+   - Amended (batch C-F5): the disposal order is sessions, then the contributed objects, then the provider. A
+     contribution is created from the provider's services and may use them in its own `Dispose`, so the provider
+     outlives it; the extension still disposes in one pass in which a throwing `Dispose` stops nothing.
    - Startup validation runs on every provider build, the extensions' providers included. At .NET 11 this moves to
      `IAsyncStartupValidator` (`IStartupValidator` becomes obsolete, SYSLIB0066).
    - The conformance kit (ADR-0010) runs a capture and leak test per extension: an extension that subscribes to a
@@ -84,6 +87,9 @@ earlier plan of a hand-written composition root with no container, which was the
    `RequiresUnreferencedCode`). There is no generic host, so the composition calls the startup validator itself.
    How `IConfiguration` relates to `JsonFileSettingsStore` (settings stay JSON files in the config folder) is settled
    in the P3 spec; smart enums are never bound through `IConfiguration` (ADR-0034).
+   Amended by [ADR-0040](0040-editor-settings-pages-and-key-bindings.md): the settings store stays the only source,
+   sections are typed and validated by the `[OptionsValidator]` validators, and the configuration binding generator is
+   not used for settings.
 8. **ReadyToRun.** Desktop releases are published ReadyToRun per assembly with `DisableDynamicEngine=true`.
    Measured on the real editor: the start page goes from 1034 to 519 ms (-50%) and opening a project from 2688 to
    1869 ms (-30%), for +38% install size. `DisableDynamicEngine` stops MS.DI from emitting IL after the second call
@@ -97,7 +103,7 @@ Each step lands in the P3 order of the roadmap and has its gate.
 
 1. **R5-0.** Baselines for M1 (shell start), M2 (graph scope) and M4 (trimming) before any change, plus the M5 spike:
    a throwaway copy of `EditorServices` composed three ways. This is the gate between MS.DI with our generator and
-   Pure.DI.
+   Pure.DI. Amended (amendment 1): the M1 and M2 time gates compare the head with R5-0 rebuilt on the same runner.
 2. **With S1.** `SingletonAttribute<T>`, `SessionScopedAttribute<T>`, the registration generator, its analyzers and
    snapshot tests, and the hygiene test in its new form.
 3. **App and shell.** `EditorServices` builds a `ServiceCollection` with `AddEditorServices()` plus the
@@ -106,7 +112,8 @@ Each step lands in the P3 order of the roadmap and has its gate.
    `?? new Default()` fallbacks go as the typed contexts (R5a) land. Gate: M1 (composition budget 150 ms, including
    the provider build and the first resolves).
 4. **Project session.** `ProjectSessionScope` extracted from `ProjectLoader`; `BackupScope`, `RecoveryService` and
-   the template services become session-scoped. Gate: a resolve-everything test.
+   the template services become session-scoped. Gate: a resolve-everything test. Amended (batch C-F5): the project
+   template service holds no session state and New project has no project, so the loader creates it directly.
 5. **Class and graph.** Generated `ClassContextFactory` and `GraphScopeFactory`; `GraphDocumentFactory` keeps only
    document ownership. Gate: M2 with counting fakes.
 6. **R7 and N1.** `IExtensionBuilder.Services`; `ExtensionRegistry` builds and owns the extension providers;
@@ -126,3 +133,40 @@ Each step lands in the P3 order of the roadmap and has its gate.
 - The CLI keeps MS.DI as today. Project-declared extensions load in the CLI without a trust check, the same as
   analyzers and build tasks; the guide says so.
 - The roadmap lines that said "no container in the editor" are amended; ADR-0020 gets an amendment at step 6.
+
+## Amendment 1: the M1 and M2 time gates are a same-runner A/B against R5-0 (2026-10-17, batch C-F2c)
+
+SC-005 holds M1 (shell start) and M2 (graph scope) to at most 10% over R5-0 (`d7ddde50`), in the non-blocking perf
+job. Two ways of comparing with a recorded baseline failed:
+
+- **Absolute times from the perf job** (batch C-F2). The first-use medians moved from 41 to 76 ms on M2 across heads
+  that did not touch its path: shared runners differ in speed and the median of five runs lands before or after the
+  JIT's tier-up.
+- **A steady-state median divided by an in-process calibration workload, against a baseline ratio per CPU model**
+  (batches C-F2 and C-F2b). The same code read M2 0.95 to 0.98 locally, 1.04 to 1.10 on a Xeon Platinum 8573C, 1.90
+  on an EPYC 7763 and 2.54 on an EPYC 9V74 (job 117346128293, the gate failing at +33.9%), and M1 failed at +25.4% on
+  an EPYC 9V45 (job 117351326444). The calibration does not scale like the measured code across microarchitectures,
+  and the runner pool keeps adding models, so a table per model cannot be kept.
+
+Decision:
+
+1. The perf job builds R5-0 next to the head on the same runner (`eng/perf/prepare-r5-0.sh`: a worktree at
+   `d7ddde50`, `eng/perf/r5-0.patch` for its M1 and M2 tests, and the head's `PerformanceGate.cs` copied in, so both
+   trees run the same harness), then `eng/perf/ab.sh` runs the two trees in alternation, each run in a fresh test
+   process, eight rounds, the base first in odd rounds.
+2. A run warms up, then times 9 (M2) or 21 (M1) samples and reports the fastest. A tree's figure is the median of its
+   runs. The gate is head / base <= 1.10, unchanged. The script prints every run, both trees' figures, the ratios and
+   the CPU model on pass and on fail.
+3. A sample starts after a full collection and its time leaves out the GC pauses inside it; the bytes the process
+   allocated are recorded and gated at the same head / base <= 1.10. With a collection forced before each sample, the
+   GC cost per sample is either zero or one collection: R5-0 allocates 16.40 MB per start and the head 17.28 MB, a
+   16 MB gen0 budget sits between them, and on that runner each head start paid one 18 to 24 ms collection that no R5-0
+   start paid (M1 at +33.9% on an EPYC 9V74, job 117354922356, while a machine with a larger budget read them equal).
+   The collector's cost follows the allocation, which the bytes gate holds.
+4. Outside the A/B script the M1 and M2 tests print their first-use numbers and judge no time; the other wall-clock
+   budgets keep the strict-in-perf-job, sanity-bound-elsewhere rule.
+
+Consequences: R5-0 has to stay buildable from this repository (the commit is in the branch history and pins the same
+`global.json`); a change to the sample code of the M1 or M2 test is made in the test and in the patch; the perf job
+takes about 13 minutes; the absolute R5-0 numbers in the P3 implementation notes stay as history. The stability and
+sensitivity evidence (equal trees, injected slowdowns) is in the Batch C-F2c entry of those notes.

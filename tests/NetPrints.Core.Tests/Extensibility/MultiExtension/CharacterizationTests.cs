@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using NetPrints.Core;
 using NetPrints.Extensibility;
 using NetPrints.Extensibility.Loading;
+using NetPrints.Extensibility.Testing;
 using NetPrints.Graph;
 using NetPrints.Testing.Extensions;
 using Xunit;
@@ -116,7 +117,7 @@ public sealed class CharacterizationTests : IAsyncLifetime
     public async Task Npx003AMissingDependencyFailsOnlyTheDependent()
     {
         string dependent = Path.Combine(root, "dependent");
-        WriteManifest(dependent, ManifestJson("fx.dependent", "fx.dependent.dll", "1.0", "fx.absent"));
+        WriteManifest(dependent, ManifestJson("fx.dependent", "fx.dependent.dll", "0.4", "fx.absent"));
 
         await using ExtensionHarness harness = await LoadWithNeighboursAsync(dependent);
 

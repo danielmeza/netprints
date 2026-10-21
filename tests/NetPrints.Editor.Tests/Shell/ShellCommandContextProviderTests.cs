@@ -12,18 +12,13 @@ using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Editor.UndoRedo;
 using NetPrints.Graph;
 using NetPrints.Serialization;
-using DocumentId = NetPrints.Editor.Shell.DocumentId;
+using DocumentId = NetPrints.Extensibility.Editor.DocumentId;
 
 namespace NetPrints.Editor.Tests.Shell;
 
 /// <summary>The shell's context provider reads the active graph document and pulses for the same triggers as the class editor's provider.</summary>
 public sealed class ShellCommandContextProviderTests(TestEditor testEditor) : GraphTestBase(testEditor)
 {
-    private sealed class NoServices : IServiceProvider
-    {
-        public object? GetService(Type serviceType) => null;
-    }
-
     private static readonly DocumentId MainId = DocumentId.Graph("C.cs", "method:1");
 
     private (ShellViewModel Shell, ShellCommandContextProvider Provider, FakeShell Services, GraphDocumentViewModel Document) Create()
@@ -31,7 +26,7 @@ public sealed class ShellCommandContextProviderTests(TestEditor testEditor) : Gr
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         BuiltInContributions.Register(registry);
         registry.Freeze();
-        var shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, new InlineDispatcher());
+        var shell = new ShellViewModel(registry, PanelFactoryContext.Detached, TimeProvider.System, new InlineDispatcher());
         var services = new FakeShell();
         var document = new GraphDocumentViewModel(MainId, Graph, Class, session: null);
         shell.AddDocument(document);
@@ -60,7 +55,7 @@ public sealed class ShellCommandContextProviderTests(TestEditor testEditor) : Gr
 
             Assert.Equal(MainId, active.ActiveDocument);
             Assert.Same(Graph, active.ActiveGraph);
-            Assert.Same(node, Assert.Single(active.Selection.Nodes));
+            Assert.Same(added, Assert.Single(active.Selection.Nodes));
         }
     }
 

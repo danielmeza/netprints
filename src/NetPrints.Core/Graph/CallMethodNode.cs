@@ -11,30 +11,20 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing a method call.
     /// </summary>
-    public partial class CallMethodNode : ExecNode, IMemberReferencingNode
+    public partial class CallMethodNode : ExecNode, IMemberReferencingNode, IOverloadableNode
     {
+        /// <inheritdoc />
+        object IOverloadableNode.CurrentOverload => MethodSpecifier;
+
+        /// <inheritdoc />
+        Node? IOverloadableNode.ChangeOverload(object overload) =>
+            overload is MethodSpecifier specifier
+                ? new CallMethodNode(Graph, specifier)
+                : throw new ArgumentException("A call node switches between method overloads.", nameof(overload));
+
         private const string ExceptionPinName = "Exception";
+        private const string ParameterKeyPrefix = "param:";
         private const string CatchPinName = "Catch";
-
-        /// <summary>
-        /// <see langword="true"/> when the node has at least one result output data pin (see
-        /// <see cref="ResultPins"/>). A pure node is translated only when a consumer needs one of its
-        /// outputs, so a call without one would vanish from the generated code. When an <c>out</c>/<c>ref</c>
-        /// write of a pure call happens is up to the graph's author.
-        /// </summary>
-        public override bool CanSetPure
-        {
-            get => ResultPins.Count > 0;
-        }
-
-        /// <summary>
-        /// The output data pins that carry the call's results (today its return values), without the
-        /// <c>Exception</c> pin that exists while the catch pin is connected.
-        /// </summary>
-        private IReadOnlyList<NodeOutputDataPin> ResultPins
-        {
-            get => OutputDataPins.Where(pin => pin != ExceptionPin).ToList();
-        }
 
         /// <summary>
         /// Specifier for the method to call.
@@ -146,7 +136,7 @@ namespace NetPrints.Graph
         {
             // PinType.Value is set from MethodSpecifier.ReturnTypes when the pin is created (below) and
             // never cleared, so RequireValue() never throws for this node's own return pins.
-            get => OutputDataPins.Select(p => p.PinType.RequireValue()).ToList();
+            get => ReturnValuePins.Select(p => p.PinType.RequireValue()).ToList();
         }
 
         /// <summary>
@@ -162,8 +152,20 @@ namespace NetPrints.Graph
         /// </summary>
         public NodeOutputDataPin? ExceptionPin
         {
-            get { return OutputDataPins.SingleOrDefault(p => p.Name == ExceptionPinName); }
+            get { return OutputDataPins.SingleOrDefault(p => p.Role == PinRole.Exception); }
         }
+
+        /// <summary>
+        /// Gives an output pin of a by-reference parameter named like the exception pin the key name
+        /// <c>"param:Exception"</c>, so it never takes the stored key of the exception pin. Every other pin
+        /// uses the base <see cref="Node.GetPinKeyName"/>.
+        /// </summary>
+        /// <param name="pin">Pin of this node to get the key name of.</param>
+        /// <returns>The pin's keyName.</returns>
+        public override string GetPinKeyName(NodePin pin) =>
+            pin is NodeOutputDataPin { Role: PinRole.OutParam } && pin.Name == ExceptionPinName
+                ? ParameterKeyPrefix + pin.Name
+                : base.GetPinKeyName(pin);
 
         /// <summary>
         /// Pin that gets executed when an exception is caught.
@@ -206,7 +208,16 @@ namespace NetPrints.Graph
         /// </summary>
         public IList<NodeOutputDataPin> ReturnValuePins
         {
-            get => (OutputDataPins.Where(p => p.Name != ExceptionPinName)).ToList();
+            get => OutputDataPins.Where(p => p.Role == PinRole.Result).ToList();
+        }
+
+        /// <summary>
+        /// List of node pins, one for each <c>out</c> or <c>ref</c> parameter of the method, in parameter order;
+        /// each carries the parameter's value after the call.
+        /// </summary>
+        public IList<NodeOutputDataPin> OutParamPins
+        {
+            get => OutputDataPins.Where(p => p.Role == PinRole.OutParam).ToList();
         }
 
         /// <summary>
@@ -232,6 +243,7 @@ namespace NetPrints.Graph
             if (!IsStatic)
             {
                 AddInputDataPin("Target", DeclaringType);
+                InputDataPins[^1].Role = PinRole.Target;
             }
 
             AddExceptionPins();
@@ -239,11 +251,15 @@ namespace NetPrints.Graph
             foreach (var argument in MethodSpecifier.Parameters)
             {
                 AddInputDataPin(argument.Name, argument.Value);
+                if (IsByReference(argument))
+                {
+                    InputDataPins[^1].Role = PinRole.OutParam;
+                }
 
                 // Set default parameter value if set
                 if (argument.HasExplicitDefaultValue)
                 {
-                    var newPin = InputDataPins.Last();
+                    var newPin = InputDataPins[^1];
                     newPin.UsesExplicitDefaultValue = true;
                     newPin.ExplicitDefaultValue = argument.ExplicitDefaultValue;
                 }
@@ -252,11 +268,21 @@ namespace NetPrints.Graph
             foreach (BaseType returnType in MethodSpecifier.ReturnTypes)
             {
                 AddOutputDataPin(returnType.ShortName, returnType);
+                OutputDataPins[^1].Role = PinRole.Result;
+            }
+
+            foreach (var argument in MethodSpecifier.Parameters.Where(IsByReference))
+            {
+                AddOutputDataPin(argument.Name, argument.Value);
+                OutputDataPins[^1].Role = PinRole.OutParam;
             }
 
             // TODO: Set the correct types to begin with.
             UpdateTypes();
         }
+
+        private static bool IsByReference(MethodParameter parameter) =>
+            parameter.PassType is MethodParameterPassType.Out or MethodParameterPassType.Reference;
 
         private void AddExceptionPins()
         {
@@ -287,6 +313,7 @@ namespace NetPrints.Graph
             else if (CatchPin?.OutgoingPin != null && ExceptionPin == null)
             {
                 AddOutputDataPin(ExceptionPinName, TypeSpecifier.FromType<Exception>());
+                OutputDataPins[^1].Role = PinRole.Exception;
             }
         }
 
@@ -347,10 +374,22 @@ namespace NetPrints.Graph
                 // Construct type with generic arguments replaced by our input type pins
                 BaseType constructedType = GenericsHelper.ConstructWithTypePins(type, InputTypePins);
 
-                // +1 because the first pin is the exception pin
-                if (ReturnValuePins[i].PinType.Value != constructedType)
+                NodeOutputDataPin returnPin = ReturnValuePins[i];
+                if (returnPin.PinType.Value != constructedType)
                 {
-                    ReturnValuePins[i].PinType.Value = constructedType;
+                    returnPin.PinType.Value = constructedType;
+                }
+            }
+
+            IList<NodeOutputDataPin> outParamPins = OutParamPins;
+            int outIndex = 0;
+            foreach (MethodParameter parameter in MethodSpecifier.Parameters.Where(IsByReference))
+            {
+                BaseType constructedType = GenericsHelper.ConstructWithTypePins(parameter.Value, InputTypePins);
+                NodeOutputDataPin outPin = outParamPins[outIndex++];
+                if (outPin.PinType.Value != constructedType)
+                {
+                    outPin.PinType.Value = constructedType;
                 }
             }
         }

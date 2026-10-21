@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using NetPrints.Core;
 using NetPrints.Extensibility;
 using NetPrints.Extensibility.Loading;
+using NetPrints.Extensibility.Testing;
 using NetPrints.Testing.Extensions;
 using Xunit;
 using static NetPrints.Tests.Extensibility.ExtensionTestSupport;
@@ -193,7 +194,7 @@ public sealed class FailureIsolationTests : IAsyncLifetime
                 folders.Add(failing);
                 break;
             case "NPX003":
-                WriteManifest(failing, ManifestJson("fx.dependent", "fx.dependent.dll", "1.0", "fx.absent"));
+                WriteManifest(failing, ManifestJson("fx.dependent", "fx.dependent.dll", "0.4", "fx.absent"));
                 folders.Add(failing);
                 break;
             case "NPX004":

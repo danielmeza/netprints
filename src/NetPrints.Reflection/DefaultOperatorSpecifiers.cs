@@ -83,7 +83,7 @@ namespace NetPrints.Reflection
                 parameters = parameters.Concat(new[] { new MethodParameter("b", argType, MethodParameterPassType.Default, false, null) });
             }
 
-            target.Add(new MethodSpecifier(opName, parameters, new[] { returnType }, MethodModifiers.Static, MemberVisibility.Public, returnType, new BaseType[0]));
+            target.Add(new MethodSpecifier(opName, parameters, new[] { returnType }, MethodModifiers.Static, MemberVisibility.Public, returnType, []));
         }
 
         private static readonly List<TypeSpecifier> defaultNumericTypes = new List<TypeSpecifier>()

@@ -17,7 +17,7 @@ public static class TreeContributions
 
     /// <summary>Registers the <c>openGraph</c> command and the tree context menu items.</summary>
     /// <param name="registry">The registry to add to.</param>
-    public static void Register(IContributionRegistry registry)
+    public static void Register(IEditorContributions registry)
     {
         ArgumentNullException.ThrowIfNull(registry);
 
@@ -26,7 +26,7 @@ public static class TreeContributions
             "Open",
             new OpenGraphCommandHandler(),
             IconId: null,
-            DefaultGestures: ["Enter"],
+            DefaultGestures: [new(CommandModifiers.None, CommandKey.Enter)],
             Scope: CommandScope.ProjectTree,
             Menu: null,
             CommandBarOrder: null));
@@ -36,7 +36,7 @@ public static class TreeContributions
         AddItems(registry, ContextMenuTarget.TreeEventGraph, "eventGraph", [OpenGraphName, RenameName, DeleteName]);
     }
 
-    private static void AddItems(IContributionRegistry registry, ContextMenuTarget target, string name, string[] commands)
+    private static void AddItems(IEditorContributions registry, ContextMenuTarget target, string name, string[] commands)
     {
         for (int order = 0; order < commands.Length; order++)
         {

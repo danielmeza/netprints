@@ -170,6 +170,12 @@ public class ThemeTokenTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void TheStartPageLogoHasOneSize()
+    {
+        Assert.Equal(42.0, Assert.IsType<double>(Resolve("StartPage.LogoSize", ThemeVariant.Default)));
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public void TheDensityTokensHaveTheirValues()
     {
         Assert.Equal(24.0, Assert.IsType<double>(Resolve("Density.RowHeight", ThemeVariant.Default)));

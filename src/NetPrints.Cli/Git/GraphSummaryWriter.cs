@@ -22,6 +22,7 @@ internal static class GraphSummaryWriter
     private const int Body = 2;
     private const int NestedBody = 3;
     private const int IndentWidth = 2;
+    private const int PinMembers = 2;
     private const string UnknownNodeSuffix = " (extension not loaded)";
 
     /// <summary>Renders <paramref name="document"/>.</summary>
@@ -38,6 +39,7 @@ internal static class GraphSummaryWriter
             Line(text, Member, "generic " + argument);
         }
 
+        WriteUnknown(text, Member, document.ExtensionData);
         WriteGraph(text, Member, document.ClassGraph);
         foreach (VariableDocument variable in document.Variables ?? [])
         {
@@ -47,18 +49,21 @@ internal static class GraphSummaryWriter
         foreach (MethodDocument method in document.Methods ?? [])
         {
             Line(text, Member, Join("method", method.Id, method.Name, method.Visibility.ToString(), Flags(method.Modifiers)));
+            WriteUnknown(text, Body, method.ExtensionData);
             WriteGraph(text, Body, method.Graph);
         }
 
         foreach (ConstructorDocument constructor in document.Constructors ?? [])
         {
             Line(text, Member, Join("constructor", constructor.Id, constructor.Visibility.ToString()));
+            WriteUnknown(text, Body, constructor.ExtensionData);
             WriteGraph(text, Body, constructor.Graph);
         }
 
         foreach (EventGraphDocument eventGraph in document.EventGraphs ?? [])
         {
             Line(text, Member, Join("event-graph", eventGraph.Id, eventGraph.Name));
+            WriteUnknown(text, Body, eventGraph.ExtensionData);
             WriteGraph(text, Body, eventGraph.Graph);
         }
 
@@ -70,6 +75,7 @@ internal static class GraphSummaryWriter
     private static void WriteVariable(StringBuilder text, VariableDocument variable)
     {
         Line(text, Member, Join("variable", variable.Id, variable.Name + " : " + VariableType(variable.TypeGraph), variable.Visibility.ToString(), Flags(variable.Modifiers)));
+        WriteUnknown(text, Body, variable.ExtensionData);
         Line(text, Body, "type-graph");
         WriteGraph(text, NestedBody, variable.TypeGraph);
         foreach ((string label, AccessorDocument? accessor) in new[] { ("getter", variable.Getter), ("setter", variable.Setter) })
@@ -80,6 +86,7 @@ internal static class GraphSummaryWriter
             }
 
             Line(text, Body, Join(label, accessor.Visibility.ToString()));
+            WriteUnknown(text, NestedBody, accessor.ExtensionData);
             WriteGraph(text, NestedBody, accessor.Graph);
         }
     }
@@ -101,6 +108,7 @@ internal static class GraphSummaryWriter
 
     private static void WriteGraph(StringBuilder text, int depth, GraphDocument graph)
     {
+        WriteUnknown(text, depth, graph.ExtensionData);
         foreach (LocalVariableDocument local in (graph.Locals ?? []).OrderBy(local => local.Name, StringComparer.Ordinal))
         {
             Line(text, depth, $"local {local.Name} : {Type(local.Type)}");
@@ -114,9 +122,11 @@ internal static class GraphSummaryWriter
                 Line(text, depth + 1, "raw " + raw);
             }
 
+            WriteUnknown(text, depth + 1, node.ExtensionData);
             foreach (PinStateDocument pin in (node.Pins ?? []).OrderBy(pin => pin.Pin, StringComparer.Ordinal))
             {
                 Line(text, depth + 1, PinLine(pin));
+                WriteUnknown(text, depth + PinMembers, pin.ExtensionData);
             }
         }
 
@@ -248,6 +258,21 @@ internal static class GraphSummaryWriter
     private static string? NonDefault<T>(T modifiers) where T : struct, Enum => Flags(modifiers) is { Length: > 0 } flags ? flags : null;
 
     private static string Quote(string value) => "\"" + Escape(value) + "\"";
+
+    // The members the reader did not know, one line each in key order with the value as compact JSON.
+    private static void WriteUnknown(StringBuilder text, int depth, UnknownMembers? members)
+    {
+        foreach ((string key, JsonElement value) in members ?? [])
+        {
+            using var stream = new MemoryStream();
+            using (var writer = new Utf8JsonWriter(stream))
+            {
+                value.WriteTo(writer);
+            }
+
+            Line(text, depth, $"unknown {key} {Encoding.UTF8.GetString(stream.ToArray())}");
+        }
+    }
 
     // The properties of an unknown node other than its kind and id, compact, in file order.
     private static string? Raw(UnknownNodeDocument node)

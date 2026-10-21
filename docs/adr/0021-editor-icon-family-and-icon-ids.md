@@ -132,3 +132,18 @@ Options weighed:
   Semi.Avalonia 12.1.0.1, Irihi.Ursa and Irihi.Ursa.Themes.Semi 2.2.0, Avalonia.Fonts.Inter 12.1.3) and the Cascadia Mono font file.
 - The Amendment 1 consequence "the contact sheet and its review check that icons look consistent across panes, both themes and 200 %"
   is met by `contact-sheet.png` of the T098b CI run; the review itself is T100.
+
+## Amendment 3: extension icon ids (P3, T072)
+
+The Consequences left open how extensions contribute glyphs. They do it with the same `IconId` string the built-in
+descriptors use:
+
+- **An id is a resource key.** An extension adds a `ResourceDictionary` through `IEditorContributions.AddViewResources` whose
+  `StreamGeometry` entries are keyed `Icon.<id>`, and names `<id>` in the `IconId` of a command, panel or other descriptor.
+  The id should start with the extension's manifest id, so two extensions never share a glyph name.
+- **Resolution.** `IconRegistry` looks a built-in id up first and an extension id in the view resources second; an unknown id
+  draws the fallback glyph and is reported as `NPX010` (`IsKnown` tells which).
+- **Same family rules.** An extension glyph is a single-path vector that takes the foreground colour, so it follows the theme
+  tokens and the 200 % scale like the built-ins. The extension owns the licence of the glyphs it ships.
+- **No raster and no brand glyphs** are accepted from extensions either; `SourceHygieneTests.NoRasterIconsInSource` covers the
+  repository only, so the extensions guide states it as the rule for authors.

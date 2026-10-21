@@ -6,6 +6,7 @@ namespace NetPrints.Editor.Hosting.Avalonia;
 
 /// <summary>Starts processes, redirecting their console output to <see cref="OutputReceived"/>
 /// (the editor's Output pane) instead of the editor's own terminal.</summary>
+[Singleton<IProcessLauncher>]
 public sealed class ProcessLauncher : IProcessLauncher
 {
     private int lastId;

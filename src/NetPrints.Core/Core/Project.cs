@@ -84,7 +84,11 @@ namespace NetPrints.Core
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(TargetFramework))]
         [NotifyPropertyChangedFor(nameof(ProfileId))]
+        [NotifyPropertyChangedFor(nameof(CSharpTarget))]
         public partial ProjectSnapshot Snapshot { get; set; }
+
+        /// <summary>The C# language the project compiles with, from <see cref="Snapshot"/> (ADR-0038).</summary>
+        public CSharpTarget CSharpTarget => Snapshot.CSharpTarget;
 
         /// <summary>Target framework moniker of <see cref="Snapshot"/> (e.g. <c>"net10.0"</c>).</summary>
         public string TargetFramework => Snapshot.TargetFramework;
@@ -150,7 +154,7 @@ namespace NetPrints.Core
             ArgumentNullException.ThrowIfNull(profile);
 
             string qualifiedName = NetPrintsUtil.GetUniqueName($"{DefaultNamespace}.MyClass", Classes.Select(c => c.FullName).ToList());
-            string name = qualifiedName.Split('.').Last();
+            string name = qualifiedName.Split('.')[^1];
 
             ClassGraph cls = profile.ClassTemplates[0].Create(this, name);
             cls.MarkDirty();

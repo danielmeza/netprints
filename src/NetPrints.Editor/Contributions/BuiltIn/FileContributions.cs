@@ -11,10 +11,11 @@ public static class FileContributions
     private const string ClassGroup = "class";
     private const string SaveGroup = "save";
     private const string ProjectSettingsGroup = "project-settings";
+    private const string SettingsGroup = "settings";
 
     /// <summary>Registers the File menu's commands.</summary>
     /// <param name="registry">The registry to add to.</param>
-    public static void Register(IContributionRegistry registry)
+    public static void Register(IEditorContributions registry)
     {
         ArgumentNullException.ThrowIfNull(registry);
 
@@ -23,7 +24,7 @@ public static class FileContributions
             "New project…",
             new NewProjectCommandHandler(),
             IconId: IconIds.NewProject,
-            DefaultGestures: ["Ctrl+Shift+N"],
+            DefaultGestures: [new(CommandModifiers.Ctrl | CommandModifiers.Shift, CommandKey.N)],
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, ProjectGroup, 0),
             CommandBarOrder: null));
@@ -33,7 +34,7 @@ public static class FileContributions
             "Open project…",
             new OpenProjectCommandHandler(),
             IconId: IconIds.OpenProject,
-            DefaultGestures: ["Ctrl+O"],
+            DefaultGestures: [new(CommandModifiers.Ctrl, CommandKey.O)],
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, ProjectGroup, 1),
             CommandBarOrder: null));
@@ -83,7 +84,7 @@ public static class FileContributions
             "Save",
             new SaveCommandHandler(),
             IconId: IconIds.Save,
-            DefaultGestures: ["Ctrl+S"],
+            DefaultGestures: [new(CommandModifiers.Ctrl, CommandKey.S)],
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, SaveGroup, 0),
             CommandBarOrder: 1));
@@ -93,7 +94,7 @@ public static class FileContributions
             "Save all",
             new SaveAllCommandHandler(),
             IconId: IconIds.SaveAll,
-            DefaultGestures: ["Ctrl+Shift+S"],
+            DefaultGestures: [new(CommandModifiers.Ctrl | CommandModifiers.Shift, CommandKey.S)],
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, SaveGroup, 1),
             CommandBarOrder: null));
@@ -117,6 +118,16 @@ public static class FileContributions
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, ProjectSettingsGroup, 1),
             CommandBarOrder: 7));
+
+        registry.AddCommand(new CommandDescriptor(
+            ContributionIds.CommandPrefix + "openSettings",
+            "Settings",
+            new OpenSettingsCommandHandler(),
+            IconId: IconIds.ProjectSettings,
+            DefaultGestures: [new(CommandModifiers.Ctrl, CommandKey.OemComma)],
+            Scope: CommandScope.Global,
+            Menu: new MenuPlacement(MenuName, SettingsGroup, 0),
+            CommandBarOrder: null));
 
         registry.AddCommand(new CommandDescriptor(
             ContributionIds.CommandPrefix + "exit",

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "high-contrast.dark",
+  "label": "High contrast",
+  "base": "dark",
+  "semiVariant": "Aquatic",
+  "tokens": {
+    "Canvas.Background": "#FF000000",
+    "Node.CardBackground": "#FF1E1E1E",
+    "Node.Border": "#FFFFFFFF",
+    "Focus.Ring": "#FFFFFF00",
+    "Tab.SelectedAccent": "#FFFFFF00",
+    "Tab.StripBorder": "#FFFFFFFF",
+    "Canvas.SelectionBorder": "#FFFFFF00",
+    "Canvas.MarqueeBorder": "#FFFFFF00",
+    "GraphGrid.MinorColor": "#33FFFFFF",
+    "GraphGrid.MajorColor": "#66FFFFFF",
+    "State.Hover": "#40FFFFFF",
+    "Row.Separator": "#66FFFFFF",
+    "Inspector.EditorBorder": "#FFFFFFFF",
+    "Wire.Opacity": "1",
+    "Wire.Thickness": "5"
+  }
+}

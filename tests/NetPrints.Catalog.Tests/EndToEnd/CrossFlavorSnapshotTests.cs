@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using NetPrints.Catalog.Tests.Generator;
+using NetPrints.Testing.Roslyn;
 using Xunit;
 
 namespace NetPrints.Catalog.Tests.EndToEnd;

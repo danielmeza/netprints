@@ -5,6 +5,7 @@ using Avalonia.VisualTree;
 using NetPrints.Core;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.Icons;
+using NetPrints.Editor.NodeSearch;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.UITests.Shell;
 using NetPrints.Graph;
@@ -29,7 +30,7 @@ public class NodeSearchTests
 
         await search.FilterAsync("write line", r => r.Contains(" WriteLine ", StringComparison.Ordinal), Token);
         Assert.All(session.GraphViewModel.Search.Items.Where(i => !i.IsHeader), i => Assert.Contains("line", i.SearchText, StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(session.GraphViewModel.Search.Items, i => i.Value is MethodSpecifier { Name: "WriteLine" });
+        Assert.Contains(session.GraphViewModel.Search.Items, i => i.Entry is MethodEntry { Method.Name: "WriteLine" });
         Assert.True((await search.RowTextsAsync(Token)).Count < 200, "the result list is virtualized");
 
         await search.PressEnterAsync(Token);

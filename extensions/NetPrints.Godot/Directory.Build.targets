@@ -1,0 +1,3 @@
+<Project>
+  <!-- Stops the walk to the repository's targets: the sample builds only against the packed NetPrints packages (research R26). -->
+</Project>

@@ -1,0 +1,21 @@
+#nullable enable
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.ConformanceTests() -> void
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK001_ManifestAsync() -> System.Threading.Tasks.Task!
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK002_PackagingAsync() -> System.Threading.Tasks.Task!
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK003_TypeIdentityAsync() -> System.Threading.Tasks.Task!
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK004_RegistrationAsync() -> System.Threading.Tasks.Task!
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK005_RegistryIssuesAsync() -> System.Threading.Tasks.Task!
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK006_NodeRoundTripAsync() -> System.Threading.Tasks.Task!
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK007_TranslationCompilesAsync() -> System.Threading.Tasks.Task!
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK008_DeterministicEmittersAsync() -> System.Threading.Tasks.Task!
+virtual NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.CreateOptions() -> NetPrints.Extensibility.Testing.ConformanceOptions!
+virtual NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.ExtensionFolder.get -> string?
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK009_SettingsAsync() -> System.Threading.Tasks.Task!
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK010_HostChannelAsync() -> System.Threading.Tasks.Task!
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK011_CoexistenceAsync() -> System.Threading.Tasks.Task!
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK012_DisposalAsync() -> System.Threading.Tasks.Task!
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK013_ServicesAsync() -> System.Threading.Tasks.Task!
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK015_EditorContributionsAsync() -> System.Threading.Tasks.Task!
+NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.NPK016_ContributedViewsAsync() -> System.Threading.Tasks.Task!
+virtual NetPrints.Extensibility.Testing.Xunit.ConformanceTests<TExtension>.SourceDirectory.get -> string?

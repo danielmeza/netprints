@@ -5,7 +5,12 @@ using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
+using NetPrints.Extensibility;
+using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
 using Xunit;
 
@@ -94,7 +99,8 @@ public class JsonFileSettingsStoreTests : IDisposable
                 "trustedProjects": [
                   "/p/a.csproj"
                 ],
-                "enableAnimations": true
+                "enableAnimations": true,
+                "language": ""
               },
               "extensions": {
                 "test.other": {
@@ -112,6 +118,29 @@ public class JsonFileSettingsStoreTests : IDisposable
         byte[] bytes = await File.ReadAllBytesAsync(FilePath, TestContext.Current.CancellationToken);
         Assert.NotEqual(0xEF, bytes[0]);
         Assert.Equal(expected.Replace("\r\n", "\n"), Encoding.UTF8.GetString(bytes));
+    }
+
+    [Fact]
+    public void APartialBuiltInSectionKeepsTheDefaultsOfItsMissingMembers()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(FilePath) ?? directory);
+        File.WriteAllText(FilePath, """{ "netprints": { "extensionPaths": ["/ext"] } }""");
+
+        NetPrintsSettings read = NewStore().Get(NetPrintsSettings.Descriptor);
+
+        Assert.Equal(["/ext"], read.ExtensionPaths);
+        Assert.Empty(read.TrustedProjects);
+        Assert.True(read.EnableAnimations);
+        Assert.Equal("", read.Language);
+    }
+
+    [Fact]
+    public void APartialExtensionSectionKeepsTheDefaultsOfItsMissingMembers()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(FilePath) ?? directory);
+        File.WriteAllText(FilePath, """{ "extensions": { "test.sample": { "name": "x" } } }""");
+
+        Assert.Equal(new SampleSettings("x", 1), NewStore().Get(Sample));
     }
 
     [Fact]
@@ -227,6 +256,162 @@ public class JsonFileSettingsStoreTests : IDisposable
         Assert.Equal("n", NewStore().Get(Sample).Name);
         Assert.Equal([FilePath], Directory.GetFiles(Path.GetDirectoryName(FilePath) ?? directory));
     }
+
+    [Fact]
+    public async Task AnInvalidExtensionSectionUsesItsDefaultsAndShowsNpx014Once()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(FilePath) ?? directory);
+        await File.WriteAllTextAsync(
+            FilePath,
+            """{ "netprints": { "extensionPaths": [""] }, "extensions": { "test.checked": { "name": "x", "count": 99 }, "test.other": { "name": "ok", "count": 3 } } }""",
+            TestContext.Current.CancellationToken);
+        JsonFileSettingsStore store = NewStore();
+
+        Assert.Equal(Checked.Default, store.Get(Checked));
+        Assert.Equal(Checked.Default, store.Get(Checked));
+        Assert.Empty(store.Get(NetPrintsSettings.Descriptor).ExtensionPaths);
+        Assert.Equal(new SampleSettings("ok", 3), store.Get(Other));
+
+        Assert.Equal(2, store.Issues.Count);
+        SettingsSectionIssue extension = Assert.Single(store.Issues, issue => issue.SectionId == "test.checked");
+        Assert.Equal(ExtensionDiagnosticCodes.SettingsInvalid, extension.Code);
+        Assert.Contains("count", extension.Reason, StringComparison.Ordinal);
+        Assert.Null(Assert.Single(store.Issues, issue => issue.SectionId == "netprints").Code);
+        Assert.Single(logs.Entries, entry => entry.Message.Contains("NPX014", StringComparison.Ordinal));
+        Assert.Equal(2, logs.Entries.Count);
+    }
+
+    [Fact]
+    public async Task AnExtensionWhoseIdStartsWithNetprintsGetsNpx014()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(FilePath) ?? directory);
+        await File.WriteAllTextAsync(
+            FilePath,
+            """{ "extensions": { "netprints.godot": { "name": "x", "count": 99 } } }""",
+            TestContext.Current.CancellationToken);
+        var descriptor = new ExtensionSettingsDescriptor<SampleSettings>("netprints.godot", SampleSettingsContext.Default.SampleSettings, new SampleSettings("godot-default", 1))
+        {
+            Validator = value => value.Count > 10 ? ["count must be at most 10"] : [],
+        };
+        JsonFileSettingsStore store = NewStore();
+
+        Assert.Equal(descriptor.Default, store.Get(descriptor));
+        Assert.Equal(ExtensionDiagnosticCodes.SettingsInvalid, Assert.Single(store.Issues).Code);
+    }
+
+    private static readonly ExtensionSettingsDescriptor<SampleSettings> Checked =
+        new("test.checked", SampleSettingsContext.Default.SampleSettings, new SampleSettings("checked-default", 1))
+        {
+            Validator = value => value.Count > 10 ? ["count must be at most 10"] : [],
+        };
+
+    [Fact]
+    public async Task AnUnparseableFileIsCopiedOnceBeforeTheNextWrite()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(FilePath) ?? directory);
+        await File.WriteAllTextAsync(FilePath, "{ not json", TestContext.Current.CancellationToken);
+        var clock = new FakeTimeProvider(new DateTimeOffset(2026, 10, 17, 9, 8, 7, TimeSpan.Zero));
+        JsonFileSettingsStore store = new(FilePath, logs.CreateLogger<JsonFileSettingsStore>(), clock);
+
+        Assert.Equal(Sample.Default, store.Get(Sample));
+        Assert.Empty(CopiesOf("settings.json.unreadable-*"));
+
+        await store.SetAsync(Sample, new SampleSettings("first", 1), TestContext.Current.CancellationToken);
+        clock.Advance(TimeSpan.FromSeconds(30));
+        await store.SetAsync(Sample, new SampleSettings("second", 2), TestContext.Current.CancellationToken);
+
+        string copy = Assert.Single(CopiesOf("settings.json.unreadable-*"));
+        Assert.EndsWith("settings.json.unreadable-20261017090807", copy, StringComparison.Ordinal);
+        Assert.Equal("{ not json", await File.ReadAllTextAsync(copy, TestContext.Current.CancellationToken));
+        Assert.Equal("second", NewStore().Get(Sample).Name);
+        Assert.Equal([2006, 2015], logs.Entries.Select(entry => entry.EventId.Id));
+    }
+
+    [Fact]
+    public async Task AValidFileIsNeverCopied()
+    {
+        JsonFileSettingsStore store = NewStore();
+        await store.SetAsync(Sample, new SampleSettings("a", 1), TestContext.Current.CancellationToken);
+        await store.SetAsync(Sample, new SampleSettings("b", 2), TestContext.Current.CancellationToken);
+
+        Assert.Empty(CopiesOf("settings.json.unreadable-*"));
+    }
+
+    [Fact]
+    public async Task ANewerSchemaVersionIsPreservedWithOneWarning()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(FilePath) ?? directory);
+        await File.WriteAllTextAsync(
+            FilePath,
+            """{ "schemaVersion": 7, "extensions": { "test.sample": { "name": "kept", "count": 3 } }, "future": { "x": 1 } }""",
+            TestContext.Current.CancellationToken);
+        JsonFileSettingsStore store = NewStore();
+
+        Assert.Equal(new SampleSettings("kept", 3), store.Get(Sample));
+        Assert.Equal(Other.Default, store.Get(Other));
+        CollectingLoggerFactory.Entry warning = Assert.Single(logs.Entries);
+        Assert.Equal(LogLevel.Warning, warning.Level);
+        Assert.Equal(2014, warning.EventId.Id);
+
+        await store.SetAsync(Other, new SampleSettings("o", 4), TestContext.Current.CancellationToken);
+
+        string text = await File.ReadAllTextAsync(FilePath, TestContext.Current.CancellationToken);
+        Assert.StartsWith("{\n  \"schemaVersion\": 7,", text, StringComparison.Ordinal);
+        Assert.Contains("\"future\"", text, StringComparison.Ordinal);
+        Assert.Empty(CopiesOf("settings.json.unreadable-*"));
+        Assert.Single(logs.Entries);
+    }
+
+    [Fact]
+    public async Task AFailedWriteRevertsTheValueAndNotifiesNobody()
+    {
+        Directory.CreateDirectory(FilePath);
+        JsonFileSettingsStore store = NewStore();
+        int notifications = 0;
+        using IDisposable subscription = store.OnSectionChanged(Sample.ExtensionId, () => notifications++);
+
+        await Assert.ThrowsAnyAsync<IOException>(async () =>
+            await store.SetAsync(Sample, new SampleSettings("lost", 9), TestContext.Current.CancellationToken));
+
+        Assert.Equal(Sample.Default, store.Get(Sample));
+        Assert.Equal(0, notifications);
+    }
+
+    [Fact]
+    public async Task ASectionChangeNotifiesOnlyItsSubscribersUntilTheyDispose()
+    {
+        JsonFileSettingsStore store = NewStore();
+        var seen = new List<string>();
+        IDisposable sample = store.OnSectionChanged(Sample.ExtensionId, () => seen.Add("sample:" + store.Get(Sample).Name));
+        using IDisposable other = store.OnSectionChanged(Other.ExtensionId, () => seen.Add("other"));
+
+        await store.SetAsync(Sample, new SampleSettings("one", 1), TestContext.Current.CancellationToken);
+        sample.Dispose();
+        await store.SetAsync(Sample, new SampleSettings("two", 2), TestContext.Current.CancellationToken);
+        await store.SetAsync(Other, new SampleSettings("o", 3), TestContext.Current.CancellationToken);
+
+        Assert.Equal(["sample:one", "other"], seen);
+    }
+
+    [Fact]
+    public async Task ASectionChangeReachesTheOptionsMonitorOfAnExtension()
+    {
+        JsonFileSettingsStore store = NewStore();
+        var extension = ExtensionTestSupport.InProcess("test.sample", builder => builder.AddSettings(Sample));
+        await using ExtensionRegistry registry = ExtensionTestSupport.Load(
+            ExtensionTestSupport.Options([BuiltInExtension.InProcessEntry, extension]) with { SettingsStore = store });
+        IOptionsMonitor<SampleSettings> monitor = registry.ServicesOf("test.sample").GetRequiredService<IOptionsMonitor<SampleSettings>>();
+        var received = new List<SampleSettings>();
+        using IDisposable? subscription = monitor.OnChange((value, _) => received.Add(value));
+
+        await store.SetAsync(Sample, new SampleSettings("live", 5), TestContext.Current.CancellationToken);
+
+        Assert.Equal([new SampleSettings("live", 5)], received);
+        Assert.Equal(new SampleSettings("live", 5), monitor.CurrentValue);
+    }
+
+    private string[] CopiesOf(string pattern) =>
+        Directory.Exists(Path.GetDirectoryName(FilePath)) ? Directory.GetFiles(Path.GetDirectoryName(FilePath) ?? directory, pattern) : [];
 
     [Fact]
     public void DefaultFilePathEndsWithNetPrintsSettings() =>

@@ -14,6 +14,7 @@ using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Nodes;
 using NetPrints.Extensibility.Settings;
+using NetPrints.Extensibility.Testing;
 using NetPrints.Graph;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Documents;

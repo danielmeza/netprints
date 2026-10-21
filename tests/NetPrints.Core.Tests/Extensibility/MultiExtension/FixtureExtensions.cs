@@ -8,14 +8,26 @@ namespace NetPrints.Tests.Extensibility.MultiExtension;
 internal static class FixtureExtensions
 {
     public const string Alpha = "fx.alpha";
+
     public const string Beta = "fx.beta";
+
     public const string LibV1 = "fx.libv1";
+
     public const string LibV2 = "fx.libv2";
+
     public const string PrefixedPrivate = "fx.private-prefix";
+
     public const string TypesProvider = "fx.types-provider";
+
     public const string TypesConsumer = "fx.types-consumer";
+
     public const string Diamond = "fx.diamond";
+
     public const string Native = "fx.native";
+
+    public const string HostConflict = "fx.host-conflict";
+
+    public const string TransitiveConflict = "fx.transitive-conflict";
 
     private static readonly Dictionary<string, string> ProjectFolders = new(System.StringComparer.Ordinal)
     {
@@ -28,6 +40,8 @@ internal static class FixtureExtensions
         [TypesConsumer] = "Fx.TypesConsumer",
         [Diamond] = "Fx.Diamond",
         [Native] = "Fx.Native",
+        [HostConflict] = "Fx.HostConflict",
+        [TransitiveConflict] = "Fx.TransitiveConflict",
     };
 
     /// <summary>The build output folder of the fixture with manifest id <paramref name="id"/>, in the configuration of the running tests.</summary>

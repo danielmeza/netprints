@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="NetPrints.Extensibility.Testing.Xunit" Version="NetPrintsPackageVersion" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MyExtension\MyExtension.csproj" />
+  </ItemGroup>
+
+  <!-- The kit reads the manifest, the packaging and the type identity from the extension's own build output. -->
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ExtensionFolder</_Parameter1>
+      <_Parameter2>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/../MyExtension/bin/$(Configuration)/extension/'))</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>

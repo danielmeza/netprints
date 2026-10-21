@@ -11,6 +11,7 @@ using NetPrints.Editor.Graph;
 using NetPrints.Editor.Graph.Nodes;
 using NetPrints.Editor.Graph.Pins;
 using NetPrints.Editor.Icons;
+using NetPrints.Editor.Theming;
 using NetPrints.Editor.UITests.Shell;
 using NetPrints.Graph;
 using NetPrints.Testing.Ui.Driving;
@@ -66,23 +67,9 @@ public class CanvasPaletteTests
         return data;
     }
 
-    public static double Luminance(Color color)
-    {
-        static double Channel(byte value)
-        {
-            double c = value / 255.0;
-            return c <= 0.03928 ? c / 12.92 : Math.Pow((c + 0.055) / 1.055, 2.4);
-        }
+    public static double Luminance(Color color) => ContrastMath.Luminance(color);
 
-        return (0.2126 * Channel(color.R)) + (0.7152 * Channel(color.G)) + (0.0722 * Channel(color.B));
-    }
-
-    public static double Contrast(Color a, Color b)
-    {
-        double x = Luminance(a);
-        double y = Luminance(b);
-        return (Math.Max(x, y) + 0.05) / (Math.Min(x, y) + 0.05);
-    }
+    public static double Contrast(Color a, Color b) => ContrastMath.Ratio(a, b);
 
     public static ThemeVariant VariantOf(string name) => name == "Light" ? ThemeVariant.Light : ThemeVariant.Dark;
 

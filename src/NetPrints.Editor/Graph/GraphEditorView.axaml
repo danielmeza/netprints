@@ -7,7 +7,7 @@
              xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
              xmlns:ednodes="clr-namespace:NetPrints.Editor.Graph.Nodes"
              xmlns:edpins="clr-namespace:NetPrints.Editor.Graph.Pins"
-             xmlns:edsearch="clr-namespace:NetPrints.Editor.Search"
+             xmlns:edsearch="clr-namespace:NetPrints.Editor.NodeSearch"
              xmlns:edshell="clr-namespace:NetPrints.Editor.Shell"
              xmlns:nodify="clr-namespace:Nodify.Avalonia;assembly=Nodify.Avalonia"
              xmlns:nc="clr-namespace:Nodify.Avalonia.Connections;assembly=Nodify.Avalonia"
@@ -98,8 +98,8 @@
     </nodify:NodifyEditor>
 
     <!-- Graph name watermark (PAR-38) -->
-    <TextBlock x:Name="Watermark" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphWatermark}" Text="{Binding Name}" FontWeight="Bold" FontSize="{StaticResource Font.Watermark}" Foreground="{DynamicResource GraphWatermark.Foreground}"
-               VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="{StaticResource Space.S}" IsHitTestVisible="False" />
+    <TextBlock x:Name="Watermark" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphWatermark}" Text="{Binding Name}" FontWeight="Bold" FontSize="{DynamicResource Font.Watermark}" Foreground="{DynamicResource GraphWatermark.Foreground}"
+               VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="{DynamicResource Space.S}" IsHitTestVisible="False" />
 
     <!-- Node search (PAR-52). CanvasPopup anchors itself at the pointer (ADR-0004). -->
     <edcontrols:CanvasPopup x:Name="SearchPopup" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphSearchPopup}" IsOpen="{Binding Search.IsOpen, Mode=TwoWay}"

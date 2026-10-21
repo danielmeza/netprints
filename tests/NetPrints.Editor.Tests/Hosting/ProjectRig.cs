@@ -13,17 +13,12 @@ namespace NetPrints.Editor.Tests.Hosting;
 /// <summary>A shell state with the project flows of the shell window over it, as the shell host composes them, without a window.</summary>
 internal sealed class ProjectRig : IDisposable
 {
-    private sealed class NoServices : IServiceProvider
-    {
-        public object? GetService(Type serviceType) => null;
-    }
-
     public ProjectRig(EditorContext context, TimeProvider? time = null, IFolderLauncher? folders = null)
     {
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         BuiltInContributions.Register(registry);
         registry.Freeze();
-        Shell = new ShellViewModel(registry, new NoServices(), time ?? new FakeTimeProvider(), new InlineDispatcher());
+        Shell = new ShellViewModel(registry, PanelFactoryContext.Detached, time ?? new FakeTimeProvider(), new InlineDispatcher());
         Actions = new ShellProjectActions(context, Shell, folders);
     }
 

@@ -10,4 +10,11 @@ namespace NetPrints.Editor.Graph.Nodes;
 /// </summary>
 /// <param name="Left">Pin in the row's left column, or <see langword="null"/> if the row has none.</param>
 /// <param name="Right">Pin in the row's right column, or <see langword="null"/> if the row has none.</param>
-public sealed record PinRowViewModel(NodePinViewModel? Left, NodePinViewModel? Right);
+public sealed record PinRowViewModel(NodePinViewModel? Left, NodePinViewModel? Right)
+{
+    /// <summary>Gets the per-pin automation id of the left pin, or null when the row has none.</summary>
+    public string? LeftAutomationId => Left?.PinAutomationId;
+
+    /// <summary>Gets the per-pin automation id of the right pin, or null when the row has none.</summary>
+    public string? RightAutomationId => Right?.PinAutomationId;
+}

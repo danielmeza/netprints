@@ -18,11 +18,11 @@ public sealed partial class CommandBarSlotViewModel : ObservableObject
     [ObservableProperty]
     public partial CommandEntryViewModel Current { get; private set; }
 
-    internal void Refresh()
+    internal void Refresh(CommandContext? pulse = null)
     {
         foreach (CommandEntryViewModel item in Items)
         {
-            item.Refresh();
+            item.Refresh(pulse);
         }
 
         Current = Items.FirstOrDefault(item => item.IsEnabled) ?? Items[0];

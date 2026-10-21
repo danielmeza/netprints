@@ -25,6 +25,6 @@
     </ctl:DialogShell.Actions>
     <!-- Read-only but selectable so the error can be copied. -->
     <TextBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ErrorMessage}" Classes="codeBlock"
-             IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" MaxHeight="{StaticResource Dialog.ListMaxHeight}" Text="{Binding Message, Mode=OneWay}" />
+             IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" MaxHeight="{DynamicResource Dialog.ListMaxHeight}" Text="{Binding Message, Mode=OneWay}" />
   </ctl:DialogShell>
 </Window>

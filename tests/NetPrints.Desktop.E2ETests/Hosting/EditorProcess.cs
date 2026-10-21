@@ -104,6 +104,11 @@ public sealed class EditorProcess : ICapturedEditor, IAsyncDisposable
             RedirectStandardError = true,
             WorkingDirectory = workDirectory,
         };
+        foreach (string argument in start.Arguments ?? [])
+        {
+            info.ArgumentList.Add(argument);
+        }
+
         if (project is not null)
         {
             info.ArgumentList.Add(project);

@@ -5,7 +5,7 @@ using NetPrints.Editor.Shell;
 namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>nodeSearch</c> command: asks the canvas to open the node search.</summary>
-public sealed class NodeSearchCommandHandler : ICommandHandler
+public sealed class NodeSearchCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => context.ActiveGraph is not null;

@@ -100,7 +100,7 @@ public class BuiltInNodeLibraryTests
         INodeLibrary library = BuiltInNodeLibrary.Instance;
 
         string[] For(GraphKinds graphKind) =>
-            [.. library.NodeKinds.Where(k => k.AllowedIn.HasFlag(graphKind)).SelectMany(k => k.Suggestions).Select(s => s.DisplayName)];
+            [.. library.NodeKinds.Where(k => k.AllowedIn.HasFlag(graphKind)).SelectMany(k => k.Suggestions).Select(s => s.DisplayName.Text)];
 
         Assert.Equal(MethodSuggestions, For(GraphKinds.Method));
         Assert.Equal(ConstructorSuggestions, For(GraphKinds.Constructor));
@@ -156,7 +156,7 @@ public class BuiltInNodeLibraryTests
     public void BuiltInExtensionUsesTheBuiltInId()
     {
         Assert.Equal(BuiltInNodeLibrary.Id, BuiltInExtension.Manifest.Id);
-        Assert.Equal(new Version(1, 0), BuiltInExtension.Manifest.ApiVersion);
+        Assert.Equal(ExtensionApi.Version, BuiltInExtension.Manifest.ApiVersion);
         Assert.Same(BuiltInExtension.Manifest, BuiltInExtension.InProcessEntry.Manifest);
     }
 }

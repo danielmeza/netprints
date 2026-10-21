@@ -1,0 +1,8 @@
+{
+  "id": "fx.fail.determinism",
+  "name": "Fails NPK008: translates the same graph to different text each time",
+  "version": "1.0.0",
+  "assembly": "Fx.Fail.Determinism.dll",
+  "netprintsApi": "0.4",
+  "dependsOn": []
+}

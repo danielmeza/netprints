@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://danielmeza.github.io/netprints/schemas/settings.v1.schema.json",
+  "title": "NetPrints settings (schema v1)",
+  "description": "The user settings file of the NetPrints editor; sections and keys this version does not know are preserved",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "netprints": {
+      "type": "object",
+      "properties": {
+        "extensionPaths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Folders searched for extensions. Each subfolder that holds a manifest is loaded at the next start",
+          "x-netprints-restart": true,
+          "x-netprints-path": "folder"
+        },
+        "trustedProjects": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Project files whose extensions you allowed to load",
+          "x-netprints-path": "file"
+        },
+        "enableAnimations": {
+          "type": "boolean",
+          "description": "Turns the interface animations on. Turn them off to reduce motion"
+        },
+        "language": {
+          "type": "string",
+          "description": "The interface language: en (English), the only language shipped so far. Empty uses the system language",
+          "x-netprints-restart": true,
+          "x-netprints-choices": "netprints.languages"
+        }
+      }
+    },
+    "run": {
+      "type": "object",
+      "properties": {
+        "stopTimeoutSeconds": {
+          "type": "integer",
+          "description": "Seconds a stopped program has to exit before its process tree is killed",
+          "minimum": 1,
+          "maximum": 600
+        },
+        "linuxTerminal": {
+          "type": "string",
+          "description": "Linux only: the terminal command that hosts a run in an external terminal. Empty detects one",
+          "maxLength": 512,
+          "pattern": "^[^\\x00-\\x1F\\x7F]*$"
+        }
+      }
+    },
+    "keyboard": {
+      "type": "object",
+      "properties": {
+        "bindings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "command": {
+                "type": "string",
+                "description": "The id of the command",
+                "minLength": 1
+              },
+              "scope": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "default": "Global",
+                "description": "The scope of the command when the entry was written"
+              },
+              "add": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "type": "string"
+                },
+                "default": [],
+                "description": "Gestures added to the command, in canonical form"
+              },
+              "remove": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "type": "string"
+                },
+                "default": [],
+                "description": "Default gestures removed from the command, in canonical form"
+              }
+            },
+            "required": [
+              "command"
+            ]
+          },
+          "description": "Your changes to the default key bindings, one entry per changed command"
+        }
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "properties": {
+        "netprints.editor": {
+          "type": "object",
+          "properties": {
+            "theme": {
+              "enum": [
+                "dark",
+                "light",
+                "system"
+              ],
+              "description": "The theme variant the editor starts in"
+            },
+            "darkPreset": {
+              "type": "string",
+              "description": "The id of the preset the Dark variant uses",
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$",
+              "x-netprints-choices": "netprints.presets.dark"
+            },
+            "lightPreset": {
+              "type": "string",
+              "description": "The id of the preset the Light variant uses",
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$",
+              "x-netprints-choices": "netprints.presets.light"
+            }
+          }
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

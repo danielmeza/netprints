@@ -1,0 +1,324 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
+             xmlns:edsettings="clr-namespace:NetPrints.Editor.Settings"
+             x:Class="NetPrints.Editor.Settings.SettingsView"
+             x:DataType="edsettings:SettingsDocumentViewModel">
+  <!-- The Settings document (FR-039): a page list with search on the left, the fields of the selected page on the right. -->
+  <UserControl.DataTemplates>
+    <DataTemplate DataType="edsettings:LoadedExtensionsItemViewModel" x:DataType="edsettings:LoadedExtensionsItemViewModel">
+      <StackPanel Classes="settingsField" IsVisible="{Binding IsVisible}">
+        <TextBlock Classes="groupTitle" Text="{Binding Label}" />
+        <TextBlock Classes="secondary" Text="{Binding Description}" TextWrapping="Wrap" />
+        <ItemsControl ItemsSource="{Binding Rows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="edsettings:LoadedExtensionRow">
+              <Grid ColumnDefinitions="2*,Auto,3*" AutomationProperties.Name="{Binding Name}">
+                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="1" Classes="secondary" Text="{Binding Version}" />
+                <TextBlock Grid.Column="2" Classes="secondary" Text="{Binding Source}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Source}" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </DataTemplate>
+    <DataTemplate DataType="edsettings:ThemePreviewItemViewModel" x:DataType="edsettings:ThemePreviewItemViewModel">
+      <StackPanel Classes="settingsField" IsVisible="{Binding IsVisible}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsThemePreview}">
+        <TextBlock Classes="groupTitle" Text="{Binding Label}" />
+        <TextBlock Classes="secondary" Text="{Binding Description}" TextWrapping="Wrap" />
+        <ItemsControl ItemsSource="{Binding Rows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="edsettings:ThemePreviewRow">
+              <StackPanel Orientation="Horizontal" Spacing="8" AutomationProperties.Name="{Binding PresetLabel}">
+                <TextBlock Text="{Binding Variant}" VerticalAlignment="Center" />
+                <TextBlock Classes="secondary" Text="{Binding PresetLabel}" VerticalAlignment="Center" />
+                <ItemsControl ItemsSource="{Binding Swatches}" AutomationProperties.AccessibilityView="Raw">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="4" />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="edsettings:ThemeSwatch">
+                      <Border Classes="swatch" Background="{Binding Brush}" ToolTip.Tip="{Binding Token}" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </DataTemplate>
+    <DataTemplate DataType="edsettings:KeyboardShortcutsItemViewModel" x:DataType="edsettings:KeyboardShortcutsItemViewModel">
+      <StackPanel Classes="settingsField" IsVisible="{Binding IsVisible}" Focusable="True" KeyboardNavigation.IsTabStop="False">
+        <Interaction.Behaviors>
+          <edbehaviors:RecordGestureBehavior IsRecording="{Binding IsRecording}" Command="{Binding CaptureCommand}"
+                                             CancelCommand="{Binding CancelRecordingCommand}" />
+        </Interaction.Behaviors>
+        <TextBlock Classes="secondary" Text="{Binding Description}" TextWrapping="Wrap" />
+        <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto">
+          <TextBox Text="{Binding FilterText}" PlaceholderText="{x:Static ed:Strings.Settings_Keyboard_FilterPlaceholder}"
+                   AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsFilter}"
+                   AutomationProperties.Name="{x:Static ed:Strings.Settings_Keyboard_FilterName}">
+            <Interaction.Behaviors>
+              <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding RecordFirstVisibleCommand}" />
+              <edbehaviors:FocusOnRequestBehavior Request="{Binding FilterFocusRequest}" />
+            </Interaction.Behaviors>
+          </TextBox>
+          <Button Grid.Column="1" Content="{x:Static ed:Strings.Settings_Keyboard_RecordFilter}" Command="{Binding RecordFilterCommand}"
+                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsRecordFilter}" />
+          <TextBlock Grid.Column="2" Classes="secondary" Text="{Binding FilterGesture}" VerticalAlignment="Center" />
+          <Button Grid.Column="3" Content="{x:Static ed:Strings.Settings_Keyboard_ClearFilter}" Command="{Binding ClearFilterGestureCommand}"
+                  IsVisible="{Binding FilterGesture, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsClearFilter}" />
+          <Button Grid.Column="4" Content="{x:Static ed:Strings.Settings_Keyboard_ResetAll}" Command="{Binding ResetAllCommand}"
+                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsResetAll}" />
+        </Grid>
+        <Border Classes="restartBar" IsVisible="{Binding Conflict, Converter={x:Static ObjectConverters.IsNotNull}}"
+                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsConflict}"
+                AutomationProperties.Name="{Binding Conflict.Message}">
+          <Border.KeyBindings>
+            <KeyBinding Gesture="Escape" Command="{Binding Conflict.CancelCommand}" />
+          </Border.KeyBindings>
+          <DockPanel DataContext="{Binding Conflict}" x:DataType="edsettings:GestureConflictViewModel">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4">
+              <Button Content="{x:Static ed:Strings.Settings_Keyboard_ConflictAccept}" Command="{Binding AcceptCommand}"
+                      AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsConflictAccept}">
+                <Interaction.Behaviors>
+                  <edbehaviors:FocusOnDataContextBehavior />
+                </Interaction.Behaviors>
+              </Button>
+              <Button Content="{x:Static ed:Strings.Settings_Keyboard_ConflictCancel}" Command="{Binding CancelCommand}"
+                      AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsConflictCancel}" />
+            </StackPanel>
+            <TextBlock Text="{Binding Message}" TextWrapping="Wrap" VerticalAlignment="Center" />
+          </DockPanel>
+        </Border>
+        <TextBlock Classes="fieldError" Text="{Binding Refusal}" IsVisible="{Binding HasRefusal}"
+                   AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsRefusal}" />
+        <ItemsControl ItemsSource="{Binding IssueTexts}" IsVisible="{Binding HasIssues}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <TextBlock Classes="fieldError" Text="{Binding}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <ItemsControl ItemsSource="{Binding VisibleRows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="edsettings:ShortcutEditRowViewModel">
+              <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" Classes.recording="{Binding IsRecording}"
+                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsEditRow}"
+                    AutomationProperties.Name="{Binding Label}">
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                  <TextBlock Text="{Binding Label}" ToolTip.Tip="{Binding CommandId}" />
+                  <TextBlock Classes="secondary" Text="{Binding Owner}" />
+                  <TextBlock Classes="secondary" Text="{Binding Scope}" ToolTip.Tip="{Binding Defaults}" />
+                </StackPanel>
+                <ItemsControl Grid.Row="1" ItemsSource="{Binding Gestures}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <WrapPanel />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="edsettings:GestureChipViewModel">
+                      <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Text}" VerticalAlignment="Center" />
+                        <Button Classes="icon" Content="✕" Command="{Binding RemoveCommand}"
+                                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsRemoveGesture}"
+                                AutomationProperties.Name="{x:Static ed:Strings.Settings_Keyboard_RemoveGesture}" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <StackPanel Grid.Column="1" Grid.RowSpan="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                  <Button Content="{Binding AddLabel}" Command="{Binding ToggleRecordingCommand}"
+                          AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsAdd}" />
+                  <Button Content="{x:Static ed:Strings.Settings_Keyboard_Reset}" Command="{Binding ResetCommand}"
+                          AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsReset}" />
+                </StackPanel>
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBlock Classes="groupTitle" Text="{x:Static ed:Strings.Settings_Keyboard_NotLoaded}" IsVisible="{Binding HasNotLoaded}" />
+        <ItemsControl ItemsSource="{Binding NotLoaded}" IsVisible="{Binding HasNotLoaded}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="edsettings:NotLoadedRowViewModel">
+              <Grid ColumnDefinitions="*,Auto" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsNotLoaded}"
+                    AutomationProperties.Name="{Binding Summary}">
+                <TextBlock Text="{Binding Summary}" TextTrimming="CharacterEllipsis" />
+                <Button Grid.Column="1" Content="{x:Static ed:Strings.Settings_Keyboard_RemoveNotLoaded}" Command="{Binding RemoveCommand}"
+                        AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsNotLoadedRemove}" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </DataTemplate>
+    <DataTemplate DataType="edsettings:CustomSettingsPageItemViewModel" x:DataType="edsettings:CustomSettingsPageItemViewModel">
+      <ContentControl Content="{Binding Content}" IsVisible="{Binding IsVisible}"
+                      AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsCustomPage}" />
+    </DataTemplate>
+    <DataTemplate DataType="edsettings:SettingsFieldViewModel" x:DataType="edsettings:SettingsFieldViewModel">
+      <StackPanel Classes="settingsField" IsVisible="{Binding IsVisible}">
+        <TextBlock Classes="groupTitle" Text="{Binding Label}" />
+        <TextBlock Classes="secondary" Text="{Binding Description}" TextWrapping="Wrap"
+                   IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+        <ContentControl Content="{Binding}">
+          <ContentControl.DataTemplates>
+            <DataTemplate DataType="edsettings:ToggleFieldViewModel" x:DataType="edsettings:ToggleFieldViewModel">
+              <CheckBox IsChecked="{Binding IsOn, Mode=OneWay}" Command="{Binding ToggleCommand}"
+                        AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsFieldInput}"
+                        AutomationProperties.Name="{Binding Label}" />
+            </DataTemplate>
+            <DataTemplate DataType="edsettings:NumberFieldViewModel" x:DataType="edsettings:NumberFieldViewModel">
+              <TextBox Text="{Binding Text}"
+                       AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsFieldInput}"
+                       AutomationProperties.Name="{Binding Label}">
+                <Interaction.Behaviors>
+                  <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding CommitCommand}" />
+                  <EventTriggerBehavior EventName="LostFocus">
+                    <InvokeCommandAction Command="{Binding CommitCommand}" />
+                  </EventTriggerBehavior>
+                </Interaction.Behaviors>
+              </TextBox>
+            </DataTemplate>
+            <DataTemplate DataType="edsettings:ChoiceFieldViewModel" x:DataType="edsettings:ChoiceFieldViewModel">
+              <ComboBox x:Name="Chooser" ItemsSource="{Binding Options}" SelectedItem="{Binding SelectedOption, Mode=OneWay}"
+                        AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsFieldInput}"
+                        AutomationProperties.Name="{Binding Label}">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="edsettings:ChoiceOption">
+                    <TextBlock Text="{Binding Label}" />
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+                <Interaction.Behaviors>
+                  <EventTriggerBehavior EventName="SelectionChanged">
+                    <InvokeCommandAction Command="{Binding ChooseOptionCommand}" CommandParameter="{Binding #Chooser.SelectedItem}" />
+                  </EventTriggerBehavior>
+                </Interaction.Behaviors>
+              </ComboBox>
+            </DataTemplate>
+            <DataTemplate DataType="edsettings:PathFieldViewModel" x:DataType="edsettings:PathFieldViewModel">
+              <DockPanel>
+                <Button DockPanel.Dock="Right" Content="{x:Static ed:Strings.Settings_Browse}" Command="{Binding BrowseCommand}"
+                        AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsBrowse}" />
+                <TextBox Text="{Binding Text}"
+                         AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsFieldInput}"
+                         AutomationProperties.Name="{Binding Label}">
+                  <Interaction.Behaviors>
+                    <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding CommitCommand}" />
+                    <EventTriggerBehavior EventName="LostFocus">
+                      <InvokeCommandAction Command="{Binding CommitCommand}" />
+                    </EventTriggerBehavior>
+                  </Interaction.Behaviors>
+                </TextBox>
+              </DockPanel>
+            </DataTemplate>
+            <DataTemplate DataType="edsettings:TextFieldViewModel" x:DataType="edsettings:TextFieldViewModel">
+              <TextBox Text="{Binding Text}"
+                       AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsFieldInput}"
+                       AutomationProperties.Name="{Binding Label}">
+                <Interaction.Behaviors>
+                  <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding CommitCommand}" />
+                  <EventTriggerBehavior EventName="LostFocus">
+                    <InvokeCommandAction Command="{Binding CommitCommand}" />
+                  </EventTriggerBehavior>
+                </Interaction.Behaviors>
+              </TextBox>
+            </DataTemplate>
+            <DataTemplate DataType="edsettings:StringListFieldViewModel" x:DataType="edsettings:StringListFieldViewModel">
+              <StackPanel Classes="settingsField">
+                <ItemsControl ItemsSource="{Binding Items}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="edsettings:StringListItemViewModel">
+                      <Grid ColumnDefinitions="*,Auto,Auto,Auto"
+                            AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsListItem}"
+                            AutomationProperties.Name="{Binding Text}">
+                        <TextBlock Text="{Binding Text}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Text}" />
+                        <Button Grid.Column="1" Classes="icon" Content="↑" AutomationProperties.Name="{x:Static ed:Strings.Settings_List_MoveUp}"
+                                Command="{Binding $parent[ItemsControl].((edsettings:StringListFieldViewModel)DataContext).MoveUpCommand}"
+                                CommandParameter="{Binding}" />
+                        <Button Grid.Column="2" Classes="icon" Content="↓" AutomationProperties.Name="{x:Static ed:Strings.Settings_List_MoveDown}"
+                                Command="{Binding $parent[ItemsControl].((edsettings:StringListFieldViewModel)DataContext).MoveDownCommand}"
+                                CommandParameter="{Binding}" />
+                        <Button Grid.Column="3" Classes="icon" Content="✕" AutomationProperties.Name="{x:Static ed:Strings.Settings_List_Remove}"
+                                Command="{Binding $parent[ItemsControl].((edsettings:StringListFieldViewModel)DataContext).RemoveCommand}"
+                                CommandParameter="{Binding}" />
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                  <TextBox Text="{Binding NewItem}" PlaceholderText="{x:Static ed:Strings.Settings_List_NewItem}"
+                           AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsListNewItem}"
+                           AutomationProperties.Name="{Binding Label}">
+                    <Interaction.Behaviors>
+                      <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding AddCommand}" />
+                    </Interaction.Behaviors>
+                  </TextBox>
+                  <Button Grid.Column="1" Content="{x:Static ed:Strings.Settings_List_Add}" Command="{Binding AddCommand}"
+                          AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsListAdd}" />
+                  <Button Grid.Column="2" Content="{x:Static ed:Strings.Settings_Browse}" Command="{Binding BrowseCommand}" IsVisible="{Binding CanBrowse}"
+                          AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsBrowse}" />
+                </Grid>
+              </StackPanel>
+            </DataTemplate>
+          </ContentControl.DataTemplates>
+        </ContentControl>
+        <TextBlock Classes="fieldError" Text="{Binding Error}" IsVisible="{Binding HasError}"
+                   AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsFieldError}" />
+        <TextBlock Classes="secondary" Text="{x:Static ed:Strings.Settings_RequiresRestart}" IsVisible="{Binding RequiresRestart}"
+                   AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsRequiresRestart}" />
+      </StackPanel>
+    </DataTemplate>
+  </UserControl.DataTemplates>
+  <DockPanel>
+    <Border DockPanel.Dock="Top" Classes="restartBar" IsVisible="{Binding RestartPending}"
+            AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsRestartBar}">
+      <DockPanel>
+        <Button DockPanel.Dock="Right" Content="{x:Static ed:Strings.Settings_RestartNow}" Command="{Binding RestartNowCommand}"
+                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsRestartNow}" />
+        <TextBlock Text="{x:Static ed:Strings.Settings_RestartToApply}" VerticalAlignment="Center" />
+      </DockPanel>
+    </Border>
+    <Grid ColumnDefinitions="240,*">
+      <DockPanel>
+        <TextBox DockPanel.Dock="Top" Text="{Binding SearchText}" PlaceholderText="{x:Static ed:Strings.Settings_Search}"
+                 AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsSearch}"
+                 AutomationProperties.Name="{x:Static ed:Strings.Settings_Search}">
+          <Interaction.Behaviors>
+            <edbehaviors:FocusOnDataContextBehavior />
+            <KeyTrigger Key="Down" EventRoutingStrategy="Tunnel">
+              <InvokeCommandAction Command="{Binding SelectFirstVisiblePageCommand}" />
+              <FocusControlAction TargetControl="Pages" />
+            </KeyTrigger>
+          </Interaction.Behaviors>
+        </TextBox>
+        <ListBox x:Name="Pages" Classes="rows" Focusable="True" ItemsSource="{Binding VisiblePages}" SelectedItem="{Binding SelectedPage}"
+                 AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsPageList}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="edsettings:SettingsPageViewModel">
+              <TextBlock Text="{Binding Title}" Classes.settingsChildPage="{Binding IsChild}"
+                         AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SettingsPageItem}"
+                         AutomationProperties.Name="{Binding Title}" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+      <ScrollViewer Grid.Column="1">
+        <ItemsControl ItemsSource="{Binding SelectedPage.Items}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Classes="formContainer settingsPage" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+        </ItemsControl>
+      </ScrollViewer>
+    </Grid>
+  </DockPanel>
+</UserControl>

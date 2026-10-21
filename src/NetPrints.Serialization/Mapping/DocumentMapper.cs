@@ -100,7 +100,10 @@ public sealed class DocumentMapper : IDocumentMapper
             methods,
             constructors,
             eventGraphs,
-            BuildLayout(cls));
+            BuildLayout(cls))
+        {
+            ExtensionData = PreservedMembers.Recall(cls, PreservedMembers.Member),
+        };
     }
 
     /// <inheritdoc/>
@@ -129,6 +132,7 @@ public sealed class DocumentMapper : IDocumentMapper
             Modifiers = document.Modifiers,
             Project = project,
         };
+        PreservedMembers.Remember(cls, PreservedMembers.Member, document.ExtensionData);
 
         if (document.GenericArguments is not null)
         {
@@ -186,22 +190,40 @@ public sealed class DocumentMapper : IDocumentMapper
     };
 
     private MethodDocument MapMethod(MethodGraph method, NodeMappingContext context) =>
-        new(method.Id, method.Name, method.Visibility, method.Modifiers, MapGraph(method, context));
+        new(method.Id, method.Name, method.Visibility, method.Modifiers, MapGraph(method, context))
+        {
+            ExtensionData = PreservedMembers.Recall(method, PreservedMembers.Member),
+        };
 
     private ConstructorDocument MapConstructor(ConstructorGraph constructor, NodeMappingContext context) =>
-        new(constructor.Id, constructor.Visibility, MapGraph(constructor, context));
+        new(constructor.Id, constructor.Visibility, MapGraph(constructor, context))
+        {
+            ExtensionData = PreservedMembers.Recall(constructor, PreservedMembers.Member),
+        };
 
     private EventGraphDocument MapEventGraph(EventGraph eventGraph, NodeMappingContext context) =>
-        new(eventGraph.Id, eventGraph.Name, MapGraph(eventGraph, context));
+        new(eventGraph.Id, eventGraph.Name, MapGraph(eventGraph, context))
+        {
+            ExtensionData = PreservedMembers.Recall(eventGraph, PreservedMembers.Member),
+        };
 
     private VariableDocument MapVariable(Variable variable, NodeMappingContext context)
     {
-        AccessorDocument? getter = variable.GetterMethod is { } g ? new AccessorDocument(g.Visibility, MapGraph(g, context)) : null;
-        AccessorDocument? setter = variable.SetterMethod is { } s ? new AccessorDocument(s.Visibility, MapGraph(s, context)) : null;
+        AccessorDocument? getter = variable.GetterMethod is { } g ? MapAccessor(g, context) : null;
+        AccessorDocument? setter = variable.SetterMethod is { } s ? MapAccessor(s, context) : null;
 
         return new VariableDocument(variable.Id, variable.Name, variable.Visibility, variable.Modifiers,
-            MapGraph(variable.TypeGraph, context), getter, setter);
+            MapGraph(variable.TypeGraph, context), getter, setter)
+        {
+            ExtensionData = PreservedMembers.Recall(variable, PreservedMembers.Member),
+        };
     }
+
+    private AccessorDocument MapAccessor(MethodGraph accessor, NodeMappingContext context) =>
+        new(accessor.Visibility, MapGraph(accessor, context))
+        {
+            ExtensionData = PreservedMembers.Recall(accessor, PreservedMembers.Accessor),
+        };
 
     private GraphDocument MapGraph(NodeGraph graph, NodeMappingContext context)
     {
@@ -218,6 +240,8 @@ public sealed class DocumentMapper : IDocumentMapper
                 Id = node.Id,
                 Name = node.Name == node.DefaultName ? null : node.Name,
                 Pins = BuildPinStates(node, context),
+                ExtensionData = PreservedMembers.Recall(node, PreservedMembers.Member),
+                KindVersion = nodes.DataVersionOf(converter.Kind) is > 0 and int dataVersion ? dataVersion : null,
             });
         }
 
@@ -244,10 +268,16 @@ public sealed class DocumentMapper : IDocumentMapper
         });
 
         List<LocalVariableDocument>? locals = graph is ExecutionGraph { LocalVariables.Count: > 0 } execGraph
-            ? execGraph.LocalVariables.Select(local => new LocalVariableDocument(local.Name, context.ToRef(local.Type))).ToList()
+            ? execGraph.LocalVariables.Select(local => new LocalVariableDocument(local.Name, context.ToRef(local.Type))
+            {
+                ExtensionData = PreservedMembers.Recall(local, PreservedMembers.Member),
+            }).ToList()
             : null;
 
-        return new GraphDocument(nodeDocuments, connections.Count > 0 ? connections : null, locals);
+        return new GraphDocument(nodeDocuments, connections.Count > 0 ? connections : null, locals)
+        {
+            ExtensionData = PreservedMembers.Recall(graph, PreservedMembers.Graph),
+        };
     }
 
     private static List<PinStateDocument>? BuildPinStates(Node node, NodeMappingContext context)
@@ -259,12 +289,13 @@ public sealed class DocumentMapper : IDocumentMapper
             string keyName = node.GetPinKeyName(pin);
             string? name = pin.Name == keyName ? null : pin.Name;
 
-            if (name is null && value is null)
+            UnknownMembers? unknown = PreservedMembers.Recall(pin, PreservedMembers.Member);
+            if (name is null && value is null && unknown is null)
             {
                 return;
             }
 
-            (pins ??= []).Add(new PinStateDocument(PinKeys.For(pin), name, value));
+            (pins ??= []).Add(new PinStateDocument(PinKeys.For(pin), name, value) { ExtensionData = unknown });
         }
 
         foreach (NodeInputDataPin pin in node.InputDataPins)
@@ -312,6 +343,9 @@ public sealed class DocumentMapper : IDocumentMapper
         return pins;
     }
 
+    private static ConnectionDocument Connect(NodeGraph graph, string from, string to) =>
+        new(from, to) { ExtensionData = PreservedMembers.RecallConnection(graph, from, to) };
+
     private static List<ConnectionDocument> BuildConnections(NodeGraph graph)
     {
         var connections = new List<ConnectionDocument>();
@@ -322,7 +356,7 @@ public sealed class DocumentMapper : IDocumentMapper
             {
                 if (pin.OutgoingPin is { } target)
                 {
-                    connections.Add(new ConnectionDocument($"{node.Id}/{PinKeys.For(pin)}", $"{target.Node.Id}/{PinKeys.For(target)}"));
+                    connections.Add(Connect(graph, $"{node.Id}/{PinKeys.For(pin)}", $"{target.Node.Id}/{PinKeys.For(target)}"));
                 }
             }
 
@@ -330,7 +364,7 @@ public sealed class DocumentMapper : IDocumentMapper
             {
                 foreach (NodeInputDataPin target in pin.OutgoingPins)
                 {
-                    connections.Add(new ConnectionDocument($"{node.Id}/{PinKeys.For(pin)}", $"{target.Node.Id}/{PinKeys.For(target)}"));
+                    connections.Add(Connect(graph, $"{node.Id}/{PinKeys.For(pin)}", $"{target.Node.Id}/{PinKeys.For(target)}"));
                 }
             }
 
@@ -338,7 +372,7 @@ public sealed class DocumentMapper : IDocumentMapper
             {
                 foreach (NodeInputTypePin target in pin.OutgoingPins)
                 {
-                    connections.Add(new ConnectionDocument($"{node.Id}/{PinKeys.For(pin)}", $"{target.Node.Id}/{PinKeys.For(target)}"));
+                    connections.Add(Connect(graph, $"{node.Id}/{PinKeys.For(pin)}", $"{target.Node.Id}/{PinKeys.For(target)}"));
                 }
             }
         }
@@ -575,7 +609,7 @@ public sealed class DocumentMapper : IDocumentMapper
         }
 
         return connections
-            .Select(connection => new ConnectionDocument(RemapEndpoint(connection.From, oldToNewNodeId), RemapEndpoint(connection.To, oldToNewNodeId)))
+            .Select(connection => connection with { From = RemapEndpoint(connection.From, oldToNewNodeId), To = RemapEndpoint(connection.To, oldToNewNodeId) })
             .ToList();
     }
 
@@ -594,6 +628,7 @@ public sealed class DocumentMapper : IDocumentMapper
             Visibility = document.Visibility,
         };
         variable.Id = ResolveMemberId('m', document.Id, MemberIdKind, seenMemberIds, layout, isVariable: true, id, issues);
+        PreservedMembers.Remember(variable, PreservedMembers.Member, document.ExtensionData);
 
         // Variable's constructor always builds a placeholder type-node tree for its TypeSpecifier
         // argument (GraphUtil.CreateNestedTypeNode), unlike every other graph kind's constructor,
@@ -619,6 +654,7 @@ public sealed class DocumentMapper : IDocumentMapper
         {
             var getter = new MethodGraph($"get_{document.Name}") { Class = cls, Project = cls.Project, Visibility = document.Getter.Visibility };
             variable.GetterMethod = getter;
+            PreservedMembers.Remember(getter, PreservedMembers.Accessor, document.Getter.ExtensionData);
             MapGraphFromDocument(document.Getter.Graph, getter, context, layout, knownGraphKeys, id, issues);
         }
 
@@ -626,6 +662,7 @@ public sealed class DocumentMapper : IDocumentMapper
         {
             var setter = new MethodGraph($"set_{document.Name}") { Class = cls, Project = cls.Project, Visibility = document.Setter.Visibility };
             variable.SetterMethod = setter;
+            PreservedMembers.Remember(setter, PreservedMembers.Accessor, document.Setter.ExtensionData);
             MapGraphFromDocument(document.Setter.Graph, setter, context, layout, knownGraphKeys, id, issues);
         }
     }
@@ -642,6 +679,7 @@ public sealed class DocumentMapper : IDocumentMapper
             Modifiers = document.Modifiers,
         };
         method.Id = ResolveMemberId('m', document.Id, MemberIdKind, seenMemberIds, layout, isVariable: false, id, issues);
+        PreservedMembers.Remember(method, PreservedMembers.Member, document.ExtensionData);
         cls.Methods.Add(method);
 
         MapGraphFromDocument(document.Graph, method, context, layout, knownGraphKeys, id, issues);
@@ -653,6 +691,7 @@ public sealed class DocumentMapper : IDocumentMapper
     {
         var constructor = new ConstructorGraph { Class = cls, Project = cls.Project, Visibility = document.Visibility };
         constructor.Id = ResolveMemberId('m', document.Id, MemberIdKind, seenMemberIds, layout, isVariable: false, id, issues);
+        PreservedMembers.Remember(constructor, PreservedMembers.Member, document.ExtensionData);
         cls.Constructors.Add(constructor);
 
         MapGraphFromDocument(document.Graph, constructor, context, layout, knownGraphKeys, id, issues);
@@ -664,6 +703,7 @@ public sealed class DocumentMapper : IDocumentMapper
     {
         var eventGraph = new EventGraph(document.Name) { Class = cls, Project = cls.Project };
         eventGraph.Id = ResolveMemberId('m', document.Id, MemberIdKind, seenMemberIds, layout, isVariable: false, id, issues);
+        PreservedMembers.Remember(eventGraph, PreservedMembers.Member, document.ExtensionData);
         cls.EventGraphs.Add(eventGraph);
 
         MapGraphFromDocument(document.Graph, eventGraph, context, layout, knownGraphKeys, id, issues);
@@ -675,6 +715,7 @@ public sealed class DocumentMapper : IDocumentMapper
     {
         string graphKey = GraphKeys.For(graph);
         knownGraphKeys.Add(graphKey);
+        PreservedMembers.Remember(graph, PreservedMembers.Graph, graphDocument.ExtensionData);
 
         // Locals are restored before the graph's nodes (data-model.md §3): a variableGetter/Setter node
         // referencing one does not depend on this, but "declared first" is the same rule the translator
@@ -683,7 +724,9 @@ public sealed class DocumentMapper : IDocumentMapper
         {
             foreach (LocalVariableDocument local in locals)
             {
-                execGraph.LocalVariables.Add(new LocalVariable(local.Name, context.FromTypeRef(local.Type, $"Local variable '{local.Name}' type")));
+                var localVariable = new LocalVariable(local.Name, context.FromTypeRef(local.Type, $"Local variable '{local.Name}' type"));
+                PreservedMembers.Remember(localVariable, PreservedMembers.Member, local.ExtensionData);
+                execGraph.LocalVariables.Add(localVariable);
             }
         }
 
@@ -743,12 +786,19 @@ public sealed class DocumentMapper : IDocumentMapper
             node.Id = ResolveDuplicateId('n', documentNodeId, seenNodeIds, $"Node in graph '{graphKey}'", id, issues);
             graph.ReindexNode(node, previousId);
             node.Name = nodeDocument.Name ?? node.DefaultName;
+            PreservedMembers.Remember(node, PreservedMembers.Member, nodeDocument.ExtensionData);
             createdNodes.Add((node, nodeDocument));
         }
 
         var preservedNodeIds = new HashSet<string>(preservedNodeDocuments.Select(n => n.Document.Id), StringComparer.Ordinal);
         var preservedConnections = new List<ConnectionDocument>();
-        ApplyConnections(RemapConnectionEndpoints(graphDocument.Connections, oldToNewNodeId), graph, id, issues, preservedNodeIds, preservedConnections, logger);
+        IReadOnlyList<ConnectionDocument>? connectionDocuments = RemapConnectionEndpoints(graphDocument.Connections, oldToNewNodeId);
+        foreach (ConnectionDocument connectionDocument in connectionDocuments ?? [])
+        {
+            PreservedMembers.RememberConnection(graph, connectionDocument);
+        }
+
+        ApplyConnections(connectionDocuments, graph, id, issues, preservedNodeIds, preservedConnections, logger);
 
         // Settle types from the connections just wired before applying pin states: a pin's
         // eligibility for an unconnected value (and, for an enum pin, the shape the value must have)
@@ -863,6 +913,8 @@ public sealed class DocumentMapper : IDocumentMapper
                     $"Node '{node.Id}' has no pin '{pinState.Pin}'.", id));
                 continue;
             }
+
+            PreservedMembers.Remember(pin, PreservedMembers.Member, pinState.ExtensionData);
 
             if (pinState.Name is not null)
             {

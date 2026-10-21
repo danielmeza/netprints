@@ -4,7 +4,7 @@ using NetPrints.Editor.Shell;
 namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>openGraph</c> command: opens the graph selected in the project tree as a document.</summary>
-public sealed class OpenGraphCommandHandler : ICommandHandler
+public sealed class OpenGraphCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => CommandTargets.TreeSelectionDocument(context) is not null;

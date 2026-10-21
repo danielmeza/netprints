@@ -30,6 +30,7 @@ SCHEMAS=(
     "netpc.v1.schema.json:*.netpc.json"
     "npcat.v1.schema.json:*.npcat.json"
     "netprints.catalog.v1.schema.json::(glob)**/netprints.catalog.json"
+    "settings.v1.schema.json::(glob)**/*.settings.json"
 )
 
 total=0

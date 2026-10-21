@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using NetPrints.Editor.Graph.Pins;
+using NetPrints.Editor.Theming;
 using NetPrints.Editor.UITests.Shell;
 
 namespace NetPrints.Editor.UITests.Theming;
@@ -31,16 +32,11 @@ public class PinContrastTests
         return data;
     }
 
-    public static Color Composite(Color top, Color bottom)
-    {
-        double alpha = top.A / 255.0;
-        byte Mix(byte a, byte b) => (byte)Math.Round((a * alpha) + (b * (1 - alpha)));
-        return Color.FromRgb(Mix(top.R, bottom.R), Mix(top.G, bottom.G), Mix(top.B, bottom.B));
-    }
+    public static Color Composite(Color top, Color bottom) => ContrastMath.Composite(top, bottom);
 
-    public static Color WithOpacity(Color color, double opacity) => Color.FromArgb((byte)Math.Round(color.A * opacity), color.R, color.G, color.B);
+    public static Color WithOpacity(Color color, double opacity) => ContrastMath.WithOpacity(color, opacity);
 
-    public static double WireOpacity() => Assert.IsType<double>(CanvasPaletteTests.Resolve("Wire.Opacity", ThemeVariant.Default));
+    public static double WireOpacity(string variant) => Assert.IsType<double>(CanvasPaletteTests.Resolve("Wire.Opacity", CanvasPaletteTests.VariantOf(variant)));
 
     private static (Color Pin, Color Body, Color Canvas) Colours(string variant, string family)
     {
@@ -100,7 +96,7 @@ public class PinContrastTests
     public void AWireReaches3To1AtItsOpacityOnTheCanvasAndOnTheNodeBody(string variant, string family)
     {
         var (pin, body, canvas) = Colours(variant, family);
-        Color wire = WithOpacity(pin, WireOpacity());
+        Color wire = WithOpacity(pin, WireOpacity(variant));
 
         double onCanvas = CanvasPaletteTests.Contrast(Composite(wire, canvas), canvas);
         double onBody = CanvasPaletteTests.Contrast(Composite(wire, body), body);

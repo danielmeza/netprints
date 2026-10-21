@@ -16,9 +16,9 @@ public sealed class NodeSearchConnectionTests(IReflectionHost sharedReflection)
     private (NodeOutputExecPin Entry, CallMethodNode Write) ConnectedEntry()
     {
         var write = new CallMethodNode(Method, ConsoleWriteLine(StringType));
-        GraphUtil.ConnectExecPins(Method.EntryNode.InitialExecutionPin, write.InputExecPins[0]);
+        GraphUtil.ConnectExecPins(Method.EntryNode.ExecPin, write.InputExecPins[0]);
         ClassContext.UndoRedo.Clear();
-        return (Method.EntryNode.InitialExecutionPin, write);
+        return (Method.EntryNode.ExecPin, write);
     }
 
     [Fact(Timeout = 60000)]

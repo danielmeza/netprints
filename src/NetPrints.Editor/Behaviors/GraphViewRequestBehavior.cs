@@ -4,6 +4,7 @@ using Avalonia.Xaml.Interactivity;
 using NetPrints.Editor.Controls;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
+using NetPrints.Graph;
 using Nodify.Avalonia;
 
 namespace NetPrints.Editor.Behaviors;

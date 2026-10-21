@@ -1,0 +1,17 @@
+<DataTemplates xmlns="https://github.com/avaloniaui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+               xmlns:sys="using:System"
+               xmlns:local="using:Fx.Views">
+  <DataTemplate DataType="{x:Type sys:Version}">
+    <TextBlock Text="fx.views" />
+  </DataTemplate>
+  <DataTemplate DataType="{x:Type sys:Uri}">
+    <local:ThrowingView />
+  </DataTemplate>
+  <DataTemplate DataType="{x:Type sys:Guid}">
+    <local:MeasureThrowingView />
+  </DataTemplate>
+  <TreeDataTemplate DataType="{x:Type local:Model}" ItemsSource="{Binding Children}">
+    <TextBlock Text="fx.views model" />
+  </TreeDataTemplate>
+</DataTemplates>

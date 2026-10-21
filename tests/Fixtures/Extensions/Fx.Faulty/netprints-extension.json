@@ -1,0 +1,8 @@
+{
+  "id": "fx.faulty",
+  "name": "Faulty fixture extension",
+  "version": "1.0.0",
+  "assembly": "Fx.Faulty.dll",
+  "netprintsApi": "0.4",
+  "dependsOn": []
+}

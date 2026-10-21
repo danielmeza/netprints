@@ -197,6 +197,25 @@ Catalogs the public surface of assemblies, packages or a project's references in
 
 **Output:** `wrote <path> (N types, M members)`, `up to date: <path> (...)`, or with `--check` `stale: <path>`.
 
+### `extension verify` — Check an extension without loading it
+
+```
+netprints extension verify <folder|package.nupkg> [--host <folder>] [--format text|json]
+```
+
+Runs the checks that need no test code on an extension folder (the one holding `netprints-extension.json`) or on an extension package (a `.nupkg` of package type `NetPrintsExtension` that holds the folder under `extension/`):
+
+| Check | What it verifies |
+|---|---|
+| NPK001 | The manifest is valid and its `netprintsApi` is a version the host implements. |
+| NPK002 | The folder has the loader's layout and holds no copy of a host assembly; for a package, it is of type `NetPrintsExtension` and holds `extension/`. |
+| NPK003 | The extension references only the NetPrints assemblies of the extension contract. |
+| NPK017 | Every NetPrints type and member the extension references exists in the host. |
+
+Nothing of the extension is loaded or run: the assemblies are read through their metadata, so a package built for a newer host is checked the same way. `--host` names the folder of host assemblies to check against; the default is the assemblies this tool ships. The text output has one line per check (`passed`, `failed` or `skipped`), the messages of each failed check, then each missing member as `<assembly>: <type>.<member> (referenced from <extension type>)`. `--format json` writes `schemaVersion`, the extension and host versions, `checks` and `missingMembers`.
+
+Exit codes: 0 when every check passed, 1 when a check failed, 2 when the path does not exist or is neither a folder nor a package, or an option is invalid. See [extension testing](extension-testing.md) for the checks that need test code and [Reusable CI workflow](extension-testing.md#ci-workflow) for running `verify` in CI.
+
 ## Exit codes
 
 | Code | Name | Meaning |

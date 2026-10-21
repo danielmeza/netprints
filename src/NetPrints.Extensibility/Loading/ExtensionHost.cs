@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 
 namespace NetPrints.Extensibility.Loading;
@@ -21,6 +22,7 @@ public sealed class ExtensionHost : IExtensionHost
     /// </summary>
     /// <param name="options">The loader options without project folders.</param>
     /// <param name="loggerFactory">Logger factory for the loader and the extensions.</param>
+    [RequiresUnreferencedCode(DynamicLoading.Reason)]
     public ExtensionHost(ExtensionLoaderOptions options, ILoggerFactory loggerFactory)
     {
         ArgumentNullException.ThrowIfNull(options);

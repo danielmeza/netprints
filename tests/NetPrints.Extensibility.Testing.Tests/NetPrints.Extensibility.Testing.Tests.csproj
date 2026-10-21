@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>NetPrints.Extensibility.Testing.Tests</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <WarningsAsErrors>$(WarningsAsErrors);xUnit1051</WarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <NetPrintsExperimentalOptIn Include="NPXE0001" />
+    <NetPrintsExperimentalOptIn Include="NPXE0002" />
+    <NetPrintsExperimentalOptIn Include="NPXE0005" />
+    <NetPrintsExperimentalOptIn Include="NPXE0008" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\NetPrints.Extensibility.Testing\NetPrints.Extensibility.Testing.csproj" />
+    <ProjectReference Include="..\..\src\NetPrints.Extensibility.Testing.Xunit\NetPrints.Extensibility.Testing.Xunit.csproj" />
+    <ProjectReference Include="..\..\src\NetPrints.Core\NetPrints.Core.csproj" />
+    <ProjectReference Include="..\NetPrints.Testing\NetPrints.Testing.csproj" />
+    <ProjectReference Include="..\NetPrints.TestExtension\NetPrints.TestExtension.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Fixtures\Extensions\Shared\FxKit.cs" Link="Fixtures\FxKit.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Built first, never referenced: the tests load each fixture from its own output folder. -->
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.Alpha\Fx.Alpha.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.Manifest\Fx.Fail.Manifest.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.Packaging\Fx.Fail.Packaging.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.TypeIdentity\Fx.Fail.TypeIdentity.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.Registration\Fx.Fail.Registration.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.RegistryIssues\Fx.Fail.RegistryIssues.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.RoundTrip\Fx.Fail.RoundTrip.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.Translation\Fx.Fail.Translation.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.Determinism\Fx.Fail.Determinism.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.Settings\Fx.Fail.Settings.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.HostChannel\Fx.Fail.HostChannel.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.Coexistence\Fx.Fail.Coexistence.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.Disposal\Fx.Fail.Disposal.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.Services\Fx.Fail.Services.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.Editor\Fx.Fail.Editor.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Conformance\Fx.Fail.Views\Fx.Fail.Views.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+</Project>

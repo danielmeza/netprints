@@ -46,7 +46,7 @@ namespace NetPrints.Tests
             VariableGetterNode getLengthNode = new VariableGetterNode(stringLengthMethod, new VariableSpecifier("Length", intType, MemberVisibility.Public, MemberVisibility.Public, stringType, VariableModifiers.None));
 
             // Connect node execs
-            GraphUtil.ConnectExecPins(stringLengthMethod.EntryNode.InitialExecutionPin, stringLengthMethod.ReturnNodes.First().ReturnPin);
+            GraphUtil.ConnectExecPins(stringLengthMethod.EntryNode.ExecPin, stringLengthMethod.ReturnNodes.First().ExecPin);
 
             // Connect node data
             NodeInputDataPin? getLengthTargetPin = getLengthNode.TargetPin;
@@ -78,7 +78,7 @@ namespace NetPrints.Tests
             CallMethodNode writeConsoleNode = new CallMethodNode(mainMethod, writeConsoleSpecifier);
 
             // Connect node execs
-            GraphUtil.ConnectExecPins(mainMethod.EntryNode.InitialExecutionPin, setStringNode.InputExecPins[0]);
+            GraphUtil.ConnectExecPins(mainMethod.EntryNode.ExecPin, setStringNode.InputExecPins[0]);
             GraphUtil.ConnectExecPins(setStringNode.OutputExecPins[0], getStringLengthNode.InputExecPins[0]);
             GraphUtil.ConnectExecPins(getStringLengthNode.OutputExecPins[0], writeConsoleNode.InputExecPins[0]);
             GraphUtil.ConnectExecPins(writeConsoleNode.OutputExecPins[0], mainMethod.ReturnNodes.First().InputExecPins[0]);
@@ -139,7 +139,7 @@ namespace NetPrints.Tests
             GraphUtil.ConnectTypePins(returnTypeNode.OutputTypePins[0], getter.MainReturnNode.InputTypePins[0]);
 
             LiteralNode literalNode = LiteralNode.WithValue(getter, 0);
-            GraphUtil.ConnectExecPins(getter.EntryNode.InitialExecutionPin, getter.MainReturnNode.ReturnPin);
+            GraphUtil.ConnectExecPins(getter.EntryNode.ExecPin, getter.MainReturnNode.ExecPin);
             GraphUtil.ConnectDataPins(literalNode.ValuePin, getter.MainReturnNode.InputDataPins[0]);
 
             return getter;
@@ -152,7 +152,7 @@ namespace NetPrints.Tests
             ((MethodEntryNode)setter.EntryNode).AddArgument();
             TypeNode argTypeNode = new TypeNode(setter, TypeSpecifier.FromType<int>());
             GraphUtil.ConnectTypePins(argTypeNode.OutputTypePins[0], setter.EntryNode.InputTypePins[0]);
-            GraphUtil.ConnectExecPins(setter.EntryNode.InitialExecutionPin, setter.MainReturnNode.ReturnPin);
+            GraphUtil.ConnectExecPins(setter.EntryNode.ExecPin, setter.MainReturnNode.ExecPin);
 
             return setter;
         }

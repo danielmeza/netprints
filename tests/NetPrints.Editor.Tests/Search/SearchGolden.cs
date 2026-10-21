@@ -5,9 +5,11 @@ public static class SearchGolden
 {
     public const string UpdateSnapshotsVariable = "NETPRINTS_UPDATE_SNAPSHOTS";
 
-    public static void Check(string name, string actual)
+    public static void Check(string name, string actual) => Check("Search", name, actual);
+
+    public static void Check(string folder, string name, string actual)
     {
-        string path = Path.Combine(FindRepositoryRoot(), "tests", "NetPrints.Editor.Tests", "Search", "Goldens", name + ".txt");
+        string path = Path.Combine(FindRepositoryRoot(), "tests", "NetPrints.Editor.Tests", folder, "Goldens", name + ".txt");
         if (Environment.GetEnvironmentVariable(UpdateSnapshotsVariable) == "1")
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path) ?? throw new InvalidOperationException("The golden path has no folder."));

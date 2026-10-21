@@ -2,6 +2,7 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using Microsoft.CodeAnalysis;
+using NetPrints.Testing.Roslyn;
 using Xunit;
 
 namespace NetPrints.Catalog.Tests.Generator;

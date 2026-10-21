@@ -59,7 +59,72 @@ public class CommandGestureTests
         Assert.True(single.IsSingleKey);
         Assert.False(chord.IsSingleKey);
         Assert.Equal(CommandModifiers.Ctrl, chord.Modifiers);
-        Assert.Equal("F", chord.Key);
+        Assert.Same(CommandKey.F, chord.Key);
+    }
+
+    [Fact]
+    public void EveryKeyWithEveryModifierSetRoundTripsThroughSpansAndFormatting()
+    {
+        char[] buffer = new char[64];
+
+        foreach (CommandKey key in CommandKey.All)
+        {
+            for (int bits = 0; bits < 16; bits++)
+            {
+                CommandGesture gesture = new((CommandModifiers)bits, key);
+                string text = gesture.ToString();
+
+                Assert.True(CommandGesture.TryParse(text.AsSpan(), null, out CommandGesture? fromSpan), text);
+                Assert.Equal(gesture, fromSpan);
+                Assert.Equal(gesture, CommandGesture.Parse(text, null));
+                Assert.True(((ISpanFormattable)gesture).TryFormat(buffer, out int written, default, null), text);
+                Assert.Equal(text, new string(buffer, 0, written));
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData("Ctrl+Esc", "Ctrl+Esc")]
+    [InlineData("shift+pgdn", "Shift+PgDn")]
+    [InlineData("Ctrl+K", "Ctrl+K")]
+    public void TheDisplayTextUsesTheShortGlyphOfTheKey(string text, string display)
+    {
+        Assert.Equal(display, CommandGesture.Parse(text, null).Display);
+    }
+
+    [Fact]
+    public void FormattingNeedsRoomForTheWholeGesture()
+    {
+        CommandGesture gesture = new(CommandModifiers.Ctrl | CommandModifiers.Shift, CommandKey.B);
+        Span<char> buffer = stackalloc char[11];
+
+        Assert.False(gesture.TryFormat(buffer, out int written, default, null));
+        Assert.Equal(0, written);
+        Assert.True(gesture.TryFormat(buffer = stackalloc char[12], out written, default, null));
+        Assert.Equal("Ctrl+Shift+B", buffer[..written].ToString());
+    }
+
+    [Fact]
+    public void TheParsableInterfaceRejectsWhatTheTextParserRejects()
+    {
+        Assert.False(CommandGesture.TryParse("Ctrl+Banana".AsSpan(), null, out _));
+        Assert.False(CommandGesture.TryParse((string?)null, null, out _));
+        Assert.Throws<FormatException>(() => CommandGesture.Parse("Ctrl+K+L", null));
+    }
+
+    [Fact]
+    public void ParsingASpanAllocatesOnlyTheGesture()
+    {
+        ReadOnlySpan<char> text = "Ctrl+Shift+PageDown";
+        CommandGesture.TryParse(text, null, out _);
+
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        bool parsed = CommandGesture.TryParse(text, null, out CommandGesture? gesture);
+        long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+        Assert.True(parsed);
+        Assert.Equal(new CommandGesture(CommandModifiers.Ctrl | CommandModifiers.Shift, CommandKey.PageDown), gesture);
+        Assert.InRange(allocated, 0, 48);
     }
 
     [Theory]

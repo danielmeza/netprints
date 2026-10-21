@@ -50,11 +50,6 @@ public sealed class GraphDocumentDisposalTests(IReflectionHost shared)
         }
     }
 
-    private sealed class NoServices : IServiceProvider
-    {
-        public object? GetService(Type serviceType) => null;
-    }
-
     private sealed class Rig : IAsyncDisposable
     {
         private readonly TestEditor editor;
@@ -70,7 +65,7 @@ public sealed class GraphDocumentDisposalTests(IReflectionHost shared)
             var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
             BuiltInContributions.Register(registry);
             registry.Freeze();
-            Shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, new InlineDispatcher());
+            Shell = new ShellViewModel(registry, PanelFactoryContext.Detached, TimeProvider.System, new InlineDispatcher());
         }
 
         public CountingReflectionHost Reflection { get; }

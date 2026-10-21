@@ -14,7 +14,7 @@ public class HelpMenuTests
 {
     private static readonly string[] MenuOrder = ["File", "Edit", "View", "Go", "Build", "Help"];
 
-    private static ContributionRegistry Registered(Action<IContributionRegistry>? extra = null)
+    private static ContributionRegistry Registered(Action<ContributionRegistry>? extra = null)
     {
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         BuiltInContributions.Register(registry);
@@ -65,7 +65,7 @@ public class HelpMenuTests
     public void ACommandFromAnotherContributionAppearsInItsMenu()
     {
         ContributionRegistry registry = Registered(extra => extra.AddCommand(new CommandDescriptor(
-            "acme.command.hello", "Hello", new AboutCommandHandler(), DefaultGestures: ["Ctrl+H"], Menu: new MenuPlacement("Help", "acme", 0))));
+            "acme.command.hello", "Hello", new AboutCommandHandler(), DefaultGestures: [new CommandGesture(CommandModifiers.Ctrl, CommandKey.H)], Menu: new MenuPlacement("Help", "acme", 0))));
 
         var sheet = new KeyboardShortcutsViewModel(registry);
 

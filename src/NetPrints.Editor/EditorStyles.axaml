@@ -31,7 +31,7 @@
       </ControlTheme>
       <ControlTheme x:Key="NetPrints.Connection" TargetType="nc:Connection" BasedOn="{StaticResource {x:Type nc:Connection}}">
         <Setter Property="Stroke" Value="{DynamicResource Pin.Generic}" />
-        <Setter Property="StrokeThickness" Value="4" />
+        <Setter Property="StrokeThickness" Value="{DynamicResource Wire.Thickness}" />
         <Setter Property="Opacity" Value="{DynamicResource Wire.Opacity}" />
         <Setter Property="StrokeLineCap" Value="Round" />
       </ControlTheme>
@@ -50,9 +50,10 @@
       <StreamGeometry x:Key="Pin.TypeShape.Diamond">M8,0 L16,8 L8,16 L0,8 Z</StreamGeometry>
       <StaticResource x:Key="Pin.TypeShape" ResourceKey="Pin.TypeShape.Diamond" />
       <x:Double x:Key="Pin.OutlineThickness">2</x:Double>
-      <x:Double x:Key="Wire.Opacity">0.78</x:Double>
-      <!-- Start page recent row: a left-anchor icon tile (FR-110). -->
-      <x:Double x:Key="StartPage.RecentTileSize">32</x:Double>      <!-- Type ramp, spacing scale and shared widths (FR-080, research R11); none of these vary by theme. -->
+      <!-- Start page: the recent row's left-anchor icon tile (FR-110) and the logo beside the title. -->
+      <x:Double x:Key="StartPage.RecentTileSize">32</x:Double>
+      <x:Double x:Key="StartPage.LogoSize">42</x:Double>
+      <!-- Type ramp, spacing scale and shared widths (FR-080, research R11); none of these vary by theme. -->
       <x:Double x:Key="Font.Caption">12</x:Double>
       <x:Double x:Key="Font.Body">14</x:Double>
       <x:Double x:Key="Font.Subtitle">16</x:Double>
@@ -98,13 +99,13 @@
       <!-- Empty state (FR-088): a centred icon, one sentence and an optional action. -->
       <ControlTheme x:Key="{x:Type ctl:EmptyState}" TargetType="ctl:EmptyState">
         <Setter Property="Focusable" Value="False" />
-        <Setter Property="Padding" Value="{StaticResource Space.L}" />
+        <Setter Property="Padding" Value="{DynamicResource Space.L}" />
         <Setter Property="HorizontalAlignment" Value="Center" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="Template">
           <ControlTemplate>
-            <StackPanel Margin="{TemplateBinding Padding}" Spacing="{StaticResource Space.S.Size}" HorizontalAlignment="Center" VerticalAlignment="Center">
-              <icons:IconPresenter IconId="{TemplateBinding IconId}" Width="{StaticResource Icon.Large}" Height="{StaticResource Icon.Large}"
+            <StackPanel Margin="{TemplateBinding Padding}" Spacing="{DynamicResource Space.S.Size}" HorizontalAlignment="Center" VerticalAlignment="Center">
+              <icons:IconPresenter IconId="{TemplateBinding IconId}" Width="{DynamicResource Icon.Large}" Height="{DynamicResource Icon.Large}"
                                    HorizontalAlignment="Center" Opacity="0.6" />
               <TextBlock Classes="secondary" Text="{TemplateBinding Message}" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="320" />
               <Button HorizontalAlignment="Center" Content="{TemplateBinding ActionText}" Command="{TemplateBinding ActionCommand}"
@@ -123,7 +124,7 @@
       <x:Double x:Key="VariableChip.Size">10</x:Double>
       <ControlTheme x:Key="{x:Type ctl:ListRow}" TargetType="ctl:ListRow">
         <Setter Property="Focusable" Value="False" />
-        <Setter Property="MinHeight" Value="{StaticResource Density.RowHeight}" />
+        <Setter Property="MinHeight" Value="{DynamicResource Density.RowHeight}" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Template">
@@ -132,7 +133,7 @@
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="{StaticResource Row.RemoveColumnWidth}" />
+                <ColumnDefinition Width="{DynamicResource Row.RemoveColumnWidth}" />
               </Grid.ColumnDefinitions>
               <ContentPresenter Grid.Column="0" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
                                 HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
@@ -154,15 +155,15 @@
       <x:Double x:Key="Dialog.ListMaxHeight">360</x:Double>
       <x:Double x:Key="Flyout.MethodPickerWidth">480</x:Double>
       <ControlTheme x:Key="{x:Type ctl:DialogShell}" TargetType="ctl:DialogShell">
-        <Setter Property="MinWidth" Value="{StaticResource Dialog.MinWidth}" />
-        <Setter Property="MaxWidth" Value="{StaticResource Dialog.MaxWidth}" />
-        <Setter Property="Padding" Value="{StaticResource Space.M}" />
+        <Setter Property="MinWidth" Value="{DynamicResource Dialog.MinWidth}" />
+        <Setter Property="MaxWidth" Value="{DynamicResource Dialog.MaxWidth}" />
+        <Setter Property="Padding" Value="{DynamicResource Space.M}" />
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="Template">
           <ControlTemplate>
-            <Grid Margin="{TemplateBinding Padding}" RowDefinitions="Auto,*,Auto" RowSpacing="{StaticResource Space.M.Size}">
-              <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space.S.Size}">
-                <icons:IconPresenter IconId="{TemplateBinding IconId}" Width="{StaticResource Icon.Medium}" Height="{StaticResource Icon.Medium}"
+            <Grid Margin="{TemplateBinding Padding}" RowDefinitions="Auto,*,Auto" RowSpacing="{DynamicResource Space.M.Size}">
+              <StackPanel Orientation="Horizontal" Spacing="{DynamicResource Space.S.Size}">
+                <icons:IconPresenter IconId="{TemplateBinding IconId}" Width="{DynamicResource Icon.Medium}" Height="{DynamicResource Icon.Medium}"
                                      VerticalAlignment="Center" AutomationProperties.AccessibilityView="Raw" />
                 <TextBlock Classes="dialogTitle" Text="{TemplateBinding Title}" />
               </StackPanel>
@@ -170,7 +171,7 @@
               <ItemsControl Grid.Row="2" HorizontalAlignment="Right" ItemsSource="{TemplateBinding SortedActions}">
                 <ItemsControl.ItemsPanel>
                   <ItemsPanelTemplate>
-                    <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space.S.Size}" />
+                    <StackPanel Orientation="Horizontal" Spacing="{DynamicResource Space.S.Size}" />
                   </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
               </ItemsControl>
@@ -179,8 +180,8 @@
         </Setter>
       </ControlTheme>
       <FocusAdornerTemplate x:Key="NetPrints.FocusAdorner">
-        <Border BorderThickness="{StaticResource Focus.RingThickness}" BorderBrush="{DynamicResource Focus.Ring}"
-                CornerRadius="{StaticResource Radius.Control}" IsHitTestVisible="False" />
+        <Border BorderThickness="{DynamicResource Focus.RingThickness}" BorderBrush="{DynamicResource Focus.Ring}"
+                CornerRadius="{DynamicResource Radius.Control}" IsHitTestVisible="False" />
       </FocusAdornerTemplate>
       <!-- Graph canvas grid (spec 002): lines white on dark, black on light; minor 8% and major 18% alpha.
            The canvas background is the Canvas.Background token (FR-109). -->
@@ -251,6 +252,14 @@
           <SolidColorBrush x:Key="Canvas.MarqueeFill">#334FC3F7</SolidColorBrush>
           <SolidColorBrush x:Key="Canvas.MarqueeBorder">#4FC3F7</SolidColorBrush>
           <SolidColorBrush x:Key="Canvas.WireSelected">#FFD54F</SolidColorBrush>
+          <x:Double x:Key="Wire.Opacity">0.78</x:Double>
+          <x:Double x:Key="Wire.Thickness">4</x:Double>
+          <SolidColorBrush x:Key="Inspector.CategoryHeaderBackground">#FF2A2A30</SolidColorBrush>
+          <SolidColorBrush x:Key="Inspector.CategoryHeaderForeground">#FFEEEEEE</SolidColorBrush>
+          <SolidColorBrush x:Key="Inspector.ModifiedMarker">#FFFFB74D</SolidColorBrush>
+          <SolidColorBrush x:Key="Inspector.EditorBackground">#FF1E1E22</SolidColorBrush>
+          <SolidColorBrush x:Key="Inspector.EditorBorder">#FF3C3C42</SolidColorBrush>
+          <x:Double x:Key="Inspector.RowSpacing">4</x:Double>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
           <Color x:Key="Canvas.Background">#FFFFFFFF</Color>
@@ -313,6 +322,14 @@
           <SolidColorBrush x:Key="Canvas.MarqueeFill">#330277BD</SolidColorBrush>
           <SolidColorBrush x:Key="Canvas.MarqueeBorder">#0277BD</SolidColorBrush>
           <SolidColorBrush x:Key="Canvas.WireSelected">#F57F17</SolidColorBrush>
+          <x:Double x:Key="Wire.Opacity">0.78</x:Double>
+          <x:Double x:Key="Wire.Thickness">4</x:Double>
+          <SolidColorBrush x:Key="Inspector.CategoryHeaderBackground">#FFE4E6EC</SolidColorBrush>
+          <SolidColorBrush x:Key="Inspector.CategoryHeaderForeground">#FF202020</SolidColorBrush>
+          <SolidColorBrush x:Key="Inspector.ModifiedMarker">#FFF57F17</SolidColorBrush>
+          <SolidColorBrush x:Key="Inspector.EditorBackground">#FFFFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="Inspector.EditorBorder">#FFD0D3DA</SolidColorBrush>
+          <x:Double x:Key="Inspector.RowSpacing">4</x:Double>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>
@@ -391,7 +408,7 @@
   <!-- Pins, cables and the preview cable by type family (FR-107). A pin is an outline in its family colour until it is connected, then filled with it (FR-108). -->
   <Style Selector=":is(Shape).pin">
     <Setter Property="Fill" Value="Transparent" />
-    <Setter Property="StrokeThickness" Value="{StaticResource Pin.OutlineThickness}" />
+    <Setter Property="StrokeThickness" Value="{DynamicResource Pin.OutlineThickness}" />
   </Style>
   <Style Selector=":is(Shape).pin-exec">
     <Setter Property="Stroke" Value="{DynamicResource Pin.Exec}" />
@@ -455,7 +472,7 @@
   </Style>
   <Style Selector="TextBlock.pinHint">
     <Setter Property="Foreground" Value="{DynamicResource Pin.Hint}" />
-    <Setter Property="FontSize" Value="{StaticResource Font.Body}" />
+    <Setter Property="FontSize" Value="{DynamicResource Font.Body}" />
     <Setter Property="FontStyle" Value="Italic" />
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
@@ -547,7 +564,7 @@
     <Setter Property="Height" Value="100" />
     <Setter Property="CornerRadius" Value="50" />
     <Setter Property="Margin" Value="4" />
-    <Setter Property="FontSize" Value="{StaticResource Font.Subtitle}" />
+    <Setter Property="FontSize" Value="{DynamicResource Font.Subtitle}" />
     <Setter Property="FontWeight" Value="Bold" />
     <!-- Little padding, so the longest label ("References") fits the 100-px circle. -->
     <Setter Property="Padding" Value="2" />
@@ -590,10 +607,10 @@
   </Style>
 
   <Style Selector="TextBlock.header">
-    <Setter Property="FontSize" Value="{StaticResource Font.Subtitle}" />
+    <Setter Property="FontSize" Value="{DynamicResource Font.Subtitle}" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="HorizontalAlignment" Value="Left" />
-    <Setter Property="Margin" Value="{StaticResource Space.XS}" />
+    <Setter Property="Margin" Value="{DynamicResource Space.XS}" />
   </Style>
 
   <!-- Command bar (contracts/commands.md section 1): a compact icon and label button, at most 40 px high with its bar. -->
@@ -619,34 +636,34 @@
   <!-- Keyboard focus ring and hover and pressed states (FR-087): the ring follows Radius.Control, the states are tokens. -->
   <Style Selector="TreeViewItem, ListBoxItem, MenuItem, TextBox, Button.command-bar">
     <Setter Property="FocusAdorner" Value="{StaticResource NetPrints.FocusAdorner}" />
-    <Setter Property="CornerRadius" Value="{StaticResource Radius.Control}" />
+    <Setter Property="CornerRadius" Value="{DynamicResource Radius.Control}" />
   </Style>
   <!-- Hover and pressed backgrounds fade over Motion.Fast. -->
   <Style Selector="Button /template/ ContentPresenter#PART_ContentPresenter, ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Transitions">
       <Transitions>
-        <BrushTransition Property="{x:Static ContentPresenter.BackgroundProperty}" Duration="{StaticResource Motion.Fast}" Easing="{StaticResource Motion.Easing}" />
+        <BrushTransition Property="{x:Static ContentPresenter.BackgroundProperty}" Duration="{DynamicResource Motion.Fast}" Easing="{DynamicResource Motion.Easing}" />
       </Transitions>
     </Setter>
   </Style>
   <Style Selector="TreeViewItem /template/ Border#PART_LayoutRoot">
     <Setter Property="Transitions">
       <Transitions>
-        <BrushTransition Property="{x:Static Border.BackgroundProperty}" Duration="{StaticResource Motion.Fast}" Easing="{StaticResource Motion.Easing}" />
+        <BrushTransition Property="{x:Static Border.BackgroundProperty}" Duration="{DynamicResource Motion.Fast}" Easing="{DynamicResource Motion.Easing}" />
       </Transitions>
     </Setter>
   </Style>
 
   <!-- Row density: tree items, the Errors and Output rows and the quick-pick rows share one height and padding. -->
   <Style Selector="TreeView TreeViewItem, ListBox.rows ListBoxItem, ListBox.quickPick ListBoxItem">
-    <Setter Property="MinHeight" Value="{StaticResource Density.RowHeight}" />
-    <Setter Property="Padding" Value="{StaticResource Density.RowPadding}" />
+    <Setter Property="MinHeight" Value="{DynamicResource Density.RowHeight}" />
+    <Setter Property="Padding" Value="{DynamicResource Density.RowPadding}" />
   </Style>
 
   <!-- Variable lists: one compact row per item, a hairline between rows, the remove button shown on hover, selection or keyboard focus. -->
   <Style Selector="ListBox.variableList ListBoxItem">
-    <Setter Property="MinHeight" Value="{StaticResource Density.RowHeight}" />
-    <Setter Property="Padding" Value="{StaticResource Row.Padding}" />
+    <Setter Property="MinHeight" Value="{DynamicResource Density.RowHeight}" />
+    <Setter Property="Padding" Value="{DynamicResource Row.Padding}" />
     <Setter Property="BorderThickness" Value="0,0,0,1" />
     <Setter Property="BorderBrush" Value="{DynamicResource Row.Separator}" />
   </Style>
@@ -659,24 +676,24 @@
     <Setter Property="Opacity" Value="0" />
   </Style>
   <Style Selector="Ellipse.variableChip">
-    <Setter Property="Width" Value="{StaticResource VariableChip.Size}" />
-    <Setter Property="Height" Value="{StaticResource VariableChip.Size}" />
+    <Setter Property="Width" Value="{DynamicResource VariableChip.Size}" />
+    <Setter Property="Height" Value="{DynamicResource VariableChip.Size}" />
     <Setter Property="VerticalAlignment" Value="Center" />
-    <Setter Property="Margin" Value="{StaticResource Row.ChipMargin}" />
+    <Setter Property="Margin" Value="{DynamicResource Row.ChipMargin}" />
   </Style>
   <Style Selector="Grid.sectionHeaderRow">
-    <Setter Property="Margin" Value="{StaticResource SectionHeader.Margin}" />
+    <Setter Property="Margin" Value="{DynamicResource SectionHeader.Margin}" />
   </Style>
   <Style Selector="Grid.sectionHeaderRow.spaced">
-    <Setter Property="Margin" Value="{StaticResource SectionHeader.SpacedMargin}" />
+    <Setter Property="Margin" Value="{DynamicResource SectionHeader.SpacedMargin}" />
   </Style>
   <Style Selector="TextBlock.rowType">
-    <Setter Property="Margin" Value="{StaticResource Row.TypeMargin}" />
+    <Setter Property="Margin" Value="{DynamicResource Row.TypeMargin}" />
     <Setter Property="VerticalAlignment" Value="Center" />
     <Setter Property="TextTrimming" Value="CharacterEllipsis" />
   </Style>
   <Style Selector="Grid.propertyGrid.inspectorRoot">
-    <Setter Property="Margin" Value="{StaticResource Space.XS}" />
+    <Setter Property="Margin" Value="{DynamicResource Space.XS}" />
   </Style>
   <Style Selector="TextBlock.sectionHeader">
     <Setter Property="FontWeight" Value="SemiBold" />
@@ -701,7 +718,7 @@
     <Setter Property="Opacity" Value="0.5" />
   </Style>
   <Style Selector="TextBlock.methodMark">
-    <Setter Property="FontSize" Value="{StaticResource Font.Caption}" />
+    <Setter Property="FontSize" Value="{DynamicResource Font.Caption}" />
     <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
   </Style>
 
@@ -710,7 +727,7 @@
     <Setter Property="Opacity" Value="0" />
     <Setter Property="Transitions">
       <Transitions>
-        <DoubleTransition Property="Opacity" Duration="{StaticResource Motion.Normal}" Easing="{StaticResource Motion.Easing}" />
+        <DoubleTransition Property="Opacity" Duration="{DynamicResource Motion.Normal}" Easing="{DynamicResource Motion.Easing}" />
       </Transitions>
     </Setter>
   </Style>
@@ -745,7 +762,7 @@
   </Style>
   <Style Selector="Border.badge > TextBlock">
     <Setter Property="Foreground" Value="{DynamicResource CommandBar.BadgeForeground}" />
-    <Setter Property="FontSize" Value="{StaticResource Font.Caption}" />
+    <Setter Property="FontSize" Value="{DynamicResource Font.Caption}" />
     <Setter Property="HorizontalAlignment" Value="Center" />
   </Style>
 
@@ -754,38 +771,38 @@
   </Style>
   <!-- Type ramp for text roles: a view picks a class and never sets FontSize (rule E8). -->
   <Style Selector="TextBlock.title">
-    <Setter Property="FontSize" Value="{StaticResource Font.Watermark}" />
+    <Setter Property="FontSize" Value="{DynamicResource Font.Watermark}" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="LetterSpacing" Value="-0.5" />
     <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
   </Style>
   <Style Selector="TextBlock.section">
-    <Setter Property="FontSize" Value="{StaticResource Font.Title}" />
+    <Setter Property="FontSize" Value="{DynamicResource Font.Title}" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
   </Style>
   <Style Selector="TextBlock.secondary">
-    <Setter Property="FontSize" Value="{StaticResource Font.Caption}" />
+    <Setter Property="FontSize" Value="{DynamicResource Font.Caption}" />
     <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
     <Setter Property="Opacity" Value="0.75" />
   </Style>
   <Style Selector="TextBlock.treeItem">
-    <Setter Property="FontSize" Value="{StaticResource Font.Body}" />
+    <Setter Property="FontSize" Value="{DynamicResource Font.Body}" />
   </Style>
   <Style Selector="TextBlock.nodeTitle">
-    <Setter Property="FontSize" Value="{StaticResource Font.Subtitle}" />
+    <Setter Property="FontSize" Value="{DynamicResource Font.Subtitle}" />
     <Setter Property="FontWeight" Value="Bold" />
   </Style>
   <Style Selector="TextBlock.pinLabel">
-    <Setter Property="FontSize" Value="{StaticResource Font.Body}" />
+    <Setter Property="FontSize" Value="{DynamicResource Font.Body}" />
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
   <Style Selector="TextBox.pinLabel">
-    <Setter Property="FontSize" Value="{StaticResource Font.Body}" />
+    <Setter Property="FontSize" Value="{DynamicResource Font.Body}" />
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
   <Style Selector="TextBlock.memberName">
-    <Setter Property="FontSize" Value="{StaticResource Font.Body}" />
+    <Setter Property="FontSize" Value="{DynamicResource Font.Body}" />
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
   <Style Selector="TextBlock.inspectorLabel">
@@ -813,7 +830,7 @@
 
   <!-- Dialogs: header, footer buttons and a read-only code-like text box. -->
   <Style Selector="TextBlock.dialogTitle">
-    <Setter Property="FontSize" Value="{StaticResource Font.Subtitle}" />
+    <Setter Property="FontSize" Value="{DynamicResource Font.Subtitle}" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
@@ -828,7 +845,7 @@
   <Style Selector="TextBox.codeBlock">
     <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
     <Setter Property="CornerRadius" Value="4" />
-    <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
+    <Setter Property="FontFamily" Value="{DynamicResource Font.Mono}" />
     <Setter Property="VerticalContentAlignment" Value="Top" />
   </Style>
 
@@ -838,6 +855,9 @@
   </Style>
   <Style Selector="TextBox.tabular">
     <Setter Property="FontFeatures" Value="tnum" />
+  </Style>
+  <Style Selector="TextBlock.statusSegment">
+    <Setter Property="Margin" Value="16,0,0,0" />
   </Style>
 
   <!-- Search box flush with its popup. -->
@@ -856,6 +876,13 @@
     <Setter Property="Spacing" Value="4" />
     <Setter Property="MaxWidth" Value="480" />
   </Style>
+  <Style Selector="Border.swatch">
+    <Setter Property="Width" Value="{DynamicResource Icon.Medium}" />
+    <Setter Property="Height" Value="{DynamicResource Icon.Medium}" />
+    <Setter Property="CornerRadius" Value="{DynamicResource Radius.Control}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Row.Separator}" />
+  </Style>
   <Style Selector="TextBlock.formLabel">
     <Setter Property="VerticalAlignment" Value="Center" />
     <Setter Property="Margin" Value="4" />
@@ -863,6 +890,25 @@
   <Style Selector="ComboBox.formInput">
     <Setter Property="Margin" Value="4" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />
+  </Style>
+
+  <!-- Settings document: the restart bar, the indented extension pages and the field pages. -->
+  <Style Selector="Border.restartBar">
+    <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
+    <Setter Property="Padding" Value="8" />
+  </Style>
+  <Style Selector="TextBlock.settingsChildPage">
+    <Setter Property="Padding" Value="16,0,0,0" />
+  </Style>
+  <Style Selector="StackPanel.formContainer.settingsPage">
+    <Setter Property="Spacing" Value="16" />
+    <Setter Property="MaxWidth" Value="640" />
+  </Style>
+  <Style Selector="StackPanel.settingsField">
+    <Setter Property="Spacing" Value="4" />
+  </Style>
+  <Style Selector="Grid.recording">
+    <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
   </Style>
 
   <!-- Key hint next to a menu item. -->

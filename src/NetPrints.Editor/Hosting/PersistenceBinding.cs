@@ -11,6 +11,7 @@ namespace NetPrints.Editor.Hosting;
 /// Keeps a <see cref="ProjectPersistence"/> on the node converters of the current extension registry: the mapper and the
 /// JSON options are rebuilt whenever the registry changes (editor-services.md §4).
 /// </summary>
+[Singleton<PersistenceBinding>(Factory = "Bind")]
 public sealed class PersistenceBinding : IDisposable
 {
     private readonly ProjectPersistence persistence;
@@ -35,7 +36,7 @@ public sealed class PersistenceBinding : IDisposable
         ArgumentNullException.ThrowIfNull(registry);
         ArgumentNullException.ThrowIfNull(loggerFactory);
         var jsonFormat = new JsonDocumentFormat(new NetPrintsJsonOptions(registry.NodeConverters),
-            new DocumentMigrator([], loggerFactory.CreateLogger<DocumentMigrator>()));
+            new DocumentMigrator([], loggerFactory.CreateLogger<DocumentMigrator>()), registry.NodeMigrator);
         return (new DocumentFormatRegistry([jsonFormat]), new DocumentMapper(registry.NodeConverters, loggerFactory.CreateLogger<DocumentMapper>()));
     }
 

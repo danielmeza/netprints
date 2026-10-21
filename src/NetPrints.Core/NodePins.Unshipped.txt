@@ -1,0 +1,1 @@
+; Pin keys added since the last release; a "*REMOVED*" prefix removes a shipped key on purpose.

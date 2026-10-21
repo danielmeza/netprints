@@ -2,13 +2,16 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.DependencyInjection;
 using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Lifecycle;
 using NetPrints.Editor.State;
 using NetPrints.Editor.UndoRedo;
+using NetPrints.Extensibility.Loading;
 using NetPrints.Generation;
 using NetPrints.Projects;
 using NetPrints.Serialization;
@@ -26,9 +29,11 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     private const string BuildSucceededText = "Build succeeded";
 
     private readonly EditorContext context;
+    private readonly ClassContextFactory classContexts;
     private readonly Dictionary<ClassGraph, UndoRedoStack> undoStacks = [];
     private readonly Dictionary<ClassGraph, string> classPaths = [];
     private readonly Dictionary<ClassGraph, ClassContext> contexts = [];
+    private readonly Dictionary<string, IServiceScope> extensionSessions = new(StringComparer.Ordinal);
     private Task<bool>? saving;
     private bool saveRequested;
     private Task<bool>? flow;
@@ -41,14 +46,17 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     /// <summary>Creates the session of <paramref name="project"/>.</summary>
     /// <param name="project">The open project.</param>
     /// <param name="context">Host services shared across the editor.</param>
-    public ProjectSessionViewModel(Project project, EditorContext context)
+    /// <param name="classContexts">Creates the context of each class from the session's container; defaults to a factory over <paramref name="context"/> alone.</param>
+    public ProjectSessionViewModel(Project project, EditorContext context, ClassContextFactory? classContexts = null)
     {
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(context);
         Project = project;
         this.context = context;
+        this.classContexts = classContexts ?? ClassContextFactory.For(context);
         wasRunning = IsRunning;
         context.RunState.PhaseChanged += OnRunPhaseChanged;
+        context.Extensions.RegistryChanged += OnRegistryChanged;
         project.PropertyChanged += OnProjectPropertyChanged;
         project.Classes.CollectionChanged += OnClassesChanged;
         Unsaved = new UnsavedChangesTracker(this);
@@ -94,7 +102,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     public event EventHandler? MembersChanged;
 
     /// <summary>
-    /// Gets the path of a class's graph file relative to the project, with <c>/</c> separators (the class path of its <see cref="DocumentId"/>s).
+    /// Gets the path of a class's graph file relative to the project, with <c>/</c> separators (the class path of its <see cref="NetPrints.Extensibility.Editor.DocumentId"/>s).
     /// The path is fixed the first time it is asked for, so renaming a class that has never been saved, or changing its namespace, does not change
     /// the ids of its open documents.
     /// </summary>
@@ -147,7 +155,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(cls);
         if (!contexts.ContainsKey(cls))
         {
-            var created = new ClassContext(cls, context, UndoStackFor(cls), () => Project.Classes);
+            var created = classContexts.Create(cls, UndoStackFor(cls), () => Project.Classes);
             created.MembersChanged += OnContextMembersChanged;
             created.DirtyChanged += OnContextDirtyChanged;
             created.Edited += OnContextEdited;
@@ -261,6 +269,31 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     /// <returns>The task to await.</returns>
     public Task WaitForBuildAsync() => flow is { IsCompleted: false } current ? current : Task.CompletedTask;
 
+    /// <summary>Gets the session-scoped services of one extension: the scoped registrations of its provider, living until the session is disposed.</summary>
+    /// <param name="extensionId">The extension id, as <see cref="IContributionSnapshot.OwnerOf"/> gives it for a contribution.</param>
+    /// <returns>The services; an empty provider for an id that registered none.</returns>
+    public IServiceProvider ExtensionServices(string extensionId)
+    {
+        ArgumentNullException.ThrowIfNull(extensionId);
+        lock (extensionSessions)
+        {
+            if (!extensionSessions.ContainsKey(extensionId))
+            {
+                extensionSessions[extensionId] = context.Extensions.Current.OpenSession(extensionId);
+            }
+
+            return extensionSessions[extensionId].ServiceProvider;
+        }
+    }
+
+    private void OnRegistryChanged(object? sender, ExtensionRegistry registry)
+    {
+        lock (extensionSessions)
+        {
+            extensionSessions.Clear();
+        }
+    }
+
     /// <summary>Stops the running program and its child processes; does nothing when none runs.</summary>
     public void Stop() => runCancellation?.Cancel();
 
@@ -268,6 +301,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         context.RunState.PhaseChanged -= OnRunPhaseChanged;
+        context.Extensions.RegistryChanged -= OnRegistryChanged;
         Project.PropertyChanged -= OnProjectPropertyChanged;
         Project.Classes.CollectionChanged -= OnClassesChanged;
         foreach (ClassContext classContext in contexts.Values)
@@ -276,6 +310,12 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         }
 
         contexts.Clear();
+        foreach (IServiceScope scope in extensionSessions.Values)
+        {
+            scope.Dispose();
+        }
+
+        extensionSessions.Clear();
         foreach (UndoRedoStack stack in undoStacks.Values)
         {
             stack.Changed -= OnUndoChanged;
@@ -495,7 +535,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         if (saved)
         {
             Saved?.Invoke(this, files);
-            context.Dialogs.ShowNotification("Saved", $"Project saved ({files} files)");
+            context.Dialogs.ShowNotification("Saved", TextFormat.Of(Strings.Message_ProjectSaved, files));
         }
 
         RaiseCommandStatesChanged();

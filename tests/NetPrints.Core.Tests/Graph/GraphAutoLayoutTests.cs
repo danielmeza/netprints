@@ -17,7 +17,7 @@ namespace NetPrints.Tests.Graph
             method.MainReturnNode.PositionY = 999999;
 
             var target = new IfElseNode(method);
-            GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, target.ExecutionPin);
+            GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, target.ExecPin);
 
             GraphAutoLayout.PlaceUnpositioned(method, new Node[] { target });
 
@@ -36,7 +36,7 @@ namespace NetPrints.Tests.Graph
 
             var downstream = new IfElseNode(method) { PositionX = 700, PositionY = 50 };
             var target = new IfElseNode(method);
-            GraphUtil.ConnectExecPins(target.TruePin, downstream.ExecutionPin);
+            GraphUtil.ConnectExecPins(target.TruePin, downstream.ExecPin);
 
             GraphAutoLayout.PlaceUnpositioned(method, new Node[] { target });
 
@@ -92,7 +92,7 @@ namespace NetPrints.Tests.Graph
 
             var blocker = new IfElseNode(method) { PositionX = 400, PositionY = 50 };
             var target = new IfElseNode(method);
-            GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, target.ExecutionPin);
+            GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, target.ExecPin);
 
             GraphAutoLayout.PlaceUnpositioned(method, new Node[] { target });
 

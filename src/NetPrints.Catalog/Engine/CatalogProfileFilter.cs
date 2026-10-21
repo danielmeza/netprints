@@ -124,7 +124,7 @@ public sealed class CatalogProfileFilter : ICatalogFilter
 
         return rendered.TokensOnly
             ? rendered.Tokens.Contains(needle, StringComparer.Ordinal)
-            : rendered.Text.IndexOf(needle, StringComparison.Ordinal) >= 0;
+            : rendered.Text.Contains(needle, StringComparison.Ordinal);
     }
 
     private bool PassesGlobs(INamedTypeSymbol type)

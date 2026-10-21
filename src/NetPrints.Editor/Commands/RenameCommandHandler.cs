@@ -10,7 +10,7 @@ namespace NetPrints.Editor.Commands;
 /// active graph otherwise (the variable for an accessor or type graph), falling back to the tree item only when no graph
 /// is active. A constructor is never renamed. From the Variables panel it starts the in-place rename of the row passed as the command parameter.
 /// </summary>
-public sealed class RenameCommandHandler : ICommandHandler
+public sealed class RenameCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => context.Scope == CommandScope.VariablesPanel

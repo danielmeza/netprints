@@ -13,7 +13,7 @@ namespace NetPrints.Reflection
     /// provider's underlying data changes (eg. the compilation was rebuilt), since results are cached
     /// for the lifetime of this instance otherwise.
     /// </summary>
-    public class MemoizedReflectionProvider : IReflectionProvider, ICatalogScope
+    public class MemoizedReflectionProvider : IReflectionProvider, ICatalogScope, INodeHintSource
     {
         private readonly IReflectionProvider provider;
 
@@ -132,6 +132,14 @@ namespace NetPrints.Reflection
         /// <inheritdoc/>
         public string? GetHidingCatalogId(TypeSpecifier type)
             => (provider as ICatalogScope)?.GetHidingCatalogId(type);
+
+        /// <inheritdoc/>
+        public NodeHint? GetMethodHint(MethodSpecifier method)
+            => (provider as INodeHintSource)?.GetMethodHint(method);
+
+        /// <inheritdoc/>
+        public NodeHint? GetTypeHint(TypeSpecifier type)
+            => (provider as INodeHintSource)?.GetTypeHint(type);
 
         /// <inheritdoc/>
         public bool HasImplicitCast(TypeSpecifier fromType, TypeSpecifier toType)

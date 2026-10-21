@@ -3,6 +3,6 @@
   "name": "Fixture private dependency with a host-like name",
   "version": "1.0.0",
   "assembly": "Fx.PrefixedPrivate.dll",
-  "netprintsApi": "1.0",
+  "netprintsApi": "0.4",
   "dependsOn": []
 }

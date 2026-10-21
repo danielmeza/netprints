@@ -45,7 +45,7 @@ namespace NetPrints.Core
         {
             get
             {
-                string shortName = Name.Split('.').Last();
+                string shortName = Name.Split('.')[^1];
 
                 if (GenericArguments.Count > 0)
                 {
@@ -104,16 +104,7 @@ namespace NetPrints.Core
         /// </summary>
         public bool IsPrimitive
         {
-            get
-            {
-                return this == FromType<byte>() || this == FromType<char>()
-                    || this == FromType<short>() || this == FromType<ushort>()
-                    || this == FromType<int>() || this == FromType<uint>()
-                    || this == FromType<long>() || this == FromType<ulong>()
-                    || this == FromType<float>() || this == FromType<double>()
-                    || this == FromType<string>() || this == FromType<bool>()
-                    || IsEnum;
-            }
+            get => IsEnum || PrimitiveKinds.TryGet(Name, out _);
         }
 
         /// <summary>
@@ -161,7 +152,7 @@ namespace NetPrints.Core
                 throw new ArgumentException("Type must not be a generic parameter.", nameof(type));
             }
 
-            string typeName = type.Name.Split('`').First();
+            string typeName = type.Name.Split('`')[0];
             if (!string.IsNullOrEmpty(type.Namespace))
             {
                 typeName = type.Namespace + "." + typeName;

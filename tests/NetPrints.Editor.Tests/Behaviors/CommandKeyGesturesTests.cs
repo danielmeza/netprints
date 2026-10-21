@@ -10,12 +10,26 @@ public class CommandKeyGesturesTests
 {
     private sealed class NoopHandler : ICommandHandler
     {
-        public bool CanExecute(CommandContext context) => true;
+        public bool CanExecute(ICommandContext context) => true;
 
-        public Task ExecuteAsync(CommandContext context, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task ExecuteAsync(ICommandContext context, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
-    private static CommandDescriptor Command(params string[] gestures) => new("netprints.command.test", "Test", new NoopHandler(), DefaultGestures: gestures);
+    private static CommandDescriptor Command(params string[] gestures) =>
+        new("netprints.command.test", "Test", new NoopHandler(), DefaultGestures: [.. gestures.Select(text => CommandGesture.Parse(text, null))]);
+
+    [Fact]
+    public void EveryKeyAGestureUsesMapsToAnAvaloniaKey()
+    {
+        foreach (CommandKey key in CommandKey.All)
+        {
+            var descriptor = new CommandDescriptor("netprints.command.test", "Test", new NoopHandler(), DefaultGestures: [new CommandGesture(CommandModifiers.None, key)]);
+
+            var gesture = Assert.Single(CommandKeyGestures.Of(descriptor, isMacOS: false));
+
+            Assert.Equal(Enum.Parse<Key>(key.Id.ToString()), gesture.Key);
+        }
+    }
 
     [Theory]
     [InlineData(false, KeyModifiers.Control)]

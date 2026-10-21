@@ -31,11 +31,6 @@ public sealed class StatusMessagesTests : IAsyncDisposable
         await editor.DisposeAsync();
     }
 
-    private sealed class NoServices : IServiceProvider
-    {
-        public object? GetService(Type serviceType) => null;
-    }
-
     private async Task<(ShellViewModel Shell, ProjectSessionViewModel Session, ShellCommandContextProvider Contexts)> OpenAsync()
     {
         string path = TestPaths.CopyHelloWorldSample();
@@ -46,7 +41,7 @@ public sealed class StatusMessagesTests : IAsyncDisposable
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         BuiltInContributions.Register(registry);
         registry.Freeze();
-        var shell = new ShellViewModel(registry, new NoServices(), time, new InlineDispatcher()) { Session = session };
+        var shell = new ShellViewModel(registry, PanelFactoryContext.Detached, time, new InlineDispatcher()) { Session = session };
         shells.Add(shell);
         return (shell, session, new ShellCommandContextProvider(shell, new FakeShell()));
     }

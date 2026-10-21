@@ -138,7 +138,7 @@ public static class NetPrintsJsonSchema
 
         if (context.TypeInfo.Type == typeof(NodeDocument) && obj["anyOf"] is JsonArray anyOf)
         {
-            anyOf.Add(new JsonObject
+            anyOf.Add((JsonNode)new JsonObject
             {
                 ["type"] = "object",
                 [RequiredKeyword] = new JsonArray("$kind", "id"),
@@ -213,7 +213,7 @@ public static class NetPrintsJsonSchema
 
             if (isRequired)
             {
-                required.Add(name);
+                required.Add((JsonNode?)JsonValue.Create(name));
             }
         }
 

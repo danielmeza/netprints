@@ -13,6 +13,7 @@ namespace NetPrints.Tests.Serialization
         private sealed class RenamePropertyMigration : IDocumentMigration
         {
             public DocumentKind Kind => DocumentKind.Class;
+
             public int FromVersion => 1;
 
             public void Migrate(JsonObject document)
@@ -87,7 +88,9 @@ namespace NetPrints.Tests.Serialization
         private sealed class GapMigration : IDocumentMigration
         {
             public DocumentKind Kind => DocumentKind.Class;
+
             public int FromVersion => 2;
+
             public void Migrate(JsonObject document) => document["schemaVersion"] = 3;
         }
 

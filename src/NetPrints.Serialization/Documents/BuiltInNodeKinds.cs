@@ -1,5 +1,7 @@
 #nullable enable
 
+using NetPrints.Graph;
+
 namespace NetPrints.Serialization.Documents;
 
 /// <summary>
@@ -13,22 +15,22 @@ namespace NetPrints.Serialization.Documents;
 public static class BuiltInNodeKinds
 {
     /// <summary>A method's entry node (<see cref="MethodEntryNodeDocument"/>).</summary>
-    public const string MethodEntry = "methodEntry";
+    public const string MethodEntry = NodeKindIds.MethodEntry;
 
     /// <summary>A constructor's entry node (<see cref="ConstructorEntryNodeDocument"/>).</summary>
-    public const string ConstructorEntry = "constructorEntry";
+    public const string ConstructorEntry = NodeKindIds.ConstructorEntry;
 
     /// <summary>A method's return node (<see cref="ReturnNodeDocument"/>).</summary>
-    public const string Return = "return";
+    public const string Return = NodeKindIds.Return;
 
     /// <summary>The class graph's fixed return node (<see cref="ClassReturnNodeDocument"/>).</summary>
-    public const string ClassReturn = "classReturn";
+    public const string ClassReturn = NodeKindIds.ClassReturn;
 
     /// <summary>A type graph's fixed return node (<see cref="TypeReturnNodeDocument"/>).</summary>
-    public const string TypeReturn = "typeReturn";
+    public const string TypeReturn = NodeKindIds.TypeReturn;
 
     /// <summary>An event graph's entry node (<see cref="EventEntryNodeDocument"/>, sub-phase G).</summary>
-    public const string EventEntry = "eventEntry";
+    public const string EventEntry = NodeKindIds.EventEntry;
 
     /// <summary>A method call node (<see cref="CallMethodNodeDocument"/>).</summary>
     public const string CallMethod = "callMethod";
@@ -52,7 +54,7 @@ public static class BuiltInNodeKinds
     public const string Type = "type";
 
     /// <summary>An array-type node (<see cref="MakeArrayTypeNodeDocument"/>).</summary>
-    public const string MakeArrayType = "makeArrayType";
+    public const string MakeArrayType = NodeKindIds.MakeArrayType;
 
     /// <summary>An array-creation node (<see cref="MakeArrayNodeDocument"/>).</summary>
     public const string MakeArray = "makeArray";
@@ -61,13 +63,13 @@ public static class BuiltInNodeKinds
     public const string ExplicitCast = "explicitCast";
 
     /// <summary>A <c>typeof</c> node (<see cref="TypeOfNodeDocument"/>).</summary>
-    public const string TypeOf = "typeOf";
+    public const string TypeOf = NodeKindIds.TypeOf;
 
     /// <summary>An if/else branch node (<see cref="IfElseNodeDocument"/>).</summary>
-    public const string IfElse = "ifElse";
+    public const string IfElse = NodeKindIds.IfElse;
 
     /// <summary>A for-loop node (<see cref="ForLoopNodeDocument"/>).</summary>
-    public const string ForLoop = "forLoop";
+    public const string ForLoop = NodeKindIds.ForLoop;
 
     /// <summary>A ternary-selection node (<see cref="TernaryNodeDocument"/>).</summary>
     public const string Ternary = "ternary";
@@ -76,10 +78,10 @@ public static class BuiltInNodeKinds
     public const string Await = "await";
 
     /// <summary>A <c>throw</c> node (<see cref="ThrowNodeDocument"/>).</summary>
-    public const string Throw = "throw";
+    public const string Throw = NodeKindIds.Throw;
 
     /// <summary>A default-value node (<see cref="DefaultNodeDocument"/>).</summary>
-    public const string Default = "default";
+    public const string Default = NodeKindIds.Default;
 
     /// <summary>An execution reroute node (<see cref="RerouteNodeDocument"/>).</summary>
     public const string Reroute = "reroute";

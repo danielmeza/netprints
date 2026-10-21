@@ -21,13 +21,13 @@
       <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustDontLoadButton}" Content="Don't load" Classes="dialogAction Primary" Theme="{DynamicResource SolidButton}" IsDefault="True" IsCancel="True" Command="{Binding DontLoadCommand}" />
       <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustButton}" Content="Trust" Classes="dialogAction" Command="{Binding TrustCommand}" />
     </ctl:DialogShell.Actions>
-    <Grid RowDefinitions="Auto,Auto" RowSpacing="{StaticResource Space.M.Size}">
+    <Grid RowDefinitions="Auto,Auto" RowSpacing="{DynamicResource Space.M.Size}">
       <TextBlock x:Name="Prompt" TextWrapping="Wrap" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustPrompt}" Text="{Binding Prompt}" />
-      <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="{StaticResource Dialog.ListMaxHeight}">
+      <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="{DynamicResource Dialog.ListMaxHeight}">
         <ItemsControl x:Name="FolderList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustFolders}" ItemsSource="{Binding ExtensionFolders}">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="x:String">
-              <TextBlock Text="{Binding}" TextWrapping="Wrap" FontFamily="{StaticResource Font.Mono}" Margin="2" />
+              <TextBlock Text="{Binding}" TextWrapping="Wrap" FontFamily="{DynamicResource Font.Mono}" Margin="2" />
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>

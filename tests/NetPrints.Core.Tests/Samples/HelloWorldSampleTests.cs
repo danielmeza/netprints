@@ -83,7 +83,7 @@ namespace NetPrints.Tests.Samples
             var write = main.Nodes.OfType<NetPrints.Graph.CallMethodNode>().Single();
             var ifElse = new NetPrints.Graph.IfElseNode(main) { PositionX = 280, PositionY = 392 };
             ifElse.ConditionPin.UnconnectedValue = condition;
-            NetPrints.Graph.GraphUtil.ConnectExecPins(main.EntryNode.InitialExecutionPin, ifElse.ExecutionPin);
+            NetPrints.Graph.GraphUtil.ConnectExecPins(main.EntryNode.ExecPin, ifElse.ExecPin);
             NetPrints.Graph.GraphUtil.ConnectExecPins(ifElse.TruePin, write.InputExecPins[0]);
             cls.MarkDirty();
             return (sample, project);

@@ -12,7 +12,15 @@
         WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsDialog}">
   <ctl:DialogShell Title="{Binding $parent[Window].Title}" IconId="{x:Static icons:IconIds.DialogInfo}">
     <ctl:DialogShell.Actions>
-      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsCloseButton}" Content="Close" Classes="dialogAction"
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsEdit}" Content="{x:Static ed:Strings.Shortcuts_EditShortcuts}" Classes="dialogAction"
+              Command="{Binding EditShortcutsCommand}">
+        <Interaction.Behaviors>
+          <ButtonClickEventTriggerBehavior>
+            <CloseWindowAction />
+          </ButtonClickEventTriggerBehavior>
+        </Interaction.Behaviors>
+      </Button>
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsCloseButton}" Content="{x:Static ed:Strings.Shortcuts_Close}" Classes="dialogAction Primary" Theme="{DynamicResource SolidButton}"
               IsDefault="True" IsCancel="True">
         <Interaction.Behaviors>
           <ButtonClickEventTriggerBehavior>
@@ -21,7 +29,7 @@
         </Interaction.Behaviors>
       </Button>
     </ctl:DialogShell.Actions>
-    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="{StaticResource Dialog.ListMaxHeight}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="{DynamicResource Dialog.ListMaxHeight}">
       <ItemsControl AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsList}" ItemsSource="{Binding Groups}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="edks:ShortcutGroup">
@@ -33,8 +41,12 @@
                   <DataTemplate x:DataType="edks:ShortcutRow">
                     <Grid ColumnDefinitions="*,Auto" Margin="12,2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsRow}"
                           AutomationProperties.Name="{Binding Label}">
-                      <TextBlock Text="{Binding Label}" />
-                      <TextBlock Grid.Column="1" Text="{Binding Shortcuts}" FontFamily="{StaticResource Font.Mono}" />
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="{Binding Label}" />
+                        <TextBlock Classes="secondary" Text="{Binding Owner}" IsVisible="{Binding Owner, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                   AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsOwner}" />
+                      </StackPanel>
+                      <TextBlock Grid.Column="1" Text="{Binding Shortcuts}" FontFamily="{DynamicResource Font.Mono}" />
                     </Grid>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>

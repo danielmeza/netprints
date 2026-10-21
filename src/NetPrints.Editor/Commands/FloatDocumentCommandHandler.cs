@@ -4,7 +4,7 @@ using NetPrints.Editor.Shell;
 namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>floatDocument</c> command.</summary>
-public sealed class FloatDocumentCommandHandler : ICommandHandler
+public sealed class FloatDocumentCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => context.ActiveDocument is { } id && !context.Shell.IsFloating(id);

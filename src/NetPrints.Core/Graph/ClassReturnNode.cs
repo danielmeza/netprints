@@ -13,15 +13,13 @@ namespace NetPrints.Graph
     /// interfaces as input type pins, so inheritance participates in the same connection and
     /// type-inference machinery as any other node.
     /// </summary>
-    public class ClassReturnNode : Node
+    [NodeKind(NodeKindIds.ClassReturn)]
+    public sealed partial class ClassReturnNode : Node, IPinListEditor
     {
         /// <summary>
         /// Input type pin for the class's base type.
         /// </summary>
-        public NodeInputTypePin SuperTypePin
-        {
-            get => InputTypePins[0];
-        }
+        public partial NodeInputTypePin BaseTypePin { get; }
 
         /// <summary>
         /// Input type pins for the class's implemented interfaces, one per interface added with
@@ -39,7 +37,7 @@ namespace NetPrints.Graph
         public ClassReturnNode(ClassGraph graph)
             : base(graph)
         {
-            AddInputTypePin("BaseType");
+            DeclarePins();
         }
 
         /// <summary>
@@ -65,5 +63,35 @@ namespace NetPrints.Graph
                 InputTypePins.Remove(interfacePin);
             }
         }
+
+        /// <inheritdoc />
+        bool IPinListEditor.ShowsPinButtons => true;
+
+        /// <inheritdoc />
+        string IPinListEditor.AddPinLabel => "Add interface";
+
+        /// <inheritdoc />
+        string IPinListEditor.RemovePinLabel => "Remove interface";
+
+        /// <inheritdoc />
+        bool IPinListEditor.CanRemovePin => InterfacePins.Any();
+
+        /// <inheritdoc />
+        bool IPinListEditor.ChangesMethodSignature => false;
+
+        /// <inheritdoc />
+        IReadOnlyList<int>? IPinListEditor.SlotsAfterAdd => null;
+
+        /// <inheritdoc />
+        IReadOnlyList<int>? IPinListEditor.SlotsAfterRemove => null;
+
+        /// <inheritdoc />
+        void IPinListEditor.AddPin() => AddInterfacePin();
+
+        /// <inheritdoc />
+        void IPinListEditor.RemovePin() => RemoveInterfacePin();
+
+        /// <inheritdoc />
+        public override bool TitleIsFixed => true;
     }
 }

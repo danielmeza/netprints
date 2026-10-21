@@ -148,11 +148,45 @@ public sealed partial class ErrorListViewModel : ObservableObject, IDisposable
     private ClassGraph? OwnerOf(CodeDiagnostic diagnostic) =>
         cls ?? wholeProject?.Classes.FirstOrDefault(candidate => string.Equals(candidate.FullName, diagnostic.ClassFullName, StringComparison.Ordinal));
 
+    private IEnumerable<CodeDiagnostic> WithoutLiveCounterparts(IEnumerable<CodeDiagnostic> build)
+    {
+        var pending = new Dictionary<(CodeDiagnosticSeverity, string, string, string?, string?, string?), int>();
+        foreach (CodeDiagnostic live in liveDiagnostics)
+        {
+            var key = KeyOf(live);
+            pending[key] = pending.GetValueOrDefault(key) + 1;
+        }
+
+        foreach (CodeDiagnostic diagnostic in build)
+        {
+            var key = KeyOf(diagnostic);
+            if (pending.GetValueOrDefault(key) > 0)
+            {
+                pending[key]--;
+            }
+            else
+            {
+                yield return diagnostic;
+            }
+        }
+    }
+
+    private static (CodeDiagnosticSeverity, string, string, string?, string?, string?) KeyOf(CodeDiagnostic d) =>
+        (d.Severity, d.Id, d.Message, d.ClassFullName, d.GraphKey, d.NodeId);
+
+    private static (CodeDiagnostic Diagnostic, string? MemberName) Shown(DiagnosticRowViewModel row) => (row.Diagnostic, row.MemberName);
+
     private void Refresh()
     {
         EnsureProjectSubscription();
         IEnumerable<CodeDiagnostic> build = currentProject?.LastDiagnostics.Where(Belongs) ?? [];
-        Rows.ReplaceRange(liveDiagnostics.Concat(build).Select(d => new DiagnosticRowViewModel(d, OwnerOf(d))));
+        CodeDiagnostic[] diagnostics = [.. liveDiagnostics, .. WithoutLiveCounterparts(build)];
+        DiagnosticRowViewModel[] rows = [.. diagnostics.Select(d => new DiagnosticRowViewModel(d, OwnerOf(d)))];
+        if (!rows.Select(Shown).SequenceEqual(Rows.Select(Shown)))
+        {
+            Rows.ReplaceRange(rows);
+        }
+
         OnPropertyChanged(nameof(ErrorCount));
         OnPropertyChanged(nameof(WarningCount));
         OnPropertyChanged(nameof(InfoCount));

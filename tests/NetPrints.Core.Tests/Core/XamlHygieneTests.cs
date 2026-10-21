@@ -38,6 +38,7 @@ namespace NetPrints.Tests.Core
         };
 
         private static readonly HashSet<string> IconTags = new(StringComparer.Ordinal) { "MaterialIcon", "PathIcon", "Image", "Path", "Viewbox", "Svg", "IconPresenter" };
+
         private static readonly HashSet<string> ButtonTags = new(StringComparer.Ordinal)
         {
             "Button", "ToggleButton", "RepeatButton", "SplitButton", "DropDownButton", "HyperlinkButton",
@@ -460,6 +461,28 @@ namespace NetPrints.Tests.Core
         private static AxamlFile LoadAxaml(string relativePath) =>
             LoadAxamlFiles().Single(file => file.RelativePath == relativePath);
 
+        /// <summary>FR-027: the Settings document's own text comes from <c>Strings.resx</c>, not from literals in the view.</summary>
+        [Fact]
+        public void SettingsViewTakesEveryTextFromResources()
+        {
+            AxamlFile view = LoadAxaml("src/NetPrints.Editor/Settings/SettingsView.axaml");
+            string[] textAttributes = ["Text", "Content", "PlaceholderText", "AutomationProperties.Name", "ToolTip.Tip"];
+            HashSet<string> glyphs = new(StringComparer.Ordinal) { "✕", "↑", "↓" };
+            var offenders = new List<string>();
+
+            foreach (XAttribute attribute in view.Document.Descendants().SelectMany(element => element.Attributes())
+                .Where(attribute => textAttributes.Contains(attribute.Name.LocalName)))
+            {
+                string value = attribute.Value.Trim();
+                if (!value.StartsWith('{') && !glyphs.Contains(value))
+                {
+                    offenders.Add($"{attribute.Name.LocalName}={value}");
+                }
+            }
+
+            Assert.True(offenders.Count == 0, "SettingsView text must come from Strings.resx (FR-027): " + string.Join(", ", offenders));
+        }
+
         private static XElement[] StyleSetters(AxamlFile file, string selector) =>
             [.. file.Document.Descendants().Where(e => e.Name.LocalName == "Style" && e.Attribute("Selector")?.Value == selector).Elements()];
 
@@ -481,7 +504,7 @@ namespace NetPrints.Tests.Core
         {
             Assert.Contains(
                 StyleSetters(LoadAxaml("src/NetPrints.Editor/EditorStyles.axaml"), "TextBox.codeBlock"),
-                s => s.Attribute("Property")?.Value == "FontFamily" && s.Attribute("Value")?.Value == "{StaticResource Font.Mono}");
+                s => s.Attribute("Property")?.Value == "FontFamily" && s.Attribute("Value")?.Value == "{DynamicResource Font.Mono}");
             Assert.Contains(
                 LoadAxaml("src/NetPrints.Editor/Dialogs/ErrorDialog.axaml").Document.Descendants(),
                 e => e.Name.LocalName == "TextBox" && e.Attribute("Classes")?.Value.Split(' ').Contains("codeBlock") == true);
@@ -490,7 +513,7 @@ namespace NetPrints.Tests.Core
         [Theory]
         [InlineData("src/NetPrints.Editor/ErrorList/ErrorListView.axaml", "{Binding Header}")]
         [InlineData("src/NetPrints.Editor/Shell/ShellWindow.axaml", "{Binding BadgeText}")]
-        [InlineData("src/NetPrints.Editor/Shell/ShellWindow.axaml", "{Binding StatusBar.BuildStateText}")]
+        [InlineData("src/NetPrints.Editor/BuiltInViews.axaml", "{Binding Text}")]
         public void CountsTakeTheTabularClass(string path, string textBinding)
         {
             XElement block = LoadAxaml(path).Document.Descendants()

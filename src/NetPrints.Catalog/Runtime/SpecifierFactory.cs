@@ -137,23 +137,13 @@ internal static class SpecifierFactory
             return null;
         }
 
-        CultureInfo invariant = CultureInfo.InvariantCulture;
-        return typed.Type switch
+        if (PrimitiveKinds.TryGet(typed.Type, out PrimitiveKind? kind))
         {
-            "System.Boolean" => bool.Parse(text),
-            "System.Char" => text.Length > 0 ? text[0] : default(char),
-            "System.SByte" => sbyte.Parse(text, invariant),
-            "System.Byte" => byte.Parse(text, invariant),
-            "System.Int16" => short.Parse(text, invariant),
-            "System.UInt16" => ushort.Parse(text, invariant),
-            "System.Int32" => int.Parse(text, invariant),
-            "System.UInt32" => uint.Parse(text, invariant),
-            "System.Int64" => long.Parse(text, invariant),
-            "System.UInt64" => ulong.Parse(text, invariant),
-            "System.Single" => float.Parse(text, invariant),
-            "System.Double" => double.Parse(text, invariant),
-            "System.Decimal" => decimal.Parse(text, invariant),
-            _ => text,
-        };
+            return kind.Category is PrimitiveCategory.Character
+                ? (text.Length > 0 ? text[0] : default(char))
+                : kind.Parse(text);
+        }
+
+        return text;
     }
 }

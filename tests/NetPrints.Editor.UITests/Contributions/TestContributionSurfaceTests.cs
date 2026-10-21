@@ -40,9 +40,9 @@ public class TestContributionSurfaceTests
 
     private sealed class HelloHandler : ICommandHandler
     {
-        public bool CanExecute(CommandContext context) => true;
+        public bool CanExecute(ICommandContext context) => true;
 
-        public Task ExecuteAsync(CommandContext context, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task ExecuteAsync(ICommandContext context, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private sealed class ImmediateDispatcher : IUiDispatcher
@@ -78,9 +78,9 @@ public class TestContributionSurfaceTests
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    private static void AddTestContributions(IContributionRegistry registry)
+    private static void AddTestContributions(ContributionRegistry registry)
     {
-        registry.AddCommand(new CommandDescriptor(HelloId, "Say hello", new HelloHandler(), DefaultGestures: ["Ctrl+Alt+H"], Menu: new MenuPlacement("File", "testext", 0)));
+        registry.AddCommand(new CommandDescriptor(HelloId, "Say hello", new HelloHandler(), DefaultGestures: [new CommandGesture(CommandModifiers.Ctrl | CommandModifiers.Alt, CommandKey.H)], Menu: new MenuPlacement("File", "testext", 0)));
         registry.AddPanel(new PanelDescriptor(NotesPanelId, "Notes", _ => new object(), PanelDock.Bottom, 9));
         registry.AddDashboardTile(new DashboardTileDescriptor("testext.tile.hello", "Hello", 99, _ => TileBody));
         registry.AddProjectTemplate(new ProjectTemplateDescriptor(TemplateId, "Empty test app", "An empty template", DefaultProjectProfile.ProfileId, ProjectOutputType.Library));
@@ -181,7 +181,7 @@ public class TestContributionSurfaceTests
         var palette = new CommandPaletteViewModel(rig.Registry, rig.Invoker);
         var sheet = new KeyboardShortcutsViewModel(rig.Registry);
 
-        Assert.Equal("Notes", show.Label);
+        Assert.Equal("Notes", show.DisplayLabel);
         Assert.Contains(palette.Items, item => item.Command.Id == show.Id);
         Assert.Contains(sheet.Groups.SelectMany(group => group.Rows), row => row.CommandId == show.Id);
     }
@@ -190,8 +190,8 @@ public class TestContributionSurfaceTests
     public void ATestTileIsOnTheStartPageAfterTheBuiltInTiles()
     {
         ContributionRegistry registry = NewRegistry(withTestContributions: true);
-        var shell = new ShellViewModel(registry, new StartPageServices(), TimeProvider.System, new ImmediateDispatcher());
-        var services = new StartPageServices().Add<IProjectActions>(new NoProjectActions());
+        var shell = new ShellViewModel(registry, PanelFactoryContext.Detached, TimeProvider.System, new ImmediateDispatcher());
+        var services = new StartPageContext(new NoProjectActions(), PanelFactoryContext.Detached);
         using var page = new StartPageViewModel(shell, services);
         using var ui = HeadlessUi.Create();
 

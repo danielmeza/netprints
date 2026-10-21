@@ -21,34 +21,47 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
 
     private readonly IContributionRegistry registry;
     private readonly List<PanelViewModel> panels;
+    private readonly IPanelContext factoryContext;
+    private readonly EditorContext? host;
+    private readonly Action<ContributionSnapshot> attachStatusItems;
+    private PanelContext? attachedContext;
     private Project? followedProject;
     private ProjectSessionViewModel? followedSession;
     private DocumentViewModel? followedDocument;
 
     /// <summary>Creates the shell state; every registered panel's view model is created now.</summary>
     /// <param name="registry">The registry the panels come from.</param>
-    /// <param name="services">The services panel view models are created with.</param>
+    /// <param name="panelContext">The context panel view models are created with.</param>
     /// <param name="timeProvider">The clock of the status message expiry.</param>
     /// <param name="dispatcher">Brings the status message expiry to the UI thread.</param>
-    public ShellViewModel(IContributionRegistry registry, IServiceProvider services, TimeProvider timeProvider, IUiDispatcher dispatcher)
+    /// <param name="host">The editor services the status bar items' contexts give their extensions; <see langword="null"/> for none.</param>
+    public ShellViewModel(IContributionRegistry registry, IPanelContext panelContext, TimeProvider timeProvider, IUiDispatcher dispatcher, EditorContext? host = null)
     {
         ArgumentNullException.ThrowIfNull(registry);
-        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(panelContext);
         ArgumentNullException.ThrowIfNull(timeProvider);
         ArgumentNullException.ThrowIfNull(dispatcher);
         this.registry = registry;
+        factoryContext = panelContext;
+        this.host = host;
         panels =
         [.. registry.Panels
             .OrderBy(panel => panel.DefaultDock)
             .ThenBy(panel => panel.Order)
-            .Select(panel => new PanelViewModel(panel, panel.CreateViewModel(services)))];
+            .Select(panel => new PanelViewModel(panel, panel.CreateViewModel(ContextOf(panel.Id, panelContext, registry.Snapshot))))];
         StatusBar = new StatusBarViewModel(timeProvider, dispatcher);
         StatusBar.PropertyChanged += OnStatusBarChanged;
+        attachStatusItems = snapshot => StatusBar.Attach(snapshot.StatusBarItems, item => new ShellStatusBarContext(this, panelContext.Shell, host, snapshot.OwnerOf(item.Id)));
+        attachStatusItems(registry.Snapshot);
+        registry.Changed += OnRegistryChanged;
         Documents.CollectionChanged += (_, _) => OnPropertyChanged(nameof(Title));
     }
 
     /// <inheritdoc/>
     public event EventHandler? CommandStatesChanged;
+
+    /// <summary>Raised after panels were added to <see cref="Panels"/> or removed from it because the registry changed, such as a session group of an extension.</summary>
+    public event EventHandler<PanelsChangedEventArgs>? PanelsChanged;
 
     /// <summary>Raised by <see cref="NotifyModelRenamed"/>: a class or member was renamed through a view model, and the model does not notify.</summary>
     public event EventHandler? ModelRenamed;
@@ -127,7 +140,13 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
     public void AttachCommands(CommandInvoker invoker)
     {
         ArgumentNullException.ThrowIfNull(invoker);
+        if (Commands is { } previous)
+        {
+            previous.CommandStatesChanged -= OnInvokerStatesChanged;
+        }
+
         Commands = invoker;
+        invoker.CommandStatesChanged += OnInvokerStatesChanged;
         MenuBar?.Dispose();
         CommandBar?.Dispose();
         MenuBar = new MenuBarViewModel(registry, invoker);
@@ -144,6 +163,7 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         ArgumentNullException.ThrowIfNull(invoker);
         ArgumentNullException.ThrowIfNull(context);
         var panelContext = new PanelContext(this, api, invoker, context);
+        attachedContext = panelContext;
         foreach (IShellPanelContent content in panels.Select(panel => panel.Content).OfType<IShellPanelContent>())
         {
             content.Attach(panelContext);
@@ -220,10 +240,16 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
     /// <summary>Stops following the session and the active document, and disposes the open documents.</summary>
     public void Dispose()
     {
+        registry.Changed -= OnRegistryChanged;
         Unfollow();
         foreach (IShellPanelContent content in panels.Select(panel => panel.Content).OfType<IShellPanelContent>())
         {
             content.Detach();
+        }
+
+        if (Commands is { } invoker)
+        {
+            invoker.CommandStatesChanged -= OnInvokerStatesChanged;
         }
 
         MenuBar?.Dispose();
@@ -236,6 +262,62 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         }
 
         Documents.Clear();
+    }
+
+    private void OnRegistryChanged(object? sender, ContributionSnapshot snapshot)
+    {
+        attachStatusItems(snapshot);
+        SyncPanels(snapshot);
+    }
+
+    /// <summary>Gets the context a factory of the contribution <paramref name="id"/> is given: the editor's, or with the services of the extension that contributed it.</summary>
+    /// <param name="id">The contribution id.</param>
+    /// <param name="editorContext">The editor's context.</param>
+    /// <param name="snapshot">The snapshot that names the contribution's owner.</param>
+    /// <returns>The context.</returns>
+    internal IPanelContext ContextOf(string id, IPanelContext editorContext, IContributionSnapshot snapshot) =>
+        ExtensionServicesOf(id, snapshot) is { } services ? new ServicesContext(editorContext, services) : editorContext;
+
+    /// <summary>Gets the services of the extension that contributed <paramref name="id"/>.</summary>
+    /// <param name="id">The contribution id.</param>
+    /// <param name="snapshot">The snapshot that names the contribution's owner.</param>
+    /// <returns>The extension's provider, or <see langword="null"/> for a built-in contribution or when the shell has no host.</returns>
+    internal IServiceProvider? ExtensionServicesOf(string id, IContributionSnapshot snapshot) =>
+        host is not null && snapshot.OwnerNameOf(id) is not null && snapshot.OwnerOf(id) is { } owner
+            ? host.Extensions.Current.ServicesOf(owner)
+            : null;
+
+    private void SyncPanels(ContributionSnapshot snapshot)
+    {
+        HashSet<string> wanted = [.. snapshot.Panels.Select(panel => panel.Id)];
+        PanelViewModel[] removed = [.. panels.Where(panel => !wanted.Contains(panel.Id))];
+        List<PanelViewModel> added = [];
+        foreach (PanelDescriptor descriptor in snapshot.Panels.Where(descriptor => FindPanel(descriptor.Id) is null))
+        {
+            var panel = new PanelViewModel(descriptor, descriptor.CreateViewModel(ContextOf(descriptor.Id, factoryContext, snapshot)));
+            int index = panels.FindIndex(existing => (existing.DefaultDock, existing.Order).CompareTo((panel.DefaultDock, panel.Order)) > 0);
+            panels.Insert(index < 0 ? panels.Count : index, panel);
+            if (attachedContext is { } attached && panel.Content is IShellPanelContent content)
+            {
+                content.Attach(attached);
+            }
+
+            added.Add(panel);
+        }
+
+        foreach (PanelViewModel panel in removed)
+        {
+            panels.Remove(panel);
+            if (panel.Content is IShellPanelContent content)
+            {
+                content.Detach();
+            }
+        }
+
+        if (added.Count > 0 || removed.Length > 0)
+        {
+            PanelsChanged?.Invoke(this, new PanelsChangedEventArgs(added, removed));
+        }
     }
 
     partial void OnSessionChanged(ProjectSessionViewModel? oldValue, ProjectSessionViewModel? newValue)
@@ -309,7 +391,7 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         }
     }
 
-    private void OnSessionSaved(object? sender, int files) => ShowStatus($"Saved {files} file(s)", SessionStatus.TransientLifetime);
+    private void OnSessionSaved(object? sender, int files) => ShowStatus(TextFormat.Of(Strings.Status_SavedFiles, files), SessionStatus.TransientLifetime);
 
     private void OnSessionStatus(object? sender, SessionStatus status) => ShowStatus(status.Text, status.Expiry);
 
@@ -326,10 +408,17 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         {
             OnPropertyChanged(nameof(CompileErrorCount));
             CommandBar?.RefreshBadge();
+            StatusBar.Refresh();
         }
     }
 
-    private void OnDocumentChanged(object? sender, PropertyChangedEventArgs e) => OnPropertyChanged(nameof(Title));
+    private void OnInvokerStatesChanged(object? sender, EventArgs e) => StatusBar.Refresh();
+
+    private void OnDocumentChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        OnPropertyChanged(nameof(Title));
+        StatusBar.Refresh();
+    }
 
     private void OnStatusBarChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -352,5 +441,9 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
     /// <summary>Tells the menus and bars that a state a command shows changed (the theme), so they ask their commands again.</summary>
     internal void NotifyCommandStatesChanged() => RaiseCommandStatesChanged();
 
-    private void RaiseCommandStatesChanged() => CommandStatesChanged?.Invoke(this, EventArgs.Empty);
+    private void RaiseCommandStatesChanged()
+    {
+        StatusBar.Refresh();
+        CommandStatesChanged?.Invoke(this, EventArgs.Empty);
+    }
 }

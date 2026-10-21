@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Navigation;
+using NetPrints.Graph;
 
 namespace NetPrints.Editor.Shell;
 

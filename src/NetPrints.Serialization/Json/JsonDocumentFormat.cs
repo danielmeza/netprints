@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -8,6 +9,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
+using NetPrints.Core;
 using NetPrints.Serialization.Documents;
 using NetPrints.Serialization.Migrations;
 
@@ -28,6 +30,7 @@ public sealed class JsonDocumentFormat : IDocumentFormat
 
     private readonly NetPrintsJsonOptions options;
     private readonly DocumentMigrator migrator;
+    private readonly NodeDataMigrator? nodeMigrator;
 
     /// <summary>
     /// Creates a JSON document format.
@@ -36,9 +39,23 @@ public sealed class JsonDocumentFormat : IDocumentFormat
     /// documents.</param>
     /// <param name="migrator">Migrator used to upgrade older schema versions before deserializing.</param>
     public JsonDocumentFormat(NetPrintsJsonOptions options, DocumentMigrator migrator)
+        : this(options, migrator, null)
+    {
+    }
+
+    /// <summary>
+    /// Creates a JSON document format that also upgrades the data of node kinds that declare a data version.
+    /// </summary>
+    /// <param name="options">Serializer options for <see cref="Documents.ClassDocument"/> and its node
+    /// documents.</param>
+    /// <param name="migrator">Migrator used to upgrade older schema versions before deserializing.</param>
+    /// <param name="nodeMigrator">Migrator that upgrades the data of node kinds that declare a data version; <see langword="null"/> when no kind does.</param>
+    [Experimental(ExperimentalApiIds.NodeDataMigrations, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    public JsonDocumentFormat(NetPrintsJsonOptions options, DocumentMigrator migrator, NodeDataMigrator? nodeMigrator)
     {
         this.options = options ?? throw new ArgumentNullException(nameof(options));
         this.migrator = migrator ?? throw new ArgumentNullException(nameof(migrator));
+        this.nodeMigrator = nodeMigrator;
     }
 
     /// <inheritdoc/>
@@ -90,6 +107,10 @@ public sealed class JsonDocumentFormat : IDocumentFormat
         }
 
         JsonObject migrated = migrator.Upgrade(rootObject, DocumentKind.Class, id);
+        if (nodeMigrator is not null)
+        {
+            migrated = nodeMigrator.Upgrade(migrated);
+        }
 
         try
         {

@@ -29,7 +29,7 @@ public class NodeUndoTests : GraphTestBase
     private Task DeleteAsync(params Node[] nodes)
     {
         Graph.SelectNodes(nodes.Select(VmOf), deselectPrevious: true);
-        var context = new CommandContext(new FakeShell(), null, null, Graph, new CommandSelection([.. Graph.SelectedNodes]));
+        var context = new CommandContext(new FakeShell(), null, null, Graph, new CommandSelection([.. Graph.SelectedNodes.Select(vm => vm.Node)]));
         return new DeleteCommandHandler().ExecuteAsync(context, Token);
     }
 
@@ -52,7 +52,7 @@ public class NodeUndoTests : GraphTestBase
     [Fact(Timeout = 60000)]
     public async Task UndoingAPinSearchAddDisconnectsTheNodeAndRedoConnectsItAgain()
     {
-        NodeOutputExecPin entry = Method.EntryNode.InitialExecutionPin;
+        NodeOutputExecPin entry = Method.EntryNode.ExecPin;
         NodeInputExecPin? previous = entry.OutgoingPin;
         IfElseNode node = await AddIfElseAsync(new GraphPoint(0, 0), entry);
         Assert.Same(node.InputExecPins[0], entry.OutgoingPin);
@@ -80,9 +80,9 @@ public class NodeUndoTests : GraphTestBase
     [Fact(Timeout = 60000)]
     public async Task DeletingANodeIsUndoneWithItsConnections()
     {
-        NodeOutputExecPin entry = Method.EntryNode.InitialExecutionPin;
+        NodeOutputExecPin entry = Method.EntryNode.ExecPin;
         IfElseNode node = await AddIfElseAsync(new GraphPoint(0, 0), entry);
-        GraphUtil.ConnectExecPins(node.OutputExecPins[0], Method.MainReturnNode.ReturnPin);
+        GraphUtil.ConnectExecPins(node.OutputExecPins[0], Method.MainReturnNode.ExecPin);
         int connections = Graph.Connections.Count;
 
         await DeleteAsync(node);
@@ -95,7 +95,7 @@ public class NodeUndoTests : GraphTestBase
 
         Assert.Contains(node, Method.Nodes);
         Assert.Same(node.InputExecPins[0], entry.OutgoingPin);
-        Assert.Same(Method.MainReturnNode.ReturnPin, node.OutputExecPins[0].OutgoingPin);
+        Assert.Same(Method.MainReturnNode.ExecPin, node.OutputExecPins[0].OutgoingPin);
         Assert.Equal(connections, Graph.Connections.Count);
 
         ClassContext.UndoRedo.Redo();
@@ -107,7 +107,7 @@ public class NodeUndoTests : GraphTestBase
     [Fact(Timeout = 60000)]
     public async Task SeveralDeletedNodesAreOneUndoStepThatRestoresTheConnectionsBetweenThem()
     {
-        NodeOutputExecPin entry = Method.EntryNode.InitialExecutionPin;
+        NodeOutputExecPin entry = Method.EntryNode.ExecPin;
         IfElseNode first = await AddIfElseAsync(new GraphPoint(0, 0), entry);
         IfElseNode second = await AddIfElseAsync(new GraphPoint(300, 0), first.OutputExecPins[0]);
         Assert.Same(second.InputExecPins[0], first.OutputExecPins[0].OutgoingPin);

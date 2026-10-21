@@ -94,8 +94,8 @@
               </Border.ContextMenu>
               <Grid ColumnDefinitions="Auto,*,Auto,Auto" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentRow}"
                     AutomationProperties.Name="{Binding DisplayName}">
-                <Border Margin="{StaticResource Space.S}" VerticalAlignment="Center" Width="{StaticResource StartPage.RecentTileSize}" Height="{StaticResource StartPage.RecentTileSize}"
-                        CornerRadius="{StaticResource Radius.Control}" Background="{DynamicResource StartPage.RecentTileBackground}" AutomationProperties.AccessibilityView="Raw">
+                <Border Margin="{DynamicResource Space.S}" VerticalAlignment="Center" Width="{DynamicResource StartPage.RecentTileSize}" Height="{DynamicResource StartPage.RecentTileSize}"
+                        CornerRadius="{DynamicResource Radius.Control}" Background="{DynamicResource StartPage.RecentTileBackground}" AutomationProperties.AccessibilityView="Raw">
                   <icons:IconPresenter IconId="{x:Static icons:IconIds.Project}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                 </Border>
                 <Button Grid.Column="1" Classes="flat row-open" Margin="0" Padding="12,8" HorizontalContentAlignment="Left" HorizontalAlignment="Stretch"

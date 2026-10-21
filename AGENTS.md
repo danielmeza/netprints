@@ -74,7 +74,7 @@ instead of retrying blindly.
 - Call `OnPropertyChanged(nameof(X))` manually only when the change doesn't go through an observable setter (a
   model event, a collection change, a value computed from another object). Always `nameof`, never a string.
 - No Fody or other IL weaving (`[AlsoNotifyFor]`, `[DependsOn]`, …).
-- View model types are named `<Name>ViewModel`, never `<Name>VM`, enforced by `SourceHygieneTests.NoTypeNameEndsInVM`.
+- View model types are named `<Name>ViewModel`, never `<Name>VM`, enforced by NPH002.
 
 ## Nullable reference types
 The goal is to model and handle null correctly, not to silence warnings. A green build with `!` sprinkled
@@ -143,14 +143,14 @@ is on); `[review]` means only the reviewer catches it (not promoted to `error` y
 
 ### Constants and literals
 See "Batch rules for implementer agents" below (the "identifier used in more than one place" rule) for
-the naming-and-placement convention. [S1192, S109, SourceHygieneTests, CA1861]
+the naming-and-placement convention. [S1192, S109, NPH003, CA1861]
 
 ### Nullability
 See "Nullable reference types" above (no `!`, `null!`, `default!`) and "Batch rules for implementer
 agents" below. Guard entry points with `ArgumentNullException.ThrowIfNull`,
 `ArgumentException.ThrowIfNullOrEmpty`, `ArgumentOutOfRangeException.ThrowIf*`,
 `ObjectDisposedException.ThrowIf` instead of re-checking what the annotations already guarantee.
-[SourceHygieneTests, CA1510, CA1511, CA1512, CA1513]
+[NPH001, CA1510, CA1511, CA1512, CA1513]
 
 ### Exceptions
 - Throw the most specific existing type; never `Exception`, `ApplicationException`, `SystemException` or
@@ -197,7 +197,7 @@ agents" below. Guard entry points with `ArgumentNullException.ThrowIfNull`,
   Justification = "ADR-0003: <one-line reason>")]` on the smallest containing member, for pre-P1 code the
   analyzer's ownership/intent-tracking genuinely cannot see the truth of, listed in ADR-0003's suppression
   ledger. Never `#pragma warning disable`. `.editorconfig` has no per-file severity override: never add one.
-  [SourceHygieneTests: `NoUnlistedSuppressions`]
+  [NPH004; the ledger is `HygieneLedger.txt`]
 - Never change analyzer packages, severities or `.editorconfig` to get a green build; propose it in your
   report.
 
@@ -279,7 +279,7 @@ A batch prompt names the task range and pastes the task text; everything below a
   empty, and `git grep -n "SuppressMessage" -- 'src/*.cs'` lists only ledger entries. A "confirmed false
   positive" in code the batch touches is not by itself a reason to suppress: find the real fix (a different
   API, an ownership-transfer pattern the analyzer can see, …) instead
-  (`SourceHygieneTests.NoRawDiagnosticCodeLiteralsOutsideTheirConstants` is the actual enforced gate for
+  (NPH003 is the actual enforced gate for
   diagnostic/kind-code literals specifically).
 - Never open images or windows on the owner's desktop: no `eog`/`xdg-open`/viewers, never `DISPLAY=:1`. To inspect a
   snapshot, use the Read tool on the PNG.

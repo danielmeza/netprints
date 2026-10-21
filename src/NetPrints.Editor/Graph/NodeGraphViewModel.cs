@@ -11,7 +11,7 @@ using NetPrints.Editor.Graph.Nodes;
 using NetPrints.Editor.Graph.Pins;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.ModelSync;
-using NetPrints.Editor.Search;
+using NetPrints.Editor.NodeSearch;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.UndoRedo;
 using NetPrints.Editor.Variables;
@@ -58,7 +58,7 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
             owner.PropertyChanged += OnGraphPropertyChanged;
         }
 
-        Search = new SuggestionListViewModel(this);
+        Search = new NodeSearchViewModel(this);
         GetSetChooser = new GetSetChooserViewModel(this);
 
         RebuildConnections();
@@ -89,7 +89,7 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
     public event EventHandler? SelectionChanged;
 
     /// <summary>Node search popup (PAR-52..54).</summary>
-    public SuggestionListViewModel Search { get; }
+    public NodeSearchViewModel Search { get; }
 
     /// <summary>Get/Set chooser for variables (PAR-55, 57).</summary>
     public GetSetChooserViewModel GetSetChooser { get; }
@@ -384,47 +384,29 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
     // Node creation (PAR-47, 52..57)
 
     /// <summary>
-    /// Creates a node. Negative positions are clamped to the canvas; when the request has a
-    /// suggestion pin, the new node is connected to it (PAR-47).
-    /// </summary>
-    public Node AddNode(AddNodeRequest request)
-    {
-        if (request.Graph != Graph)
-        {
-            throw new ArgumentException("The request targets another graph.", nameof(request));
-        }
-
-        return RecordAdd(() => CreateNode(request));
-    }
-
-    private Node CreateNode(AddNodeRequest request)
-    {
-        object[] parameters = [Graph, .. request.ConstructorParameters];
-        var node = (Node)(Activator.CreateInstance(request.NodeType, parameters)
-            ?? throw new InvalidOperationException($"Could not create an instance of {request.NodeType}."));
-        node.PositionX = Math.Max(0, request.Position.X);
-        node.PositionY = Math.Max(0, request.Position.Y);
-
-        if (request.SuggestionPin is not null)
-        {
-            var provider = Context.Reflection.Provider;
-            GraphUtil.ConnectRelevantPins(request.SuggestionPin, node, provider.TypeSpecifierIsSubclassOf, provider.HasImplicitCast);
-        }
-
-        return node;
-    }
-
-    /// <summary>
     /// Creates the node an extension's <see cref="NodeSuggestion"/> offers, positioned and connected like
-    /// <see cref="AddNode(AddNodeRequest)"/> (a node constructor adds the node to its graph).
+    /// <see cref="AddNode(GraphPoint, NodePin?, Func{NodeGraph, Node})"/>.
     /// </summary>
     /// <param name="position">Where the node is created (graph coordinates).</param>
     /// <param name="suggestionPin">Pin the search was opened for, or <see langword="null"/>.</param>
     /// <param name="suggestion">The chosen suggestion.</param>
     /// <returns>The new node.</returns>
-    public Node AddNode(GraphPoint position, NodePin? suggestionPin, NodeSuggestion suggestion) => RecordAdd(() =>
+    public Node AddNode(GraphPoint position, NodePin? suggestionPin, NodeSuggestion suggestion) =>
+        AddNode(position, suggestionPin, suggestion.Create);
+
+    /// <summary>
+    /// Creates a node with a factory (a node constructor adds the node to its graph) as one undo step.
+    /// Negative positions are clamped to the canvas; when <paramref name="suggestionPin"/> is set, the
+    /// new node is connected to it (PAR-47).
+    /// </summary>
+    /// <param name="position">Where the node is created (graph coordinates).</param>
+    /// <param name="suggestionPin">Pin the search was opened for, or <see langword="null"/>.</param>
+    /// <param name="factory">Creates the node in this view model's graph.</param>
+    /// <returns>The new node.</returns>
+    public Node AddNode(GraphPoint position, NodePin? suggestionPin, Func<NodeGraph, Node> factory) => RecordAdd(() =>
     {
-        Node node = suggestion.Create(Graph);
+        ArgumentNullException.ThrowIfNull(factory);
+        Node node = factory(Graph);
         node.PositionX = Math.Max(0, position.X);
         node.PositionY = Math.Max(0, position.Y);
 
@@ -447,12 +429,9 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Creates an event graph entry (US4) directly, bypassing the reflection-based
-    /// <see cref="AddNode{T}(GraphPoint, NodePin?, object[])"/> pipeline: <see cref="EventEntryNode"/>'s
-    /// constructors take an <see cref="EventGraph"/>, not a <see cref="NodeGraph"/>, and
-    /// <see cref="AddNodeRequest"/> validates a constructor by an exact parameter-type match (every
-    /// other node type's constructor is declared with a <see cref="NodeGraph"/> first parameter for
-    /// exactly this reason), so it can never resolve one of <see cref="EventEntryNode"/>'s.
+    /// Creates an event graph entry (US4): <see cref="EventEntryNode"/>'s constructors take an
+    /// <see cref="EventGraph"/>, not a <see cref="NodeGraph"/>, so the factory of
+    /// <see cref="AddNode(GraphPoint, NodePin?, Func{NodeGraph, Node})"/> cannot build one.
     /// </summary>
     /// <param name="position">Where the entry is created (graph coordinates).</param>
     /// <param name="create">Constructs the entry from this graph, cast to <see cref="EventGraph"/>.</param>
@@ -464,10 +443,6 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
         node.PositionY = Math.Max(0, position.Y);
         return node;
     });
-
-    /// <summary>Creates a node of type <typeparamref name="T"/> at a position.</summary>
-    public Node AddNode<T>(GraphPoint position, NodePin? suggestionPin = null, params object[] arguments) where T : Node =>
-        AddNode(new AddNodeRequest(typeof(T), Graph, position, suggestionPin, arguments));
 
     /// <summary>
     /// Opens the node search at a position. With a pin, the suggestions are filtered for it and the
@@ -524,8 +499,8 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
         var declaringClass = method.Graph.Class ?? Graph.Class ?? throw new InvalidOperationException("The open graph has no class.");
         var declaringType = declaringClass.Type;
         return method.IsConstructor
-            ? AddNode<ConstructorNode>(position, null, method.ToConstructorSpecifier(declaringType))
-            : AddNode<CallMethodNode>(position, null, method.ToMethodSpecifier(declaringType));
+            ? AddNode(position, null, g => new ConstructorNode(g, method.ToConstructorSpecifier(declaringType)))
+            : AddNode(position, null, g => new CallMethodNode(g, method.ToMethodSpecifier(declaringType)));
     }
 
     /// <summary>

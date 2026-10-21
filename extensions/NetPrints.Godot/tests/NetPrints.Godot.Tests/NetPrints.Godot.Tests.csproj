@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <!-- ADR-0017: an extension opts in to experimental APIs with NoWarn. -->
+    <NoWarn>$(NoWarn);NPXE0002;NPXE0005;NPXE0009;NPXE0012;NPXE0013</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="NetPrints.Extensibility.Testing.Xunit" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\NetPrints.Godot\NetPrints.Godot.csproj" />
+  </ItemGroup>
+
+  <!-- The kit reads the manifest, the packaging and the type identity from the extension's own build output. -->
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>ExtensionFolder</_Parameter1>
+      <_Parameter2>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/../../src/NetPrints.Godot/bin/$(Configuration)/extension/'))</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>

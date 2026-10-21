@@ -8,7 +8,7 @@
   <!-- Class inspector (PAR-34) -->
   <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassInspector}" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*" Classes="propertyGrid" Margin="4">
     <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="{StaticResource Inspector.LabelColumnWidth}" />
+      <ColumnDefinition Width="{DynamicResource Inspector.LabelColumnWidth}" />
       <ColumnDefinition Width="*" />
     </Grid.ColumnDefinitions>
     <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />

@@ -118,4 +118,44 @@ internal static partial class Log
     /// <param name="exception">The exception the rollback threw.</param>
     [LoggerMessage(EventId = 1041, Level = LogLevel.Error, Message = "Restoring the previous project's extensions after a failed load also failed")]
     public static partial void ExtensionRollbackFailed(ILogger logger, Exception exception);
+
+    /// <summary>Logs 1042: a view resource an extension declared could not be used and was ignored.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="owner">The id of the extension that declared it.</param>
+    /// <param name="uri">The declared URI.</param>
+    /// <param name="reason">Why it could not be used.</param>
+    [LoggerMessage(EventId = 1042, Level = LogLevel.Warning, Message = "The view resource {Uri} of extension {Owner} was ignored: {Reason}")]
+    public static partial void ViewResourceIgnored(ILogger logger, string owner, string uri, string reason);
+
+    /// <summary>Logs 1044: an extension's data template threw while its view was built; a placeholder names the extension.</summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="exception">The failure.</param>
+    /// <param name="owner">The id of the extension.</param>
+    /// <param name="uri">The URI of the templates file.</param>
+    [LoggerMessage(EventId = 1044, Level = LogLevel.Warning, Message = "A view template of extension {Owner} from {Uri} failed; a placeholder is shown")]
+    public static partial void ViewTemplateFailed(ILogger logger, Exception exception, string owner, string uri);
+
+    /// <summary>Logs 1045: the assembly an extension's manifest names is not among the loaded assemblies, so its views resolve by assembly name.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="id">The extension id.</param>
+    /// <param name="path">The full path the manifest names.</param>
+    [LoggerMessage(EventId = 1045, Level = LogLevel.Warning, Message = "The assembly {Path} of extension {Id} is not loaded; its views resolve by assembly name")]
+    public static partial void ExtensionAssemblyNotFound(ILogger logger, string id, string path);
+
+    /// <summary>Logs 1046: a project's copy of an extension shadows a different per-user copy of the same assembly name.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="id">The extension id.</param>
+    /// <param name="projectVersion">Version of the project's copy.</param>
+    /// <param name="userVersion">Version of the per-user copy.</param>
+    /// <param name="userPath">Path of the per-user copy's assembly.</param>
+    [LoggerMessage(EventId = 1046, Level = LogLevel.Warning, Message = "The project's copy ({ProjectVersion}) of extension {Id} shadows the per-user copy ({UserVersion}, {UserPath}); images and fonts (avares:// assets) come from the per-user copy")]
+    public static partial void ExtensionCopyShadowed(ILogger logger, string id, string projectVersion, string userVersion, string userPath);
+
+    /// <summary>Logs 1043: a <c>darkPreset</c> or <c>lightPreset</c> setting names no preset of its variant, so the variant's default applies.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="id">The id in the setting.</param>
+    /// <param name="variant">The variant the setting is for.</param>
+    /// <param name="fallback">The id of the preset applied instead.</param>
+    [LoggerMessage(EventId = 1043, Level = LogLevel.Warning, Message = "The theme preset {Id} is unknown for the {Variant} variant; {Fallback} applies")]
+    public static partial void ThemePresetUnknown(ILogger logger, string id, string variant, string fallback);
 }

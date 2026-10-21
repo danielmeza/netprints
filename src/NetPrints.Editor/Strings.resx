@@ -1,0 +1,568 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Category.netprints" xml:space="preserve">
+    <value>NetPrints</value>
+  </data>
+  <data name="Menu.File" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="Menu.Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Menu.View" xml:space="preserve">
+    <value>View</value>
+  </data>
+  <data name="Menu.Go" xml:space="preserve">
+    <value>Go</value>
+  </data>
+  <data name="Menu.Build" xml:space="preserve">
+    <value>Build</value>
+  </data>
+  <data name="Menu.Help" xml:space="preserve">
+    <value>Help</value>
+  </data>
+  <data name="Panel.netprints.panel.projectTree.Title" xml:space="preserve">
+    <value>Project</value>
+  </data>
+  <data name="Panel.netprints.panel.inspector.Title" xml:space="preserve">
+    <value>Inspector</value>
+  </data>
+  <data name="Panel.netprints.panel.variables.Title" xml:space="preserve">
+    <value>Variables</value>
+  </data>
+  <data name="Panel.netprints.panel.errors.Title" xml:space="preserve">
+    <value>Errors</value>
+  </data>
+  <data name="Panel.netprints.panel.output.Title" xml:space="preserve">
+    <value>Output</value>
+  </data>
+  <data name="Panel.netprints.panel.csharp.Title" xml:space="preserve">
+    <value>C#</value>
+  </data>
+  <data name="Command.netprints.command.newProject.Label" xml:space="preserve">
+    <value>New project…</value>
+  </data>
+  <data name="Command.netprints.command.openProject.Label" xml:space="preserve">
+    <value>Open project…</value>
+  </data>
+  <data name="Command.netprints.command.openFolder.Label" xml:space="preserve">
+    <value>Open folder…</value>
+  </data>
+  <data name="Command.netprints.command.closeProject.Label" xml:space="preserve">
+    <value>Close project</value>
+  </data>
+  <data name="Command.netprints.command.newClass.Label" xml:space="preserve">
+    <value>New class</value>
+  </data>
+  <data name="Command.netprints.command.addExistingClass.Label" xml:space="preserve">
+    <value>Add existing class…</value>
+  </data>
+  <data name="Command.netprints.command.save.Label" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Command.netprints.command.saveAll.Label" xml:space="preserve">
+    <value>Save all</value>
+  </data>
+  <data name="Command.netprints.command.projectSettings.Label" xml:space="preserve">
+    <value>Project settings</value>
+  </data>
+  <data name="Command.netprints.command.openSettings.Label" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Command.netprints.command.references.Label" xml:space="preserve">
+    <value>References…</value>
+  </data>
+  <data name="Command.netprints.command.exit.Label" xml:space="preserve">
+    <value>Exit</value>
+  </data>
+  <data name="Command.netprints.command.undo.Label" xml:space="preserve">
+    <value>Undo</value>
+  </data>
+  <data name="Command.netprints.command.redo.Label" xml:space="preserve">
+    <value>Redo</value>
+  </data>
+  <data name="Command.netprints.command.delete.Label" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Command.netprints.command.rename.Label" xml:space="preserve">
+    <value>Rename</value>
+  </data>
+  <data name="Command.netprints.command.selectAll.Label" xml:space="preserve">
+    <value>Select all</value>
+  </data>
+  <data name="Command.netprints.command.cancel.Label" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Command.netprints.command.nodeSearch.Label" xml:space="preserve">
+    <value>Add node…</value>
+  </data>
+  <data name="Command.netprints.command.classSettings.Label" xml:space="preserve">
+    <value>Class settings</value>
+  </data>
+  <data name="Command.netprints.command.addMethod.Label" xml:space="preserve">
+    <value>Add method</value>
+  </data>
+  <data name="Command.netprints.command.addConstructor.Label" xml:space="preserve">
+    <value>Add constructor</value>
+  </data>
+  <data name="Command.netprints.command.addVariable.Label" xml:space="preserve">
+    <value>Add variable</value>
+  </data>
+  <data name="Command.netprints.command.addEventGraph.Label" xml:space="preserve">
+    <value>Add event graph</value>
+  </data>
+  <data name="Command.netprints.command.overrideMethod.Label" xml:space="preserve">
+    <value>Override method…</value>
+  </data>
+  <data name="Command.netprints.command.frameSelection.Label" xml:space="preserve">
+    <value>Frame selection</value>
+  </data>
+  <data name="Command.netprints.command.fitAll.Label" xml:space="preserve">
+    <value>Fit all</value>
+  </data>
+  <data name="Command.netprints.command.showPanel.projectTree.Label" xml:space="preserve">
+    <value>Project</value>
+  </data>
+  <data name="Command.netprints.command.showPanel.inspector.Label" xml:space="preserve">
+    <value>Inspector</value>
+  </data>
+  <data name="Command.netprints.command.showPanel.variables.Label" xml:space="preserve">
+    <value>Variables</value>
+  </data>
+  <data name="Command.netprints.command.showPanel.errors.Label" xml:space="preserve">
+    <value>Errors</value>
+  </data>
+  <data name="Command.netprints.command.showPanel.output.Label" xml:space="preserve">
+    <value>Output</value>
+  </data>
+  <data name="Command.netprints.command.showPanel.csharp.Label" xml:space="preserve">
+    <value>C#</value>
+  </data>
+  <data name="Command.netprints.command.floatDocument.Label" xml:space="preserve">
+    <value>Float tab</value>
+  </data>
+  <data name="Command.netprints.command.dockDocument.Label" xml:space="preserve">
+    <value>Dock tab</value>
+  </data>
+  <data name="Command.netprints.command.resetLayout.Label" xml:space="preserve">
+    <value>Reset layout</value>
+  </data>
+  <data name="Command.netprints.command.theme.dark.Label" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="Command.netprints.command.theme.light.Label" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="Command.netprints.command.theme.system.Label" xml:space="preserve">
+    <value>System (follow OS)</value>
+  </data>
+  <data name="Command.netprints.command.commandPalette.Label" xml:space="preserve">
+    <value>Command palette…</value>
+  </data>
+  <data name="Command.netprints.command.goToAnything.Label" xml:space="preserve">
+    <value>Go to anything…</value>
+  </data>
+  <data name="Command.netprints.command.navigateBack.Label" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="Command.netprints.command.navigateForward.Label" xml:space="preserve">
+    <value>Forward</value>
+  </data>
+  <data name="Command.netprints.command.nextTab.Label" xml:space="preserve">
+    <value>Next tab</value>
+  </data>
+  <data name="Command.netprints.command.previousTab.Label" xml:space="preserve">
+    <value>Previous tab</value>
+  </data>
+  <data name="Command.netprints.command.closeTab.Label" xml:space="preserve">
+    <value>Close tab</value>
+  </data>
+  <data name="Command.netprints.command.goToSource.Label" xml:space="preserve">
+    <value>Go to source</value>
+  </data>
+  <data name="Command.netprints.command.goToTarget.Label" xml:space="preserve">
+    <value>Go to target</value>
+  </data>
+  <data name="Command.netprints.command.compile.Label" xml:space="preserve">
+    <value>Compile</value>
+  </data>
+  <data name="Command.netprints.command.run.Label" xml:space="preserve">
+    <value>Run</value>
+  </data>
+  <data name="Command.netprints.command.stop.Label" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="Command.netprints.command.keyboardShortcuts.Label" xml:space="preserve">
+    <value>Keyboard shortcuts</value>
+  </data>
+  <data name="Command.netprints.command.startPage.Label" xml:space="preserve">
+    <value>Start page</value>
+  </data>
+  <data name="Command.netprints.command.help.openLogsFolder.Label" xml:space="preserve">
+    <value>Open logs folder</value>
+  </data>
+  <data name="Command.netprints.command.about.Label" xml:space="preserve">
+    <value>About NetPrints</value>
+  </data>
+  <data name="Command.netprints.command.openGraph.Label" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="Message.SampleNotFound" xml:space="preserve">
+    <value>There is no bundled sample named '{0}'.</value>
+  </data>
+  <data name="Dialog.ExtensionErrorTitle" xml:space="preserve">
+    <value>Extension error</value>
+  </data>
+  <data name="Message.ExtensionError" xml:space="preserve">
+    <value>The extension "{0}" ({1}) threw this error. The details are in the log. Its folder is {2}. To stop loading it, move or delete that folder, then restart NetPrints.
+
+{3}</value>
+  </data>
+  <data name="Message.ExtensionErrorProjectCopy" xml:space="preserve">
+    <value>The extension "{0}" ({1}) threw this error. The details are in the log. It is this project's own copy, in {2}; the project's build needs that folder, so keep it. To stop loading it in the editor, remove the project from Trusted projects on the Extensions page, then open the project again and choose Don't load.
+
+{3}</value>
+  </data>
+  <data name="Message.UnsupportedProjectFile" xml:space="preserve">
+    <value>'{0}' is not a NetPrints project: only '.csproj' projects are supported. Nothing was opened.</value>
+  </data>
+  <data name="Message.FailedToLoadProject" xml:space="preserve">
+    <value>Failed to load project at path {0}. The exception has been copied to your clipboard.&#10;&#10;{1}</value>
+  </data>
+  <data name="Message.FailedToLoadClass" xml:space="preserve">
+    <value>Failed to load existing class at path {0}:&#10;&#10;{1}</value>
+  </data>
+  <data name="Message.NoBaseMethodToOverride" xml:space="preserve">
+    <value>{0} has no base method to override.</value>
+  </data>
+  <data name="Message.ConfirmRemoveClass" xml:space="preserve">
+    <value>Remove class '{0}' and close its graphs? This cannot be undone.</value>
+  </data>
+  <data name="Message.FailedToAddAssembly" xml:space="preserve">
+    <value>Failed to add assembly at {0}:&#10;&#10;{1}</value>
+  </data>
+  <data name="Message.FailedToAddSources" xml:space="preserve">
+    <value>Failed to add sources at {0}:&#10;&#10;{1}</value>
+  </data>
+  <data name="Message.ProjectSaved" xml:space="preserve">
+    <value>Project saved ({0} files)</value>
+  </data>
+  <data name="Status.ErrorsOne" xml:space="preserve">
+    <value>{0} error</value>
+  </data>
+  <data name="Status.ErrorsOther" xml:space="preserve">
+    <value>{0} errors</value>
+  </data>
+  <data name="Status.WarningsOne" xml:space="preserve">
+    <value>{0} warning</value>
+  </data>
+  <data name="Status.WarningsOther" xml:space="preserve">
+    <value>{0} warnings</value>
+  </data>
+  <data name="Status.Selected" xml:space="preserve">
+    <value>{0} selected</value>
+  </data>
+  <data name="Status.Zoom" xml:space="preserve">
+    <value>{0}%</value>
+  </data>
+  <data name="Status.LoadingProject" xml:space="preserve">
+    <value>Loading project {0}</value>
+  </data>
+  <data name="Status.LoadedProject" xml:space="preserve">
+    <value>Loaded project {0}</value>
+  </data>
+  <data name="Status.FailedToLoadProject" xml:space="preserve">
+    <value>Failed to load project {0}</value>
+  </data>
+  <data name="Status.SavedFiles" xml:space="preserve">
+    <value>Saved {0} file(s)</value>
+  </data>
+  <data name="Tile.netprints.tile.recent.Title" xml:space="preserve">
+    <value>Recent projects</value>
+  </data>
+  <data name="Tile.netprints.tile.open.Title" xml:space="preserve">
+    <value>Open folder or project</value>
+  </data>
+  <data name="Tile.netprints.tile.new.Title" xml:space="preserve">
+    <value>New project</value>
+  </data>
+  <data name="Tile.netprints.tile.samples.Title" xml:space="preserve">
+    <value>Samples</value>
+  </data>
+  <data name="Tile.netprints.tile.learn.Title" xml:space="preserve">
+    <value>Learn</value>
+  </data>
+  <data name="Tile.netprints.tile.whatsNew.Title" xml:space="preserve">
+    <value>What's new</value>
+  </data>
+  <data name="Template.netprints.template.console.Name" xml:space="preserve">
+    <value>Console app</value>
+  </data>
+  <data name="Template.netprints.template.console.Description" xml:space="preserve">
+    <value>A program with an entry point: a Program class with an empty Main method.</value>
+  </data>
+  <data name="Template.netprints.template.library.Name" xml:space="preserve">
+    <value>Class library</value>
+  </data>
+  <data name="Template.netprints.template.library.Description" xml:space="preserve">
+    <value>A library with no entry point and no classes yet.</value>
+  </data>
+  <data name="ContributionError.Title" xml:space="preserve">
+    <value>The extension {0} could not show {1}.</value>
+  </data>
+  <data name="ContributionError.HandlerFailed" xml:space="preserve">
+    <value>The extension {0} failed while running {1}: {2}</value>
+  </data>
+  <data name="Startup.UnknownProfile" xml:space="preserve">
+    <value>The profile '{0}' is not known, so New project shows every template. Known profiles: {1}.</value>
+  </data>
+  <data name="Startup.ProfileIgnored" xml:space="preserve">
+    <value>The profile '{0}' was ignored because a project was given.</value>
+  </data>
+  <data name="NewProject.ProfileNote" xml:space="preserve">
+    <value>Templates for the profile {0}.</value>
+  </data>
+  <data name="Settings.Title" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Settings.Page.General" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="Settings.Page.Appearance" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="Settings.Page.Keyboard" xml:space="preserve">
+    <value>Keyboard shortcuts</value>
+  </data>
+  <data name="Settings.Keyboard.Label" xml:space="preserve">
+    <value>Keyboard shortcuts</value>
+  </data>
+  <data name="Settings.Keyboard.Description" xml:space="preserve">
+    <value>Every command with its gestures. Add, remove or reset a gesture; a change applies at once.</value>
+  </data>
+  <data name="Settings.Keyboard.BuiltInOwner" xml:space="preserve">
+    <value>Built-in</value>
+  </data>
+  <data name="Settings.Keyboard.AddGesture" xml:space="preserve">
+    <value>Add gesture</value>
+  </data>
+  <data name="Settings.Keyboard.Recording" xml:space="preserve">
+    <value>Press keys…</value>
+  </data>
+  <data name="Settings.Keyboard.Conflict" xml:space="preserve">
+    <value>"{1}" already uses {0}. Move it to "{2}"?</value>
+  </data>
+  <data name="Settings.Keyboard.NotLoadedSummary" xml:space="preserve">
+    <value>{0} (add: {1}; remove: {2})</value>
+  </data>
+  <data name="Settings.Keyboard.EntryNotObject" xml:space="preserve">
+    <value>an entry must be an object.</value>
+  </data>
+  <data name="Settings.Keyboard.EntryCommand" xml:space="preserve">
+    <value> (command '{0}')</value>
+  </data>
+  <data name="Settings.Keyboard.EntryProblem" xml:space="preserve">
+    <value>Kept as written and not loaded{0}: {1}</value>
+  </data>
+  <data name="Settings.Keyboard.EntryValueInvalid" xml:space="preserve">
+    <value>the value of '{0}' is not valid</value>
+  </data>
+  <data name="Settings.Keyboard.IssueFormat" xml:space="preserve">
+    <value>{0}: "{1}" ignored. {2}</value>
+  </data>
+  <data name="Settings.Page.Run" xml:space="preserve">
+    <value>Run</value>
+  </data>
+  <data name="Settings.Page.Extensions" xml:space="preserve">
+    <value>Extensions</value>
+  </data>
+  <data name="Settings.Error.WholeNumber" xml:space="preserve">
+    <value>Enter a whole number.</value>
+  </data>
+  <data name="Settings.Error.Number" xml:space="preserve">
+    <value>Enter a number.</value>
+  </data>
+  <data name="Settings.LoadedExtensions.Label" xml:space="preserve">
+    <value>Loaded extensions</value>
+  </data>
+  <data name="Settings.LoadedExtensions.Description" xml:space="preserve">
+    <value>The extensions loaded at start, with their version and the folder they came from</value>
+  </data>
+  <data name="Settings.ThemePreview.Label" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="Settings.ThemePreview.Description" xml:space="preserve">
+    <value>The canvas, node card, pins and selected wire of the presets chosen for each variant</value>
+  </data>
+  <data name="Settings.ThemePreview.Dark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="Settings.ThemePreview.Light" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="Settings.BuiltInSource" xml:space="preserve">
+    <value>Built in</value>
+  </data>
+  <data name="Settings.ChooseFolder" xml:space="preserve">
+    <value>Choose a folder</value>
+  </data>
+  <data name="Settings.ChooseFile" xml:space="preserve">
+    <value>Choose a file</value>
+  </data>
+  <data name="Settings.AllFiles" xml:space="preserve">
+    <value>All files</value>
+  </data>
+  <data name="Settings.Keyboard.FilterPlaceholder" xml:space="preserve">
+    <value>Filter by label, id or owner</value>
+  </data>
+  <data name="Settings.Keyboard.FilterName" xml:space="preserve">
+    <value>Filter shortcuts</value>
+  </data>
+  <data name="Settings.Keyboard.RecordFilter" xml:space="preserve">
+    <value>Record gesture</value>
+  </data>
+  <data name="Settings.Keyboard.ClearFilter" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="Settings.Keyboard.ResetAll" xml:space="preserve">
+    <value>Reset all</value>
+  </data>
+  <data name="Settings.Keyboard.ConflictAccept" xml:space="preserve">
+    <value>Move</value>
+  </data>
+  <data name="Settings.Keyboard.ConflictCancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Settings.Keyboard.RemoveGesture" xml:space="preserve">
+    <value>Remove gesture</value>
+  </data>
+  <data name="Settings.Keyboard.Reset" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="Settings.Keyboard.NotLoaded" xml:space="preserve">
+    <value>Not loaded</value>
+  </data>
+  <data name="Settings.Keyboard.RemoveNotLoaded" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="Settings.Keyboard.GlobalScopeRefusal" xml:space="preserve">
+    <value>A single-key or Shift-only gesture is not allowed in the Global scope (function keys are).</value>
+  </data>
+  <data name="Settings.Keyboard.NotAGesture" xml:space="preserve">
+    <value>Not a gesture.</value>
+  </data>
+  <data name="Settings.Keyboard.TakenByUser" xml:space="preserve">
+    <value>Already bound to '{0}' by the user.</value>
+  </data>
+  <data name="Settings.Browse" xml:space="preserve">
+    <value>Browse…</value>
+  </data>
+  <data name="Settings.List.MoveUp" xml:space="preserve">
+    <value>Move up</value>
+  </data>
+  <data name="Settings.List.MoveDown" xml:space="preserve">
+    <value>Move down</value>
+  </data>
+  <data name="Settings.List.Remove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="Settings.List.NewItem" xml:space="preserve">
+    <value>Add an entry</value>
+  </data>
+  <data name="Settings.List.Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Settings.RequiresRestart" xml:space="preserve">
+    <value>Requires restart</value>
+  </data>
+  <data name="Settings.RestartNow" xml:space="preserve">
+    <value>Restart now</value>
+  </data>
+  <data name="Settings.RestartToApply" xml:space="preserve">
+    <value>Restart to apply</value>
+  </data>
+  <data name="Settings.Search" xml:space="preserve">
+    <value>Search settings</value>
+  </data>
+  <data name="Settings.Language.System" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="Shortcuts.EditShortcuts" xml:space="preserve">
+    <value>Edit shortcuts</value>
+  </data>
+  <data name="Shortcuts.Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="NewProject.Template" xml:space="preserve">
+    <value>Template</value>
+  </data>
+  <data name="NewProject.ShowAll" xml:space="preserve">
+    <value>Show all templates</value>
+  </data>
+  <data name="Settings.netprints.enableAnimations.Label" xml:space="preserve">
+    <value>Enable animations</value>
+  </data>
+  <data name="Settings.netprints.enableAnimations.Description" xml:space="preserve">
+    <value>Turns the interface animations on. Turn them off to reduce motion</value>
+  </data>
+  <data name="Settings.netprints.language.Label" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Settings.netprints.language.Description" xml:space="preserve">
+    <value>The interface language. System follows the operating system</value>
+  </data>
+  <data name="Settings.netprints.extensionPaths.Label" xml:space="preserve">
+    <value>Extension paths</value>
+  </data>
+  <data name="Settings.netprints.extensionPaths.Description" xml:space="preserve">
+    <value>Folders searched for extensions. Each subfolder that holds a manifest is loaded at the next start</value>
+  </data>
+  <data name="Settings.netprints.trustedProjects.Label" xml:space="preserve">
+    <value>Trusted projects</value>
+  </data>
+  <data name="Settings.netprints.trustedProjects.Description" xml:space="preserve">
+    <value>Project files whose extensions you allowed to load</value>
+  </data>
+  <data name="Settings.run.stopTimeoutSeconds.Label" xml:space="preserve">
+    <value>Stop timeout seconds</value>
+  </data>
+  <data name="Settings.run.stopTimeoutSeconds.Description" xml:space="preserve">
+    <value>Seconds a stopped program has to exit before its process tree is killed</value>
+  </data>
+  <data name="Settings.run.linuxTerminal.Label" xml:space="preserve">
+    <value>Linux terminal</value>
+  </data>
+  <data name="Settings.run.linuxTerminal.Description" xml:space="preserve">
+    <value>Linux only: the terminal command that hosts a run in an external terminal. Empty detects one</value>
+  </data>
+  <data name="Settings.netprints.editor.theme.Label" xml:space="preserve">
+    <value>Theme</value>
+  </data>
+  <data name="Settings.netprints.editor.theme.Description" xml:space="preserve">
+    <value>The theme variant the editor starts in</value>
+  </data>
+  <data name="Settings.netprints.editor.darkPreset.Label" xml:space="preserve">
+    <value>Dark preset</value>
+  </data>
+  <data name="Settings.netprints.editor.darkPreset.Description" xml:space="preserve">
+    <value>The preset the Dark variant uses</value>
+  </data>
+  <data name="Settings.netprints.editor.lightPreset.Label" xml:space="preserve">
+    <value>Light preset</value>
+  </data>
+  <data name="Settings.netprints.editor.lightPreset.Description" xml:space="preserve">
+    <value>The preset the Light variant uses</value>
+  </data>
+</root>

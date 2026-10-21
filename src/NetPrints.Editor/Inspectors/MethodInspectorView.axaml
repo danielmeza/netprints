@@ -7,7 +7,7 @@
   <!-- Method inspector (PAR-35): constructors have a read-only name and no modifiers. -->
   <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MethodInspector}" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Classes="propertyGrid" Margin="4">
     <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="{StaticResource Inspector.LabelColumnWidth}" />
+      <ColumnDefinition Width="{DynamicResource Inspector.LabelColumnWidth}" />
       <ColumnDefinition Width="*" />
     </Grid.ColumnDefinitions>
     <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />

@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "id": "netprints.light",
+  "label": "NetPrints Light",
+  "base": "light",
+  "tokens": {}
+}

@@ -13,7 +13,7 @@ concurrency group are unchanged.
 | `build-test` | **Build and test (Linux)** | `checks`, `test` | `if: always()`; fails unless every needed job succeeded; no other steps |
 | `e2e` | Desktop E2E (Linux, Xvfb) | — | unchanged, plus the diagnostics folder (§3) inside the uploaded `e2e-results` |
 | `packages` | Packages (local feed) | — | unchanged |
-| `perf` | Performance budgets (non-blocking) | — | `continue-on-error`, 20 min; builds Core, Catalog, Editor and Editor.UITests in Release and runs each with `--filter-trait "Category=Performance"` and `NETPRINTS_PERF_STRICT=1` (strict budgets); uploads `test-results-perf`; not in `build-test`'s needs |
+| `perf` | Performance budgets (non-blocking) | — | `continue-on-error`, 30 min; builds Core, Catalog, Editor and Editor.UITests in Release and runs each with `--filter-trait "Category=Performance"` and `NETPRINTS_PERF_STRICT=1` (strict budgets); then builds R5-0 with `eng/perf/prepare-r5-0.sh` and runs `eng/perf/ab.sh` (SC-005 M1 and M2, same-runner A/B, spec 006 batch C-F2c); uploads `test-results-perf`; not in `build-test`'s needs |
 | `trim-readiness` | Trim warnings (non-blocking) | — | `continue-on-error`, 15 min; runs `eng/trim-warnings.sh`, the M4 ratchet that counts the IL2xxx/IL3xxx warnings of `NetPrints.Editor` against `eng/trim-warnings.txt` and fails when the count rises; not in `build-test`'s needs |
 | `desktop-publish` | Self-contained editor smoke (linux-x64) | — | publishes the editor self-contained for linux-x64 and runs `scripts/smoke-desktop.sh` (headless project check); 20 min |
 | `jsonschema` | JSON Schema (metaschema, lint, validate) | — | `eng/validate-schemas.sh`; 10 min |

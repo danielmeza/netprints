@@ -1,6 +1,7 @@
 using System;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
+using NetPrints.Roslyn;
 
 namespace NetPrints.Annotations
 {

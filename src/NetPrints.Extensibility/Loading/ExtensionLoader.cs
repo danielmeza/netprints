@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
 
@@ -41,13 +42,14 @@ public sealed class ExtensionLoader
     /// <param name="cancellationToken">Cancels the load between extensions.</param>
     /// <returns>The registry.</returns>
     /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was cancelled.</exception>
+    [RequiresUnreferencedCode(DynamicLoading.Reason)]
     public ExtensionRegistry Load(CancellationToken cancellationToken)
     {
         var failures = new List<ExtensionLoadResult.Failed>();
         var candidates = Discover(failures, cancellationToken);
         var ordered = Order(candidates, failures);
 
-        var registryBuilder = new RegistryBuilder(loggerFactory.CreateLogger<ExtensionRegistry>());
+        var registryBuilder = new RegistryBuilder(loggerFactory.CreateLogger<ExtensionRegistry>(), loggerFactory, options.SettingsStore);
         var loaded = new List<ExtensionLoadResult>();
         var loadedIds = new HashSet<string>(StringComparer.Ordinal);
         var contexts = new Dictionary<string, ExtensionLoadContext>(StringComparer.Ordinal);
@@ -82,13 +84,13 @@ public sealed class ExtensionLoader
     private List<Candidate> Discover(List<ExtensionLoadResult.Failed> failures, CancellationToken cancellationToken)
     {
         var candidates = new List<Candidate>();
-        var seenIds = new HashSet<string>(StringComparer.Ordinal);
+        var seenIds = new Dictionary<string, (string Version, bool FromFolder)>(StringComparer.Ordinal);
         var seenPaths = new HashSet<string>(StringComparer.Ordinal);
 
         for (int index = 0; index < options.InProcess.Count; index++)
         {
             (ExtensionManifest manifest, INetPrintsExtension extension) = options.InProcess[index];
-            if (!seenIds.Add(manifest.Id))
+            if (!seenIds.TryAdd(manifest.Id, (manifest.Version, false)))
             {
                 failures.Add(Duplicate(manifest.Id, null));
                 continue;
@@ -151,10 +153,18 @@ public sealed class ExtensionLoader
             }
 
             Log.ExtensionDiscovered(logger, manifest.Id, fullPath);
-
-            if (!seenIds.Add(manifest.Id))
+            if (manifest.UnknownFields.Count > 0)
             {
-                failures.Add(Duplicate(manifest.Id, fullPath));
+                Log.ManifestFieldsIgnored(logger, manifest.Id, string.Join(", ", manifest.UnknownFields));
+            }
+
+            if (!seenIds.TryAdd(manifest.Id, (manifest.Version, mustExist)))
+            {
+                (string firstVersion, bool firstFromFolder) = seenIds[manifest.Id];
+                failures.Add(firstFromFolder && !mustExist
+                    ? RecordFailure(manifest.Id, fullPath, ExtensionDiagnosticCodes.Shadowed,
+                        $"the project's copy (version {firstVersion}) serves this session; the copy in the user directories (version {manifest.Version}) adds nothing to it.", null)
+                    : Duplicate(manifest.Id, fullPath));
                 return;
             }
 
@@ -236,6 +246,7 @@ public sealed class ExtensionLoader
         return byGroup != 0 ? byGroup : string.CompareOrdinal(left.Manifest.Id, right.Manifest.Id);
     }
 
+    [RequiresUnreferencedCode(DynamicLoading.Reason)]
     private ExtensionLoadResult LoadOne(Candidate candidate, RegistryBuilder registryBuilder, Dictionary<string, ExtensionLoadContext> contexts)
     {
         ExtensionManifest manifest = candidate.Manifest;
@@ -295,7 +306,7 @@ public sealed class ExtensionLoader
             }
         }
 
-        var builder = new ExtensionBuilder(manifest, loggerFactory);
+        var builder = new ExtensionBuilder(manifest, loggerFactory, extension.GetType().Assembly);
         ExtensionContributions contributions;
         try
         {
@@ -308,22 +319,46 @@ public sealed class ExtensionLoader
         }
 
         contributions = builder.Seal();
-        registryBuilder.Commit(manifest, contributions);
+        try
+        {
+            registryBuilder.Commit(manifest, contributions);
+        }
+        catch (ExtensionServicesException ex)
+        {
+            return Fail(candidate, ExtensionDiagnosticCodes.RegisterFailed, ex.Message, ex);
+        }
+
+        builder.BufferedEditor.ReplayTo(options.EditorContributions?.Invoke(manifest) ?? NullEditorContributions.Instance);
         return new ExtensionLoadResult.Loaded(manifest.Id, candidate.ManifestPath, manifest);
     }
 
+    [RequiresUnreferencedCode(DynamicLoading.Reason)]
     private static string? OlderDependencyCopy(Assembly assembly, ExtensionLoadContext context)
     {
-        if (context.Dependencies.Count == 0)
+        string root = assembly.GetName().Name ?? string.Empty;
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var pending = new Queue<(string Referrer, AssemblyName Reference)>(assembly.GetReferencedAssemblies().Select(reference => (root, reference)));
+        while (pending.Count > 0)
         {
-            return null;
-        }
-
-        foreach (AssemblyName reference in assembly.GetReferencedAssemblies())
-        {
-            if (reference.Version is { } required && context.FindDependencyVersion(reference) is { } provided && provided < required)
+            (string referrer, AssemblyName reference) = pending.Dequeue();
+            if (reference.Name is null || !seen.Add($"{reference.Name}/{reference.Version}"))
             {
-                return $"it was built against {reference.Name} {required}, but its dependency provides {provided}.";
+                continue;
+            }
+
+            if (context.FindProvided(reference) is { } provided)
+            {
+                if (reference.Version is { } required && provided.Version < required)
+                {
+                    return $"{referrer} was built against {reference.Name} {required}, but {provided.Provider} provides {provided.Version}.";
+                }
+
+                continue;
+            }
+
+            foreach (AssemblyName next in context.ReadPrivateReferences(reference))
+            {
+                pending.Enqueue((reference.Name, next));
             }
         }
 
@@ -363,6 +398,7 @@ public sealed class ExtensionLoader
         }
     }
 
+    [RequiresUnreferencedCode(DynamicLoading.Reason)]
     private static bool IsExtensionType(Type type) =>
         type is { IsClass: true, IsAbstract: false, IsPublic: true }
         && typeof(INetPrintsExtension).IsAssignableFrom(type)

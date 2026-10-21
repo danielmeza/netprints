@@ -43,7 +43,7 @@ public class StartPageTests
     public async Task OpeningAProjectClosesTheStartPage()
     {
         await using ShellApp app = ShellApp.Start();
-        Assert.Equal([NetPrints.Editor.Shell.DocumentId.StartPage], app.Api.OpenDocuments);
+        Assert.Equal([NetPrints.Extensibility.Editor.DocumentId.StartPage], app.Api.OpenDocuments);
 
         await app.OpenSampleAsync(Token);
 

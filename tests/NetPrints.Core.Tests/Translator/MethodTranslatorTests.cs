@@ -68,7 +68,7 @@ namespace NetPrints.Tests
                 MemberVisibility.Public, MemberVisibility.Public, TypeSpecifier.FromType<string>(), VariableModifiers.None));
 
             // Connect node execs
-            GraphUtil.ConnectExecPins(stringLengthMethod.EntryNode.InitialExecutionPin, stringLengthMethod.ReturnNodes.First().ReturnPin);
+            GraphUtil.ConnectExecPins(stringLengthMethod.EntryNode.ExecPin, stringLengthMethod.ReturnNodes.First().ExecPin);
 
             // Connect node data
             GraphUtil.ConnectDataPins(stringLengthMethod.EntryNode.OutputDataPins[0], getLengthNode.InputDataPins[0]);
@@ -114,9 +114,9 @@ namespace NetPrints.Tests
             LiteralNode literalNode = LiteralNode.WithValue(ifElseMethod, 123);
 
             // Connect exec nodes
-            GraphUtil.ConnectExecPins(ifElseMethod.EntryNode.InitialExecutionPin, ifElseNode.ExecutionPin);
-            GraphUtil.ConnectExecPins(ifElseNode.TruePin, ifElseMethod.ReturnNodes.First().ReturnPin);
-            GraphUtil.ConnectExecPins(ifElseNode.FalsePin, ifElseMethod.ReturnNodes.First().ReturnPin);
+            GraphUtil.ConnectExecPins(ifElseMethod.EntryNode.ExecPin, ifElseNode.ExecPin);
+            GraphUtil.ConnectExecPins(ifElseNode.TruePin, ifElseMethod.ReturnNodes.First().ExecPin);
+            GraphUtil.ConnectExecPins(ifElseNode.FalsePin, ifElseMethod.ReturnNodes.First().ExecPin);
 
             // Connect node data
             GraphUtil.ConnectDataPins(ifElseMethod.EntryNode.OutputDataPins[1], ifElseNode.ConditionPin);
@@ -138,8 +138,8 @@ namespace NetPrints.Tests
             ForLoopNode forLoopNode = new ForLoopNode(forLoopMethod);
 
             // Connect exec nodes
-            GraphUtil.ConnectExecPins(forLoopMethod.EntryNode.InitialExecutionPin, forLoopNode.ExecutionPin);
-            GraphUtil.ConnectExecPins(forLoopNode.CompletedPin, forLoopMethod.ReturnNodes.First().ReturnPin);
+            GraphUtil.ConnectExecPins(forLoopMethod.EntryNode.ExecPin, forLoopNode.ExecPin);
+            GraphUtil.ConnectExecPins(forLoopNode.CompletedPin, forLoopMethod.ReturnNodes.First().ExecPin);
 
             // Connect node data
             GraphUtil.ConnectDataPins(maxIndexLiteralNode.ValuePin, forLoopNode.MaxIndexPin);

@@ -1,0 +1,8 @@
+{
+  "id": "fx.fail.registryissues",
+  "name": "Fails NPK005: registers a node kind twice",
+  "version": "1.0.0",
+  "assembly": "Fx.Fail.RegistryIssues.dll",
+  "netprintsApi": "0.4",
+  "dependsOn": []
+}

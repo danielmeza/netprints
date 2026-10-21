@@ -5,7 +5,7 @@ using NetPrints.Editor.Shell;
 namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>fitAll</c> command: asks the canvas to fit every node.</summary>
-public sealed class FitAllCommandHandler : ICommandHandler
+public sealed class FitAllCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => context.ActiveGraph is { Nodes.Count: > 0 };

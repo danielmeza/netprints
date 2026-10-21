@@ -4,7 +4,7 @@ using NetPrints.Editor.Shell;
 namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>resetLayout</c> command.</summary>
-public sealed class ResetLayoutCommandHandler : ICommandHandler
+public sealed class ResetLayoutCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => true;

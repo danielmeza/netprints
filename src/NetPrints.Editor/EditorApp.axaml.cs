@@ -1,3 +1,4 @@
+using System.Globalization;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Controls;
@@ -10,6 +11,8 @@ using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.State;
 using NetPrints.Extensibility.Settings;
+using Semi.Avalonia;
+using Ursa.Themes.Semi;
 
 namespace NetPrints.Editor;
 
@@ -29,9 +32,13 @@ public partial class EditorApp : Application
         [EditorTheme.System] = ThemeVariant.Default,
     };
 
+    private static readonly CultureInfo FallbackLocale = CultureInfo.GetCultureInfo("en-US");
+
     private static EditorHostServices? hostServices;
 
     private Style? noTransitions;
+
+    private Theming.ThemeApplier? themeApplier;
 
     /// <summary>
     /// Process-wide services (logging, extensions, settings, host channel, MSBuild availability). Set by the host (<c>NetPrints.Desktop</c>'s <c>Program</c>) before
@@ -108,16 +115,50 @@ public partial class EditorApp : Application
         }
     }
 
+    /// <summary>Applies the language stored in the settings file; the operating system's culture when none is.</summary>
+    /// <param name="settings">The settings to read the language from.</param>
+    public void ApplyLanguageSetting(ISettingsStore settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        string language = settings.Get(NetPrintsSettings.Descriptor).Language;
+        CultureInfo culture = language.Length == 0 ? CultureInfo.InstalledUICulture : CultureInfo.GetCultureInfo(language);
+        CultureInfo.DefaultThreadCurrentUICulture = culture;
+        CultureInfo.CurrentUICulture = culture;
+        foreach (IStyle style in Styles)
+        {
+            if (style is SemiTheme semi)
+            {
+                semi.Locale = culture;
+                if (!IsLocale(semi.Locale, culture))
+                {
+                    semi.Locale = FallbackLocale;
+                }
+            }
+            else if (style is UrsaSemiTheme ursa)
+            {
+                ursa.Locale = culture;
+                if (!IsLocale(ursa.Locale, culture))
+                {
+                    ursa.Locale = FallbackLocale;
+                }
+            }
+        }
+    }
+
+    private static bool IsLocale(CultureInfo? locale, CultureInfo culture) =>
+        string.Equals(locale?.Name, culture.Name, StringComparison.OrdinalIgnoreCase);
+
     /// <summary>Switches the application to a theme (FR-082); <see cref="EditorTheme.System"/> follows the operating system.</summary>
     /// <param name="theme">The theme to switch to.</param>
     public void ApplyTheme(EditorTheme theme) => RequestedThemeVariant = Variants[theme];
 
-    /// <summary>Applies the theme stored in the settings file, <see cref="EditorTheme.Dark"/> when none is.</summary>
-    /// <param name="settings">The settings to read the theme from.</param>
+    /// <summary>Applies the appearance stored in the settings file: the theme (<see cref="EditorTheme.Dark"/> when none is) and the preset of each variant.</summary>
+    /// <param name="settings">The settings to read the appearance from.</param>
     public void ApplyThemeSetting(ISettingsStore settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
-        ApplyTheme(settings.Get(EditorSettings.Descriptor).Theme);
+        themeApplier ??= new Theming.ThemeApplier(this, hostServices?.LoggerFactory.CreateLogger(nameof(EditorApp)) ?? Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance);
+        themeApplier.Apply(settings.Get(EditorSettings.Descriptor));
     }
 
     /// <summary>
@@ -130,8 +171,20 @@ public partial class EditorApp : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            ApplyLanguageSetting(HostServices.Settings);
             ApplyAnimationSetting(HostServices.Settings);
             ApplyThemeSetting(HostServices.Settings);
+
+            if (HostServices.Settings is ISettingsChangeSource changes)
+            {
+                IDisposable animations = changes.OnSectionChanged(NetPrintsSettings.SectionId, () => Avalonia.Threading.Dispatcher.UIThread.Post(() => ApplyAnimationSetting(HostServices.Settings)));
+                IDisposable theme = changes.OnSectionChanged(EditorSettings.SectionId, () => Avalonia.Threading.Dispatcher.UIThread.Post(() => ApplyThemeSetting(HostServices.Settings)));
+                desktop.Exit += (_, _) =>
+                {
+                    animations.Dispose();
+                    theme.Dispose();
+                };
+            }
 
             var composition = new EditorComposition(HostServices);
             var exceptionHandler = composition.InstallUnhandledExceptionHandler();
@@ -160,7 +213,7 @@ public partial class EditorApp : Application
                 DisableTransitions();
                 var tree = new AutomationTree();
                 tree.Track(window);
-                string? startupProject = desktop.Args is [var single] ? single : null;
+                string? startupProject = Hosting.StartupArguments.Parse(desktop.Args).ProjectPath;
                 AutomationAgent agent;
                 try
                 {

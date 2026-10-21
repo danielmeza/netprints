@@ -18,7 +18,9 @@ namespace NetPrints.Editor.UITests.Hosting;
 public sealed class RecordingDialogs : IEditorDialogs
 {
     public List<(string Title, string Message)> Errors { get; } = [];
+
     public List<TypeSpecifier> SelectTypeCalls { get; } = [];
+
     public TypeSpecifier? TypeAnswer { get; set; } = TypeSpecifier.FromType<int>();
 
     /// <summary>When set, the references dialog is shown for real (non-modal) instead of being skipped.</summary>
@@ -104,6 +106,8 @@ public sealed class RecordingDialogs : IEditorDialogs
     public Task ShowKeyboardShortcutsAsync(KeyboardShortcutsViewModel sheet) => Task.CompletedTask;
 
     public Task ShowAboutAsync(AboutViewModel about) => Task.CompletedTask;
+
+    public Task ShowViewModelAsync(string title, object viewModel, CancellationToken cancellationToken) => Task.CompletedTask;
 
     public Task ShowGoToAnythingAsync(NetPrints.Editor.Navigation.GoToAnythingViewModel goTo) => Task.CompletedTask;
 

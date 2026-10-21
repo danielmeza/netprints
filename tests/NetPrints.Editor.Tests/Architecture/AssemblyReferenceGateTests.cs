@@ -17,6 +17,7 @@ public class AssemblyReferenceGateTests
         "NetPrints.Reflection",
         "NetPrints.Serialization",
         "NetPrints.Extensibility",
+        "NetPrints.Extensibility.Abstractions",
         "NetPrints.Workspace",
         "NetPrints.Generation",
         "NetPrints.Generator",

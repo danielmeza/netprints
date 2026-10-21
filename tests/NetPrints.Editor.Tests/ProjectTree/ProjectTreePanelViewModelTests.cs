@@ -4,7 +4,7 @@ using NetPrints.Editor.ProjectTree;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Shell;
 using NetPrints.Editor.UndoRedo;
-using DocumentId = NetPrints.Editor.Shell.DocumentId;
+using DocumentId = NetPrints.Extensibility.Editor.DocumentId;
 
 namespace NetPrints.Editor.Tests.ProjectTree;
 
@@ -239,7 +239,7 @@ public sealed class ProjectTreePanelViewModelTests : IAsyncDisposable
         var method = new MethodGraph("Greet") { Class = cls };
         cls.Methods.Add(method);
         CommandDescriptor open = Assert.Single(rig.Invoker.CommandsIn(CommandScope.ProjectTree), command => command.Id == ContributionIds.CommandPrefix + "openGraph");
-        Assert.Contains("Enter", open.DefaultGestures ?? []);
+        Assert.Contains(new CommandGesture(CommandModifiers.None, CommandKey.Enter), open.DefaultGestures ?? []);
 
         rig.Tree.SelectedItem = rig.Item(TreeItemKind.Method, "Greet");
         Assert.True(rig.Invoker.TryRun(open));

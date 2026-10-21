@@ -1,0 +1,122 @@
+# The reusable author workflow (specs/006-editor-extension-host/research.md R25, docs/adr/0041-extension-packages-and-verify.md).
+# It restores, builds, runs the kit tests, packs and verifies a NetPrints extension, and uploads the extension package.
+# The folder holds the extension project (package type NetPrintsExtension) and its test project (*.Tests.csproj), as the netprints-extension template lays them out.
+name: NetPrints extension
+
+on:
+  workflow_call:
+    inputs:
+      extension-folder:
+        description: Folder that holds the extension project and its test project
+        required: true
+        type: string
+      packages-artifact:
+        description: Name of an artifact that holds the packed NetPrints packages, used as a local feed
+        required: false
+        type: string
+        default: ''
+      netprints-version:
+        description: Version of the NetPrints.Cli tool that verifies the package, the latest release when empty and the version in the packed feed when an artifact is given
+        required: false
+        type: string
+        default: ''
+      dotnet-version:
+        description: The .NET SDK to install
+        required: false
+        type: string
+        default: 10.0.x
+    outputs:
+      package-artifact:
+        description: Name of the artifact that holds the extension package
+        value: ${{ jobs.extension.outputs.package-artifact }}
+
+permissions:
+  contents: read
+
+jobs:
+  extension:
+    name: Build, test, pack and verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      package-artifact: ${{ steps.names.outputs.artifact }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: ${{ inputs.dotnet-version }}
+
+      - name: Download the packed NetPrints packages
+        if: inputs.packages-artifact != ''
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ inputs.packages-artifact }}
+          path: ${{ runner.temp }}/netprints-packages
+
+      - name: Use the packed packages as a restore source
+        if: inputs.packages-artifact != ''
+        run: echo "RestoreAdditionalProjectSources=${RUNNER_TEMP}/netprints-packages" >> "$GITHUB_ENV"
+
+      - name: Find the projects
+        id: names
+        env:
+          FOLDER: ${{ inputs.extension-folder }}
+        run: |
+          extension=$(grep -rl --include='*.csproj' '<PackageType>NetPrintsExtension</PackageType>' "$FOLDER" | head -n 1)
+          tests=$(find "$FOLDER" -name '*.Tests.csproj' -not -path '*/obj/*' | head -n 1)
+          [ -n "$extension" ] || { echo "::error::No project of package type NetPrintsExtension under $FOLDER"; exit 1; }
+          [ -n "$tests" ] || { echo "::error::No *.Tests.csproj under $FOLDER"; exit 1; }
+          echo "extension=$extension" >> "$GITHUB_OUTPUT"
+          echo "tests=$tests" >> "$GITHUB_OUTPUT"
+          echo "artifact=extension-package-$(basename "$extension" .csproj)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore
+        env:
+          EXTENSION: ${{ steps.names.outputs.extension }}
+          TESTS: ${{ steps.names.outputs.tests }}
+        run: |
+          dotnet restore "$EXTENSION"
+          dotnet restore "$TESTS"
+
+      - name: Build
+        env:
+          TESTS: ${{ steps.names.outputs.tests }}
+        run: dotnet build "$TESTS" -c Release --no-restore
+
+      - name: Kit tests
+        env:
+          TESTS: ${{ steps.names.outputs.tests }}
+        run: dotnet test --project "$TESTS" -c Release --no-build
+
+      - name: Pack
+        env:
+          EXTENSION: ${{ steps.names.outputs.extension }}
+        run: dotnet pack "$EXTENSION" -c Release -o "${RUNNER_TEMP}/extension-package"
+
+      - name: Install the NetPrints tool
+        env:
+          PACKAGES: ${{ inputs.packages-artifact }}
+          VERSION: ${{ inputs.netprints-version }}
+        run: |
+          feed="${RUNNER_TEMP}/netprints-packages"
+          if [ -n "$PACKAGES" ]; then
+            cli=$(basename "$(ls "$feed"/NetPrints.Cli.*.nupkg | head -n 1)" .nupkg)
+            dotnet tool install NetPrints.Cli --tool-path "${RUNNER_TEMP}/netprints-tool" --version "${cli#NetPrints.Cli.}" --add-source "$feed"
+          elif [ -n "$VERSION" ]; then
+            dotnet tool install NetPrints.Cli --tool-path "${RUNNER_TEMP}/netprints-tool" --version "$VERSION"
+          else
+            dotnet tool install NetPrints.Cli --tool-path "${RUNNER_TEMP}/netprints-tool"
+          fi
+
+      - name: Verify the extension package
+        run: |
+          for package in "${RUNNER_TEMP}"/extension-package/*.nupkg; do
+            "${RUNNER_TEMP}/netprints-tool/netprints" extension verify "$package"
+          done
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ steps.names.outputs.artifact }}
+          path: ${{ runner.temp }}/extension-package/*.nupkg
+          if-no-files-found: error

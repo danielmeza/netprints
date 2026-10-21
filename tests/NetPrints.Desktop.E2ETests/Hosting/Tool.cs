@@ -78,7 +78,7 @@ public sealed class Tool(XServer server)
         }
 
         server.Apply(info.Environment);
-        using var process = Process.Start(info)!;
+        using var process = Process.Start(info) ?? throw new InvalidOperationException($"Cannot start {file}.");
         string output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
         await process.WaitForExitAsync(cancellationToken);
         lock (log)

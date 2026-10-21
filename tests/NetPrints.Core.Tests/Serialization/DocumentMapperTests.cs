@@ -35,6 +35,7 @@ namespace NetPrints.Tests.Serialization
         // T054b (research.md R21): FromDocument is strict now, so every handcrafted document it reads
         // needs IdFormat-shaped ids or the mapper repairs them out from under the test (NPD009).
         private static string NodeId(long value) => IdFormat.Format('n', value);
+
         private static string MemberId(long value) => IdFormat.Format('m', value);
 
         // DF-T06: every built-in kind round-trips, including dynamic pin counts and renamed pins.

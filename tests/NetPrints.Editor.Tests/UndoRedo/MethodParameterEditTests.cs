@@ -92,7 +92,7 @@ public sealed class MethodParameterEditTests : GraphTestBase
     {
         var mapper = new DocumentMapper(new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []), NullLogger<DocumentMapper>.Instance);
         List<DocumentIssue> issues = [];
-        ClassGraph loaded = mapper.FromDocument(mapper.ToDocument(Class), Project.FromSnapshot(TestSnapshots.Empty("P", "N")), issues, new DocumentId("C.netpc.json"));
+        ClassGraph loaded = mapper.FromDocument(mapper.ToDocument(Class), Project.FromSnapshot(TestSnapshots.Empty("P", "N")), issues, new NetPrints.Serialization.DocumentId("C.netpc.json"));
         Assert.Empty(issues);
         return loaded.Methods[Class.Methods.IndexOf(caller)].Nodes.OfType<CallMethodNode>().Single(call => call.MethodName == Method.Name);
     }

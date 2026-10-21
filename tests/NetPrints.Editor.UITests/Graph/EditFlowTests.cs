@@ -36,7 +36,7 @@ public class EditFlowTests
         var reloaded = (await session.App.Composition.Context.Persistence.LoadAsync(session.Sample.ProjectPath, Token)).Project;
         var reloadedMain = reloaded.Classes.Single().Methods.Single();
         var reloadedIf = reloadedMain.Nodes.OfType<IfElseNode>().Single();
-        Assert.Same(reloadedIf.InputExecPins[0], reloadedMain.EntryNode.InitialExecutionPin.OutgoingPin);
+        Assert.Same(reloadedIf.InputExecPins[0], reloadedMain.EntryNode.ExecPin.OutgoingPin);
         Assert.Equal(x, reloadedIf.PositionX);
     }
 

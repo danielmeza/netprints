@@ -1,0 +1,973 @@
+#nullable enable
+NetPrints.Extensibility.ExtensionApi
+NetPrints.Extensibility.Hosting.HostChannelState
+NetPrints.Extensibility.Hosting.HostChannelState.Closed = 2 -> NetPrints.Extensibility.Hosting.HostChannelState
+NetPrints.Extensibility.Hosting.HostChannelState.Connecting = 0 -> NetPrints.Extensibility.Hosting.HostChannelState
+NetPrints.Extensibility.Hosting.HostChannelState.Open = 1 -> NetPrints.Extensibility.Hosting.HostChannelState
+NetPrints.Extensibility.Hosting.HostLaunchContext
+NetPrints.Extensibility.Hosting.HostLaunchContext.<Clone>$() -> NetPrints.Extensibility.Hosting.HostLaunchContext!
+NetPrints.Extensibility.Hosting.HostLaunchContext.Deconstruct(out System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Settings) -> void
+NetPrints.Extensibility.Hosting.HostLaunchContext.Equals(NetPrints.Extensibility.Hosting.HostLaunchContext? other) -> bool
+NetPrints.Extensibility.Hosting.HostLaunchContext.HostLaunchContext(System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Settings) -> void
+NetPrints.Extensibility.Hosting.HostLaunchContext.Settings.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
+NetPrints.Extensibility.Hosting.HostLaunchContext.Settings.init -> void
+NetPrints.Extensibility.Hosting.HostMessageTypes
+NetPrints.Extensibility.IExtensionBuilder
+[NPXE0004]NetPrints.Extensibility.IExtensionBuilder.AddCatalogProfile(NetPrints.Catalog.CatalogProfile! profile) -> NetPrints.Extensibility.IExtensionBuilder!
+[NPXE0011]NetPrints.Extensibility.IExtensionBuilder.AddStringResources(System.Resources.ResourceManager! resources) -> NetPrints.Extensibility.IExtensionBuilder!
+NetPrints.Extensibility.IExtensionBuilder.AddJsonTypeInfoResolver(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver! resolver) -> NetPrints.Extensibility.IExtensionBuilder!
+NetPrints.Extensibility.IExtensionBuilder.AddNodeLibrary(NetPrints.Extensibility.Nodes.INodeLibrary! library) -> NetPrints.Extensibility.IExtensionBuilder!
+NetPrints.Extensibility.IExtensionBuilder.AddProjectProfile(NetPrints.Core.IProjectProfile! profile) -> NetPrints.Extensibility.IExtensionBuilder!
+NetPrints.Extensibility.IExtensionBuilder.AddProjectProperty(string! msbuildPropertyName) -> NetPrints.Extensibility.IExtensionBuilder!
+NetPrints.Extensibility.IExtensionBuilder.AddTypeCatalog(NetPrints.Reflection.ITypeCatalog! catalog) -> NetPrints.Extensibility.IExtensionBuilder!
+NetPrints.Extensibility.IExtensionBuilder.LoggerFactory.get -> Microsoft.Extensions.Logging.ILoggerFactory!
+NetPrints.Extensibility.IExtensionBuilder.Manifest.get -> NetPrints.Extensibility.Loading.ExtensionManifest!
+NetPrints.Extensibility.INetPrintsExtension
+NetPrints.Extensibility.INetPrintsExtension.Register(NetPrints.Extensibility.IExtensionBuilder! builder) -> void
+NetPrints.Extensibility.Loading.ExtensionManifest
+NetPrints.Extensibility.Loading.ExtensionManifest.<Clone>$() -> NetPrints.Extensibility.Loading.ExtensionManifest!
+NetPrints.Extensibility.Loading.ExtensionManifest.ApiVersion.get -> System.Version?
+NetPrints.Extensibility.Loading.ExtensionManifest.Assembly.get -> string!
+NetPrints.Extensibility.Loading.ExtensionManifest.Assembly.init -> void
+NetPrints.Extensibility.Loading.ExtensionManifest.Deconstruct(out string! Id, out string! Name, out string! Version, out string! Assembly, out string! NetprintsApi, out System.Collections.Generic.IReadOnlyList<string!>! DependsOn) -> void
+NetPrints.Extensibility.Loading.ExtensionManifest.DependsOn.get -> System.Collections.Generic.IReadOnlyList<string!>!
+NetPrints.Extensibility.Loading.ExtensionManifest.DependsOn.init -> void
+NetPrints.Extensibility.Loading.ExtensionManifest.Equals(NetPrints.Extensibility.Loading.ExtensionManifest? other) -> bool
+NetPrints.Extensibility.Loading.ExtensionManifest.ExtensionManifest(string! Id, string! Name, string! Version, string! Assembly, string! NetprintsApi, System.Collections.Generic.IReadOnlyList<string!>! DependsOn) -> void
+NetPrints.Extensibility.Loading.ExtensionManifest.Id.get -> string!
+NetPrints.Extensibility.Loading.ExtensionManifest.Id.init -> void
+NetPrints.Extensibility.Loading.ExtensionManifest.Name.get -> string!
+NetPrints.Extensibility.Loading.ExtensionManifest.Name.init -> void
+NetPrints.Extensibility.Loading.ExtensionManifest.NetprintsApi.get -> string!
+NetPrints.Extensibility.Loading.ExtensionManifest.NetprintsApi.init -> void
+NetPrints.Extensibility.Loading.ExtensionManifest.Themes.get -> System.Collections.Generic.IReadOnlyList<string!>!
+NetPrints.Extensibility.Loading.ExtensionManifest.Themes.init -> void
+NetPrints.Extensibility.Loading.ExtensionManifest.UnknownFields.get -> System.Collections.Generic.IReadOnlyList<string!>!
+NetPrints.Extensibility.Loading.ExtensionManifest.UnknownFields.init -> void
+static NetPrints.Extensibility.Loading.ExtensionManifest.ThemesSinceApi.get -> System.Version!
+NetPrints.Extensibility.Loading.ExtensionManifest.Version.get -> string!
+NetPrints.Extensibility.Loading.ExtensionManifest.Version.init -> void
+NetPrints.Extensibility.Loading.ExtensionManifestException
+NetPrints.Extensibility.Loading.ExtensionManifestException.Code.get -> string!
+NetPrints.Extensibility.Loading.ExtensionManifestException.ExtensionManifestException(string! manifestPath, string! message, System.Exception? inner = null) -> void
+NetPrints.Extensibility.Loading.ExtensionManifestException.ManifestPath.get -> string!
+NetPrints.Extensibility.Nodes.GraphKinds
+NetPrints.Extensibility.Nodes.GraphKinds.Class = 4 -> NetPrints.Extensibility.Nodes.GraphKinds
+NetPrints.Extensibility.Nodes.GraphKinds.Constructor = 2 -> NetPrints.Extensibility.Nodes.GraphKinds
+NetPrints.Extensibility.Nodes.GraphKinds.Event = 16 -> NetPrints.Extensibility.Nodes.GraphKinds
+NetPrints.Extensibility.Nodes.GraphKinds.Execution = NetPrints.Extensibility.Nodes.GraphKinds.Method | NetPrints.Extensibility.Nodes.GraphKinds.Constructor | NetPrints.Extensibility.Nodes.GraphKinds.Event -> NetPrints.Extensibility.Nodes.GraphKinds
+NetPrints.Extensibility.Nodes.GraphKinds.Method = 1 -> NetPrints.Extensibility.Nodes.GraphKinds
+NetPrints.Extensibility.Nodes.GraphKinds.None = 0 -> NetPrints.Extensibility.Nodes.GraphKinds
+NetPrints.Extensibility.Nodes.GraphKinds.Type = 8 -> NetPrints.Extensibility.Nodes.GraphKinds
+NetPrints.Extensibility.Nodes.INodeLibrary
+NetPrints.Extensibility.Nodes.INodeLibrary.Id.get -> string!
+NetPrints.Extensibility.Nodes.INodeLibrary.NodeKinds.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Nodes.NodeKindDescriptor!>!
+NetPrints.Extensibility.Nodes.NodeGraphKinds
+NetPrints.Extensibility.Nodes.NodeKindDescriptor
+NetPrints.Extensibility.Nodes.NodeKindDescriptor.<Clone>$() -> NetPrints.Extensibility.Nodes.NodeKindDescriptor!
+NetPrints.Extensibility.Nodes.NodeKindDescriptor.AllowedIn.get -> NetPrints.Extensibility.Nodes.GraphKinds
+NetPrints.Extensibility.Nodes.NodeKindDescriptor.AllowedIn.init -> void
+NetPrints.Extensibility.Nodes.NodeKindDescriptor.Converter.get -> NetPrints.Serialization.Mapping.INodeDocumentConverter!
+NetPrints.Extensibility.Nodes.NodeKindDescriptor.Converter.init -> void
+NetPrints.Extensibility.Nodes.NodeKindDescriptor.Deconstruct(out string! Kind, out System.Type! NodeType, out NetPrints.Serialization.Mapping.INodeDocumentConverter! Converter, out NetPrints.Translator.INodeTranslator! Translator, out NetPrints.Extensibility.Nodes.GraphKinds AllowedIn, out System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Nodes.NodeSuggestion!>! Suggestions) -> void
+[NPXE0013]NetPrints.Extensibility.Nodes.NodeKindDescriptor.DataVersion.get -> int
+[NPXE0013]NetPrints.Extensibility.Nodes.NodeKindDescriptor.DataVersion.init -> void
+[NPXE0013]NetPrints.Extensibility.IExtensionBuilder.AddDocumentMigration(NetPrints.Serialization.Migrations.INodeDataMigration! migration) -> NetPrints.Extensibility.IExtensionBuilder!
+NetPrints.Extensibility.Nodes.NodeKindDescriptor.Equals(NetPrints.Extensibility.Nodes.NodeKindDescriptor? other) -> bool
+NetPrints.Extensibility.Nodes.NodeKindDescriptor.Kind.get -> string!
+NetPrints.Extensibility.Nodes.NodeKindDescriptor.Kind.init -> void
+NetPrints.Extensibility.Nodes.NodeKindDescriptor.NodeKindDescriptor(string! Kind, System.Type! NodeType, NetPrints.Serialization.Mapping.INodeDocumentConverter! Converter, NetPrints.Translator.INodeTranslator! Translator, NetPrints.Extensibility.Nodes.GraphKinds AllowedIn, System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Nodes.NodeSuggestion!>! Suggestions) -> void
+NetPrints.Extensibility.Nodes.NodeKindDescriptor.NodeType.get -> System.Type!
+NetPrints.Extensibility.Nodes.NodeKindDescriptor.NodeType.init -> void
+NetPrints.Extensibility.Nodes.NodeKindDescriptor.Suggestions.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Nodes.NodeSuggestion!>!
+NetPrints.Extensibility.Nodes.NodeKindDescriptor.Suggestions.init -> void
+NetPrints.Extensibility.Nodes.NodeKindDescriptor.Translator.get -> NetPrints.Translator.INodeTranslator!
+NetPrints.Extensibility.Nodes.NodeKindDescriptor.Translator.init -> void
+NetPrints.Extensibility.Nodes.NodeSuggestion
+NetPrints.Extensibility.Nodes.NodeSuggestion.<Clone>$() -> NetPrints.Extensibility.Nodes.NodeSuggestion!
+NetPrints.Extensibility.Nodes.NodeSuggestion.Category.get -> string!
+NetPrints.Extensibility.Nodes.NodeSuggestion.Category.init -> void
+NetPrints.Extensibility.Nodes.NodeSuggestion.Create.get -> System.Func<NetPrints.Core.NodeGraph!, NetPrints.Graph.Node!>!
+NetPrints.Extensibility.Nodes.NodeSuggestion.Create.init -> void
+NetPrints.Extensibility.Nodes.NodeSuggestion.Deconstruct(out string! Category, out NetPrints.Core.LocalizedText DisplayName, out string? IconKey, out System.Func<NetPrints.Core.NodeGraph!, NetPrints.Graph.Node!>! Create) -> void
+NetPrints.Extensibility.Nodes.NodeSuggestion.DisplayName.get -> NetPrints.Core.LocalizedText
+NetPrints.Extensibility.Nodes.NodeSuggestion.DisplayName.init -> void
+NetPrints.Extensibility.Nodes.NodeSuggestion.Equals(NetPrints.Extensibility.Nodes.NodeSuggestion? other) -> bool
+NetPrints.Extensibility.Nodes.NodeSuggestion.IconKey.get -> string?
+NetPrints.Extensibility.Nodes.NodeSuggestion.IconKey.init -> void
+NetPrints.Extensibility.Nodes.NodeSuggestion.NodeSuggestion(string! Category, NetPrints.Core.LocalizedText DisplayName, string? IconKey, System.Func<NetPrints.Core.NodeGraph!, NetPrints.Graph.Node!>! Create) -> void
+[NPXE0001]NetPrints.Extensibility.Hosting.HostMessage
+[NPXE0001]NetPrints.Extensibility.Hosting.HostMessage.<Clone>$() -> NetPrints.Extensibility.Hosting.HostMessage!
+[NPXE0001]NetPrints.Extensibility.Hosting.HostMessage.Deconstruct(out string! Type, out System.Text.Json.JsonElement Payload) -> void
+[NPXE0001]NetPrints.Extensibility.Hosting.HostMessage.Equals(NetPrints.Extensibility.Hosting.HostMessage? other) -> bool
+[NPXE0001]NetPrints.Extensibility.Hosting.HostMessage.HostMessage(string! Type, System.Text.Json.JsonElement Payload) -> void
+[NPXE0001]NetPrints.Extensibility.Hosting.HostMessage.Payload.get -> System.Text.Json.JsonElement
+[NPXE0001]NetPrints.Extensibility.Hosting.HostMessage.Payload.init -> void
+[NPXE0001]NetPrints.Extensibility.Hosting.HostMessage.Type.get -> string!
+[NPXE0001]NetPrints.Extensibility.Hosting.HostMessage.Type.init -> void
+[NPXE0001]NetPrints.Extensibility.Hosting.IHostChannel
+[NPXE0001]NetPrints.Extensibility.Hosting.IHostChannel.Id.get -> string!
+[NPXE0001]NetPrints.Extensibility.Hosting.IHostChannel.Messages.get -> System.IObservable<NetPrints.Extensibility.Hosting.HostMessage!>!
+[NPXE0001]NetPrints.Extensibility.Hosting.IHostChannel.SendAsync(NetPrints.Extensibility.Hosting.HostMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+[NPXE0001]NetPrints.Extensibility.Hosting.IHostChannel.State.get -> NetPrints.Extensibility.Hosting.HostChannelState
+[NPXE0001]NetPrints.Extensibility.Hosting.IHostChannelFactory
+[NPXE0001]NetPrints.Extensibility.Hosting.IHostChannelFactory.Create(NetPrints.Extensibility.Hosting.HostLaunchContext! context) -> NetPrints.Extensibility.Hosting.IHostChannel!
+[NPXE0001]NetPrints.Extensibility.Hosting.IHostChannelFactory.Id.get -> string!
+[NPXE0001]NetPrints.Extensibility.IExtensionBuilder.AddHostChannel(NetPrints.Extensibility.Hosting.IHostChannelFactory! factory) -> NetPrints.Extensibility.IExtensionBuilder!
+[NPXE0001]override NetPrints.Extensibility.Hosting.HostMessage.Equals(object? obj) -> bool
+[NPXE0001]override NetPrints.Extensibility.Hosting.HostMessage.GetHashCode() -> int
+[NPXE0001]override NetPrints.Extensibility.Hosting.HostMessage.ToString() -> string!
+[NPXE0001]static NetPrints.Extensibility.Hosting.HostMessage.operator !=(NetPrints.Extensibility.Hosting.HostMessage? left, NetPrints.Extensibility.Hosting.HostMessage? right) -> bool
+[NPXE0001]static NetPrints.Extensibility.Hosting.HostMessage.operator ==(NetPrints.Extensibility.Hosting.HostMessage? left, NetPrints.Extensibility.Hosting.HostMessage? right) -> bool
+[NPXE0002]NetPrints.Extensibility.IExtensionBuilder.AddSettings(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor! descriptor) -> NetPrints.Extensibility.IExtensionBuilder!
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.Deconstruct(out string! ExtensionId, out System.Type! ValueType) -> void
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ExtensionId.get -> string!
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ExtensionId.init -> void
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ExtensionSettingsDescriptor(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor! original) -> void
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ExtensionSettingsDescriptor(string! ExtensionId, System.Type! ValueType) -> void
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ValueType.get -> System.Type!
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ValueType.init -> void
+[NPXE0002]NetPrints.Extensibility.Settings.ISettingsStore
+[NPXE0002]NetPrints.Extensibility.Settings.ISettingsStore.Get<T>(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>! descriptor) -> T
+[NPXE0002]NetPrints.Extensibility.Settings.ISettingsStore.SetAsync<T>(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>! descriptor, T value, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+[NPXE0002]abstract NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.<Clone>$() -> NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor!
+[NPXE0002]override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.Equals(object? obj) -> bool
+[NPXE0002]override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.GetHashCode() -> int
+[NPXE0002]override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ToString() -> string!
+[NPXE0002]static NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.operator !=(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor? left, NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor? right) -> bool
+[NPXE0002]static NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.operator ==(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor? left, NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor? right) -> bool
+[NPXE0002]virtual NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.EqualityContract.get -> System.Type!
+[NPXE0002]virtual NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.Equals(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor? other) -> bool
+[NPXE0002]virtual NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.PrintMembers(System.Text.StringBuilder! builder) -> bool
+[NPXE0003]NetPrints.Extensibility.IExtensionBuilder.AddClassEmitter(NetPrints.Translator.IClassEmitter! emitter) -> NetPrints.Extensibility.IExtensionBuilder!
+[NPXE0003]NetPrints.Extensibility.IExtensionBuilder.AddMemberEmitter(NetPrints.Translator.IMemberEmitter! emitter) -> NetPrints.Extensibility.IExtensionBuilder!
+const NetPrints.Extensibility.Hosting.HostMessageTypes.FocusDocument = "netprints.focus-document" -> string!
+const NetPrints.Extensibility.Hosting.HostMessageTypes.TypesChanged = "netprints.types-changed" -> string!
+const NetPrints.Extensibility.Loading.ExtensionManifest.FileName = "netprints-extension.json" -> string!
+override NetPrints.Extensibility.Hosting.HostLaunchContext.Equals(object? obj) -> bool
+override NetPrints.Extensibility.Hosting.HostLaunchContext.GetHashCode() -> int
+override NetPrints.Extensibility.Hosting.HostLaunchContext.ToString() -> string!
+override NetPrints.Extensibility.Loading.ExtensionManifest.Equals(object? obj) -> bool
+override NetPrints.Extensibility.Loading.ExtensionManifest.GetHashCode() -> int
+override NetPrints.Extensibility.Loading.ExtensionManifest.ToString() -> string!
+override NetPrints.Extensibility.Nodes.NodeKindDescriptor.Equals(object? obj) -> bool
+override NetPrints.Extensibility.Nodes.NodeKindDescriptor.GetHashCode() -> int
+override NetPrints.Extensibility.Nodes.NodeKindDescriptor.ToString() -> string!
+override NetPrints.Extensibility.Nodes.NodeSuggestion.Equals(object? obj) -> bool
+override NetPrints.Extensibility.Nodes.NodeSuggestion.GetHashCode() -> int
+override NetPrints.Extensibility.Nodes.NodeSuggestion.ToString() -> string!
+static NetPrints.Extensibility.ExtensionApi.Version.get -> System.Version!
+static NetPrints.Extensibility.Hosting.HostLaunchContext.operator !=(NetPrints.Extensibility.Hosting.HostLaunchContext? left, NetPrints.Extensibility.Hosting.HostLaunchContext? right) -> bool
+static NetPrints.Extensibility.Hosting.HostLaunchContext.operator ==(NetPrints.Extensibility.Hosting.HostLaunchContext? left, NetPrints.Extensibility.Hosting.HostLaunchContext? right) -> bool
+static NetPrints.Extensibility.Loading.ExtensionManifest.Parse(System.IO.Stream! json, string! manifestPath) -> NetPrints.Extensibility.Loading.ExtensionManifest!
+static NetPrints.Extensibility.Loading.ExtensionManifest.operator !=(NetPrints.Extensibility.Loading.ExtensionManifest? left, NetPrints.Extensibility.Loading.ExtensionManifest? right) -> bool
+static NetPrints.Extensibility.Loading.ExtensionManifest.operator ==(NetPrints.Extensibility.Loading.ExtensionManifest? left, NetPrints.Extensibility.Loading.ExtensionManifest? right) -> bool
+static NetPrints.Extensibility.Nodes.NodeGraphKinds.Of(NetPrints.Core.NodeGraph! graph) -> NetPrints.Extensibility.Nodes.GraphKinds
+static NetPrints.Extensibility.Nodes.NodeKindDescriptor.operator !=(NetPrints.Extensibility.Nodes.NodeKindDescriptor? left, NetPrints.Extensibility.Nodes.NodeKindDescriptor? right) -> bool
+static NetPrints.Extensibility.Nodes.NodeKindDescriptor.operator ==(NetPrints.Extensibility.Nodes.NodeKindDescriptor? left, NetPrints.Extensibility.Nodes.NodeKindDescriptor? right) -> bool
+static NetPrints.Extensibility.Nodes.NodeSuggestion.operator !=(NetPrints.Extensibility.Nodes.NodeSuggestion? left, NetPrints.Extensibility.Nodes.NodeSuggestion? right) -> bool
+static NetPrints.Extensibility.Nodes.NodeSuggestion.operator ==(NetPrints.Extensibility.Nodes.NodeSuggestion? left, NetPrints.Extensibility.Nodes.NodeSuggestion? right) -> bool
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.Default.get -> T
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.TypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<T>!
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.TypeInfo.init -> void
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.Default.init -> void
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.Validator.get -> System.Func<T, System.Collections.Generic.IReadOnlyList<string!>!>?
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.Validator.init -> void
+[NPXE0002]override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.ToString() -> string!
+[NPXE0002]static NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.operator !=(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>? left, NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>? right) -> bool
+[NPXE0002]static NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.operator ==(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>? left, NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>? right) -> bool
+[NPXE0002]override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.GetHashCode() -> int
+[NPXE0002]override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.Equals(object? obj) -> bool
+[NPXE0002]override sealed NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.Equals(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor? other) -> bool
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.Equals(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>? other) -> bool
+[NPXE0002]override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.<Clone>$() -> NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>!
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.Deconstruct(out string! ExtensionId, out System.Text.Json.Serialization.Metadata.JsonTypeInfo<T>! TypeInfo, out T Default) -> void
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.ExtensionSettingsDescriptor(string! ExtensionId, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T>! TypeInfo, T Default) -> void
+NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.ApiVersion = "NPX002" -> string!
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.AssemblyLoadFailed = "NPX007" -> string!
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.ContributionRejected = "NPX006" -> string!
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.Dependency = "NPX003" -> string!
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.DependencyVersion = "NPX008" -> string!
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.DuplicateId = "NPX004" -> string!
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.InvalidManifest = "NPX001" -> string!
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.RegisterFailed = "NPX005" -> string!
+[NPXE0001]NetPrints.Extensibility.Hosting.InMemoryHostChannel
+[NPXE0001]NetPrints.Extensibility.Hosting.InMemoryHostChannel.Id.get -> string!
+[NPXE0001]NetPrints.Extensibility.Hosting.InMemoryHostChannel.State.get -> NetPrints.Extensibility.Hosting.HostChannelState
+[NPXE0001]NetPrints.Extensibility.Hosting.InMemoryHostChannel.Messages.get -> System.IObservable<NetPrints.Extensibility.Hosting.HostMessage!>!
+[NPXE0001]static NetPrints.Extensibility.Hosting.InMemoryHostChannel.CreatePair(string! id) -> (NetPrints.Extensibility.Hosting.InMemoryHostChannel! Editor, NetPrints.Extensibility.Hosting.InMemoryHostChannel! Host)
+[NPXE0001]NetPrints.Extensibility.Hosting.InMemoryHostChannel.SendAsync(NetPrints.Extensibility.Hosting.HostMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+[NPXE0001]NetPrints.Extensibility.Hosting.InMemoryHostChannel.DisposeAsync() -> System.Threading.Tasks.ValueTask
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.IdPrefix = "NPX013" -> string!
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.SettingsInvalid = "NPX014" -> string!
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.Shadowed = "NPX012" -> string!
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.GestureConflict = "NPX009" -> string!
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.ProviderFailed = "NPX011" -> string!
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.UnknownReference = "NPX010" -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.CommandScope
+[NPXE0005]NetPrints.Extensibility.Editor.CommandScope.Global = 0 -> NetPrints.Extensibility.Editor.CommandScope
+[NPXE0005]NetPrints.Extensibility.Editor.CommandScope.Graph = 1 -> NetPrints.Extensibility.Editor.CommandScope
+[NPXE0005]NetPrints.Extensibility.Editor.CommandScope.ProjectTree = 2 -> NetPrints.Extensibility.Editor.CommandScope
+[NPXE0005]NetPrints.Extensibility.Editor.CommandScope.VariablesPanel = 4 -> NetPrints.Extensibility.Editor.CommandScope
+[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection
+[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.<Clone>$() -> NetPrints.Extensibility.Editor.CommandSelection!
+[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.CommandSelection(System.Collections.Generic.IReadOnlyList<NetPrints.Graph.Node!>! Nodes, object? TreeItem = null) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.Deconstruct(out System.Collections.Generic.IReadOnlyList<NetPrints.Graph.Node!>! Nodes, out object? TreeItem) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.Equals(NetPrints.Extensibility.Editor.CommandSelection? other) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.Nodes.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Graph.Node!>!
+[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.Nodes.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.TreeItem.get -> object?
+[NPXE0005]NetPrints.Extensibility.Editor.CommandSelection.TreeItem.init -> void
+[NPXE0005]override NetPrints.Extensibility.Editor.CommandSelection.Equals(object? obj) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.CommandSelection.GetHashCode() -> int
+[NPXE0005]override NetPrints.Extensibility.Editor.CommandSelection.ToString() -> string!
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandSelection.None.get -> NetPrints.Extensibility.Editor.CommandSelection!
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandSelection.operator !=(NetPrints.Extensibility.Editor.CommandSelection? left, NetPrints.Extensibility.Editor.CommandSelection? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandSelection.operator ==(NetPrints.Extensibility.Editor.CommandSelection? left, NetPrints.Extensibility.Editor.CommandSelection? right) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.ICommandContext
+[NPXE0005]NetPrints.Extensibility.Editor.ICommandContext.ActiveGraph.get -> NetPrints.Extensibility.Editor.IGraphEditor?
+[NPXE0005]NetPrints.Extensibility.Editor.ICommandContext.Dialogs.get -> NetPrints.Extensibility.Editor.IDialogService!
+[NPXE0005]NetPrints.Extensibility.Editor.ICommandContext.Output.get -> NetPrints.Extensibility.Editor.IEditorOutput!
+[NPXE0005]NetPrints.Extensibility.Editor.ICommandContext.Parameter.get -> object?
+[NPXE0005]NetPrints.Extensibility.Editor.ICommandContext.Scope.get -> NetPrints.Extensibility.Editor.CommandScope
+[NPXE0005]NetPrints.Extensibility.Editor.ICommandContext.Selection.get -> NetPrints.Extensibility.Editor.CommandSelection!
+[NPXE0005]NetPrints.Extensibility.Editor.ICommandContext.Services.get -> System.IServiceProvider!
+[NPXE0005]NetPrints.Extensibility.Editor.ICommandContext.Session.get -> NetPrints.Extensibility.Editor.IProjectSession?
+[NPXE0005]NetPrints.Extensibility.Editor.ICommandContext.Shell.get -> NetPrints.Extensibility.Editor.IEditorShell!
+[NPXE0005]NetPrints.Extensibility.Editor.ICommandHandler
+[NPXE0005]NetPrints.Extensibility.Editor.ICommandHandler.CanExecute(NetPrints.Extensibility.Editor.ICommandContext! context) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.ICommandHandler.DynamicLabel(NetPrints.Extensibility.Editor.ICommandContext! context) -> string?
+[NPXE0005]NetPrints.Extensibility.Editor.ICommandHandler.ExecuteAsync(NetPrints.Extensibility.Editor.ICommandContext! context, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+[NPXE0005]NetPrints.Extensibility.Editor.ICommandHandler.IsChecked(NetPrints.Extensibility.Editor.ICommandContext! context) -> bool?
+[NPXE0005]NetPrints.Extensibility.Editor.IDialogContext
+[NPXE0005]NetPrints.Extensibility.Editor.IDialogContext.Dialogs.get -> NetPrints.Extensibility.Editor.IDialogService!
+[NPXE0005]NetPrints.Extensibility.Editor.IDialogContext.Services.get -> System.IServiceProvider!
+[NPXE0005]NetPrints.Extensibility.Editor.IDialogContext.Session.get -> NetPrints.Extensibility.Editor.IProjectSession?
+[NPXE0005]NetPrints.Extensibility.Editor.IDialogContext.Shell.get -> NetPrints.Extensibility.Editor.IEditorShell!
+[NPXE0005]NetPrints.Extensibility.Editor.IDialogService
+[NPXE0005]NetPrints.Extensibility.Editor.IDialogService.ShowErrorAsync(string! title, string! message) -> System.Threading.Tasks.Task!
+[NPXE0005]NetPrints.Extensibility.Editor.IDialogService.ShowNotification(string! title, string! message) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorOutput
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorOutput.WriteLine(string! text) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorShell
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorShell.HidePanel(string! panelId) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorShell.IsPanelVisible(string! panelId) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorShell.ResetLayout() -> void
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorShell.ShowPanel(string! panelId) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorUndo
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorUndo.CanRedo.get -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorUndo.CanUndo.get -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorUndo.Redo() -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorUndo.RedoName.get -> string?
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorUndo.Undo() -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorUndo.UndoName.get -> string?
+[NPXE0005]NetPrints.Extensibility.Editor.IGraphEditor
+[NPXE0005]NetPrints.Extensibility.Editor.IGraphEditor.Graph.get -> NetPrints.Core.NodeGraph!
+[NPXE0005]NetPrints.Extensibility.Editor.IGraphEditor.Place(System.Func<NetPrints.Core.NodeGraph!, NetPrints.Graph.Node!>! create, NetPrints.Graph.GraphPoint position, NetPrints.Graph.NodePin? connectTo) -> NetPrints.Graph.Node!
+[NPXE0005]NetPrints.Extensibility.Editor.IGraphEditor.SelectedNodes.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Graph.Node!>!
+[NPXE0005]NetPrints.Extensibility.Editor.IGraphEditor.Undo.get -> NetPrints.Extensibility.Editor.IEditorUndo!
+[NPXE0005]NetPrints.Extensibility.Editor.IPanelContext
+[NPXE0005]NetPrints.Extensibility.Editor.IPanelContext.Dialogs.get -> NetPrints.Extensibility.Editor.IDialogService!
+[NPXE0005]NetPrints.Extensibility.Editor.IPanelContext.Output.get -> NetPrints.Extensibility.Editor.IEditorOutput!
+[NPXE0005]NetPrints.Extensibility.Editor.IPanelContext.Services.get -> System.IServiceProvider!
+[NPXE0005]NetPrints.Extensibility.Editor.IPanelContext.Shell.get -> NetPrints.Extensibility.Editor.IEditorShell!
+[NPXE0005]NetPrints.Extensibility.Editor.IProjectSession
+[NPXE0005]NetPrints.Extensibility.Editor.IProjectSession.ActiveGraph.get -> NetPrints.Extensibility.Editor.IGraphEditor?
+[NPXE0005]NetPrints.Extensibility.Editor.IProjectSession.Project.get -> NetPrints.Core.Project!
+[NPXE0005]NetPrints.Extensibility.Editor.IProjectSession.Reflection.get -> NetPrints.Reflection.IReflectionProvider!
+[NPXE0005]NetPrints.Extensibility.Editor.IProjectSession.Services.get -> System.IServiceProvider!
+[NPXE0005]NetPrints.Extensibility.Editor.IProjectSession.Target.get -> NetPrints.Projects.CSharpTarget!
+[NPXE0005]NetPrints.Extensibility.Editor.ISettingsPageContext
+[NPXE0005]NetPrints.Extensibility.Editor.ISettingsPageContext.Dialogs.get -> NetPrints.Extensibility.Editor.IDialogService!
+[NPXE0005]NetPrints.Extensibility.Editor.ISettingsPageContext.Services.get -> System.IServiceProvider!
+[NPXE0005]NetPrints.Extensibility.Editor.ISettingsPageContext.Shell.get -> NetPrints.Extensibility.Editor.IEditorShell!
+[NPXE0005]NetPrints.Extensibility.Editor.IStartPageContext
+[NPXE0005]NetPrints.Extensibility.Editor.IStartPageContext.Dialogs.get -> NetPrints.Extensibility.Editor.IDialogService!
+[NPXE0005]NetPrints.Extensibility.Editor.IStartPageContext.Output.get -> NetPrints.Extensibility.Editor.IEditorOutput!
+[NPXE0005]NetPrints.Extensibility.Editor.IStartPageContext.Services.get -> System.IServiceProvider!
+[NPXE0005]NetPrints.Extensibility.Editor.IStartPageContext.Shell.get -> NetPrints.Extensibility.Editor.IEditorShell!
+[NPXE0005]NetPrints.Extensibility.Editor.IStatusBarContext
+[NPXE0005]NetPrints.Extensibility.Editor.IStatusBarContext.ActiveGraph.get -> NetPrints.Extensibility.Editor.IGraphEditor?
+[NPXE0005]NetPrints.Extensibility.Editor.IStatusBarContext.Services.get -> System.IServiceProvider!
+[NPXE0005]NetPrints.Extensibility.Editor.IStatusBarContext.Session.get -> NetPrints.Extensibility.Editor.IProjectSession?
+[NPXE0005]NetPrints.Extensibility.Editor.IStatusBarContext.Shell.get -> NetPrints.Extensibility.Editor.IEditorShell!
+[NPXE0006]abstract NetPrints.Extensibility.Nodes.NodeSearchEntry.<Clone>$() -> NetPrints.Extensibility.Nodes.NodeSearchEntry!
+[NPXE0006]abstract NetPrints.Extensibility.Nodes.NodeSearchEntry.CreateAsync(NetPrints.Extensibility.Nodes.INodeCreationContext! context, NetPrints.Graph.GraphPoint position, NetPrints.Graph.NodePin? pin) -> System.Threading.Tasks.Task<NetPrints.Graph.Node?>!
+[NPXE0006]NetPrints.Extensibility.IExtensionBuilder.AddSuggestionProvider(NetPrints.Extensibility.Nodes.INodeSuggestionProvider! provider) -> NetPrints.Extensibility.IExtensionBuilder!
+[NPXE0006]NetPrints.Extensibility.Nodes.INodeCreationContext
+[NPXE0006]NetPrints.Extensibility.Nodes.INodeCreationContext.Create(NetPrints.Graph.GraphPoint position, NetPrints.Graph.NodePin? pin, System.Func<NetPrints.Core.NodeGraph!, NetPrints.Graph.Node!>! factory) -> NetPrints.Graph.Node!
+[NPXE0006]NetPrints.Extensibility.Nodes.INodeCreationContext.SelectMethodAsync(System.Collections.Generic.IEnumerable<NetPrints.Core.MethodSpecifier!>! methods) -> System.Threading.Tasks.Task<NetPrints.Core.MethodSpecifier?>!
+[NPXE0006]NetPrints.Extensibility.Nodes.INodeCreationContext.SelectTypeAsync() -> System.Threading.Tasks.Task<NetPrints.Core.TypeSpecifier?>!
+[NPXE0006]NetPrints.Extensibility.Nodes.INodeSuggestionProvider
+[NPXE0006]NetPrints.Extensibility.Nodes.INodeSuggestionProvider.Id.get -> string!
+[NPXE0006]NetPrints.Extensibility.Nodes.INodeSuggestionProvider.Suggest(NetPrints.Extensibility.Nodes.NodeSearchContext! context) -> System.Collections.Generic.IEnumerable<NetPrints.Extensibility.Nodes.NodeSearchEntry!>!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.BaseTypes.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Core.TypeSpecifier!>!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.Class.get -> NetPrints.Core.ClassGraph?
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.ClassType.get -> NetPrints.Core.TypeSpecifier?
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.Graph.get -> NetPrints.Core.NodeGraph!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.GraphKind.get -> NetPrints.Extensibility.Nodes.GraphKinds
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.InputDataType.get -> NetPrints.Core.TypeSpecifier?
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.IsExecPin.get -> bool
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.IsExecutionCanvas.get -> bool
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.MethodQuery() -> NetPrints.Reflection.ReflectionProviderMethodQuery!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.NodeKinds.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Nodes.NodeKindDescriptor!>!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.NodeSearchContext(NetPrints.Core.NodeGraph! graph, NetPrints.Graph.NodePin? pin, NetPrints.Reflection.IReflectionProvider! reflection, System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Nodes.NodeKindDescriptor!>! nodeKinds) -> void
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.OutputDataType.get -> NetPrints.Core.TypeSpecifier?
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.Pin.get -> NetPrints.Graph.NodePin?
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.Reflection.get -> NetPrints.Reflection.IReflectionProvider!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.SuggestedKinds.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Nodes.NodeKindDescriptor!>!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.Target.get -> NetPrints.Projects.CSharpTarget!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchContext.VariableQuery() -> NetPrints.Reflection.ReflectionProviderVariableQuery!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.Category.get -> string!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.Category.init -> void
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.Deconstruct(out string! Category, out string! Text, out string! IconKey) -> void
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.IconKey.get -> string!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.IconKey.init -> void
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.Keywords.get -> System.Collections.Generic.IReadOnlyList<string!>!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.Keywords.init -> void
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.NodeSearchEntry(NetPrints.Extensibility.Nodes.NodeSearchEntry! original) -> void
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.NodeSearchEntry(string! Category, string! Text, string! IconKey) -> void
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.Text.get -> string!
+[NPXE0006]NetPrints.Extensibility.Nodes.NodeSearchEntry.Text.init -> void
+[NPXE0006]override NetPrints.Extensibility.Nodes.NodeSearchEntry.Equals(object? obj) -> bool
+[NPXE0006]override NetPrints.Extensibility.Nodes.NodeSearchEntry.GetHashCode() -> int
+[NPXE0006]override NetPrints.Extensibility.Nodes.NodeSearchEntry.ToString() -> string!
+[NPXE0006]static NetPrints.Extensibility.Nodes.NodeSearchEntry.operator !=(NetPrints.Extensibility.Nodes.NodeSearchEntry? left, NetPrints.Extensibility.Nodes.NodeSearchEntry? right) -> bool
+[NPXE0006]static NetPrints.Extensibility.Nodes.NodeSearchEntry.operator ==(NetPrints.Extensibility.Nodes.NodeSearchEntry? left, NetPrints.Extensibility.Nodes.NodeSearchEntry? right) -> bool
+[NPXE0006]virtual NetPrints.Extensibility.Nodes.NodeSearchEntry.EqualityContract.get -> System.Type!
+[NPXE0006]virtual NetPrints.Extensibility.Nodes.NodeSearchEntry.Equals(NetPrints.Extensibility.Nodes.NodeSearchEntry? other) -> bool
+[NPXE0006]virtual NetPrints.Extensibility.Nodes.NodeSearchEntry.PrintMembers(System.Text.StringBuilder! builder) -> bool
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability.Availability(bool IsAvailable, string? Reason, System.Collections.Generic.IReadOnlyList<string!>! Fixes) -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability.<Clone>$() -> NetPrints.Extensibility.Nodes.Availability!
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability.Deconstruct(out bool IsAvailable, out string? Reason, out System.Collections.Generic.IReadOnlyList<string!>! Fixes) -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability.Equals(NetPrints.Extensibility.Nodes.Availability? other) -> bool
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability.Fixes.get -> System.Collections.Generic.IReadOnlyList<string!>!
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability.Fixes.init -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability.IsAvailable.get -> bool
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability.IsAvailable.init -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability.Reason.get -> string?
+[NPXE0007]NetPrints.Extensibility.Nodes.Availability.Reason.init -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.Check(NetPrints.Projects.CSharpTarget! target, System.Func<string!, bool>? typeExists = null) -> NetPrints.Extensibility.Nodes.Availability!
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.<Clone>$() -> NetPrints.Extensibility.Nodes.CSharpFeature!
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.CSharpFeature(NetPrints.Extensibility.Nodes.CSharpFeatureId Id, NetPrints.Projects.CSharpLanguageVersion MinimumVersion, System.Collections.Generic.IReadOnlyList<string!>! RequiredTypes) -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.Deconstruct(out NetPrints.Extensibility.Nodes.CSharpFeatureId Id, out NetPrints.Projects.CSharpLanguageVersion MinimumVersion, out System.Collections.Generic.IReadOnlyList<string!>! RequiredTypes) -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.Equals(NetPrints.Extensibility.Nodes.CSharpFeature? other) -> bool
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeatureId
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeatureId.CSharpFeatureId(string! Value) -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeatureId.CSharpFeatureId() -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeatureId.Deconstruct(out string! Value) -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeatureId.Equals(NetPrints.Extensibility.Nodes.CSharpFeatureId other) -> bool
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.Id.get -> NetPrints.Extensibility.Nodes.CSharpFeatureId
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.Id.init -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeatureId.Value.get -> string!
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeatureId.Value.init -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.MinimumVersion.get -> NetPrints.Projects.CSharpLanguageVersion
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.MinimumVersion.init -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.RequiredTypes.get -> System.Collections.Generic.IReadOnlyList<string!>!
+[NPXE0007]NetPrints.Extensibility.Nodes.CSharpFeature.RequiredTypes.init -> void
+[NPXE0007]NetPrints.Extensibility.Nodes.NodeSearchEntry.Requires.get -> NetPrints.Extensibility.Nodes.CSharpFeature?
+[NPXE0007]NetPrints.Extensibility.Nodes.NodeSearchEntry.Requires.init -> void
+[NPXE0007]override NetPrints.Extensibility.Nodes.Availability.Equals(object? obj) -> bool
+[NPXE0007]override NetPrints.Extensibility.Nodes.Availability.GetHashCode() -> int
+[NPXE0007]override NetPrints.Extensibility.Nodes.Availability.ToString() -> string!
+[NPXE0007]override NetPrints.Extensibility.Nodes.CSharpFeature.Equals(object? obj) -> bool
+[NPXE0007]override NetPrints.Extensibility.Nodes.CSharpFeature.GetHashCode() -> int
+~[NPXE0007]override NetPrints.Extensibility.Nodes.CSharpFeatureId.Equals(object obj) -> bool
+[NPXE0007]override NetPrints.Extensibility.Nodes.CSharpFeatureId.GetHashCode() -> int
+[NPXE0007]override NetPrints.Extensibility.Nodes.CSharpFeatureId.ToString() -> string!
+[NPXE0007]override NetPrints.Extensibility.Nodes.CSharpFeature.ToString() -> string!
+[NPXE0007]static NetPrints.Extensibility.Nodes.Availability.Available.get -> NetPrints.Extensibility.Nodes.Availability!
+[NPXE0007]static NetPrints.Extensibility.Nodes.Availability.operator !=(NetPrints.Extensibility.Nodes.Availability? left, NetPrints.Extensibility.Nodes.Availability? right) -> bool
+[NPXE0007]static NetPrints.Extensibility.Nodes.Availability.operator ==(NetPrints.Extensibility.Nodes.Availability? left, NetPrints.Extensibility.Nodes.Availability? right) -> bool
+[NPXE0007]static NetPrints.Extensibility.Nodes.Availability.Unavailable(string! reason, params string![]! fixes) -> NetPrints.Extensibility.Nodes.Availability!
+[NPXE0007]static NetPrints.Extensibility.Nodes.CSharpFeatureId.operator !=(NetPrints.Extensibility.Nodes.CSharpFeatureId left, NetPrints.Extensibility.Nodes.CSharpFeatureId right) -> bool
+[NPXE0007]static NetPrints.Extensibility.Nodes.CSharpFeatureId.operator ==(NetPrints.Extensibility.Nodes.CSharpFeatureId left, NetPrints.Extensibility.Nodes.CSharpFeatureId right) -> bool
+[NPXE0007]static NetPrints.Extensibility.Nodes.CSharpFeature.operator !=(NetPrints.Extensibility.Nodes.CSharpFeature? left, NetPrints.Extensibility.Nodes.CSharpFeature? right) -> bool
+[NPXE0007]static NetPrints.Extensibility.Nodes.CSharpFeature.operator ==(NetPrints.Extensibility.Nodes.CSharpFeature? left, NetPrints.Extensibility.Nodes.CSharpFeature? right) -> bool
+NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.A = 0 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.B = 1 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.Back = 74 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.C = 2 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.D0 = 26 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.D1 = 27 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.D2 = 28 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.D3 = 29 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.D = 3 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.D4 = 30 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.D5 = 31 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.D6 = 32 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.D7 = 33 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.D8 = 34 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.D9 = 35 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.Delete = 62 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.Down = 71 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.E = 4 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.End = 65 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.Enter = 61 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.Escape = 60 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F10 = 45 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F11 = 46 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F12 = 47 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F13 = 48 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F1 = 36 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F14 = 49 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F15 = 50 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F16 = 51 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F17 = 52 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F18 = 53 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F19 = 54 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F20 = 55 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F21 = 56 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F22 = 57 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F23 = 58 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F2 = 37 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F24 = 59 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F3 = 38 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F4 = 39 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F5 = 40 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F = 5 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F6 = 41 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F7 = 42 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F8 = 43 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.F9 = 44 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.G = 6 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.H = 7 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.Home = 64 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.I = 8 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.Insert = 63 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.J = 9 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.K = 10 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.L = 11 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.Left = 68 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.M = 12 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.N = 13 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.O = 14 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.P = 15 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.PageDown = 67 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.PageUp = 66 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.Q = 16 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.R = 17 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.Right = 69 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.S = 18 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.Space = 73 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.T = 19 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.Tab = 72 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.U = 20 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.Up = 70 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.V = 21 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.W = 22 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.X = 23 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.Y = 24 -> NetPrints.Extensibility.Editor.CommandKeyId
+NetPrints.Extensibility.Editor.CommandKeyId.Z = 25 -> NetPrints.Extensibility.Editor.CommandKeyId
+[NPXE0005]abstract NetPrints.Extensibility.Editor.CommandKey.Id.get -> NetPrints.Extensibility.Editor.CommandKeyId
+[NPXE0005]const NetPrints.Extensibility.Editor.ConventionKeys.MenuPrefix = "Menu." -> string!
+[NPXE0005]const NetPrints.Extensibility.Editor.DocumentId.ClassGraphKey = "class" -> string!
+[NPXE0005]const NetPrints.Extensibility.Editor.DocumentId.ConstructorKeyPrefix = "ctor:" -> string!
+[NPXE0005]const NetPrints.Extensibility.Editor.DocumentId.EventKeyPrefix = "event:" -> string!
+[NPXE0005]const NetPrints.Extensibility.Editor.DocumentId.GetterKeyPrefix = "getter:" -> string!
+[NPXE0005]const NetPrints.Extensibility.Editor.DocumentId.MethodKeyPrefix = "method:" -> string!
+[NPXE0005]const NetPrints.Extensibility.Editor.DocumentId.SetterKeyPrefix = "setter:" -> string!
+[NPXE0005]const NetPrints.Extensibility.Editor.DocumentId.TypeKeyPrefix = "type:" -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.CommandDescriptor
+[NPXE0005]NetPrints.Extensibility.Editor.CommandDescriptor.<Clone>$() -> NetPrints.Extensibility.Editor.CommandDescriptor!
+[NPXE0005]NetPrints.Extensibility.Editor.CommandDescriptor.CommandBarOrder.get -> int?
+[NPXE0005]NetPrints.Extensibility.Editor.CommandDescriptor.CommandBarOrder.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandDescriptor.CommandDescriptor(string! Id, NetPrints.Core.LocalizedText Label, NetPrints.Extensibility.Editor.ICommandHandler! Handler, string? IconId = null, System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Editor.CommandGesture!>? DefaultGestures = null, NetPrints.Extensibility.Editor.CommandScope Scope = NetPrints.Extensibility.Editor.CommandScope.Global, NetPrints.Extensibility.Editor.MenuPlacement? Menu = null, int? CommandBarOrder = null) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandDescriptor.Deconstruct(out string! Id, out NetPrints.Core.LocalizedText Label, out NetPrints.Extensibility.Editor.ICommandHandler! Handler, out string? IconId, out System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Editor.CommandGesture!>? DefaultGestures, out NetPrints.Extensibility.Editor.CommandScope Scope, out NetPrints.Extensibility.Editor.MenuPlacement? Menu, out int? CommandBarOrder) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandDescriptor.DefaultGestures.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Editor.CommandGesture!>?
+[NPXE0005]NetPrints.Extensibility.Editor.CommandDescriptor.DefaultGestures.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandDescriptor.Equals(NetPrints.Extensibility.Editor.CommandDescriptor? other) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.CommandDescriptor.Handler.get -> NetPrints.Extensibility.Editor.ICommandHandler!
+[NPXE0005]NetPrints.Extensibility.Editor.CommandDescriptor.Handler.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandDescriptor.IconId.get -> string?
+[NPXE0005]NetPrints.Extensibility.Editor.CommandDescriptor.IconId.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandDescriptor.Id.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.CommandDescriptor.Id.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandDescriptor.Label.get -> NetPrints.Core.LocalizedText
+[NPXE0005]NetPrints.Extensibility.Editor.CommandDescriptor.Label.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandDescriptor.Menu.get -> NetPrints.Extensibility.Editor.MenuPlacement?
+[NPXE0005]NetPrints.Extensibility.Editor.CommandDescriptor.Menu.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandDescriptor.Scope.get -> NetPrints.Extensibility.Editor.CommandScope
+[NPXE0005]NetPrints.Extensibility.Editor.CommandDescriptor.Scope.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandGesture
+[NPXE0005]NetPrints.Extensibility.Editor.CommandGesture.<Clone>$() -> NetPrints.Extensibility.Editor.CommandGesture!
+[NPXE0005]NetPrints.Extensibility.Editor.CommandGesture.CommandGesture(NetPrints.Extensibility.Editor.CommandModifiers Modifiers, NetPrints.Extensibility.Editor.CommandKey! Key) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandGesture.Deconstruct(out NetPrints.Extensibility.Editor.CommandModifiers Modifiers, out NetPrints.Extensibility.Editor.CommandKey! Key) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandGesture.Display.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.CommandGesture.Equals(NetPrints.Extensibility.Editor.CommandGesture? other) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.CommandGesture.IsFunctionKey.get -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.CommandGesture.IsPlain.get -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.CommandGesture.IsSingleKey.get -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.CommandGesture.Key.get -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]NetPrints.Extensibility.Editor.CommandGesture.Key.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandGesture.Modifiers.get -> NetPrints.Extensibility.Editor.CommandModifiers
+[NPXE0005]NetPrints.Extensibility.Editor.CommandGesture.Modifiers.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.CommandGesture.ToString(string? format, System.IFormatProvider? formatProvider) -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.CommandGesture.TryFormat(System.Span<char> destination, out int charsWritten, System.ReadOnlySpan<char> format, System.IFormatProvider? provider) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.CommandKey
+[NPXE0005]NetPrints.Extensibility.Editor.CommandKey.ToString(string? format, System.IFormatProvider? formatProvider) -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.CommandKey.TryFormat(System.Span<char> destination, out int charsWritten, System.ReadOnlySpan<char> format, System.IFormatProvider? provider) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.CommandModifiers
+[NPXE0005]NetPrints.Extensibility.Editor.CommandModifiers.Alt = 2 -> NetPrints.Extensibility.Editor.CommandModifiers
+[NPXE0005]NetPrints.Extensibility.Editor.CommandModifiers.Ctrl = 1 -> NetPrints.Extensibility.Editor.CommandModifiers
+[NPXE0005]NetPrints.Extensibility.Editor.CommandModifiers.Meta = 8 -> NetPrints.Extensibility.Editor.CommandModifiers
+[NPXE0005]NetPrints.Extensibility.Editor.CommandModifiers.None = 0 -> NetPrints.Extensibility.Editor.CommandModifiers
+[NPXE0005]NetPrints.Extensibility.Editor.CommandModifiers.Shift = 4 -> NetPrints.Extensibility.Editor.CommandModifiers
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuItemDescriptor
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.AppliesTo.get -> System.Func<NetPrints.Extensibility.Editor.ICommandContext!, bool>?
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.AppliesTo.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.<Clone>$() -> NetPrints.Extensibility.Editor.ContextMenuItemDescriptor!
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.CommandId.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.CommandId.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.ContextMenuItemDescriptor(string! Id, NetPrints.Extensibility.Editor.ContextMenuTarget Target, string! CommandId, string! Group, int Order, System.Func<NetPrints.Extensibility.Editor.ICommandContext!, bool>? AppliesTo = null) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.Deconstruct(out string! Id, out NetPrints.Extensibility.Editor.ContextMenuTarget Target, out string! CommandId, out string! Group, out int Order, out System.Func<NetPrints.Extensibility.Editor.ICommandContext!, bool>? AppliesTo) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.Equals(NetPrints.Extensibility.Editor.ContextMenuItemDescriptor? other) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.Group.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.Group.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.Id.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.Id.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.Order.get -> int
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.Order.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.Target.get -> NetPrints.Extensibility.Editor.ContextMenuTarget
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.Target.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuTarget
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuTarget.Canvas = 3 -> NetPrints.Extensibility.Editor.ContextMenuTarget
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuTarget.Connection = 2 -> NetPrints.Extensibility.Editor.ContextMenuTarget
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuTarget.Node = 0 -> NetPrints.Extensibility.Editor.ContextMenuTarget
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuTarget.Pin = 1 -> NetPrints.Extensibility.Editor.ContextMenuTarget
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuTarget.TreeClass = 4 -> NetPrints.Extensibility.Editor.ContextMenuTarget
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuTarget.TreeEventGraph = 6 -> NetPrints.Extensibility.Editor.ContextMenuTarget
+[NPXE0005]NetPrints.Extensibility.Editor.ContextMenuTarget.TreeMember = 5 -> NetPrints.Extensibility.Editor.ContextMenuTarget
+[NPXE0005]NetPrints.Extensibility.Editor.ConventionKeys
+[NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor
+[NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.<Clone>$() -> NetPrints.Extensibility.Editor.DashboardTileDescriptor!
+[NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.CreateViewModel.get -> System.Func<NetPrints.Extensibility.Editor.IStartPageContext!, object!>!
+[NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.CreateViewModel.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.DashboardTileDescriptor(string! Id, NetPrints.Core.LocalizedText Title, int Order, System.Func<NetPrints.Extensibility.Editor.IStartPageContext!, object!>! CreateViewModel) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.Deconstruct(out string! Id, out NetPrints.Core.LocalizedText Title, out int Order, out System.Func<NetPrints.Extensibility.Editor.IStartPageContext!, object!>! CreateViewModel) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.Equals(NetPrints.Extensibility.Editor.DashboardTileDescriptor? other) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.Id.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.Id.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.Order.get -> int
+[NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.Order.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.Title.get -> NetPrints.Core.LocalizedText
+[NPXE0005]NetPrints.Extensibility.Editor.DashboardTileDescriptor.Title.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.DocumentId
+[NPXE0005]NetPrints.Extensibility.Editor.DocumentId.ClassPath.get -> string?
+[NPXE0005]NetPrints.Extensibility.Editor.DocumentId.<Clone>$() -> NetPrints.Extensibility.Editor.DocumentId!
+[NPXE0005]NetPrints.Extensibility.Editor.DocumentId.Equals(NetPrints.Extensibility.Editor.DocumentId? other) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.DocumentId.GraphKey.get -> string?
+[NPXE0005]NetPrints.Extensibility.Editor.DocumentId.Kind.get -> NetPrints.Extensibility.Editor.DocumentKind
+[NPXE0005]NetPrints.Extensibility.Editor.DocumentKind
+[NPXE0005]NetPrints.Extensibility.Editor.DocumentKind.Graph = 0 -> NetPrints.Extensibility.Editor.DocumentKind
+[NPXE0005]NetPrints.Extensibility.Editor.DocumentKind.ProjectSettings = 2 -> NetPrints.Extensibility.Editor.DocumentKind
+[NPXE0005]NetPrints.Extensibility.Editor.DocumentKind.StartPage = 1 -> NetPrints.Extensibility.Editor.DocumentKind
+[NPXE0005]NetPrints.Extensibility.Editor.GoToItem
+[NPXE0005]NetPrints.Extensibility.Editor.GoToItem.<Clone>$() -> NetPrints.Extensibility.Editor.GoToItem!
+[NPXE0005]NetPrints.Extensibility.Editor.GoToItem.CommandId.get -> string?
+[NPXE0005]NetPrints.Extensibility.Editor.GoToItem.Detail.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.GoToItem.Equals(NetPrints.Extensibility.Editor.GoToItem? other) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.GoToItem.GoToItem(string! kind, string! title, string! detail, NetPrints.Extensibility.Editor.NavigationTarget? target, string? commandId = null) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.GoToItem.Kind.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.GoToItem.Target.get -> NetPrints.Extensibility.Editor.NavigationTarget?
+[NPXE0005]NetPrints.Extensibility.Editor.GoToItem.Title.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorContributions
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorContributions.AddCommand(NetPrints.Extensibility.Editor.CommandDescriptor! command) -> NetPrints.Extensibility.Editor.IEditorContributions!
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorContributions.AddContextMenuItem(NetPrints.Extensibility.Editor.ContextMenuItemDescriptor! item) -> NetPrints.Extensibility.Editor.IEditorContributions!
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorContributions.AddDashboardTile(NetPrints.Extensibility.Editor.DashboardTileDescriptor! tile) -> NetPrints.Extensibility.Editor.IEditorContributions!
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorContributions.AddGoToProvider(NetPrints.Extensibility.Editor.IGoToProvider! provider) -> NetPrints.Extensibility.Editor.IEditorContributions!
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorContributions.AddPanel(NetPrints.Extensibility.Editor.PanelDescriptor! panel) -> NetPrints.Extensibility.Editor.IEditorContributions!
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorContributions.AddTooltipProvider(NetPrints.Extensibility.Editor.ITooltipProvider! provider) -> NetPrints.Extensibility.Editor.IEditorContributions!
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorContributions.AddViewResources(string! resourceUri) -> NetPrints.Extensibility.Editor.IEditorContributions!
+[NPXE0005]NetPrints.Extensibility.Editor.IGoToProvider
+[NPXE0005]NetPrints.Extensibility.Editor.IGoToProvider.Kind.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.IGoToProvider.SearchAsync(string! text, System.Threading.CancellationToken cancellationToken) -> System.Collections.Generic.IAsyncEnumerable<NetPrints.Extensibility.Editor.GoToItem!>!
+[NPXE0005]NetPrints.Extensibility.Editor.ITooltipProvider
+[NPXE0005]NetPrints.Extensibility.Editor.ITooltipProvider.Order.get -> int
+[NPXE0005]NetPrints.Extensibility.Editor.ITooltipProvider.TryProvide(NetPrints.Extensibility.Editor.TooltipTarget! target) -> NetPrints.Extensibility.Editor.TooltipContent?
+[NPXE0005]NetPrints.Extensibility.Editor.MenuPlacement
+[NPXE0005]NetPrints.Extensibility.Editor.MenuPlacement.<Clone>$() -> NetPrints.Extensibility.Editor.MenuPlacement!
+[NPXE0005]NetPrints.Extensibility.Editor.MenuPlacement.Deconstruct(out string! Path, out string! Group, out int Order, out string? Submenu) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.MenuPlacement.Display.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.MenuPlacement.Equals(NetPrints.Extensibility.Editor.MenuPlacement? other) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.MenuPlacement.Group.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.MenuPlacement.Group.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.MenuPlacement.Label.get -> NetPrints.Core.LocalizedText
+[NPXE0005]NetPrints.Extensibility.Editor.MenuPlacement.MenuPlacement(string! Path, string! Group, int Order, string? Submenu = null) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.MenuPlacement.Order.get -> int
+[NPXE0005]NetPrints.Extensibility.Editor.MenuPlacement.Order.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.MenuPlacement.Path.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.MenuPlacement.Path.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.MenuPlacement.Submenu.get -> string?
+[NPXE0005]NetPrints.Extensibility.Editor.MenuPlacement.Submenu.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.NavigationTarget
+[NPXE0005]NetPrints.Extensibility.Editor.NavigationTarget.<Clone>$() -> NetPrints.Extensibility.Editor.NavigationTarget!
+[NPXE0005]NetPrints.Extensibility.Editor.NavigationTarget.Deconstruct(out NetPrints.Extensibility.Editor.DocumentId! Document, out string? NodeId, out string? PinId) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.NavigationTarget.Document.get -> NetPrints.Extensibility.Editor.DocumentId!
+[NPXE0005]NetPrints.Extensibility.Editor.NavigationTarget.Document.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.NavigationTarget.Equals(NetPrints.Extensibility.Editor.NavigationTarget? other) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.NavigationTarget.NavigationTarget(NetPrints.Extensibility.Editor.DocumentId! Document, string? NodeId = null, string? PinId = null) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.NavigationTarget.NodeId.get -> string?
+[NPXE0005]NetPrints.Extensibility.Editor.NavigationTarget.NodeId.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.NavigationTarget.PinId.get -> string?
+[NPXE0005]NetPrints.Extensibility.Editor.NavigationTarget.PinId.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDescriptor
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDescriptor.<Clone>$() -> NetPrints.Extensibility.Editor.PanelDescriptor!
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDescriptor.CreateViewModel.get -> System.Func<NetPrints.Extensibility.Editor.IPanelContext!, object!>!
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDescriptor.CreateViewModel.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDescriptor.Deconstruct(out string! Id, out NetPrints.Core.LocalizedText Title, out System.Func<NetPrints.Extensibility.Editor.IPanelContext!, object!>! CreateViewModel, out NetPrints.Extensibility.Editor.PanelDock DefaultDock, out int Order, out string? IconId) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDescriptor.DefaultDock.get -> NetPrints.Extensibility.Editor.PanelDock
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDescriptor.DefaultDock.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDescriptor.Equals(NetPrints.Extensibility.Editor.PanelDescriptor? other) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDescriptor.IconId.get -> string?
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDescriptor.IconId.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDescriptor.Id.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDescriptor.Id.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDescriptor.Order.get -> int
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDescriptor.Order.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDescriptor.PanelDescriptor(string! Id, NetPrints.Core.LocalizedText Title, System.Func<NetPrints.Extensibility.Editor.IPanelContext!, object!>! CreateViewModel, NetPrints.Extensibility.Editor.PanelDock DefaultDock, int Order, string? IconId = null) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDescriptor.Title.get -> NetPrints.Core.LocalizedText
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDescriptor.Title.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDock
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDock.Bottom = 3 -> NetPrints.Extensibility.Editor.PanelDock
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDock.Left = 0 -> NetPrints.Extensibility.Editor.PanelDock
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDock.Right = 1 -> NetPrints.Extensibility.Editor.PanelDock
+[NPXE0005]NetPrints.Extensibility.Editor.PanelDock.RightLower = 2 -> NetPrints.Extensibility.Editor.PanelDock
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipContent
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipContent.<Clone>$() -> NetPrints.Extensibility.Editor.TooltipContent!
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipContent.Deconstruct(out string! Title, out System.Collections.Generic.IReadOnlyList<string!>! Lines, out string? Documentation) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipContent.Documentation.get -> string?
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipContent.Documentation.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipContent.Equals(NetPrints.Extensibility.Editor.TooltipContent? other) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipContent.Lines.get -> System.Collections.Generic.IReadOnlyList<string!>!
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipContent.Lines.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipContent.Title.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipContent.Title.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipContent.TooltipContent(string! Title, System.Collections.Generic.IReadOnlyList<string!>! Lines, string? Documentation = null) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipConnection
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipConnection.<Clone>$() -> NetPrints.Extensibility.Editor.TooltipConnection!
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipConnection.Deconstruct(out NetPrints.Graph.NodePin! Source, out NetPrints.Graph.NodePin! Target) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipConnection.Equals(NetPrints.Extensibility.Editor.TooltipConnection? other) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipConnection.Source.get -> NetPrints.Graph.NodePin!
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipConnection.Source.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipConnection.Target.get -> NetPrints.Graph.NodePin!
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipConnection.Target.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipConnection.TooltipConnection(NetPrints.Graph.NodePin! Source, NetPrints.Graph.NodePin! Target) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipTarget
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipTarget.<Clone>$() -> NetPrints.Extensibility.Editor.TooltipTarget!
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipTarget.Deconstruct(out NetPrints.Extensibility.Editor.TooltipTargetKind Kind, out object! Subject) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipTarget.Equals(NetPrints.Extensibility.Editor.TooltipTarget? other) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipTargetKind
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipTargetKind.Connection = 1 -> NetPrints.Extensibility.Editor.TooltipTargetKind
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipTarget.Kind.get -> NetPrints.Extensibility.Editor.TooltipTargetKind
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipTarget.Kind.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipTargetKind.Pin = 0 -> NetPrints.Extensibility.Editor.TooltipTargetKind
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipTarget.Subject.get -> object!
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipTarget.Subject.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.TooltipTarget.TooltipTarget(NetPrints.Extensibility.Editor.TooltipTargetKind Kind, object! Subject) -> void
+[NPXE0005]NetPrints.Extensibility.IExtensionBuilder.Editor.get -> NetPrints.Extensibility.Editor.IEditorContributions!
+[NPXE0008]NetPrints.Extensibility.IExtensionBuilder.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.<Clone>$() -> NetPrints.Extensibility.Editor.DialogDescriptor!
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.CreateViewModel.get -> System.Func<NetPrints.Extensibility.Editor.IDialogContext!, object!>!
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.CreateViewModel.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.Deconstruct(out string! Id, out NetPrints.Core.LocalizedText Title, out System.Func<NetPrints.Extensibility.Editor.IDialogContext!, object!>! CreateViewModel) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.DialogDescriptor(string! Id, NetPrints.Core.LocalizedText Title, System.Func<NetPrints.Extensibility.Editor.IDialogContext!, object!>! CreateViewModel) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.Equals(NetPrints.Extensibility.Editor.DialogDescriptor? other) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.Id.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.Id.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.Title.get -> NetPrints.Core.LocalizedText
+[NPXE0005]NetPrints.Extensibility.Editor.DialogDescriptor.Title.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.IDialogService.ShowDialogAsync(string! dialogId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<object!>!
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorContributions.AddDialog(NetPrints.Extensibility.Editor.DialogDescriptor! dialog) -> NetPrints.Extensibility.Editor.IEditorContributions!
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorContributions.AddStatusBarItem(NetPrints.Extensibility.Editor.StatusBarItemDescriptor! item) -> NetPrints.Extensibility.Editor.IEditorContributions!
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarAlignment
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarAlignment.Left = 0 -> NetPrints.Extensibility.Editor.StatusBarAlignment
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarAlignment.Right = 1 -> NetPrints.Extensibility.Editor.StatusBarAlignment
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.<Clone>$() -> NetPrints.Extensibility.Editor.StatusBarItemDescriptor!
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.Alignment.get -> NetPrints.Extensibility.Editor.StatusBarAlignment
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.Alignment.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.AppliesTo.get -> System.Func<NetPrints.Extensibility.Editor.IStatusBarContext!, bool>?
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.AppliesTo.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.CreateViewModel.get -> System.Func<NetPrints.Extensibility.Editor.IStatusBarContext!, object!>!
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.CreateViewModel.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.Deconstruct(out string! Id, out NetPrints.Extensibility.Editor.StatusBarAlignment Alignment, out int Order, out System.Func<NetPrints.Extensibility.Editor.IStatusBarContext!, object!>! CreateViewModel, out System.Func<NetPrints.Extensibility.Editor.IStatusBarContext!, bool>? AppliesTo) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.Equals(NetPrints.Extensibility.Editor.StatusBarItemDescriptor? other) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.Id.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.Id.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.Order.get -> int
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.Order.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.StatusBarItemDescriptor.StatusBarItemDescriptor(string! Id, NetPrints.Extensibility.Editor.StatusBarAlignment Alignment, int Order, System.Func<NetPrints.Extensibility.Editor.IStatusBarContext!, object!>! CreateViewModel, System.Func<NetPrints.Extensibility.Editor.IStatusBarContext!, bool>? AppliesTo = null) -> void
+[NPXE0005]override NetPrints.Extensibility.Editor.DialogDescriptor.Equals(object? obj) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.DialogDescriptor.GetHashCode() -> int
+[NPXE0005]override NetPrints.Extensibility.Editor.DialogDescriptor.ToString() -> string!
+[NPXE0005]override NetPrints.Extensibility.Editor.StatusBarItemDescriptor.Equals(object? obj) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.StatusBarItemDescriptor.GetHashCode() -> int
+[NPXE0005]override NetPrints.Extensibility.Editor.StatusBarItemDescriptor.ToString() -> string!
+[NPXE0005]static NetPrints.Extensibility.Editor.DialogDescriptor.operator !=(NetPrints.Extensibility.Editor.DialogDescriptor? left, NetPrints.Extensibility.Editor.DialogDescriptor? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.DialogDescriptor.operator ==(NetPrints.Extensibility.Editor.DialogDescriptor? left, NetPrints.Extensibility.Editor.DialogDescriptor? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.StatusBarItemDescriptor.operator !=(NetPrints.Extensibility.Editor.StatusBarItemDescriptor? left, NetPrints.Extensibility.Editor.StatusBarItemDescriptor? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.StatusBarItemDescriptor.operator ==(NetPrints.Extensibility.Editor.StatusBarItemDescriptor? left, NetPrints.Extensibility.Editor.StatusBarItemDescriptor? right) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.CommandDescriptor.Equals(object? obj) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.CommandDescriptor.GetHashCode() -> int
+[NPXE0005]override NetPrints.Extensibility.Editor.CommandDescriptor.ToString() -> string!
+[NPXE0005]override NetPrints.Extensibility.Editor.CommandGesture.Equals(object? obj) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.CommandGesture.GetHashCode() -> int
+[NPXE0005]override NetPrints.Extensibility.Editor.CommandGesture.ToString() -> string!
+[NPXE0005]override NetPrints.Extensibility.Editor.CommandKey.ToString() -> string!
+[NPXE0005]override NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.Equals(object? obj) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.GetHashCode() -> int
+[NPXE0005]override NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.ToString() -> string!
+[NPXE0005]override NetPrints.Extensibility.Editor.DashboardTileDescriptor.Equals(object? obj) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.DashboardTileDescriptor.GetHashCode() -> int
+[NPXE0005]override NetPrints.Extensibility.Editor.DashboardTileDescriptor.ToString() -> string!
+[NPXE0005]override NetPrints.Extensibility.Editor.DocumentId.Equals(object? obj) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.DocumentId.GetHashCode() -> int
+[NPXE0005]override NetPrints.Extensibility.Editor.DocumentId.ToString() -> string!
+[NPXE0005]override NetPrints.Extensibility.Editor.GoToItem.Equals(object? obj) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.GoToItem.GetHashCode() -> int
+[NPXE0005]override NetPrints.Extensibility.Editor.GoToItem.ToString() -> string!
+[NPXE0005]override NetPrints.Extensibility.Editor.MenuPlacement.Equals(object? obj) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.MenuPlacement.GetHashCode() -> int
+[NPXE0005]override NetPrints.Extensibility.Editor.MenuPlacement.ToString() -> string!
+[NPXE0005]override NetPrints.Extensibility.Editor.NavigationTarget.Equals(object? obj) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.NavigationTarget.GetHashCode() -> int
+[NPXE0005]override NetPrints.Extensibility.Editor.NavigationTarget.ToString() -> string!
+[NPXE0005]override NetPrints.Extensibility.Editor.PanelDescriptor.Equals(object? obj) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.PanelDescriptor.GetHashCode() -> int
+[NPXE0005]override NetPrints.Extensibility.Editor.PanelDescriptor.ToString() -> string!
+[NPXE0005]override NetPrints.Extensibility.Editor.TooltipContent.Equals(object? obj) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.TooltipContent.GetHashCode() -> int
+[NPXE0005]override NetPrints.Extensibility.Editor.TooltipContent.ToString() -> string!
+[NPXE0005]override NetPrints.Extensibility.Editor.TooltipConnection.Equals(object? obj) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.TooltipConnection.GetHashCode() -> int
+[NPXE0005]override NetPrints.Extensibility.Editor.TooltipConnection.ToString() -> string!
+[NPXE0005]override NetPrints.Extensibility.Editor.TooltipTarget.Equals(object? obj) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.TooltipTarget.GetHashCode() -> int
+[NPXE0005]override NetPrints.Extensibility.Editor.TooltipTarget.ToString() -> string!
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandDescriptor.operator !=(NetPrints.Extensibility.Editor.CommandDescriptor? left, NetPrints.Extensibility.Editor.CommandDescriptor? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandDescriptor.operator ==(NetPrints.Extensibility.Editor.CommandDescriptor? left, NetPrints.Extensibility.Editor.CommandDescriptor? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandGesture.operator !=(NetPrints.Extensibility.Editor.CommandGesture? left, NetPrints.Extensibility.Editor.CommandGesture? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandGesture.operator ==(NetPrints.Extensibility.Editor.CommandGesture? left, NetPrints.Extensibility.Editor.CommandGesture? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandGesture.Parse(string! s, System.IFormatProvider? provider) -> NetPrints.Extensibility.Editor.CommandGesture!
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandGesture.Parse(System.ReadOnlySpan<char> s, System.IFormatProvider? provider) -> NetPrints.Extensibility.Editor.CommandGesture!
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandGesture.TryParse(string? s, System.IFormatProvider? provider, out NetPrints.Extensibility.Editor.CommandGesture! result) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandGesture.TryParse(string? text, out NetPrints.Extensibility.Editor.CommandGesture! gesture) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandGesture.TryParse(System.ReadOnlySpan<char> s, System.IFormatProvider? provider, out NetPrints.Extensibility.Editor.CommandGesture! result) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandKey.All.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Editor.CommandKey!>!
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandKey.FromId(NetPrints.Extensibility.Editor.CommandKeyId id) -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandKey.implicit operator NetPrints.Extensibility.Editor.CommandKey!(NetPrints.Extensibility.Editor.CommandKeyId id) -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandKey.Parse(string! s, System.IFormatProvider? provider) -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandKey.Parse(System.ReadOnlySpan<char> s, System.IFormatProvider? provider) -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandKey.TryParse(string? s, System.IFormatProvider? provider, out NetPrints.Extensibility.Editor.CommandKey! result) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.CommandKey.TryParse(System.ReadOnlySpan<char> s, System.IFormatProvider? provider, out NetPrints.Extensibility.Editor.CommandKey! result) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.operator !=(NetPrints.Extensibility.Editor.ContextMenuItemDescriptor? left, NetPrints.Extensibility.Editor.ContextMenuItemDescriptor? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.ContextMenuItemDescriptor.operator ==(NetPrints.Extensibility.Editor.ContextMenuItemDescriptor? left, NetPrints.Extensibility.Editor.ContextMenuItemDescriptor? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.ConventionKeys.CommandLabelKey(string! commandId) -> string!
+[NPXE0005]static NetPrints.Extensibility.Editor.ConventionKeys.DialogTitleKey(string! dialogId) -> string!
+[NPXE0005]static NetPrints.Extensibility.Editor.ConventionKeys.MenuKey(string! menuId) -> string!
+[NPXE0005]static NetPrints.Extensibility.Editor.ConventionKeys.TemplateDescriptionKey(string! templateId) -> string!
+[NPXE0005]static NetPrints.Extensibility.Editor.ConventionKeys.TemplateNameKey(string! templateId) -> string!
+[NPXE0005]static NetPrints.Extensibility.Editor.ConventionKeys.TileTitleKey(string! tileId) -> string!
+[NPXE0005]static NetPrints.Extensibility.Editor.ConventionKeys.PanelTitleKey(string! panelId) -> string!
+[NPXE0005]static NetPrints.Extensibility.Editor.DashboardTileDescriptor.operator !=(NetPrints.Extensibility.Editor.DashboardTileDescriptor? left, NetPrints.Extensibility.Editor.DashboardTileDescriptor? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.DashboardTileDescriptor.operator ==(NetPrints.Extensibility.Editor.DashboardTileDescriptor? left, NetPrints.Extensibility.Editor.DashboardTileDescriptor? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.DocumentId.Graph(string! classPath, string! graphKey) -> NetPrints.Extensibility.Editor.DocumentId!
+[NPXE0005]static NetPrints.Extensibility.Editor.DocumentId.operator !=(NetPrints.Extensibility.Editor.DocumentId? left, NetPrints.Extensibility.Editor.DocumentId? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.DocumentId.operator ==(NetPrints.Extensibility.Editor.DocumentId? left, NetPrints.Extensibility.Editor.DocumentId? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.DocumentId.ProjectSettings.get -> NetPrints.Extensibility.Editor.DocumentId!
+[NPXE0005]static NetPrints.Extensibility.Editor.DocumentId.StartPage.get -> NetPrints.Extensibility.Editor.DocumentId!
+[NPXE0005]static NetPrints.Extensibility.Editor.DocumentId.TryParse(string? text, out NetPrints.Extensibility.Editor.DocumentId! id) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.GoToItem.operator !=(NetPrints.Extensibility.Editor.GoToItem? left, NetPrints.Extensibility.Editor.GoToItem? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.GoToItem.operator ==(NetPrints.Extensibility.Editor.GoToItem? left, NetPrints.Extensibility.Editor.GoToItem? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.MenuPlacement.operator !=(NetPrints.Extensibility.Editor.MenuPlacement? left, NetPrints.Extensibility.Editor.MenuPlacement? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.MenuPlacement.operator ==(NetPrints.Extensibility.Editor.MenuPlacement? left, NetPrints.Extensibility.Editor.MenuPlacement? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.NavigationTarget.operator !=(NetPrints.Extensibility.Editor.NavigationTarget? left, NetPrints.Extensibility.Editor.NavigationTarget? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.NavigationTarget.operator ==(NetPrints.Extensibility.Editor.NavigationTarget? left, NetPrints.Extensibility.Editor.NavigationTarget? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.PanelDescriptor.operator !=(NetPrints.Extensibility.Editor.PanelDescriptor? left, NetPrints.Extensibility.Editor.PanelDescriptor? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.PanelDescriptor.operator ==(NetPrints.Extensibility.Editor.PanelDescriptor? left, NetPrints.Extensibility.Editor.PanelDescriptor? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.TooltipContent.operator !=(NetPrints.Extensibility.Editor.TooltipContent? left, NetPrints.Extensibility.Editor.TooltipContent? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.TooltipContent.operator ==(NetPrints.Extensibility.Editor.TooltipContent? left, NetPrints.Extensibility.Editor.TooltipContent? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.TooltipConnection.operator !=(NetPrints.Extensibility.Editor.TooltipConnection? left, NetPrints.Extensibility.Editor.TooltipConnection? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.TooltipConnection.operator ==(NetPrints.Extensibility.Editor.TooltipConnection? left, NetPrints.Extensibility.Editor.TooltipConnection? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.TooltipTarget.operator !=(NetPrints.Extensibility.Editor.TooltipTarget? left, NetPrints.Extensibility.Editor.TooltipTarget? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.TooltipTarget.operator ==(NetPrints.Extensibility.Editor.TooltipTarget? left, NetPrints.Extensibility.Editor.TooltipTarget? right) -> bool
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.A -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.Back -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.B -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.C -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.D0 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.D1 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.D2 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.D3 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.D4 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.D5 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.D6 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.D7 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.D8 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.D9 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.Delete -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.D -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.Down -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.End -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.E -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.Enter -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.Escape -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F10 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F11 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F12 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F13 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F14 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F15 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F16 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F17 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F18 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F19 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F1 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F20 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F21 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F22 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F23 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F24 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F2 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F3 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F4 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F5 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F6 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F7 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F8 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F9 -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.F -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.G -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.H -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.Home -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.I -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.Insert -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.J -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.K -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.Left -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.L -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.M -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.N -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.O -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.PageDown -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.PageUp -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.P -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.Q -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.Right -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.R -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.S -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.Space -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.Tab -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.T -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.U -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.Up -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.V -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.W -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.X -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.Y -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.Z -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0005]virtual NetPrints.Extensibility.Editor.CommandKey.Aliases.get -> System.Collections.Generic.IReadOnlyList<string!>!
+[NPXE0005]virtual NetPrints.Extensibility.Editor.CommandKey.Glyph.get -> string!
+[NPXE0005]virtual NetPrints.Extensibility.Editor.CommandKey.IsFunctionKey.get -> bool
+[NPXE0005]virtual NetPrints.Extensibility.Editor.CommandKey.Text.get -> string!
+NetPrints.Extensibility.Editor.ProjectOutputType
+NetPrints.Extensibility.Editor.ProjectOutputType.Console = 0 -> NetPrints.Extensibility.Editor.ProjectOutputType
+NetPrints.Extensibility.Editor.ProjectOutputType.Library = 1 -> NetPrints.Extensibility.Editor.ProjectOutputType
+[NPXE0012]NetPrints.Extensibility.IExtensionBuilder.AddProjectTemplate(NetPrints.Extensibility.Editor.ProjectTemplateDescriptor! template) -> NetPrints.Extensibility.IExtensionBuilder!
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.<Clone>$() -> NetPrints.Extensibility.Editor.ProjectTemplateDescriptor!
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Deconstruct(out string! Id, out NetPrints.Core.LocalizedText DisplayName, out NetPrints.Core.LocalizedText Description, out string! ProfileId, out NetPrints.Extensibility.Editor.ProjectOutputType OutputType, out string? IconId, out System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Editor.TemplateFile!>? Files) -> void
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Description.get -> NetPrints.Core.LocalizedText
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Description.init -> void
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.DisplayName.get -> NetPrints.Core.LocalizedText
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.DisplayName.init -> void
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Equals(NetPrints.Extensibility.Editor.ProjectTemplateDescriptor? other) -> bool
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Files.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Editor.TemplateFile!>?
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Files.init -> void
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.IconId.get -> string?
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.IconId.init -> void
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Id.get -> string!
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Id.init -> void
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.OutputType.get -> NetPrints.Extensibility.Editor.ProjectOutputType
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.OutputType.init -> void
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.ProfileId.get -> string!
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.ProfileId.init -> void
+[NPXE0012]NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.ProjectTemplateDescriptor(string! Id, NetPrints.Core.LocalizedText DisplayName, NetPrints.Core.LocalizedText Description, string! ProfileId, NetPrints.Extensibility.Editor.ProjectOutputType OutputType, string? IconId = null, System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Editor.TemplateFile!>? Files = null) -> void
+[NPXE0012]NetPrints.Extensibility.Editor.TemplateFile
+[NPXE0012]NetPrints.Extensibility.Editor.TemplateFile.<Clone>$() -> NetPrints.Extensibility.Editor.TemplateFile!
+[NPXE0012]NetPrints.Extensibility.Editor.TemplateFile.Content.get -> string!
+[NPXE0012]NetPrints.Extensibility.Editor.TemplateFile.Content.init -> void
+[NPXE0012]NetPrints.Extensibility.Editor.TemplateFile.Deconstruct(out string! Path, out string! Content) -> void
+[NPXE0012]NetPrints.Extensibility.Editor.TemplateFile.Equals(NetPrints.Extensibility.Editor.TemplateFile? other) -> bool
+[NPXE0012]NetPrints.Extensibility.Editor.TemplateFile.Path.get -> string!
+[NPXE0012]NetPrints.Extensibility.Editor.TemplateFile.Path.init -> void
+[NPXE0012]NetPrints.Extensibility.Editor.TemplateFile.TemplateFile(string! Path, string! Content) -> void
+[NPXE0012]const NetPrints.Extensibility.Editor.TemplateFile.ProfileIdToken = "NetPrintsProfileId" -> string!
+[NPXE0012]const NetPrints.Extensibility.Editor.TemplateFile.RootNamespaceToken = "NetPrintsRootNamespace" -> string!
+[NPXE0012]const NetPrints.Extensibility.Editor.TemplateFile.SourceName = "NetPrintsProject" -> string!
+[NPXE0012]override NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.Equals(object? obj) -> bool
+[NPXE0012]override NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.GetHashCode() -> int
+[NPXE0012]override NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.ToString() -> string!
+[NPXE0012]override NetPrints.Extensibility.Editor.TemplateFile.Equals(object? obj) -> bool
+[NPXE0012]override NetPrints.Extensibility.Editor.TemplateFile.GetHashCode() -> int
+[NPXE0012]override NetPrints.Extensibility.Editor.TemplateFile.ToString() -> string!
+[NPXE0012]static NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.operator !=(NetPrints.Extensibility.Editor.ProjectTemplateDescriptor? left, NetPrints.Extensibility.Editor.ProjectTemplateDescriptor? right) -> bool
+[NPXE0012]static NetPrints.Extensibility.Editor.ProjectTemplateDescriptor.operator ==(NetPrints.Extensibility.Editor.ProjectTemplateDescriptor? left, NetPrints.Extensibility.Editor.ProjectTemplateDescriptor? right) -> bool
+[NPXE0012]static NetPrints.Extensibility.Editor.TemplateFile.operator !=(NetPrints.Extensibility.Editor.TemplateFile? left, NetPrints.Extensibility.Editor.TemplateFile? right) -> bool
+[NPXE0012]static NetPrints.Extensibility.Editor.TemplateFile.operator ==(NetPrints.Extensibility.Editor.TemplateFile? left, NetPrints.Extensibility.Editor.TemplateFile? right) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.IEditorContributions.AddSettingsPage(NetPrints.Extensibility.Editor.SettingsPageDescriptor! page) -> NetPrints.Extensibility.Editor.IEditorContributions!
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.<Clone>$() -> NetPrints.Extensibility.Editor.SettingsPageDescriptor!
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.CreateViewModel.get -> System.Func<NetPrints.Extensibility.Editor.ISettingsPageContext!, object!>?
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.CreateViewModel.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.Deconstruct(out string! Id, out NetPrints.Core.LocalizedText Title, out string? SectionKey, out int Order) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.Equals(NetPrints.Extensibility.Editor.SettingsPageDescriptor? other) -> bool
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.Id.get -> string!
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.Id.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.Order.get -> int
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.Order.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.ParentPageId.get -> string?
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.ParentPageId.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.SectionKey.get -> string?
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.SectionKey.init -> void
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.SettingsPageDescriptor(string! Id, NetPrints.Core.LocalizedText Title, string? SectionKey, int Order) -> void
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.Title.get -> NetPrints.Core.LocalizedText
+[NPXE0005]NetPrints.Extensibility.Editor.SettingsPageDescriptor.Title.init -> void
+[NPXE0005]override NetPrints.Extensibility.Editor.SettingsPageDescriptor.Equals(object? obj) -> bool
+[NPXE0005]override NetPrints.Extensibility.Editor.SettingsPageDescriptor.GetHashCode() -> int
+[NPXE0005]override NetPrints.Extensibility.Editor.SettingsPageDescriptor.ToString() -> string!
+[NPXE0005]static NetPrints.Extensibility.Editor.SettingsPageDescriptor.operator !=(NetPrints.Extensibility.Editor.SettingsPageDescriptor? left, NetPrints.Extensibility.Editor.SettingsPageDescriptor? right) -> bool
+[NPXE0005]static NetPrints.Extensibility.Editor.SettingsPageDescriptor.operator ==(NetPrints.Extensibility.Editor.SettingsPageDescriptor? left, NetPrints.Extensibility.Editor.SettingsPageDescriptor? right) -> bool
+[NPXE0009]NetPrints.Extensibility.Settings.PathKind
+[NPXE0009]NetPrints.Extensibility.Settings.PathKind.File = 0 -> NetPrints.Extensibility.Settings.PathKind
+[NPXE0009]NetPrints.Extensibility.Settings.PathKind.Folder = 1 -> NetPrints.Extensibility.Settings.PathKind
+[NPXE0009]NetPrints.Extensibility.Settings.RequiresRestartAttribute
+[NPXE0009]NetPrints.Extensibility.Settings.RequiresRestartAttribute.RequiresRestartAttribute() -> void
+[NPXE0009]NetPrints.Extensibility.Settings.SettingChoicesAttribute
+[NPXE0009]NetPrints.Extensibility.Settings.SettingChoicesAttribute.ProviderId.get -> string!
+[NPXE0009]NetPrints.Extensibility.Settings.SettingChoicesAttribute.SettingChoicesAttribute(string! providerId) -> void
+[NPXE0009]NetPrints.Extensibility.Settings.SettingPathAttribute
+[NPXE0009]NetPrints.Extensibility.Settings.SettingPathAttribute.Kind.get -> NetPrints.Extensibility.Settings.PathKind
+[NPXE0009]NetPrints.Extensibility.Settings.SettingPathAttribute.SettingPathAttribute(NetPrints.Extensibility.Settings.PathKind kind) -> void
+NetPrints.Extensibility.Editor.CommandKeyId.OemComma = 75 -> NetPrints.Extensibility.Editor.CommandKeyId
+[NPXE0005]NetPrints.Extensibility.Editor.DocumentKind.Settings = 3 -> NetPrints.Extensibility.Editor.DocumentKind
+[NPXE0005]static NetPrints.Extensibility.Editor.DocumentId.Settings.get -> NetPrints.Extensibility.Editor.DocumentId!
+[NPXE0005]static readonly NetPrints.Extensibility.Editor.CommandKey.OemComma -> NetPrints.Extensibility.Editor.CommandKey!
+[NPXE0002]abstract NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.SectionTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo!
+[NPXE0002]abstract NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ReadSection(NetPrints.Extensibility.Settings.ISettingsStore! store) -> System.Text.Json.Nodes.JsonObject!
+[NPXE0002]abstract NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ValidateSection(System.Text.Json.Nodes.JsonObject! section) -> System.Collections.Generic.IReadOnlyList<string!>!
+[NPXE0002]abstract NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.WriteSectionAsync(NetPrints.Extensibility.Settings.ISettingsStore! store, System.Text.Json.Nodes.JsonObject! section, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+[NPXE0002]override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.SectionTypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo!
+[NPXE0002]override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.ReadSection(NetPrints.Extensibility.Settings.ISettingsStore! store) -> System.Text.Json.Nodes.JsonObject!
+[NPXE0002]override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.ValidateSection(System.Text.Json.Nodes.JsonObject! section) -> System.Collections.Generic.IReadOnlyList<string!>!
+[NPXE0002]override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.WriteSectionAsync(NetPrints.Extensibility.Settings.ISettingsStore! store, System.Text.Json.Nodes.JsonObject! section, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask

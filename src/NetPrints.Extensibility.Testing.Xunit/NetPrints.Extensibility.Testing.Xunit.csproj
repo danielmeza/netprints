@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <NetPrintsTrackPublicApi>true</NetPrintsTrackPublicApi>
+    <AssemblyName>NetPrints.Extensibility.Testing.Xunit</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <Description>The xUnit adapter of the NetPrints extension test kit: ConformanceTests, a base class with one test per conformance check. NetPrints continues the original NetPrints by Robin Kahlow (https://github.com/RobinKa/netprints).</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <NetPrintsExperimentalOptIn Include="NPXE0001" />
+    <NetPrintsExperimentalOptIn Include="NPXE0002" />
+    <NetPrintsExperimentalOptIn Include="NPXE0003" />
+    <NetPrintsExperimentalOptIn Include="NPXE0004" />
+    <NetPrintsExperimentalOptIn Include="NPXE0005" />
+    <NetPrintsExperimentalOptIn Include="NPXE0006" />
+    <NetPrintsExperimentalOptIn Include="NPXE0007" />
+    <NetPrintsExperimentalOptIn Include="NPXE0008" />
+    <NetPrintsExperimentalOptIn Include="NPXE0009" />
+    <NetPrintsExperimentalOptIn Include="NPXE0011" />
+    <NetPrintsExperimentalOptIn Include="NPXE0012" />
+    <NetPrintsExperimentalOptIn Include="NPXE0013" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit.v3.extensibility.core" />
+    <PackageReference Include="xunit.v3.assert" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NetPrints.Extensibility.Testing\NetPrints.Extensibility.Testing.csproj" />
+  </ItemGroup>
+</Project>

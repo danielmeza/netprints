@@ -82,11 +82,11 @@ namespace NetPrints.Tests.Translator
 
             var producer = new CallMethodNode(eventGraph,
                 StaticMethod("Produce", [], [TypeSpecifier.FromType<int>()]));
-            GraphUtil.ConnectExecPins(entryB.InitialExecutionPin, producer.InputExecPins[0]);
+            GraphUtil.ConnectExecPins(entryB.ExecPin, producer.InputExecPins[0]);
 
             var consumer = new CallMethodNode(eventGraph,
                 StaticMethod("Consume", [new MethodParameter("value", TypeSpecifier.FromType<int>(), MethodParameterPassType.Default, false, null)], []));
-            GraphUtil.ConnectExecPins(entryA.InitialExecutionPin, consumer.InputExecPins[0]);
+            GraphUtil.ConnectExecPins(entryA.ExecPin, consumer.InputExecPins[0]);
 
             // Invalid: consumer (reachable from A) depends on producer's output, but producer is only
             // reachable from B.

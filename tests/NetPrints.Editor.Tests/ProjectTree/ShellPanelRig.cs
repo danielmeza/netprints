@@ -23,11 +23,6 @@ public sealed class ShellPanelRig : IAsyncDisposable
     private readonly List<ProjectSessionViewModel> sessions = [];
     private readonly List<string> cleanup = [];
 
-    private sealed class NoServices : IServiceProvider
-    {
-        public object? GetService(Type serviceType) => null;
-    }
-
     public ShellPanelRig(Func<EditorContext, EditorContext>? configure = null)
     {
         EditorContext hostContext = configure?.Invoke(editor.Context) ?? editor.Context;
@@ -36,7 +31,7 @@ public sealed class ShellPanelRig : IAsyncDisposable
         BuiltInContributions.Register(registry);
         registry.Freeze();
         Registry = registry;
-        Shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, new InlineDispatcher());
+        Shell = new ShellViewModel(registry, PanelFactoryContext.Detached, TimeProvider.System, new InlineDispatcher());
         Provider = new ShellCommandContextProvider(Shell, Api);
         Invoker = new CommandInvoker(registry, Provider, exception => Faults.Add(exception));
         Shell.AttachCommands(Invoker);

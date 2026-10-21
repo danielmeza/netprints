@@ -11,6 +11,7 @@ using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Projects;
 using NetPrints.Serialization;
+using DocumentId = NetPrints.Serialization.DocumentId;
 using ProjectSessionViewModel = NetPrints.Editor.Shell.ProjectSessionViewModel;
 using ShellViewModel = NetPrints.Editor.Shell.ShellViewModel;
 
@@ -35,11 +36,15 @@ internal sealed class ProjectLoader : IDisposable
     private CancellationTokenSource? reload;
     private Project? subscribedProject;
     private ProjectSessionViewModel? session;
-    private BackupScope? backups;
+    private ProjectSessionScope? sessionScope;
     private IReadOnlyCollection<string>? discardOnReplace;
+    private string? contributionGroupKey;
 
     /// <summary>The extension folders currently loaded: restored when a load fails after the new project's extensions were swapped in.</summary>
     private IReadOnlyList<string> activeExtensionFolders = [];
+
+    /// <summary>Gets the extension folders of the open project that the host has loaded; empty when none is open or the project is not trusted.</summary>
+    internal IReadOnlyList<string> ActiveExtensionFolders => activeExtensionFolders;
 
     /// <summary>Creates the loader.</summary>
     /// <param name="context">Host services shared across the editor.</param>
@@ -98,15 +103,42 @@ internal sealed class ProjectLoader : IDisposable
     /// </summary>
     /// <param name="args">The command-line arguments.</param>
     /// <returns>A task that completes when the project is open, or at once when there is nothing to open.</returns>
-    public Task OpenStartupProjectAsync(IReadOnlyList<string>? args)
+    public async Task OpenStartupProjectAsync(IReadOnlyList<string>? args)
     {
-        if (args is { Count: 1 } && !string.IsNullOrWhiteSpace(args[0]))
+        var startup = StartupArguments.Parse(args);
+        StartupProfileId = null;
+        if (startup.ProjectPath is { } projectPath)
         {
-            return OpenStartupPathAsync(args[0]);
+            await OpenStartupPathAsync(projectPath).ConfigureAwait(true);
+            if (startup.ProfileGiven)
+            {
+                shell.ShowStatus(TextFormat.Of(Strings.Startup_ProfileIgnored, startup.ProfileId));
+            }
+
+            return;
         }
 
-        return context.StateStore?.LoadStart()?.StartupBehavior == StartupBehavior.ReopenLastProject ? ReopenLastProjectAsync() : Task.CompletedTask;
+        if (startup.ProfileGiven)
+        {
+            IReadOnlyList<string> known = [.. context.Extensions.Current.Profiles.Select(profile => profile.Id)];
+            if (known.Contains(startup.ProfileId, StringComparer.Ordinal))
+            {
+                StartupProfileId = startup.ProfileId;
+            }
+            else
+            {
+                shell.StartPageError = TextFormat.Of(Strings.Startup_UnknownProfile, startup.ProfileId, string.Join(", ", known));
+            }
+        }
+
+        if (context.StateStore?.LoadStart()?.StartupBehavior == StartupBehavior.ReopenLastProject)
+        {
+            await ReopenLastProjectAsync().ConfigureAwait(true);
+        }
     }
+
+    /// <summary>Gets the known profile <c>--profile</c> named for this session, or null; New project filters its templates to it. It is not remembered.</summary>
+    internal string? StartupProfileId { get; private set; }
 
     private async Task ReopenLastProjectAsync()
     {
@@ -200,8 +232,8 @@ internal sealed class ProjectLoader : IDisposable
     /// <returns>A task that completes when the project is open, or the user cancelled.</returns>
     public async Task CreateProjectAsync()
     {
-        var service = new ProjectTemplateService(() => shell.Registry.ProjectTemplates, FindProfile, context.Projects);
-        using var dialog = new NewProjectDialogViewModel(service, context.FilePicker, locations, TimeProvider.System);
+        var templates = ProjectTemplateService.Create(shell.Registry, context.Extensions, context.Projects);
+        using var dialog = new NewProjectDialogViewModel(templates, context.FilePicker, locations, TimeProvider.System, StartupProfileId);
         string? path = await context.Dialogs.ShowNewProjectAsync(dialog).ConfigureAwait(true);
         if (path is null)
         {
@@ -214,8 +246,8 @@ internal sealed class ProjectLoader : IDisposable
         }
     }
 
-    private IProjectProfile? FindProfile(string profileId) =>
-        context.Extensions.Current.FindProfile(profileId) ?? (profileId == DefaultProjectProfile.ProfileId ? DefaultProjectProfile.Instance : null);
+    private ProjectSessionScope BeginSession(string? projectFilePath) =>
+        ProjectSessionScope.Create(context, shell.Registry, new SessionData(projectFilePath, message => context.Dispatcher.Post(() => shell.ShowStatus(message))));
 
     /// <summary>Opens a project, asking for it with a *.csproj picker unless a path is given.</summary>
     /// <param name="path">The <c>.csproj</c> path, a folder that holds exactly one, or null to ask the user.</param>
@@ -269,7 +301,7 @@ internal sealed class ProjectLoader : IDisposable
         SampleDescriptor? sample = samples.Samples.FirstOrDefault(candidate => string.Equals(candidate.Name, sampleName, StringComparison.Ordinal));
         if (sample is null)
         {
-            await context.Dialogs.ShowErrorAsync(errorTitle, $"There is no bundled sample named '{sampleName}'.").ConfigureAwait(true);
+            await context.Dialogs.ShowErrorAsync(errorTitle, TextFormat.Of(Strings.Message_SampleNotFound, sampleName)).ConfigureAwait(true);
             return;
         }
 
@@ -360,7 +392,15 @@ internal sealed class ProjectLoader : IDisposable
     }
 
     /// <summary>Replaces the open project's session with none.</summary>
-    public Task CloseProjectAsync() => SetProjectAsync(null);
+    public async Task CloseProjectAsync()
+    {
+        await SetProjectAsync(null).ConfigureAwait(true);
+        if (activeExtensionFolders.Count > 0)
+        {
+            await context.Extensions.LoadForProjectAsync([], CancellationToken.None).ConfigureAwait(true);
+            activeExtensionFolders = [];
+        }
+    }
 
     /// <summary>
     /// Loads a project through <see cref="ProjectPersistence"/>. Only a <c>.csproj</c> is accepted: any other path (for
@@ -375,11 +415,11 @@ internal sealed class ProjectLoader : IDisposable
         if (!path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
         {
             await context.Dialogs.ShowErrorAsync("Unsupported project file",
-                $"'{path}' is not a NetPrints project: only '.csproj' projects are supported. Nothing was opened.").ConfigureAwait(true);
+                TextFormat.Of(Strings.Message_UnsupportedProjectFile, path)).ConfigureAwait(true);
             return;
         }
 
-        shell.StatusBar.Show($"Loading project {path}");
+        shell.StatusBar.Show(TextFormat.Of(Strings.Status_LoadingProject, path));
         IReadOnlyList<string> previousExtensionFolders = activeExtensionFolders;
 
         try
@@ -404,20 +444,35 @@ internal sealed class ProjectLoader : IDisposable
                     : null;
                 ProjectLoadResult loaded = await context.Persistence.LoadAsync(snapshot, CancellationToken.None).ConfigureAwait(true);
 
-                RecoveryResult recovery = await RecoverAsync(loaded).ConfigureAwait(true);
-                await SetProjectAsync(loaded.Project).ConfigureAwait(true);
+                ProjectSessionScope pending = BeginSession(loaded.Snapshot.ProjectFilePath);
+                bool adopted = false;
+                RecoveryResult recovery;
+                try
+                {
+                    recovery = await pending.RecoverAsync(loaded.Project, context.Dialogs, CancellationToken.None).ConfigureAwait(true);
+                    await SetProjectAsync(loaded.Project, pending).ConfigureAwait(true);
+                    adopted = true;
+                }
+                finally
+                {
+                    if (!adopted)
+                    {
+                        pending.Dispose();
+                    }
+                }
+
                 shell.StartPageError = null;
                 context.Recent?.Record(Path.GetFullPath(path), loaded.Project.Name);
                 foreach (ClassGraph restored in recovery.Restored)
                 {
-                    backups?.Backups.Track(restored);
+                    sessionScope?.Backups?.Track(restored);
                 }
 
                 project = loaded.Project;
                 issues = [.. new[] { notTrusted, unknownProfile }.OfType<DocumentIssue>(), .. SnapshotIssues(snapshot), .. loaded.Issues, .. recovery.Issues];
             }
 
-            shell.StatusBar.Show($"Loaded project {project.Name}", TimeSpan.FromSeconds(5));
+            shell.StatusBar.Show(TextFormat.Of(Strings.Status_LoadedProject, project.Name), TimeSpan.FromSeconds(5));
 
             await ReportExtensionFailuresAsync().ConfigureAwait(true);
 
@@ -448,24 +503,11 @@ internal sealed class ProjectLoader : IDisposable
                 }
             }
 
-            shell.StatusBar.Show($"Failed to load project {path}", TimeSpan.FromSeconds(5));
+            shell.StatusBar.Show(TextFormat.Of(Strings.Status_FailedToLoadProject, path), TimeSpan.FromSeconds(5));
             await context.Clipboard.SetTextAsync(ex.ToString()).ConfigureAwait(true);
             await context.Dialogs.ShowErrorAsync("Failed to load project",
-                $"Failed to load project at path {path}. The exception has been copied to your clipboard.\n\n{ex}").ConfigureAwait(true);
+                TextFormat.Of(Strings.Message_FailedToLoadProject, path, ex)).ConfigureAwait(true);
         }
-    }
-
-    // Offers the backups of the project that is about to open; its classes are replaced before any session or reflection work sees them.
-    private Task<RecoveryResult> RecoverAsync(ProjectLoadResult loaded)
-    {
-        if (context.Backups is not { } options)
-        {
-            return Task.FromResult(RecoveryResult.None);
-        }
-
-        var store = new BackupStore(options.Paths, options.FileSystem, loaded.Snapshot.ProjectFilePath, context.LoggerFactory.CreateLogger<BackupStore>());
-        return new RecoveryService(store, context.Persistence, context.LoggerFactory.CreateLogger<RecoveryService>())
-            .RecoverAsync(loaded.Project, context.Dialogs, CancellationToken.None);
     }
 
     /// <summary>
@@ -483,7 +525,8 @@ internal sealed class ProjectLoader : IDisposable
         {
             if (reportedExtensionFailures.Add((failed.Id, failed.ManifestPath, failed.Code)))
             {
-                diagnostics.Add(new CodeDiagnostic(CodeDiagnosticSeverity.Error, failed.Code,
+                CodeDiagnosticSeverity severity = failed.Code == ExtensionDiagnosticCodes.Shadowed ? CodeDiagnosticSeverity.Info : CodeDiagnosticSeverity.Error;
+                diagnostics.Add(new CodeDiagnostic(severity, failed.Code,
                     $"Extension '{failed.Id}' was not loaded: {failed.Reason}", null, null, null, failed.ManifestPath, null));
             }
         }
@@ -494,6 +537,23 @@ internal sealed class ProjectLoader : IDisposable
             {
                 diagnostics.Add(new CodeDiagnostic(CodeDiagnosticSeverity.Error, issue.Code,
                     $"Extension '{issue.ExtensionId}': {issue.Contribution} was rejected: {issue.Reason}", null, null, null, null, null));
+            }
+        }
+
+        foreach (Contributions.ContributionIssue issue in shell.Registry.Issues.Where(issue => issue.Owner != Contributions.ContributionIds.Owner && issue.Owner != Contributions.BuiltIn.BuiltInContributions.OwnerId))
+        {
+            string code = issue.Kind switch
+            {
+                Contributions.ContributionIssueKind.DuplicateId => ExtensionDiagnosticCodes.DuplicateId,
+                Contributions.ContributionIssueKind.GestureConflict => ExtensionDiagnosticCodes.GestureConflict,
+                Contributions.ContributionIssueKind.UnknownReference => ExtensionDiagnosticCodes.UnknownReference,
+                _ => ExtensionDiagnosticCodes.ContributionRejected,
+            };
+            if (reportedExtensionFailures.Add((issue.Owner, issue.Id, code)))
+            {
+                string name = registry.Loaded.FirstOrDefault(manifest => manifest.Id == issue.Owner)?.Name ?? issue.Owner;
+                diagnostics.Add(new CodeDiagnostic(CodeDiagnosticSeverity.Warning, code,
+                    $"Extension '{name}': {issue.Message} ({issue.Id})", null, null, null, null, null));
             }
         }
 
@@ -569,18 +629,42 @@ internal sealed class ProjectLoader : IDisposable
             .Any(trusted => string.Equals(trusted, projectFilePath, comparison));
     }
 
+    private void ReplaceContributionGroup(Project? project)
+    {
+        if (contributionGroupKey is { } previous)
+        {
+            shell.Registry.RemoveSessionGroup(previous);
+            contributionGroupKey = null;
+        }
+
+        if (project is not null && context.Contributions is { } recorder)
+        {
+            string key = project.Snapshot.ProjectFilePath;
+            IReadOnlyList<string> folders = activeExtensionFolders;
+            ExtensionRegistry loaded = context.Extensions.Current;
+            shell.Registry.AddSessionGroup(key, group => recorder.PopulateSessionGroup(group, loaded, folders));
+            contributionGroupKey = key;
+        }
+    }
+
     // Writes the backups still waiting (the session must stay alive until they are rendered), swaps the shell's session
     // (it closes the documents), then disposes the old one; reloads reflection (PAR-15).
-    private async Task SetProjectAsync(Project? project)
+    private async Task SetProjectAsync(Project? project, ProjectSessionScope? scope = null)
     {
         await FlushBackupsAsync().ConfigureAwait(true);
         Unsubscribe();
         ProjectSessionViewModel? previous = session;
         CloseBackups();
-        session = project is null ? null : new ProjectSessionViewModel(project, context);
-        CreateBackups(session);
+        session = project is null ? null : new ProjectSessionViewModel(project, context, scope?.ClassContexts);
+        sessionScope = session is null ? null : scope;
+        if (session is not null)
+        {
+            sessionScope?.CreateBackups(session, context);
+        }
+
         shell.Session = session;
         previous?.Dispose();
+        ReplaceContributionGroup(project);
 
         if (project is null)
         {
@@ -603,7 +687,7 @@ internal sealed class ProjectLoader : IDisposable
     {
         if (discardOnReplace is { } discarded)
         {
-            backups?.Backups.Discard(discarded);
+            sessionScope?.Backups?.Discard(discarded);
         }
 
         discardOnReplace = null;
@@ -617,47 +701,21 @@ internal sealed class ProjectLoader : IDisposable
     internal Task FlushBackupsAsync()
     {
         ApplyBackupDiscard();
-        return backups?.Backups.FlushAsync() ?? Task.CompletedTask;
+        return sessionScope?.Backups?.FlushAsync() ?? Task.CompletedTask;
     }
 
     /// <summary>Gets the backups of the open project, or <see langword="null"/> when none is open or the host configured none.</summary>
-    public SessionBackups? Backups => backups?.Backups;
-
-    private void CreateBackups(ProjectSessionViewModel? opened)
-    {
-        if (backups is null && opened is not null && context.Backups is { } options)
-        {
-            backups = new BackupScope(opened, options, context, message => context.Dispatcher.Post(() => shell.ShowStatus(message)));
-        }
-    }
+    public SessionBackups? Backups => sessionScope?.Backups;
 
     // Stops following the session; a caller that can wait flushed first (FlushBackupsAsync), and this is the last resort of Dispose.
     private void CloseBackups()
     {
         ApplyBackupDiscard();
-        BackupScope? closing = backups;
-        backups = null;
-        closing?.Backups.FlushAsync().ContinueWith(_ => closing.Dispose(), TaskScheduler.Default).Forget(logger);
-    }
-
-    /// <summary>The backup service of the open project and the follower that feeds it.</summary>
-    private sealed class BackupScope : IDisposable
-    {
-        private readonly BackupService service;
-
-        public BackupScope(ProjectSessionViewModel session, BackupOptions options, EditorContext context, Action<string> warn)
+        ProjectSessionScope? closing = sessionScope;
+        sessionScope = null;
+        if (closing is not null)
         {
-            service = new BackupService(options.Paths, options.FileSystem, options.Time, session.ProjectFilePath, options.Delay,
-                context.LoggerFactory.CreateLogger<BackupService>(), warn);
-            Backups = new SessionBackups(session, service, context.Persistence.RenderClassAsync, context.Dispatcher);
-        }
-
-        public SessionBackups Backups { get; }
-
-        public void Dispose()
-        {
-            Backups.Dispose();
-            service.Dispose();
+            (closing.Backups?.FlushAsync() ?? Task.CompletedTask).ContinueWith(_ => closing.Dispose(), TaskScheduler.Default).Forget(logger);
         }
     }
 

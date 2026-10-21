@@ -1,0 +1,8 @@
+{
+  "id": "netprints.godot",
+  "name": "NetPrints for Godot",
+  "version": "0.1.0",
+  "assembly": "NetPrints.Godot.dll",
+  "netprintsApi": "0.4",
+  "dependsOn": []
+}

@@ -11,7 +11,7 @@ namespace NetPrints.Editor.Commands;
 /// context menu of the project tree. It never falls back from one to the other, so Delete on an empty canvas cannot
 /// remove the member being edited. From the Variables panel it removes the row passed as the command parameter.
 /// </summary>
-public sealed class DeleteCommandHandler : ICommandHandler
+public sealed class DeleteCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => context.Scope switch

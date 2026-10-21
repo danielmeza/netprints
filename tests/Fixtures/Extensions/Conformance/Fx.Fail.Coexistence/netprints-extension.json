@@ -1,0 +1,8 @@
+{
+  "id": "fx.fail.coexistence",
+  "name": "Fails NPK011: changes the environment of the process while it loads",
+  "version": "1.0.0",
+  "assembly": "Fx.Fail.Coexistence.dll",
+  "netprintsApi": "0.4",
+  "dependsOn": []
+}

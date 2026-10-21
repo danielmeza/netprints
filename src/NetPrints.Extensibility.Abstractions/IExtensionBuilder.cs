@@ -1,0 +1,168 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Resources;
+using System.Text.Json.Serialization.Metadata;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using NetPrints.Catalog;
+using NetPrints.Core;
+using NetPrints.Extensibility.Editor;
+using NetPrints.Extensibility.Hosting;
+using NetPrints.Extensibility.Loading;
+using NetPrints.Extensibility.Nodes;
+using NetPrints.Extensibility.Settings;
+using NetPrints.Reflection;
+using NetPrints.Serialization.Migrations;
+using NetPrints.Translator;
+
+namespace NetPrints.Extensibility;
+
+/// <summary>
+/// Collects an extension's contributions during <see cref="INetPrintsExtension.Register"/>
+/// (extension-points.md §1). Every method returns the builder for chaining, throws
+/// <see cref="ArgumentNullException"/> for a <see langword="null"/> argument, and throws
+/// <see cref="InvalidOperationException"/> once <see cref="INetPrintsExtension.Register"/> has returned.
+/// Contributed objects are singletons owned by the registry for the process lifetime, are disposed with it when
+/// they implement <see cref="IDisposable"/> or <see cref="IAsyncDisposable"/>, and must be thread-safe for reads.
+/// </summary>
+public interface IExtensionBuilder
+{
+    /// <summary>
+    /// The manifest of the extension being registered.
+    /// </summary>
+    ExtensionManifest Manifest { get; }
+
+    /// <summary>
+    /// Logger factory of the host.
+    /// </summary>
+    ILoggerFactory LoggerFactory { get; }
+
+    /// <summary>
+    /// Adds a library of node kinds.
+    /// </summary>
+    /// <param name="library">The library.</param>
+    /// <returns>This builder.</returns>
+    IExtensionBuilder AddNodeLibrary(INodeLibrary library);
+
+    /// <summary>
+    /// Adds an emitter that runs once per translated type declaration.
+    /// </summary>
+    /// <param name="emitter">The emitter.</param>
+    /// <returns>This builder.</returns>
+    [Experimental(ExperimentalApiIds.Emitters, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    IExtensionBuilder AddClassEmitter(IClassEmitter emitter);
+
+    /// <summary>
+    /// Adds an emitter that runs once per translated member.
+    /// </summary>
+    /// <param name="emitter">The emitter.</param>
+    /// <returns>This builder.</returns>
+    [Experimental(ExperimentalApiIds.Emitters, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    IExtensionBuilder AddMemberEmitter(IMemberEmitter emitter);
+
+    /// <summary>
+    /// Adds a precomputed type catalog.
+    /// </summary>
+    /// <param name="catalog">The catalog.</param>
+    /// <returns>This builder.</returns>
+    IExtensionBuilder AddTypeCatalog(ITypeCatalog catalog);
+
+    /// <summary>
+    /// Adds a project profile.
+    /// </summary>
+    /// <param name="profile">The profile.</param>
+    /// <returns>This builder.</returns>
+    IExtensionBuilder AddProjectProfile(IProjectProfile profile);
+
+    /// <summary>
+    /// Adds a resolver for the JSON shape of the extension's node documents.
+    /// </summary>
+    /// <param name="resolver">The resolver, usually a source-generated <c>JsonSerializerContext</c>.</param>
+    /// <returns>This builder.</returns>
+    IExtensionBuilder AddJsonTypeInfoResolver(IJsonTypeInfoResolver resolver);
+
+    /// <summary>
+    /// Asks the project system to capture an MSBuild property into <c>ProjectSnapshot.Properties</c>.
+    /// </summary>
+    /// <param name="msbuildPropertyName">The property name.</param>
+    /// <returns>This builder.</returns>
+    /// <exception cref="ArgumentException"><paramref name="msbuildPropertyName"/> is empty or white space.</exception>
+    IExtensionBuilder AddProjectProperty(string msbuildPropertyName);
+
+    /// <summary>
+    /// Adds a factory for the host channel that <c>NETPRINTS_HOST_CHANNEL=&lt;factory id&gt;</c> selects.
+    /// </summary>
+    /// <param name="factory">The factory.</param>
+    /// <returns>This builder.</returns>
+    [Experimental(ExperimentalApiIds.HostChannel, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    IExtensionBuilder AddHostChannel(IHostChannelFactory factory);
+
+    /// <summary>
+    /// Declares the extension's settings section. An extension declares at most one, and its
+    /// <see cref="ExtensionSettingsDescriptor.ExtensionId"/> must be the extension's own id.
+    /// </summary>
+    /// <param name="descriptor">The section.</param>
+    /// <returns>This builder.</returns>
+    [Experimental(ExperimentalApiIds.Settings, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    IExtensionBuilder AddSettings(ExtensionSettingsDescriptor descriptor);
+
+    /// <summary>
+    /// Adds a catalog profile that <c>netprints catalog --profile &lt;id&gt;</c> and a project's <c>CatalogProfileId</c> can select.
+    /// A built-in id or an id another extension registered first is rejected with <c>NPX006</c>.
+    /// </summary>
+    /// <param name="profile">The profile.</param>
+    /// <returns>This builder.</returns>
+    [Experimental(ExperimentalApiIds.CatalogProfiles, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    IExtensionBuilder AddCatalogProfile(CatalogProfile profile);
+
+    /// <summary>
+    /// Adds the extension's string resources. A <see cref="LocalizedText"/> the extension contributes (a label, a title, a
+    /// node title or pin label by convention key) resolves through these resources for the UI culture, then falls back to its default text.
+    /// </summary>
+    /// <param name="resources">The resources, usually the strongly typed <c>ResourceManager</c> of the extension's resx.</param>
+    /// <returns>This builder.</returns>
+    [Experimental(ExperimentalApiIds.StringResources, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    IExtensionBuilder AddStringResources(ResourceManager resources);
+
+    /// <summary>
+    /// Adds a node search provider. Its <see cref="INodeSuggestionProvider.Id"/> must start with the manifest id (<c>NPX013</c> otherwise)
+    /// and be unique across extensions (<c>NPX004</c> for a duplicate); a provider that breaks either rule is dropped.
+    /// </summary>
+    /// <param name="provider">The provider.</param>
+    /// <returns>This builder.</returns>
+    [Experimental(ExperimentalApiIds.NodeSearchProviders, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    IExtensionBuilder AddSuggestionProvider(INodeSuggestionProvider provider);
+
+    /// <summary>
+    /// Adds a project template to the New project flow of an editor host (<c>NPXE0012</c>); a host without an editor ignores it. The template's
+    /// <see cref="ProjectTemplateDescriptor.Id"/> must start with the manifest id (<c>NPX013</c> otherwise) and be unique (<c>NPX004</c> for a duplicate);
+    /// a template that breaks either rule is dropped.
+    /// </summary>
+    /// <param name="template">The template, with its files.</param>
+    /// <returns>This builder.</returns>
+    [Experimental(ExperimentalApiIds.ProjectTemplates, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    IExtensionBuilder AddProjectTemplate(ProjectTemplateDescriptor template);
+
+    /// <summary>
+    /// Adds a migration of the stored data of one of this extension's node kinds (<c>NPXE0013</c>). On load, before a node is created, the migrations of its kind
+    /// run in <see cref="INodeDataMigration.FromVersion"/> order from the node's stored <c>kindVersion</c> (absent is 0) up to <see cref="NodeKindDescriptor.DataVersion"/>.
+    /// The kind must start with the manifest id and a slash (<c>NPX013</c> otherwise); a migration that breaks the rule is dropped.
+    /// </summary>
+    /// <param name="migration">The migration.</param>
+    /// <returns>This builder.</returns>
+    [Experimental(ExperimentalApiIds.NodeDataMigrations, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    IExtensionBuilder AddDocumentMigration(INodeDataMigration migration);
+
+    /// <summary>
+    /// Gets the collection the extension registers its own services in; the registry builds one provider from it for this extension alone, plus the
+    /// host exports of <c>HostExports</c>. A registration that replaces or configures a host service is rejected (<c>NPX006</c>) and the extension stays loaded.
+    /// </summary>
+    [Experimental(ExperimentalApiIds.ExtensionServices, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    IServiceCollection Services { get; }
+
+    /// <summary>
+    /// Gets the editor contributions of this extension. A host without an editor (the CLI, the SDK generator, the build) ignores
+    /// every call without error; the editor commits them with the rest of the extension's contributions when <see cref="INetPrintsExtension.Register"/> returns.
+    /// </summary>
+    [Experimental(ExperimentalApiIds.EditorContributions, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    IEditorContributions Editor { get; }
+}

@@ -37,9 +37,20 @@ EXPECTED_FILES=(
     "NetPrints.Cli.$VERSION.snupkg"
     "NetPrints.Core.$VERSION.nupkg"
     "NetPrints.Core.$VERSION.snupkg"
+    "NetPrints.Extensibility.$VERSION.nupkg"
+    "NetPrints.Extensibility.$VERSION.snupkg"
+    "NetPrints.Extensibility.Abstractions.$VERSION.nupkg"
+    "NetPrints.Extensibility.Abstractions.$VERSION.snupkg"
+    "NetPrints.Extensibility.Testing.$VERSION.nupkg"
+    "NetPrints.Extensibility.Testing.$VERSION.snupkg"
+    "NetPrints.Extensibility.Testing.Xunit.$VERSION.nupkg"
+    "NetPrints.Extensibility.Testing.Xunit.$VERSION.snupkg"
     "NetPrints.Reflection.$VERSION.nupkg"
     "NetPrints.Reflection.$VERSION.snupkg"
     "NetPrints.Sdk.$VERSION.nupkg"
+    "NetPrints.Serialization.$VERSION.nupkg"
+    "NetPrints.Serialization.$VERSION.snupkg"
+    "NetPrints.Templates.$VERSION.nupkg"
 )
 
 for name in "${EXPECTED_FILES[@]}"; do
@@ -83,7 +94,7 @@ check_common_metadata() {
     local heading
     heading="$(head -n 1 "$EXTRACT/README.md")"
     case "$id" in
-        NetPrints.Annotations | NetPrints.Catalog)
+        NetPrints.Annotations | NetPrints.Catalog | NetPrints.Serialization | NetPrints.Extensibility | NetPrints.Extensibility.Abstractions | NetPrints.Extensibility.Testing | NetPrints.Extensibility.Testing.Xunit | NetPrints.Templates)
             [[ "$heading" == "# $id" ]] || fail "step 2 ($id): packed README.md starts with '$heading', expected '# $id' (src/$id/README.md)"
             ;;
         *)
@@ -122,6 +133,23 @@ extract_nupkg NetPrints.Catalog
 check_common_metadata NetPrints.Catalog
 [[ -f "$EXTRACT/lib/net10.0/NetPrints.Catalog.dll" ]] || fail "step 2 (NetPrints.Catalog): missing lib/net10.0/NetPrints.Catalog.dll"
 [[ -f "$EXTRACT/lib/net10.0/NetPrints.Catalog.xml" ]] || fail "step 2 (NetPrints.Catalog): missing lib/net10.0/NetPrints.Catalog.xml"
+
+for id in NetPrints.Serialization NetPrints.Extensibility.Abstractions NetPrints.Extensibility NetPrints.Extensibility.Testing NetPrints.Extensibility.Testing.Xunit; do
+    extract_nupkg "$id"
+    check_common_metadata "$id"
+    [[ -f "$EXTRACT/lib/net10.0/$id.dll" ]] || fail "step 2 ($id): missing lib/net10.0/$id.dll"
+    [[ -f "$EXTRACT/lib/net10.0/$id.xml" ]] || fail "step 2 ($id): missing lib/net10.0/$id.xml (XML docs on every public member)"
+done
+
+# research R12: the analyzers of Core reach an author who references only Abstractions, so the dependency excludes nothing.
+extract_nupkg NetPrints.Extensibility.Abstractions
+CORE_DEPENDENCY="$(grep -o '<dependency id="NetPrints.Core"[^>]*>' "$EXTRACT/NetPrints.Extensibility.Abstractions.nuspec" | head -n 1)"
+[[ -n "$CORE_DEPENDENCY" ]] || fail "step 2 (NetPrints.Extensibility.Abstractions): nuspec has no NetPrints.Core dependency"
+grep -q 'exclude=' <<<"$CORE_DEPENDENCY" && fail "step 2 (NetPrints.Extensibility.Abstractions): the NetPrints.Core dependency excludes assets ($CORE_DEPENDENCY)"
+extract_nupkg NetPrints.Core
+[[ -f "$EXTRACT/analyzers/dotnet/cs/NetPrints.Authoring.dll" ]] || fail "step 2 (NetPrints.Core): missing analyzers/dotnet/cs/NetPrints.Authoring.dll"
+[[ -f "$EXTRACT/buildTransitive/NetPrints.Core.props" ]] || fail "step 2 (NetPrints.Core): missing buildTransitive/NetPrints.Core.props"
+grep -q 'CompilerVisibleProperty Include="NetPrintsExtensionId"' "$EXTRACT/buildTransitive/NetPrints.Core.props" || fail "step 2 (NetPrints.Core): buildTransitive/NetPrints.Core.props does not declare the compiler-visible property NetPrintsExtensionId"
 
 extract_nupkg NetPrints.Annotations
 check_common_metadata NetPrints.Annotations
@@ -188,5 +216,109 @@ TOOL_RUN_RC=0
 TOOL_RUN_OUTPUT="$("$TOOL_PATH/netprints" run "$APP/HelloWorld.csproj" 2>&1)" || TOOL_RUN_RC=$?
 [[ $TOOL_RUN_RC -eq 0 ]] || fail "step 4 (netprints run): exit code $TOOL_RUN_RC, expected 0: $TOOL_RUN_OUTPUT"
 echo "$TOOL_RUN_OUTPUT" | grep -qF "Hello, World!" || fail "step 4 (netprints run): output does not contain 'Hello, World!': $TOOL_RUN_OUTPUT"
+
+# --- Step 5: an extension author's view (research R12, FR-020, SC-003) -----------------------------
+
+write_nuget_config() {
+    cat > "$1/nuget.config" <<EOF
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="local-packages" value="$FEED" />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+  </packageSources>
+</configuration>
+EOF
+}
+
+CONSUMER="$WORK/consumer"
+mkdir -p "$CONSUMER"
+write_nuget_config "$CONSUMER"
+cat > "$CONSUMER/Consumer.csproj" <<EOF
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="NetPrints.Extensibility.Abstractions" Version="$VERSION" />
+  </ItemGroup>
+</Project>
+EOF
+cat > "$CONSUMER/Extension.cs" <<'EOF'
+using NetPrints.Extensibility;
+
+namespace Consumer;
+
+public sealed class Extension : INetPrintsExtension
+{
+    public void Register(IExtensionBuilder builder)
+    {
+    }
+}
+EOF
+
+CONSUMER_LOG="$WORK/consumer.log"
+dotnet build "$CONSUMER" -c Release -v:d -p:ReportAnalyzer=true > "$CONSUMER_LOG" 2>&1 || { tail -n 40 "$CONSUMER_LOG" >&2; fail "step 5 (scratch consumer): dotnet build failed"; }
+COMPILER_LINE="$(grep -m 1 -e '/analyzer:[^ ]*NetPrints\.Authoring\.dll' "$CONSUMER_LOG" || true)"
+[[ -n "$COMPILER_LINE" ]] || fail "step 5 (analyzers): the compiler command line has no NetPrints.Authoring.dll"
+AUTHORING_COUNT="$(grep -o -e '/analyzer:[^ ]*NetPrints\.Authoring\.dll' <<<"$COMPILER_LINE" | wc -l)"
+[[ "$AUTHORING_COUNT" -eq 1 ]] || fail "step 5 (analyzers): a consumer of NetPrints.Extensibility.Abstractions alone gets NetPrints.Authoring.dll $AUTHORING_COUNT times, expected exactly 1"
+
+# tests/NetPrints.TestExtension builds from the packed packages only (the project switches its references on this property).
+TEST_EXTENSION_OUT="$WORK/test-extension"
+dotnet build "$REPO_ROOT/tests/NetPrints.TestExtension/NetPrints.TestExtension.csproj" -c Release \
+    -p:NetPrintsPackagedExtensionVersion="$VERSION" \
+    -p:RestoreSources="$FEED;https://api.nuget.org/v3/index.json" \
+    -p:RestorePackagesPath="$NUGET_PACKAGES" \
+    -p:OutputPath="$TEST_EXTENSION_OUT/" >&2 \
+    || fail "step 5 (NetPrints.TestExtension): build from the local packages failed"
+[[ -f "$TEST_EXTENSION_OUT/NetPrints.TestExtension.dll" ]] || fail "step 5 (NetPrints.TestExtension): NetPrints.TestExtension.dll was not built"
+[[ -f "$TEST_EXTENSION_OUT/netprints-extension.json" ]] || fail "step 5 (NetPrints.TestExtension): netprints-extension.json was not copied"
+
+# --- Step 6: the netprints-extension template (FR-079, SC-011, research R25 and R17) ----------------------
+
+extract_nupkg NetPrints.Templates
+check_common_metadata NetPrints.Templates
+grep -q '<packageType name="Template" />' "$EXTRACT/NetPrints.Templates.nuspec" || fail "step 6 (NetPrints.Templates): nuspec has no Template packageType"
+[[ -f "$EXTRACT/content/netprints-extension/.template.config/template.json" ]] || fail "step 6 (NetPrints.Templates): missing the netprints-extension template.json"
+[[ -d "$EXTRACT/lib" ]] && fail "step 6 (NetPrints.Templates): package has a lib/ folder (should have none)"
+
+HIVE="$WORK/hive"
+dotnet new install "$FEED/NetPrints.Templates.$VERSION.nupkg" --debug:custom-hive "$HIVE" >&2 || fail "step 6 (template): dotnet new install failed"
+
+AUTHOR="$WORK/author"
+mkdir -p "$AUTHOR"
+dotnet new netprints-extension -n Acme.Widgets -o "$AUTHOR" --ExtensionId acme.widgets --NetPrintsVersion "$VERSION" --debug:custom-hive "$HIVE" >&2 \
+    || fail "step 6 (template): dotnet new netprints-extension failed"
+write_nuget_config "$AUTHOR"
+
+dotnet build "$AUTHOR/Acme.Widgets.Tests" -c Release >&2 || fail "step 6 (template): the generated solution does not build"
+TEMPLATE_TEST_OUTPUT="$(cd "$AUTHOR/Acme.Widgets.Tests" && dotnet test -c Release --no-build --no-progress --no-ansi 2>&1)" \
+    || { echo "$TEMPLATE_TEST_OUTPUT" >&2; fail "step 6 (template): the generated kit tests failed"; }
+grep -Eq 'Passed|passed' <<<"$TEMPLATE_TEST_OUTPUT" || fail "step 6 (template): no kit test passed: $TEMPLATE_TEST_OUTPUT"
+grep -Eq 'skipped: *[1-9]|Skipped *: *[1-9]' <<<"$TEMPLATE_TEST_OUTPUT" && fail "step 6 (template): a kit check was skipped in the generated project: $TEMPLATE_TEST_OUTPUT"
+
+PACK_OUT="$WORK/author-pack"
+dotnet pack "$AUTHOR/Acme.Widgets" -c Release -o "$PACK_OUT" >&2 || fail "step 6 (template): dotnet pack of the generated extension failed"
+PACKAGE="$(find "$PACK_OUT" -maxdepth 1 -name '*.nupkg' | head -n 1)"
+[[ -n "$PACKAGE" ]] || fail "step 6 (template): dotnet pack produced no .nupkg"
+EXT_EXTRACT="$WORK/author-extract"
+mkdir -p "$EXT_EXTRACT"
+unzip -qq "$PACKAGE" -d "$EXT_EXTRACT"
+grep -q '<packageType name="NetPrintsExtension" />' "$EXT_EXTRACT"/*.nuspec || fail "step 6 (extension package): nuspec has no NetPrintsExtension packageType"
+[[ -f "$EXT_EXTRACT/extension/netprints-extension.json" ]] || fail "step 6 (extension package): missing extension/netprints-extension.json"
+[[ -f "$EXT_EXTRACT/extension/Acme.Widgets.dll" ]] || fail "step 6 (extension package): missing extension/Acme.Widgets.dll"
+[[ ! -e "$EXT_EXTRACT/extension/NetPrints.Core.dll" ]] || fail "step 6 (extension package): the extension folder holds a host assembly"
+[[ ! -d "$EXT_EXTRACT/lib" ]] || fail "step 6 (extension package): the package has a lib/ folder"
+
+VERIFY_RC=0
+VERIFY_OUTPUT="$("$TOOL_PATH/netprints" extension verify "$PACKAGE" 2>&1)" || VERIFY_RC=$?
+[[ $VERIFY_RC -eq 0 ]] || fail "step 6 (netprints extension verify): exit code $VERIFY_RC, expected 0: $VERIFY_OUTPUT"
+for CODE in NPK001 NPK002 NPK003 NPK017; do
+    grep -q "^$CODE .*: passed" <<<"$VERIFY_OUTPUT" || fail "step 6 (netprints extension verify): $CODE did not pass: $VERIFY_OUTPUT"
+done
 
 echo "verify-packages.sh: all checks passed for $VERSION"

@@ -19,11 +19,11 @@
     <Menu DockPanel.Dock="Top" ItemsSource="{Binding MenuBar.Menus}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellMenuBar}">
       <Menu.Styles>
         <Style Selector="Menu > MenuItem" x:DataType="shell:MenuViewModel">
-          <Setter Property="Header" Value="{Binding Header}" />
+          <Setter Property="Header" Value="{Binding Title}" />
           <Setter Property="ItemsSource" Value="{Binding Items}" />
           <Setter Property="IsEnabled" Value="{Binding HasItems}" />
           <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
-          <Setter Property="AutomationProperties.Name" Value="{Binding Header}" />
+          <Setter Property="AutomationProperties.Name" Value="{Binding Title}" />
         </Style>
         <Style Selector="Menu > MenuItem MenuItem" x:DataType="shell:CommandEntryViewModel">
           <Setter Property="Header" Value="{Binding}" />
@@ -54,7 +54,7 @@
       </Menu.Styles>
     </Menu>
 
-    <Border DockPanel.Dock="Top" Height="{StaticResource Density.CommandBarHeight}" Padding="4,0" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellCommandBar}">
+    <Border DockPanel.Dock="Top" Height="{DynamicResource Density.CommandBarHeight}" Padding="4,0" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellCommandBar}">
       <ItemsControl ItemsSource="{Binding CommandBar.Slots}">
         <ItemsControl.ItemsPanel>
           <ItemsPanelTemplate>
@@ -92,14 +92,38 @@
 
     <Border DockPanel.Dock="Bottom" Padding="8,2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellStatusBar}">
       <DockPanel>
-        <TextBlock DockPanel.Dock="Right" Classes="tabular" Margin="16,0,0,0" Text="{Binding StatusBar.BuildStateText}"
-                   AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellBuildState}" />
+        <ItemsControl DockPanel.Dock="Right" ItemsSource="{Binding StatusBar.RightItems}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="shell:StatusBarItemViewModel">
+              <ContentControl Content="{Binding Content}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
         <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8" Margin="0,0,16,0" IsVisible="{Binding StatusBar.IsBusy}"
                     AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellBusy}">
           <ProgressBar IsIndeterminate="True" Width="80" Height="4" VerticalAlignment="Center" />
           <TextBlock Text="{Binding StatusBar.BusyText}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellBusyText}" />
         </StackPanel>
-        <TextBlock Text="{Binding StatusMessage}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellStatusMessage}" />
+        <StackPanel Orientation="Horizontal">
+          <TextBlock Text="{Binding StatusMessage}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellStatusMessage}" />
+          <ItemsControl ItemsSource="{Binding StatusBar.LeftItems}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="shell:StatusBarItemViewModel">
+                <ContentControl Content="{Binding Content}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
       </DockPanel>
     </Border>
 

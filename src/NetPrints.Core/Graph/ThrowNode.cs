@@ -7,15 +7,18 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing an exception throw.
     /// </summary>
-    public class ThrowNode : Node
+    [NodeKind(NodeKindIds.Throw)]
+    public sealed partial class ThrowNode : Node
     {
+        /// <summary>
+        /// Input execution pin that throws when executed.
+        /// </summary>
+        internal partial NodeInputExecPin ExecPin { get; }
+
         /// <summary>
         /// Pin for the exception to throw.
         /// </summary>
-        public NodeInputDataPin ExceptionPin
-        {
-            get { return InputDataPins[0]; }
-        }
+        public partial NodeInputDataPin<Exception> ExceptionPin { get; }
 
         /// <summary>
         /// Adds this node to <paramref name="graph"/> and gives it its execution and exception pins.
@@ -24,8 +27,7 @@ namespace NetPrints.Graph
         public ThrowNode(NodeGraph graph)
             : base(graph)
         {
-            AddInputExecPin("Exec");
-            AddInputDataPin("Exception", TypeSpecifier.FromType<Exception>());
+            DeclarePins();
         }
 
         /// <summary>
@@ -36,5 +38,8 @@ namespace NetPrints.Graph
         {
             return $"Throw Exception";
         }
+
+        /// <inheritdoc />
+        public override bool TitleIsFixed => true;
     }
 }

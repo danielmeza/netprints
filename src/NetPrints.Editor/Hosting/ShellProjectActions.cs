@@ -9,6 +9,7 @@ using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Navigation;
 using NetPrints.Editor.References;
+using NetPrints.Editor.Settings;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.StartPage;
 using NetPrints.Editor.State;
@@ -223,7 +224,16 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
 
     /// <inheritdoc/>
     public Task ShowKeyboardShortcutsAsync(CancellationToken cancellationToken) =>
-        context.Dialogs.ShowKeyboardShortcutsAsync(new KeyboardShortcutsViewModel(shell.Registry));
+        context.Dialogs.ShowKeyboardShortcutsAsync(new KeyboardShortcutsViewModel(shell.Registry, ShowShortcutsPage));
+
+    private void ShowShortcutsPage()
+    {
+        Api?.OpenDocument(DocumentId.Settings);
+        if (shell.FindDocument(DocumentId.Settings) is SettingsDocumentViewModel settings)
+        {
+            settings.SelectPage(SettingsDocumentViewModel.KeyboardPageId);
+        }
+    }
 
     /// <inheritdoc/>
     public EditorTheme Theme => context.Settings.Get(EditorSettings.Descriptor).Theme;
@@ -238,7 +248,7 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
             actual = app.ActualThemeVariant;
         }
 
-        await context.Settings.SetAsync(EditorSettings.Descriptor, new EditorSettings { Theme = theme }, cancellationToken).ConfigureAwait(true);
+        await context.Settings.SetAsync(EditorSettings.Descriptor, context.Settings.Get(EditorSettings.Descriptor) with { Theme = theme }, cancellationToken).ConfigureAwait(true);
         shell.NotifyCommandStatesChanged();
         shell.ShowStatus(ThemeStatusText.For(theme, actual), ThemeStatusDuration);
     }
@@ -319,7 +329,7 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
         catch (Exception ex)
         {
             await context.Dialogs.ShowErrorAsync("Failed to load existing class",
-                $"Failed to load existing class at path {path}:\n\n{ex}").ConfigureAwait(true);
+                TextFormat.Of(Strings.Message_FailedToLoadClass, path, ex)).ConfigureAwait(true);
         }
     }
 
@@ -349,7 +359,7 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
         List<MethodSpecifier> overridable = cls.AllBaseTypes.SelectMany(provider.GetOverridableMethodsForType).ToList();
         if (overridable.Count == 0)
         {
-            await context.Dialogs.ShowErrorAsync("Override method", $"{cls.Name} has no base method to override.").ConfigureAwait(true);
+            await context.Dialogs.ShowErrorAsync("Override method", TextFormat.Of(Strings.Message_NoBaseMethodToOverride, cls.Name)).ConfigureAwait(true);
             return;
         }
 
@@ -395,7 +405,7 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
         switch (item)
         {
             case ClassGraph cls:
-                if (!await context.Dialogs.ConfirmAsync(RemoveClassTitle, $"Remove class '{cls.Name}' and close its graphs? This cannot be undone.", RemoveClassConfirm).ConfigureAwait(true))
+                if (!await context.Dialogs.ConfirmAsync(RemoveClassTitle, TextFormat.Of(Strings.Message_ConfirmRemoveClass, cls.Name), RemoveClassConfirm).ConfigureAwait(true))
                 {
                     break;
                 }

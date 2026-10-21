@@ -8,7 +8,8 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing the initial execution node of a constructor.
     /// </summary>
-    public class ConstructorEntryNode : ExecutionEntryNode
+    [NodeKind(NodeKindIds.ConstructorEntry)]
+    public sealed partial class ConstructorEntryNode : ExecutionEntryNode
     {
         /// <summary>
         /// Same as the base <see cref="Node.Graph"/>, but typed as <see cref="ConstructorGraph"/>:
@@ -28,7 +29,7 @@ namespace NetPrints.Graph
         public ConstructorEntryNode(ConstructorGraph constructor)
             : base(constructor)
         {
-            AddOutputExecPin("Exec");
+            DeclarePins();
 
             // TODO: Add output data and type pins for constructor graph
         }

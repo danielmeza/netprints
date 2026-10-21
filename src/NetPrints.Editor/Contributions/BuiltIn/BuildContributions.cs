@@ -14,7 +14,7 @@ public static class BuildContributions
 
     /// <summary>Registers the Build menu's commands.</summary>
     /// <param name="registry">The registry to add to.</param>
-    public static void Register(IContributionRegistry registry)
+    public static void Register(IEditorContributions registry)
     {
         ArgumentNullException.ThrowIfNull(registry);
 
@@ -23,7 +23,7 @@ public static class BuildContributions
             "Compile",
             new CompileCommandHandler(),
             IconId: IconIds.Compile,
-            DefaultGestures: ["F7", "Ctrl+Shift+B"],
+            DefaultGestures: [new(CommandModifiers.None, CommandKey.F7), new(CommandModifiers.Ctrl | CommandModifiers.Shift, CommandKey.B)],
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, "build", 0),
             CommandBarOrder: 2));
@@ -33,7 +33,7 @@ public static class BuildContributions
             "Run",
             new RunCommandHandler(),
             IconId: IconIds.Run,
-            DefaultGestures: ["F5"],
+            DefaultGestures: [new(CommandModifiers.None, CommandKey.F5)],
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, RunGroup, 0),
             CommandBarOrder: 3));
@@ -43,7 +43,7 @@ public static class BuildContributions
             "Stop",
             new StopCommandHandler(),
             IconId: IconIds.Stop,
-            DefaultGestures: ["Shift+F5"],
+            DefaultGestures: [new(CommandModifiers.Shift, CommandKey.F5)],
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, RunGroup, 1),
             CommandBarOrder: 3));

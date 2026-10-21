@@ -64,7 +64,7 @@ public sealed class ConnectionNavigationCommandsTests(TestEditor editor) : Graph
     private CommandContext SelectionContext(params NodeViewModel[] nodes)
     {
         shell.OpenDocument(DocumentId.Graph("C.netpc.json", DocumentId.MethodKeyPrefix + "m"));
-        return shell.Context(null, graph: Graph, selection: new CommandSelection([.. nodes]));
+        return shell.Context(null, graph: Graph, selection: new CommandSelection([.. nodes.Select(vm => vm.Node)]));
     }
 
     [Fact]

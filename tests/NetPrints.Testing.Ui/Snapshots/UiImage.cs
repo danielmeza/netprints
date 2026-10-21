@@ -57,7 +57,7 @@ public sealed class UiImage
 
     public void Save(string path)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(path) ?? throw new ArgumentException($"'{path}' has no directory.", nameof(path)));
         File.WriteAllBytes(path, Png);
     }
 

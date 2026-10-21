@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using NetPrints.Editor.Commands;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
@@ -9,28 +10,48 @@ public sealed class MenuBarViewModel : IDisposable
 {
     internal static readonly string[] StandardMenus = ["File", "Edit", "View", "Go", "Build", "Help"];
 
+    private readonly IContributionRegistry registry;
     private readonly CommandInvoker invoker;
     private readonly List<CommandEntryViewModel> entries = [];
 
     /// <summary>Creates the menus.</summary>
-    /// <param name="registry">The registry.</param>
+    /// <param name="registry">The registry; the menus are rebuilt from its snapshot whenever it changes.</param>
     /// <param name="invoker">Runs and queries the commands.</param>
     public MenuBarViewModel(IContributionRegistry registry, CommandInvoker invoker)
     {
         ArgumentNullException.ThrowIfNull(registry);
         ArgumentNullException.ThrowIfNull(invoker);
+        this.registry = registry;
         this.invoker = invoker;
-        CommandDescriptor[] withMenu = [.. registry.Commands.Where(command => command.Menu is not null)];
-        string[] names = [.. StandardMenus, .. withMenu.Select(command => command.Menu?.Path ?? "").Distinct(StringComparer.Ordinal).Except(StandardMenus, StringComparer.Ordinal)];
-        Menus = [.. names.Select(name => Build(name, withMenu))];
+        Rebuild(registry.Snapshot);
         invoker.CommandStatesChanged += OnCommandStatesChanged;
+        registry.Changed += OnRegistryChanged;
     }
 
     /// <summary>Gets the menus: File, Edit, View, Go, Build and Help, then any other in registration order.</summary>
-    public IReadOnlyList<MenuViewModel> Menus { get; }
+    public ObservableCollection<MenuViewModel> Menus { get; } = [];
 
-    /// <summary>Stops following the command states.</summary>
-    public void Dispose() => invoker.CommandStatesChanged -= OnCommandStatesChanged;
+    /// <summary>Stops following the command states and the registry.</summary>
+    public void Dispose()
+    {
+        invoker.CommandStatesChanged -= OnCommandStatesChanged;
+        registry.Changed -= OnRegistryChanged;
+    }
+
+    private void OnRegistryChanged(object? sender, ContributionSnapshot snapshot) => Rebuild(snapshot);
+
+    private void Rebuild(IContributionSnapshot snapshot)
+    {
+        entries.Clear();
+        CommandDescriptor[] withMenu = [.. snapshot.Commands.Where(command => command.Menu is not null)];
+        string[] names = [.. StandardMenus, .. withMenu.Select(command => command.Menu?.Path ?? "").Distinct(StringComparer.Ordinal).Except(StandardMenus, StringComparer.Ordinal)];
+        MenuViewModel[] built = [.. names.Select(name => Build(name, withMenu))];
+        Menus.Clear();
+        foreach (MenuViewModel menu in built)
+        {
+            Menus.Add(menu);
+        }
+    }
 
     private MenuViewModel Build(string name, CommandDescriptor[] withMenu)
     {
@@ -74,5 +95,9 @@ public sealed class MenuBarViewModel : IDisposable
         return entry;
     }
 
-    private void OnCommandStatesChanged(object? sender, EventArgs e) => entries.ForEach(entry => entry.Refresh());
+    private void OnCommandStatesChanged(object? sender, EventArgs e)
+    {
+        CommandContext pulse = invoker.CreateContext();
+        entries.ForEach(entry => entry.Refresh(pulse));
+    }
 }

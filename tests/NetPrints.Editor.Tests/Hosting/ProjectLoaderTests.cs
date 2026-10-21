@@ -3,6 +3,7 @@ using NetPrints.Editor.Hosting;
 using NetPrints.Editor.References;
 using NetPrints.Editor.Shell;
 using NetPrints.Extensibility.Loading;
+using NetPrints.Extensibility.Nodes;
 using NetPrints.Projects;
 
 namespace NetPrints.Editor.Tests.Hosting;
@@ -13,6 +14,7 @@ public sealed class ProjectLoaderTests : IDisposable
     // The loader reloads the reflection host fire-and-forget whenever a project is set; a private
     // host keeps those reloads from replacing the provider the shared host serves to other tests.
     private readonly TestEditor testEditor = TestEditor.Create(TestEditor.CreateReflectionHost);
+
     private readonly List<string> cleanup = [];
     private readonly List<ProjectRig> rigs = [];
 
@@ -33,6 +35,23 @@ public sealed class ProjectLoaderTests : IDisposable
         var rig = new ProjectRig(context ?? testEditor.Context);
         rigs.Add(rig);
         return rig;
+    }
+
+    // US11 scenario 5 (FR-085): loading a project through the editor's project system writes no generated file.
+    [Fact(Timeout = 120_000)]
+    public async Task LoadingAProjectWritesNoGeneratedFile()
+    {
+        string csproj = Track(GeneratedFileTree.CreateStaleSample());
+        string directory = Path.GetDirectoryName(csproj) ?? throw new InvalidOperationException("The sample has no directory.");
+        Dictionary<string, string> before = GeneratedFileTree.Read(directory);
+        Assert.NotEmpty(before);
+        await using ExtensionHost extensions = TestExtensions.CreateBuiltIn();
+        var projects = new NetPrints.Workspace.MsBuildProjectSystem(
+            EditorServices.CreateProjectSystemOptions(extensions), new ProcessRunner(), Microsoft.Extensions.Logging.Abstractions.NullLogger<NetPrints.Workspace.MsBuildProjectSystem>.Instance);
+
+        await projects.LoadAsync(csproj, TestContext.Current.CancellationToken);
+
+        Assert.Equal(before, GeneratedFileTree.Read(directory));
     }
 
     [Fact]
@@ -347,6 +366,36 @@ public sealed class ProjectLoaderTests : IDisposable
 
         Assert.Same(projectA, rig.Project);
         Assert.Contains(testEditor.Dialogs.Errors, e => e.Title == "Failed to load project");
+    }
+
+    private sealed class OtherServiceProbe;
+
+    [Fact]
+    public async Task AFailedSwitchLeavesTheOpenSessionsExtensionServicesUsable()
+    {
+        testEditor.Dialogs.TrustAnswer = true;
+        ProjectRig rig = NewRig();
+        CancellationToken ct = TestContext.Current.CancellationToken;
+
+        string pathA = Track(TestPaths.CopyHelloWorldSample());
+        ProjectSnapshot snapshotA = await testEditor.Projects.LoadAsync(pathA, ct);
+        testEditor.Projects.Seed(snapshotA with { ExtensionFolders = [Path.Combine(Path.GetDirectoryName(pathA) ?? pathA, "ExtA")] });
+        await rig.LoadProjectAsync(pathA);
+        ProjectSessionViewModel sessionA = Assert.IsType<ProjectSessionViewModel>(rig.Session);
+        Assert.NotNull(sessionA.ExtensionServices(BuiltInNodeLibrary.Id));
+
+        string pathB = Track(TestPaths.CopyHelloWorldSample());
+        ProjectSnapshot snapshotB = await testEditor.Projects.LoadAsync(pathB, ct);
+        testEditor.Projects.Seed(snapshotB with
+        {
+            ExtensionFolders = [Path.Combine(Path.GetDirectoryName(pathB) ?? pathB, "ExtB")],
+            GraphFiles = [Path.Combine(Path.GetDirectoryName(pathB) ?? pathB, "Missing.netpc.json")],
+        });
+
+        await rig.LoadProjectAsync(pathB);
+
+        Assert.Same(sessionA, rig.Session);
+        Assert.Null(sessionA.ExtensionServices(BuiltInNodeLibrary.Id).GetService(typeof(OtherServiceProbe)));
     }
 
     /// <summary>Delegates to a real <see cref="IExtensionHost"/>, except a chosen call number to

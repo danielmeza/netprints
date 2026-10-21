@@ -6,7 +6,7 @@ using NetPrints.Editor.UndoRedo;
 namespace NetPrints.Editor.Commands;
 
 /// <summary>The <c>undo</c> command: undoes the last command of the active document's class, or of the tree selection's class when no document is active.</summary>
-public sealed class UndoCommandHandler : ICommandHandler
+public sealed class UndoCommandHandler : IEditorCommandHandler
 {
     /// <inheritdoc/>
     public bool CanExecute(CommandContext context) => StackOf(context) is { CanUndo: true };

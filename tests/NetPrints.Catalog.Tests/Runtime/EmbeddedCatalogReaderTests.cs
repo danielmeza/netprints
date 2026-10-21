@@ -7,6 +7,7 @@ using System.Runtime.Loader;
 using Microsoft.CodeAnalysis;
 using NetPrints.Catalog.Tests.Generator;
 using NetPrints.Reflection;
+using NetPrints.Testing.Roslyn;
 using Xunit;
 
 namespace NetPrints.Catalog.Tests.Runtime;

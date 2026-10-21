@@ -42,7 +42,7 @@ public class ContactSheetTests
     private const int PanelWidth = 700;
     private const int PanelHeight = 525;
     private const int Rows = 18;
-    private const int OwnerCalls = 5;
+    private const int OwnerCalls = 1;
     private const int MarkTiles = 2;
 
     private static readonly (string Name, ThemeVariant Variant, double Scale)[] Variants =
@@ -284,7 +284,7 @@ public class ContactSheetTests
             }
         }
 
-        return [new ContactSection("Panels (top-left 700x525, so each shows its empty state or content), documents and dialogs", grid), new ContactSection("The new defaults against Classic Dark (same graph, both Dark 1.0; Classic Dark is a test-only override until P3) and the product mark", strip)];
+        return [new ContactSection("Panels (top-left 700x525, so each shows its empty state or content), documents and dialogs", grid), new ContactSection("The new defaults (Dark 1.0) and the product mark", strip)];
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
@@ -356,18 +356,9 @@ public class ContactSheetTests
 
             Apply(ThemeVariant.Dark, 1.0, windows);
             var view = session.Window.GetVisualDescendants().OfType<GraphEditorView>().First();
-            CurrentApplication.TryGetResource("Pin.TypeShape.Triangle", CurrentApplication.ActualThemeVariant, out object? triangle);
-            Assert.NotNull(triangle);
-            void Triangle(ResourceDictionary resources) => resources["Pin.TypeShape"] = triangle;
-            void Canvas(ResourceDictionary resources) => resources["Canvas.Background"] = Color.Parse("#FF000000");
-            void Card(ResourceDictionary resources) => resources["Node.CardBackground"] = new SolidColorBrush(Color.Parse("#AA202020"));
             (string Label, Action<ResourceDictionary> Overrides)[] calls =
             [
                 ("New defaults (Dark): diamond pins, canvas #262626, card #D9141414", _ => { }),
-                ("Classic Dark, pins only: triangle", Triangle),
-                ("Classic Dark, canvas only: #000", Canvas),
-                ("Classic Dark, card only: #AA202020", Card),
-                ("Classic Dark, all three: triangle, #000, #AA202020", resources => { Triangle(resources); Canvas(resources); Card(resources); }),
             ];
             List<ContactTile> strip = [];
             foreach ((string label, Action<ResourceDictionary> overrides) in calls)

@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using NetPrints.Core;
@@ -14,20 +15,40 @@ public sealed record NetPrintsSettings
     /// </summary>
     public const string SectionId = "netprints";
 
+    /// <summary>The id of the choices provider of <see cref="Language"/>: the cultures the editor ships, plus the system language.</summary>
+    public const string LanguageChoices = "netprints.languages";
+
     /// <summary>
     /// Directories searched for extensions; each immediate subfolder holding a manifest is loaded.
     /// </summary>
+    [NonBlankItems]
+    [RequiresRestart]
+    [SettingPath(PathKind.Folder)]
+    [Description("Folders searched for extensions. Each subfolder that holds a manifest is loaded at the next start")]
     public IReadOnlyList<string> ExtensionPaths { get; init; } = [];
 
     /// <summary>
     /// Full <c>.csproj</c> paths whose <c>NetPrintsExtension</c> items the user allowed.
     /// </summary>
+    [NonBlankItems]
+    [SettingPath(PathKind.File)]
+    [Description("Project files whose extensions you allowed to load")]
     public IReadOnlyList<string> TrustedProjects { get; init; } = [];
 
     /// <summary>
     /// Whether to enable UI animations (disable for accessibility/Reduced Motion).
     /// </summary>
+    [Description("Turns the interface animations on. Turn them off to reduce motion")]
     public bool EnableAnimations { get; init; } = true;
+
+    /// <summary>
+    /// The UI language: <c>en</c> (English), the only culture the editor ships so far, or empty for the operating system's culture. A change applies after a restart.
+    /// </summary>
+    [CultureName]
+    [SettingChoices(LanguageChoices)]
+    [RequiresRestart]
+    [Description("The interface language: en (English), the only language shipped so far. Empty uses the system language")]
+    public string Language { get; init; } = "";
 
     /// <summary>
     /// The default: no extension paths and no trusted projects, animations enabled.
@@ -39,7 +60,13 @@ public sealed record NetPrintsSettings
     /// </summary>
     [Experimental(ExperimentalApiIds.Settings, UrlFormat = ExperimentalApiIds.UrlFormat)]
     public static ExtensionSettingsDescriptor<NetPrintsSettings> Descriptor { get; } =
-        new(SectionId, NetPrintsSettingsJsonContext.Default.NetPrintsSettings, Empty);
+        new(SectionId, NetPrintsSettingsJsonContext.Default.NetPrintsSettings, Empty)
+        {
+            Validator = Validate,
+        };
+
+    private static string[] Validate(NetPrintsSettings value)
+        => [.. new NetPrintsSettingsValidator().Validate(null, value).Failures ?? []];
 }
 
 /// <summary>

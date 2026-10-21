@@ -18,6 +18,7 @@ public class DocumentIdTests
     [InlineData("graph:Interop#2/Foo.netpc.json#method:m1")]
     [InlineData("start")]
     [InlineData("project-settings")]
+    [InlineData("settings")]
     public void ARoundTripThroughToStringAndTryParseKeepsTheValue(string text)
     {
         Assert.True(DocumentId.TryParse(text, out var id));
@@ -58,6 +59,8 @@ public class DocumentIdTests
         Assert.Equal(DocumentKind.StartPage, DocumentId.StartPage.Kind);
         Assert.Equal("project-settings", DocumentId.ProjectSettings.ToString());
         Assert.Equal(DocumentKind.ProjectSettings, DocumentId.ProjectSettings.Kind);
+        Assert.Equal("settings", DocumentId.Settings.ToString());
+        Assert.Equal(DocumentKind.Settings, DocumentId.Settings.Kind);
         Assert.Null(DocumentId.StartPage.ClassPath);
         Assert.Null(DocumentId.StartPage.GraphKey);
     }

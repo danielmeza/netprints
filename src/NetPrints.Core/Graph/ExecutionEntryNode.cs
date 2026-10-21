@@ -8,15 +8,13 @@ namespace NetPrints.Graph
     /// (see <see cref="ExecutionGraph.EntryNode"/>): <see cref="MethodEntryNode"/> for a method,
     /// <see cref="ConstructorEntryNode"/> for a constructor.
     /// </summary>
-    public abstract class ExecutionEntryNode : Node
+    [NodeBase]
+    public abstract partial class ExecutionEntryNode : Node
     {
         /// <summary>
         /// Output execution pin that initially executes when a method gets called.
         /// </summary>
-        public NodeOutputExecPin InitialExecutionPin
-        {
-            get { return OutputExecPins[0]; }
-        }
+        public partial NodeOutputExecPin ExecPin { get; }
 
         /// <summary>
         /// Adds this node to <paramref name="graph"/>.

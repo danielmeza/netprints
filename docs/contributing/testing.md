@@ -5,6 +5,7 @@
 | Project | Covers |
 |---|---|
 | `NetPrints.Core.Tests` | The model, serialization, translation and the repository rules (`SourceHygieneTests`, golden fixtures). |
+| `NetPrints.Analyzers.Tests` | Every Roslyn analyzer, code fix and generator NetPrints owns (ADR-0024): the analyzer assemblies load into a `CompilationWithAnalyzers` host and report their supported diagnostics. |
 | `NetPrints.Catalog.Tests` | The type catalog and its annotations. |
 | `NetPrints.Cli.Tests` | The `netprints` command line, in process (`CliTestHost`); some tests run the real tool or the real project system as child processes. |
 | `NetPrints.Editor.Tests` | Editor view models and hosting services, over fakes (no window), and the checks of the editor guides ([below](#documentation-checks-and-guide-screenshots)). |
@@ -130,9 +131,10 @@ Runs on every pull request to `master`, every push to `master` and on demand.
 |---|---|---|
 | `checks` | Repository checks (Linux) | Builds `NetPrints.slnx` in Release, runs the graph checks (`regen --check`, `format --check`), `dotnet format --verify-no-changes`, the Desktop E2E smoke step (no display, always-on tests only), the CLI smoke and the sample compile and run, and fails on any changed generated file. |
 | `test` | Test (Core), Test (Catalog), Test (CLI), Test (Editor), Test (Editor UI (headless) 1/4) to 4/4 | One matrix leg per test project, run in parallel (`fail-fast: false`); the headless UI project runs in four shards split by namespace (shard 4 is the complement of the `--filter-namespace` lists of shards 1 to 3). Each leg builds only its own project in Release and runs it with `--report-xunit-trx` and static code coverage ([ADR-0008](../adr/0008-static-only-code-coverage.md)). |
-| `build-test` | **Build and test (Linux)** | The aggregate. It runs even when a job it needs failed and fails unless `checks` and every `test` leg succeeded. |
+| `build-test` | **Build and test (Linux)** | The aggregate. It runs even when a job it needs failed and fails unless `checks`, every `test` leg, `godot-extension` and `godot-smoke` succeeded. |
 | `e2e` | **Desktop E2E (Linux, Xvfb)** | The Desktop E2E project on Xvfb with `NETPRINTS_E2E=1` and `--fail-skips on`. |
 | `packages`, `desktop-publish`, `jsonschema` | Packages (local feed), Self-contained editor smoke (linux-x64), JSON Schema (metaschema, lint, validate) | Packaging and schema checks; they run no tests. |
+| `godot-extension`, `godot-smoke` | Godot extension (packed packages), Godot extension loads in the editor host | The sample extension built, tested, packed and verified against the packed packages through `netprints-extension.yml`, then loaded by the editor host (`GodotExtensionHostTests`). Both are in the aggregate. |
 
 Branch protection requires two checks, `Build and test (Linux)` and `Desktop E2E (Linux, Xvfb)`. Do not rename them.
 A new test leg is covered by the aggregate without touching branch protection.
@@ -154,6 +156,24 @@ Runs the tests with `[Trait("Category", "Performance")]` of `tests/NetPrints.Cor
 (3x the spec target, best of three restored runs). It is not a required check and is not in the `build-test` aggregate.
 The blocking `Editor` leg runs the same tests with the sanity bound only, so a slow shared runner cannot fail a pull
 request, while an order-of-magnitude regression still does.
+
+The job then judges SC-005's M1 (shell start) and M2 (graph scope) against R5-0, the commit before the composition
+moved to MS.DI, on the same runner ([ADR-0031](../adr/0031-editor-composition-and-di.md) amendment 1):
+`eng/perf/prepare-r5-0.sh` checks R5-0 out as a worktree, applies `eng/perf/r5-0.patch` and copies this tree's
+`tests/NetPrints.Testing/PerformanceGate.cs` into it, and builds its two test projects; `eng/perf/ab.sh` runs the two
+trees in alternation, one fresh test process per run, and fails when the head's time (GC pauses left out) or allocated
+bytes is more than 10% over R5-0's. It prints every run, both trees' figures, the ratios and the CPU model, and the
+per-run lines are uploaded as `TestResults/perf-ab.txt`. To run it locally, build the head's
+`tests/NetPrints.Editor.Tests` and `tests/NetPrints.Editor.UITests` in Release, then:
+
+```bash
+eng/perf/prepare-r5-0.sh ../r5-0     # once; it resets the worktree on later calls
+eng/perf/ab.sh ../r5-0 .             # --rounds N (default 8), --metrics "M1", --results FILE
+git worktree remove --force ../r5-0  # when done
+```
+
+A change to how the M1 or M2 test times a sample (`TimeOneStartAsync`, `TimeOneBuild`) is made in the test and in
+`eng/perf/r5-0.patch`, so both trees keep measuring the same thing.
 
 ### `CLI (Windows)` (`.github/workflows/cli-windows.yml`)
 

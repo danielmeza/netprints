@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using NetPrints.Testing.Roslyn;
 
 namespace NetPrints.Catalog.Tests.Generator;
 

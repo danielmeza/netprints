@@ -20,22 +20,48 @@ public sealed partial class NewProjectDialogViewModel : DialogViewModel<string?>
     private bool inputIsValid;
     private bool closeAfterCancel;
 
-    internal NewProjectDialogViewModel(ProjectTemplateService service, IFilePickerService filePicker, ProjectLocations locations, TimeProvider time)
+    internal NewProjectDialogViewModel(ProjectTemplateService service, IFilePickerService filePicker, ProjectLocations locations, TimeProvider time, string? profileId = null)
     {
         this.service = service;
         this.filePicker = filePicker;
         this.locations = locations;
         this.time = time;
+        ProfileId = profileId;
         Location = locations.Last;
-        Templates = service.Templates;
-        SelectedTemplate = Templates.Count > 0 ? Templates[0] : null;
+        Templates = [];
+        ApplyFilter();
     }
 
     /// <summary>The pause in typing after which the name and folder are checked.</summary>
     internal static readonly TimeSpan ValidationDelay = TimeSpan.FromMilliseconds(250);
 
+    /// <summary>Gets the profile the list is narrowed to (<c>--profile</c>), or null.</summary>
+    public string? ProfileId { get; }
+
+    /// <summary>Gets a value indicating whether the list is narrowed to <see cref="ProfileId"/> and the user can show all.</summary>
+    public bool IsFiltered => ProfileId is not null;
+
+    /// <summary>Gets the note that names the profile the list is narrowed to.</summary>
+    public string ProfileNote => ProfileId is null ? "" : TextFormat.Of(Strings.NewProject_ProfileNote, ProfileId);
+
+    /// <summary>Gets or sets a value indicating whether every template shows instead of the ones of <see cref="ProfileId"/>.</summary>
+    [ObservableProperty]
+    public partial bool ShowAll { get; set; }
+
     /// <summary>Gets the templates the user can choose from.</summary>
-    public IReadOnlyList<ProjectTemplateDescriptor> Templates { get; }
+    [ObservableProperty]
+    public partial IReadOnlyList<ProjectTemplateDescriptor> Templates { get; private set; }
+
+    partial void OnShowAllChanged(bool value) => ApplyFilter();
+
+    private void ApplyFilter()
+    {
+        Templates = ProfileId is null || ShowAll ? service.Templates : [.. service.Templates.Where(t => string.Equals(t.ProfileId, ProfileId, StringComparison.Ordinal))];
+        if (SelectedTemplate is null || !Templates.Contains(SelectedTemplate))
+        {
+            SelectedTemplate = Templates.Count > 0 ? Templates[0] : null;
+        }
+    }
 
     /// <summary>Gets or sets the chosen template.</summary>
     [ObservableProperty]

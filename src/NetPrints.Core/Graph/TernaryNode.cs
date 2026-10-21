@@ -14,15 +14,6 @@ namespace NetPrints.Graph
         private const int ConditionPinIndex = 2;
 
         /// <summary>
-        /// Always <see langword="true"/>: selecting between two already-computed values has no side
-        /// effects worth sequencing.
-        /// </summary>
-        public override bool CanSetPure
-        {
-            get => true;
-        }
-
-        /// <summary>
         /// Pin for the object to choose when the condition was true.
         /// </summary>
         public NodeInputDataPin TrueObjectPin
@@ -83,6 +74,7 @@ namespace NetPrints.Graph
             AddInputDataPin("False", TypeSpecifier.FromType<object>());
             AddInputDataPin("Condition", TypeSpecifier.FromType<bool>());
             AddOutputDataPin("Output", Type);
+            OutputDataPins[^1].Role = PinRole.Result;
         }
 
         /// <summary>

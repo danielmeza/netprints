@@ -29,7 +29,9 @@ internal static class ValueConverters
     private sealed class LiteralNodeConverter : INodeDocumentConverter
     {
         public string Kind => BuiltInNodeKinds.Literal;
+
         public Type NodeType => typeof(LiteralNode);
+
         public Type DocumentType => typeof(LiteralNodeDocument);
 
         public NodeDocument ToDocument(Node node, NodeMappingContext context)
@@ -48,7 +50,9 @@ internal static class ValueConverters
     private sealed class TypeNodeConverter : INodeDocumentConverter
     {
         public string Kind => BuiltInNodeKinds.Type;
+
         public Type NodeType => typeof(TypeNode);
+
         public Type DocumentType => typeof(TypeNodeDocument);
 
         public NodeDocument ToDocument(Node node, NodeMappingContext context)
@@ -67,7 +71,9 @@ internal static class ValueConverters
     private sealed class MakeArrayTypeNodeConverter : INodeDocumentConverter
     {
         public string Kind => BuiltInNodeKinds.MakeArrayType;
+
         public Type NodeType => typeof(MakeArrayTypeNode);
+
         public Type DocumentType => typeof(MakeArrayTypeNodeDocument);
 
         public NodeDocument ToDocument(Node node, NodeMappingContext context) => new MakeArrayTypeNodeDocument(node.Id, null, null);
@@ -78,7 +84,9 @@ internal static class ValueConverters
     private sealed class MakeArrayNodeConverter : INodeDocumentConverter
     {
         public string Kind => BuiltInNodeKinds.MakeArray;
+
         public Type NodeType => typeof(MakeArrayNode);
+
         public Type DocumentType => typeof(MakeArrayNodeDocument);
 
         public NodeDocument ToDocument(Node node, NodeMappingContext context)
@@ -112,7 +120,9 @@ internal static class ValueConverters
     private sealed class ExplicitCastNodeConverter : INodeDocumentConverter
     {
         public string Kind => BuiltInNodeKinds.ExplicitCast;
+
         public Type NodeType => typeof(ExplicitCastNode);
+
         public Type DocumentType => typeof(ExplicitCastNodeDocument);
 
         public NodeDocument ToDocument(Node node, NodeMappingContext context) => new ExplicitCastNodeDocument(node.Id, null, null, node.IsPure);
@@ -129,7 +139,9 @@ internal static class ValueConverters
     private sealed class TypeOfNodeConverter : INodeDocumentConverter
     {
         public string Kind => BuiltInNodeKinds.TypeOf;
+
         public Type NodeType => typeof(TypeOfNode);
+
         public Type DocumentType => typeof(TypeOfNodeDocument);
 
         public NodeDocument ToDocument(Node node, NodeMappingContext context) => new TypeOfNodeDocument(node.Id, null, null);
@@ -140,7 +152,9 @@ internal static class ValueConverters
     private sealed class DefaultNodeConverter : INodeDocumentConverter
     {
         public string Kind => BuiltInNodeKinds.Default;
+
         public Type NodeType => typeof(DefaultNode);
+
         public Type DocumentType => typeof(DefaultNodeDocument);
 
         public NodeDocument ToDocument(Node node, NodeMappingContext context) => new DefaultNodeDocument(node.Id, null, null);

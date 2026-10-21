@@ -18,7 +18,7 @@ Replaces a `KeyDown` handler in code-behind that checks `e.Key == Key.Enter` and
 decision (which result to open) stays in the VM command, where a unit test can reach it.
 
 ```xml
-<!-- src/NetPrints.Editor/Search/NodeSearchView.axaml -->
+<!-- src/NetPrints.Editor/NodeSearch/NodeSearchView.axaml -->
 <TextBox Text="{Binding SearchText}">
   <Interaction.Behaviors>
     <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding SelectFirstCommand}" />
@@ -34,7 +34,7 @@ Inside an item template the `DataContext` is the item, so reach up to the list's
 and pass the item as the parameter.
 
 ```xml
-<!-- src/NetPrints.Editor/Search/NodeSearchView.axaml -->
+<!-- src/NetPrints.Editor/NodeSearch/NodeSearchView.axaml -->
 <DataTemplate x:DataType="edsearch:SuggestionItem">
   <Panel Background="Transparent">
     <Interaction.Behaviors>

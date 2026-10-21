@@ -1,0 +1,8 @@
+{
+  "id": "my.extension",
+  "name": "MyExtension",
+  "version": "1.0.0",
+  "assembly": "MyExtension.dll",
+  "netprintsApi": "0.4",
+  "dependsOn": []
+}

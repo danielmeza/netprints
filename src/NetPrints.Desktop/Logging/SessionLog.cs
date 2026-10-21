@@ -26,6 +26,7 @@ internal sealed class SessionLog : IDisposable
     private const string FileNamePrefix = "netprints-";
     private const string FileNameExtension = ".log";
     private const string FileNameTimestamp = "yyyyMMdd-HHmmss";
+
     private const string LineLayout =
         "${longdate}|${level:uppercase=true:padding=-5}|${logger}|${message}${onexception:inner=${newline}${exception:format=tostring}}";
 

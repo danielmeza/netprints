@@ -89,12 +89,8 @@ internal sealed class NoProjectActions : IProjectActions
 internal sealed class ShellRig : IDisposable
 {
     public const int Width = 1600;
-    public const int Height = 1000;
 
-    private sealed class NoServices : IServiceProvider
-    {
-        public object? GetService(Type serviceType) => null;
-    }
+    public const int Height = 1000;
 
     private sealed class ImmediateDispatcher : IUiDispatcher
     {
@@ -132,7 +128,9 @@ internal sealed class ShellRig : IDisposable
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         BuiltInContributions.Register(registry);
         registry.Freeze();
-        var shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, new ImmediateDispatcher());
+        NetPrints.Editor.Hosting.ViewResourceLoader.Sync(
+            Avalonia.Application.Current ?? throw new InvalidOperationException("The headless application is not running."), registry.ViewResources);
+        var shell = new ShellViewModel(registry, PanelFactoryContext.Detached, TimeProvider.System, new ImmediateDispatcher());
         var adapter = new DockShellAdapter(shell, new NoProjectActions(), documents ?? (id => new TestDocumentViewModel(id, id.GraphKey ?? id.ToString())), logger ?? NullLogger.Instance);
         shell.Layout = adapter;
         var ui = HeadlessUi.Create();

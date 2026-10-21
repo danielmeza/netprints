@@ -17,7 +17,7 @@ using NetPrints.Editor.UndoRedo;
 using NetPrints.Graph;
 using NetPrints.Testing.Ui.Driving;
 using NetPrints.Testing.Ui.Shell;
-using DocumentId = NetPrints.Editor.Shell.DocumentId;
+using DocumentId = NetPrints.Extensibility.Editor.DocumentId;
 
 namespace NetPrints.Editor.UITests.Shell;
 
@@ -25,11 +25,6 @@ namespace NetPrints.Editor.UITests.Shell;
 public class DocumentTabsTests
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;
-
-    private sealed class NoServices : IServiceProvider
-    {
-        public object? GetService(Type serviceType) => null;
-    }
 
     private sealed class ImmediateDispatcher : IUiDispatcher
     {
@@ -62,7 +57,7 @@ public class DocumentTabsTests
             registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
             BuiltInContributions.Register(registry);
             registry.Freeze();
-            Shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, new ImmediateDispatcher());
+            Shell = new ShellViewModel(registry, PanelFactoryContext.Detached, TimeProvider.System, new ImmediateDispatcher());
             Adapter = new DockShellAdapter(Shell, new NoProjectActions(), CreateDocument, NullLogger.Instance);
             Shell.Layout = Adapter;
             Invoker = new CommandInvoker(registry, new ShellCommandContextProvider(Shell, Adapter), Faults.Add);

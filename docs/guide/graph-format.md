@@ -87,6 +87,38 @@ creates that many arguments typed `object`. This means **an older editor drops c
 when it saves the graph**: it reads the entry with untyped arguments and writes it back without the
 `arguments` array. An override entry never writes `arguments`; its arguments come from the base method.
 
+## Calls with `out` and `ref` parameters
+
+A call node gets one output data pin for each `out` or `ref` parameter of its method, after the pins for the
+return values. The pin is keyed by the parameter name (`out.data.<parameterName>`; a parameter named `Exception` is keyed
+`out.data.param:Exception`, because `out.data.Exception` belongs to the exception pin) and carries the parameter's
+value after the call. The pins are derived from the method when the graph loads, so the file format is unchanged
+and version 1 stays additive: a graph that wires nothing to the new pins is written exactly as before, and a
+connection to one is an ordinary connection entry. A void method with an `out` parameter can be pure; an `out`
+or `ref` input still needs a variable connected to it.
+
+## Unknown members
+
+A member this build does not know, at any level of a graph file (the class, a graph, a method, a node, a
+pin, a connection), survives a load and save of the document. It is kept as an opaque value, written after
+the known members of its object and in ordinal key order. `netprints format` keeps it, `netprints show`
+prints it as `unknown <key> <value>`, and the merge driver takes the change of whichever side changed it,
+or reports a conflict when both sides changed the same member to different values. This lets a newer
+editor, or an extension, add a field without an older editor discarding it. Inside a type, method, variable or
+value reference, `format`, `show` and the merge driver keep an unknown member, but the editor rewrites those
+references from its own types, so its save drops it.
+
+## Node data versions
+
+A node of an extension kind may carry a `kindVersion` member: the version of the data its kind wrote it with. The member
+is written only when the kind declares a data version above 0, so every built-in node, and every file written before an
+extension versions its data, stays byte for byte as it was. A node without the member has version 0.
+
+When the extension declares a newer data version, the editor upgrades the node as the file opens: the migrations the
+extension registered for that kind run in order, from the node's stored version up to the current one, and the node is
+saved with the new `kindVersion`. A migration changes only the JSON of its own node. An older editor that does not know
+the kind keeps the node, `kindVersion` included, as an unknown node.
+
 ## Version control
 
 Graph files are designed to work well in git: they are text, canonical (deterministic bytes), and

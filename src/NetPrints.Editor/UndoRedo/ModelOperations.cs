@@ -9,10 +9,10 @@ namespace NetPrints.Editor.UndoRedo;
 public static class ModelOperations
 {
     /// <summary>Text of the <see cref="MakeArrayNode"/> overload that switches to initializer-list mode.</summary>
-    public const string UseInitializerList = "Use initializer list";
+    public const string UseInitializerList = MakeArrayNode.UseInitializerListOverload;
 
     /// <summary>Text of the <see cref="MakeArrayNode"/> overload that switches to predefined-size mode.</summary>
-    public const string UsePredefinedSize = "Use predefined size";
+    public const string UsePredefinedSize = MakeArrayNode.UsePredefinedSizeOverload;
 
     /// <summary>Creates the getter method of a variable (entry and return nodes connected, typed return).</summary>
     public static MethodGraph CreateGetter(Variable variable)
@@ -28,7 +28,7 @@ public static class ModelOperations
         method.MainReturnNode.PositionX = method.EntryNode.PositionX + GraphUtil.NewMethodReturnOffsetX;
         method.MainReturnNode.PositionY = method.EntryNode.PositionY;
 
-        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, method.MainReturnNode.ReturnPin);
+        GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, method.MainReturnNode.ExecPin);
 
         const int offsetX = -308;
         const int offsetY = -112;
@@ -54,7 +54,7 @@ public static class ModelOperations
         method.MainReturnNode.PositionX = method.EntryNode.PositionX + GraphUtil.NewMethodReturnOffsetX;
         method.MainReturnNode.PositionY = method.EntryNode.PositionY;
 
-        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, method.MainReturnNode.ReturnPin);
+        GraphUtil.ConnectExecPins(method.EntryNode.ExecPin, method.MainReturnNode.ExecPin);
 
         const int offsetX = -308;
         const int offsetY = -112;
@@ -67,13 +67,7 @@ public static class ModelOperations
     }
 
     /// <summary>The current overload of a node, or null when the node has none.</summary>
-    public static object? GetCurrentOverload(Node node) => node switch
-    {
-        CallMethodNode call => call.MethodSpecifier,
-        ConstructorNode ctor => ctor.ConstructorSpecifier,
-        MakeArrayNode makeArray => makeArray.UsePredefinedSize ? UsePredefinedSize : UseInitializerList,
-        _ => null,
-    };
+    public static object? GetCurrentOverload(Node node) => (node as IOverloadableNode)?.CurrentOverload;
 
     /// <summary>
     /// Changes the overload of a node. Call and constructor nodes are replaced by a new node at
@@ -82,23 +76,15 @@ public static class ModelOperations
     /// </summary>
     public static Node ChangeOverload(Node node, object overload)
     {
-        Node? newNode;
-        if (overload is MethodSpecifier methodSpecifier && node is CallMethodNode)
-        {
-            newNode = new CallMethodNode(node.Graph, methodSpecifier);
-        }
-        else if (overload is ConstructorSpecifier constructorSpecifier && node is ConstructorNode)
-        {
-            newNode = new ConstructorNode(node.Graph, constructorSpecifier);
-        }
-        else if (overload is string mode && node is MakeArrayNode makeArrayNode)
-        {
-            makeArrayNode.UsePredefinedSize = string.Equals(mode, UsePredefinedSize, StringComparison.OrdinalIgnoreCase);
-            return node;
-        }
-        else
+        if (node is not IOverloadableNode overloadable)
         {
             throw new InvalidOperationException("Tried to change the overload of a node that does not support overloads.");
+        }
+
+        Node? newNode = overloadable.ChangeOverload(overload);
+        if (newNode is null)
+        {
+            return node;
         }
 
         // Remember the old execution connections to restore them on the new node.

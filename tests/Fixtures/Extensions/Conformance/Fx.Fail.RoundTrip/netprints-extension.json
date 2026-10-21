@@ -1,0 +1,8 @@
+{
+  "id": "fx.fail.roundtrip",
+  "name": "Fails NPK006: writes a different document each time",
+  "version": "1.0.0",
+  "assembly": "Fx.Fail.RoundTrip.dll",
+  "netprintsApi": "0.4",
+  "dependsOn": []
+}

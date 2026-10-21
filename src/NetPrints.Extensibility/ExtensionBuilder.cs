@@ -1,12 +1,17 @@
+using System.Reflection;
+using System.Resources;
 using System.Text.Json.Serialization.Metadata;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NetPrints.Catalog;
 using NetPrints.Core;
+using NetPrints.Extensibility.Editor;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Nodes;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Reflection;
+using NetPrints.Serialization.Migrations;
 using NetPrints.Translator;
 
 namespace NetPrints.Extensibility;
@@ -24,13 +29,19 @@ internal sealed record ExtensionContributions(
     IReadOnlyList<string> ProjectProperties,
     IReadOnlyList<IHostChannelFactory> HostChannels,
     IReadOnlyList<ExtensionSettingsDescriptor> Settings,
-    IReadOnlyList<CatalogProfile> CatalogProfiles);
+    IReadOnlyList<CatalogProfile> CatalogProfiles,
+    IReadOnlyList<ResourceManager> StringResources,
+    IReadOnlyList<INodeSuggestionProvider> SuggestionProviders,
+    IReadOnlyList<INodeDataMigration> NodeDataMigrations,
+    IReadOnlyList<ProjectTemplateDescriptor> ProjectTemplates,
+    IServiceCollection Services,
+    Assembly OwnAssembly);
 
 /// <summary>
 /// The builder handed to <see cref="INetPrintsExtension.Register"/>: it buffers, and the loader commits the
 /// buffer only if <c>Register</c> returns normally.
 /// </summary>
-internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactory loggerFactory) : IExtensionBuilder
+internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactory loggerFactory, Assembly ownAssembly) : IExtensionBuilder
 {
     private readonly List<INodeLibrary> nodeLibraries = [];
     private readonly List<IClassEmitter> classEmitters = [];
@@ -42,11 +53,25 @@ internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactor
     private readonly List<IHostChannelFactory> hostChannels = [];
     private readonly List<ExtensionSettingsDescriptor> settings = [];
     private readonly List<CatalogProfile> catalogProfiles = [];
+    private readonly List<ResourceManager> stringResources = [];
+    private readonly List<INodeSuggestionProvider> suggestionProviders = [];
+    private readonly List<INodeDataMigration> nodeDataMigrations = [];
+    private readonly List<ProjectTemplateDescriptor> projectTemplates = [];
     private bool sealedBuilder;
+    private BufferedEditorContributions? editor;
 
     public ExtensionManifest Manifest { get; } = manifest;
 
+    public IEditorContributions Editor => BufferedEditor;
+
+    /// <summary>
+    /// Gets the buffer behind <see cref="Editor"/>; the loader replays it to the host's facet once registration has succeeded.
+    /// </summary>
+    internal BufferedEditorContributions BufferedEditor => editor ??= new BufferedEditorContributions(Manifest.Id, () => sealedBuilder);
+
     public ILoggerFactory LoggerFactory { get; } = loggerFactory;
+
+    public IServiceCollection Services { get; } = new ServiceCollection();
 
     public IExtensionBuilder AddNodeLibrary(INodeLibrary library) => Add(nodeLibraries, library);
 
@@ -73,6 +98,14 @@ internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactor
 
     public IExtensionBuilder AddCatalogProfile(CatalogProfile profile) => Add(catalogProfiles, profile);
 
+    public IExtensionBuilder AddStringResources(ResourceManager resources) => Add(stringResources, resources);
+
+    public IExtensionBuilder AddSuggestionProvider(INodeSuggestionProvider provider) => Add(suggestionProviders, provider);
+
+    public IExtensionBuilder AddProjectTemplate(ProjectTemplateDescriptor template) => Add(projectTemplates, template);
+
+    public IExtensionBuilder AddDocumentMigration(INodeDataMigration migration) => Add(nodeDataMigrations, migration);
+
     /// <summary>
     /// Ends registration: later builder calls throw. Returns what was buffered.
     /// </summary>
@@ -81,7 +114,7 @@ internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactor
         sealedBuilder = true;
         return new ExtensionContributions(
             [.. nodeLibraries], [.. classEmitters], [.. memberEmitters], [.. typeCatalogs], [.. profiles], [.. jsonResolvers], [.. projectProperties],
-            [.. hostChannels], [.. settings], [.. catalogProfiles]);
+            [.. hostChannels], [.. settings], [.. catalogProfiles], [.. stringResources], [.. suggestionProviders], [.. nodeDataMigrations], [.. projectTemplates], Services, ownAssembly);
     }
 
     private ExtensionBuilder Add<T>(List<T> list, T item)

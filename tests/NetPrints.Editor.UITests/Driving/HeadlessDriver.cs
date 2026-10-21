@@ -234,6 +234,7 @@ public sealed class HeadlessDriver(AutomationTree tree, Func<string> programOutp
         string name = parts[^1] switch
         {
             "Esc" => nameof(Key.Escape),
+            "," => nameof(Key.OemComma),
             var s when s.Length == 1 && char.IsDigit(s[0]) => "D" + s,
             var s => s,
         };

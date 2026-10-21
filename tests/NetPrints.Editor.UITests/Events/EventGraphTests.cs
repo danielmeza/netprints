@@ -1,7 +1,7 @@
 using Avalonia.Headless.XUnit;
 using NetPrints.Core;
 using NetPrints.Editor.Hosting.Automation;
-using NetPrints.Editor.Search;
+using NetPrints.Editor.NodeSearch;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.UITests.Shell;
 using NetPrints.Graph;
@@ -43,7 +43,7 @@ public class EventGraphTests
         // Add a custom event via search: right click empty canvas, choose "Custom Event" (US4).
         var search = await (await session.Graph.RightClickEmptyAsync(Token)).WaitOpenAsync(Token);
         await search.FilterAsync("Custom Event", "Custom Event", Token);
-        Assert.Contains(session.GraphViewModel.Search.Items, i => i.Text == "Custom Event" && i.Value is CustomEventSuggestion);
+        Assert.Contains(session.GraphViewModel.Search.Items, i => i.Text == "Custom Event" && i.Entry is CustomEventEntry);
         await search.ChooseAsync("Custom Event", Token);
         await session.WaitForRenderedAsync(Token);
 

@@ -30,7 +30,7 @@ authors, who must opt in themselves.
    - the only `<NoWarn>` is the `Directory.Build.targets` line;
    - every opt-in item is an id declared in `ExperimentalApiIds`, so unknown or stale ids fail and graduating an
      API forces its opt-ins out;
-   - no `#pragma warning disable` of any form: `NoUnlistedSuppressions` rejects every warning pragma, `NPXE*` included;
+   - no `#pragma warning disable` of any form: NPH004 rejects every warning pragma, `NPXE*` included;
    - no `.editorconfig` or globalconfig severity entries for `NPXE` ids.
 6. The probe test (AP-T02) is unchanged: an external compilation without the opt-in gets the error.
 7. ADR-0003's exception-ledger row points to this ADR.
@@ -52,3 +52,10 @@ authors, who must opt in themselves.
 - `Directory.Build.targets` fails the build when an opt-in item is not an `NPXE` id, so the item cannot carry other
   diagnostics into `NoWarn`. The hygiene gates also reject `GlobalAnalyzerConfigFiles`, `EditorConfigFiles` and
   `<Analyzer Remove>` items in build files, which could hide a diagnostic another way.
+
+## Amendment 1 (2026-10-18, T112): extension projects in the repository opt in as authors do
+
+The sample extensions under `extensions/` and the template's extension project build only from the packed packages, so they
+opt in the way an author must: `<NoWarn>$(NoWarn);NPXE000n</NoWarn>` in the project file. The hygiene gate allows such a NoWarn
+in those project files only, holding nothing but NPXE ids and NU5100 (ADR-0003 allowances). Everywhere else the
+`Directory.Build.targets` line stays the only NoWarn.

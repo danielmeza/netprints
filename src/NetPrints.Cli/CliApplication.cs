@@ -21,6 +21,7 @@ internal static class CliApplication
     private const string VerboseFlag = "--verbose";
     private const string VersionFlag = "--version";
     private const string Separator = "--";
+
     private const string P1FlagsMessage =
         "The -p/--project-path and -r/--run options were replaced: use 'netprints build <project>' or 'netprints run <project>'.";
 

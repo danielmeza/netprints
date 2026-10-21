@@ -7,6 +7,7 @@ using NetPrints.Editor.Graph;
 using NetPrints.Editor.Icons;
 using NetPrints.Editor.Inspectors;
 using NetPrints.Editor.Navigation;
+using NetPrints.Editor.Settings;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Shell.Docking;
 using NetPrints.Editor.StartPage;
@@ -17,15 +18,17 @@ namespace NetPrints.Editor.Hosting;
 /// The composed shell: the frozen registry, <see cref="ShellViewModel"/>, the docking adapter, the command invoker and
 /// the window. It closes the open documents when the project goes.
 /// </summary>
+[Singleton<ShellHost>(Factory = "Create")]
 internal sealed class ShellHost : IDisposable
 {
     private readonly WindowCloseGuard closeGuard;
     private readonly ShellStatePersistence? persistence;
     private readonly StartPageController startPage;
+    private EventHandler<ContributionSnapshot>? followResources;
 
-    private sealed class NoServices : IServiceProvider
+    private sealed class ComposedShell
     {
-        public object? GetService(Type serviceType) => null;
+        public IShell? Api { get; set; }
     }
 
     private ShellHost(ShellProjectActions actions, IContributionRegistry registry, ShellViewModel shell, DockShellAdapter adapter, CommandInvoker invoker, ShellWindow window, ILogger logger, ShellStatePersistence? persistence)
@@ -62,43 +65,49 @@ internal sealed class ShellHost : IDisposable
 
     /// <summary>Composes the shell.</summary>
     /// <param name="context">Host services shared across the editor.</param>
+    /// <param name="registry">The frozen registry the shell is generated from.</param>
     /// <returns>The shell.</returns>
-    public static ShellHost Create(EditorContext context)
+    public static ShellHost Create(EditorContext context, IContributionRegistry registry)
     {
         ILogger logger = context.LoggerFactory.CreateLogger<ShellHost>();
-        IconRegistry.Shared = new IconRegistry(context.LoggerFactory.CreateLogger<IconRegistry>());
-        var registry = new ContributionRegistry(context.LoggerFactory.CreateLogger<ContributionRegistry>());
-        BuiltInContributions.Register(registry);
-        ShellViewModel? shell = null;
-        GoToProviderContributions.Register(registry, () => shell?.Session);
-        registry.Freeze();
+        ILogger<IconRegistry> iconLogger = context.LoggerFactory.CreateLogger<IconRegistry>();
+        EventHandler<ContributionSnapshot>? followResources = null;
+        if (global::Avalonia.Application.Current is { } application)
+        {
+            SyncViewResources(application, registry, logger);
+            followResources = (_, snapshot) => SyncViewResources(application, snapshot, logger);
+            registry.Changed += followResources;
+            IconRegistry.Shared = IconRegistry.ForApplication(application, iconLogger);
+        }
+        else
+        {
+            IconRegistry.Shared = new IconRegistry(iconLogger);
+        }
 
-        shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, context.Dispatcher);
+        var composed = new ComposedShell();
+        var panelContext = new PanelFactoryContext(
+            new EditorShellFacade(() => composed.Api ?? throw new InvalidOperationException("The shell is not composed yet.")),
+            new EditorDialogService(context.Dialogs),
+            new EditorOutput(context.RunState),
+            EmptyServiceProvider.Instance);
+        var shell = new ShellViewModel(registry, panelContext, TimeProvider.System, context.Dispatcher, context);
         shell.WindowStateService = context.WindowStateService;
         var actions = new ShellProjectActions(context, shell);
-        var startPageServices = new StartPageServices().Add<IProjectActions>(actions).Add<IClipboardService>(context.Clipboard).Add<IFolderLauncher>(new ShellFolderLauncher()).Add(TimeProvider.System);
-        if (context.StateStore is { } stateStore)
-        {
-            startPageServices.Add(stateStore);
-        }
+        var startPageContext = new StartPageContext(actions, panelContext, context.Recent, context.StateStore, context.Clipboard, new ShellFolderLauncher());
 
-        if (context.Recent is { } recent)
-        {
-            startPageServices.Add(recent);
-        }
-
-        var adapter = new DockShellAdapter(shell, actions, id => OpenDocument(id, shell, context, startPageServices), context.LoggerFactory.CreateLogger<DockShellAdapter>());
+        var adapter = new DockShellAdapter(shell, actions, id => OpenDocument(id, shell, context, startPageContext, registry), context.LoggerFactory.CreateLogger<DockShellAdapter>());
+        composed.Api = adapter;
         actions.Api = adapter;
         shell.Layout = adapter;
         shell.Projects = actions;
 
-        var invoker = new CommandInvoker(registry, new ShellCommandContextProvider(shell, adapter),
+        var invoker = new CommandInvoker(registry, new ShellCommandContextProvider(shell, adapter, context),
             exception => context.Dispatcher.Post(() => context.Dialogs.ShowErrorAsync("The command failed", exception.ToString()).Forget(logger)));
         shell.AttachCommands(invoker);
 
         var window = new ShellWindow();
         ShellStatePersistence? persistence = context.StateStore is { } store ? new ShellStatePersistence(shell, adapter, window, store, TimeProvider.System, context.Dispatcher) : null;
-        var host = new ShellHost(actions, registry, shell, adapter, invoker, window, logger, persistence);
+        var host = new ShellHost(actions, registry, shell, adapter, invoker, window, logger, persistence) { followResources = followResources };
         shell.PropertyChanged += host.OnShellChanged;
         shell.AttachPanels(adapter, invoker, context);
         host.SyncProjectState();
@@ -109,6 +118,11 @@ internal sealed class ShellHost : IDisposable
     public void Dispose()
     {
         Shell.PropertyChanged -= OnShellChanged;
+        if (followResources is not null)
+        {
+            Registry.Changed -= followResources;
+        }
+
         closeGuard.Dispose();
         persistence?.Dispose();
         Shell.Dispose();
@@ -116,11 +130,31 @@ internal sealed class ShellHost : IDisposable
         Actions.Dispose();
     }
 
-    private static DocumentViewModel? OpenDocument(DocumentId id, ShellViewModel shell, EditorContext context, IServiceProvider startPageServices)
+    private static void SyncViewResources(global::Avalonia.Application application, IContributionSnapshot snapshot, ILogger logger)
+    {
+        foreach (ViewResourceFailure failure in ViewResourceLoader.Sync(application, snapshot.ViewResources, (declaration, exception) => Log.ViewTemplateFailed(logger, exception, declaration.Owner, declaration.Uri)))
+        {
+            Log.ViewResourceIgnored(logger, failure.Declaration.Owner, failure.Declaration.Uri, failure.Reason);
+        }
+    }
+
+    private static DocumentViewModel? OpenDocument(DocumentId id, ShellViewModel shell, EditorContext context, StartPageContext startPageContext, IContributionRegistry contributions)
     {
         if (id.Kind == DocumentKind.StartPage)
         {
-            return new StartPageViewModel(shell, startPageServices);
+            return new StartPageViewModel(shell, startPageContext);
+        }
+
+        if (id.Kind == DocumentKind.Settings)
+        {
+            return new SettingsDocumentViewModel(
+                context.Settings,
+                contributions,
+                context.Extensions,
+                context.Dispatcher,
+                page => new EditorContexts((shell.Commands ?? throw new InvalidOperationException("The shell has no commands.")).CreateContext() with { Owner = contributions.OwnerOf(page.Id), Contributions = contributions }),
+                context.FilePicker,
+                cancellationToken => shell.Projects?.ExitAsync(cancellationToken) ?? Task.CompletedTask);
         }
 
         if (shell.Session is not { } session)

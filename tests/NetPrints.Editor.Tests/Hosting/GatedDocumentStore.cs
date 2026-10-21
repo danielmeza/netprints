@@ -1,5 +1,6 @@
 using NetPrints.Serialization;
 using NetPrints.Serialization.Stores;
+using DocumentId = NetPrints.Serialization.DocumentId;
 
 namespace NetPrints.Editor.Tests.Hosting;
 

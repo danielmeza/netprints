@@ -1,0 +1,8 @@
+{
+  "id": "fx.fail.services",
+  "name": "Fails NPK013: a scoped service outlives its session",
+  "version": "1.0.0",
+  "assembly": "Fx.Fail.Services.dll",
+  "netprintsApi": "0.4",
+  "dependsOn": []
+}

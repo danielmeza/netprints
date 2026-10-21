@@ -1,3 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+using NetPrints.Core;
+using NetPrints.Extensibility.Editor;
+using NetPrints.Extensibility.Settings;
+
 namespace NetPrints.Extensibility.Loading;
 
 /// <summary>
@@ -13,6 +18,21 @@ public sealed record ExtensionLoaderOptions(
     IReadOnlyList<string> ExtensionFolders,
     IReadOnlyList<(ExtensionManifest Manifest, INetPrintsExtension Extension)> InProcess)
 {
+    /// <summary>
+    /// Gets the host's editor facet for an extension: what the extension registered through <see cref="IExtensionBuilder.Editor"/> is replayed to it
+    /// once <see cref="INetPrintsExtension.Register"/> has returned normally. <see langword="null"/> in a host without an editor (the CLI, the SDK
+    /// generator, the build): the contributions are then ignored without error.
+    /// </summary>
+    [Experimental(ExperimentalApiIds.EditorContributions, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    public Func<ExtensionManifest, IEditorContributions>? EditorContributions { get; init; }
+
+    /// <summary>
+    /// Gets the store behind the <c>IOptionsMonitor&lt;T&gt;</c> of an extension's own settings section (<see cref="HostExports"/>);
+    /// <see langword="null"/> makes the monitors return the sections' defaults.
+    /// </summary>
+    [Experimental(ExperimentalApiIds.Settings, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    public ISettingsStore? SettingsStore { get; init; }
+
     /// <summary>
     /// Only the built-in extension: no search directories and no folders.
     /// </summary>

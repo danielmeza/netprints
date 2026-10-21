@@ -28,8 +28,8 @@ internal static partial class Log
     public static partial void NodeKindConflict(ILogger logger, string kind, string id, string reason);
 
     /// <summary>Logs 2006: a settings section could not be read and its default is used; the section stays on disk.</summary>
-    [LoggerMessage(EventId = 2006, Level = LogLevel.Warning, Message = "Settings section {Section} in {FilePath} is invalid; using its default")]
-    public static partial void SettingsSectionInvalid(ILogger logger, Exception? exception, string section, string filePath);
+    [LoggerMessage(EventId = 2006, Level = LogLevel.Warning, Message = "Settings section {Section} in {FilePath} is invalid ({Reason}); using its default")]
+    public static partial void SettingsSectionInvalid(ILogger logger, Exception? exception, string section, string filePath, string reason);
 
     /// <summary>Logs 2007: a contribution other than a node kind was rejected.</summary>
     [LoggerMessage(EventId = 2007, Level = LogLevel.Error, Message = "Contribution {Contribution} from {Id} rejected: {Reason}")]
@@ -54,4 +54,20 @@ internal static partial class Log
     /// <summary>Logs 2012: checking an extension folder for shadowed assemblies failed; the extension still loads.</summary>
     [LoggerMessage(EventId = 2012, Level = LogLevel.Debug, Message = "Shadow check of extension {Id} folder {Folder} failed")]
     public static partial void ShadowCheckFailed(ILogger logger, Exception exception, string id, string folder);
+
+    /// <summary>Logs 2013: a manifest has fields this host does not know; they are ignored.</summary>
+    [LoggerMessage(EventId = 2013, Level = LogLevel.Information, Message = "Extension {Id} has manifest fields this host ignores: {Fields}")]
+    public static partial void ManifestFieldsIgnored(ILogger logger, string id, string fields);
+
+    /// <summary>Logs 2014: the settings file has a newer schema version than this host writes; what is unknown is preserved.</summary>
+    [LoggerMessage(EventId = 2014, Level = LogLevel.Warning, Message = "Settings file {FilePath} has schemaVersion {Found}, newer than the supported {Supported}; unknown content is preserved")]
+    public static partial void SettingsSchemaNewer(ILogger logger, string filePath, int found, int supported);
+
+    /// <summary>Logs 2015: an unreadable settings file was copied aside before it was replaced.</summary>
+    [LoggerMessage(EventId = 2015, Level = LogLevel.Information, Message = "Unreadable settings file {FilePath} was copied to {CopyPath} before the next write")]
+    public static partial void SettingsFileCopied(ILogger logger, string filePath, string copyPath);
+
+    /// <summary>Logs 2016: a settings change listener threw; the change itself was persisted.</summary>
+    [LoggerMessage(EventId = 2016, Level = LogLevel.Warning, Message = "A listener of settings section {Section} failed")]
+    public static partial void SettingsListenerFailed(ILogger logger, Exception exception, string section);
 }

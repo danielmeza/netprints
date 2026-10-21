@@ -64,6 +64,76 @@ public sealed class ErrorListViewModelTests
     }
 
     [Fact]
+    public void ADiagnosticReportedByTheLiveAnalysisAndTheBuildIsListedOnce()
+    {
+        using var host = new FakeCodeAnalysisHost();
+        var project = Project.FromSnapshot(TestSnapshots.Empty("P", "N"));
+        project.LastDiagnostics = new ObservableRangeCollection<CodeDiagnostic>(
+        [
+            new CodeDiagnostic(CodeDiagnosticSeverity.Error, "CS0026", "boom", "N.C", "m1", "n1", "/build/C.g.cs", null),
+            new CodeDiagnostic(CodeDiagnosticSeverity.Warning, "CS0649", "never assigned", "N.C", null, null, "/build/C.g.cs", null),
+        ]);
+        using var vm = new ErrorListViewModel(project, host, new StrongReferenceMessenger());
+
+        host.Push(new CodeAnalysisSnapshot(new Dictionary<string, TranslatedClass>(StringComparer.Ordinal),
+        [
+            new CodeDiagnostic(CodeDiagnosticSeverity.Error, "CS0026", "boom", "N.C", "m1", "n1", "C.g.cs", null),
+            new CodeDiagnostic(CodeDiagnosticSeverity.Warning, "CS0649", "never assigned", "N.C", null, null, "C.g.cs", null),
+        ]));
+
+        Assert.Equal(["CS0026", "CS0649"], vm.Rows.Select(row => row.Id));
+        Assert.Equal("Errors (1) · Warnings (1)", vm.Header);
+    }
+
+    [Fact]
+    public void TwoGenuineDiagnosticsWithTheSameTextInOneSourceStayTwoRows()
+    {
+        using var host = new FakeCodeAnalysisHost();
+        using var vm = new ErrorListViewModel(NewClass("N", "C"), host, new StrongReferenceMessenger());
+
+        host.Push(new CodeAnalysisSnapshot(new Dictionary<string, TranslatedClass>(StringComparer.Ordinal),
+        [
+            Diagnostic(CodeDiagnosticSeverity.Error, "CS0103"),
+            Diagnostic(CodeDiagnosticSeverity.Error, "CS0103"),
+        ]));
+
+        Assert.Equal(2, vm.Rows.Count);
+    }
+
+    [Fact]
+    public void ASnapshotWithTheSameDiagnosticsKeepsTheRowInstances()
+    {
+        using var host = new FakeCodeAnalysisHost();
+        using var vm = new ErrorListViewModel(NewClass("N", "C"), host, new StrongReferenceMessenger());
+        var empty = new Dictionary<string, TranslatedClass>(StringComparer.Ordinal);
+        host.Push(new CodeAnalysisSnapshot(empty, [Diagnostic(CodeDiagnosticSeverity.Error, "CS0001")]));
+        DiagnosticRowViewModel before = vm.Rows.Single();
+
+        host.Push(new CodeAnalysisSnapshot(empty, [Diagnostic(CodeDiagnosticSeverity.Error, "CS0001")]));
+
+        Assert.Same(before, vm.Rows.Single());
+    }
+
+    [Fact]
+    public void ARenamedMethodShowsItsNewNameWhenTheDiagnosticsAreUnchanged()
+    {
+        using var host = new FakeCodeAnalysisHost();
+        ClassGraph cls = NewClass("N", "C");
+        var method = new MethodGraph("Old");
+        cls.Methods.Add(method);
+        using var vm = new ErrorListViewModel(cls, host, new StrongReferenceMessenger());
+        var empty = new Dictionary<string, TranslatedClass>(StringComparer.Ordinal);
+        var diagnostic = new CodeDiagnostic(CodeDiagnosticSeverity.Error, "CS0026", "boom", "N.C", method.Id, null, null, null);
+        host.Push(new CodeAnalysisSnapshot(empty, [diagnostic]));
+        Assert.Equal("Old", vm.Rows.Single().MemberName);
+
+        method.Name = "New";
+        host.Push(new CodeAnalysisSnapshot(empty, [diagnostic]));
+
+        Assert.Equal("New", vm.Rows.Single().MemberName);
+    }
+
+    [Fact]
     public void HeaderStaysAtZeroCountsBeforeAnySnapshot()
     {
         using var host = new FakeCodeAnalysisHost();

@@ -93,7 +93,7 @@ only a parameterless method or one that takes a single `object`, and a plain met
 **D3. Every binding scope is typed.** Put `x:DataType` on the root, on every `DataTemplate`, and on any `Style` or
 `ControlTheme` that contains bindings. When a binding crosses into another scope, cast it:
 ```xml
-<!-- src/NetPrints.Editor/Search/NodeSearchView.axaml, inside the result item template -->
+<!-- src/NetPrints.Editor/NodeSearch/NodeSearchView.axaml, inside the result item template -->
 Command="{Binding $parent[ListBox].((edsearch:SuggestionListViewModel)DataContext).SelectCommand}"
 ```
 A view with no bindings, such as the code-behind dialogs, doesn't need `x:DataType`. Give it one when it gets a VM.

@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using NetPrints.Extensibility.Loading;
+using NetPrints.Extensibility.Testing;
 using NetPrints.Generation;
 using NetPrints.Testing.Extensions;
 using Xunit;

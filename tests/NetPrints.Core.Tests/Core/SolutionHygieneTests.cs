@@ -45,7 +45,7 @@ namespace NetPrints.Tests.Core
         }
 
         private static bool IsFixture(string relativePath) =>
-            relativePath.StartsWith("tests/", StringComparison.Ordinal)
-            && relativePath.Contains("/Fixtures/", StringComparison.Ordinal);
+            (relativePath.StartsWith("tests/", StringComparison.Ordinal) && relativePath.Contains("/Fixtures/", StringComparison.Ordinal))
+            || relativePath.StartsWith("src/NetPrints.Templates/content/", StringComparison.Ordinal);
     }
 }

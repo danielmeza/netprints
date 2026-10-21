@@ -1,7 +1,7 @@
 using NetPrints.Core;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
-using NetPrints.Editor.Search;
+using NetPrints.Editor.NodeSearch;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Graph;
 using NetPrints.Editor.Tests.Hosting;
@@ -17,12 +17,12 @@ namespace NetPrints.Editor.Tests.Search;
 public sealed class ExtensionSuggestionTests(IReflectionHost sharedReflection)
     : GraphTestBase(TestEditor.Create(_ => sharedReflection, TestExtensionFolder.CreateHost()))
 {
-    private List<SuggestionItem> Rows(NodeGraphViewModel graph, NodePin? pin = null) => graph.Search.BuildItems(pin);
+    private List<SuggestionRowViewModel> Rows(NodeGraphViewModel graph, NodePin? pin = null) => graph.Search.BuildItems(pin);
 
     [Fact]
     public void ASuggestionOfTheTestExtensionFollowsTheBuiltInCategoriesInAMethodGraph()
     {
-        List<SuggestionItem> rows = Rows(Graph);
+        List<SuggestionRowViewModel> rows = Rows(Graph);
 
         Assert.Equal(["NetPrints", "This Methods", "Static Methods", "Static Variables", "Test"], rows.Where(r => r.IsHeader).Select(r => r.Category).ToArray());
         Assert.Equal(["Log"], rows.Where(r => r is { IsHeader: false, Category: "Test" }).Select(r => r.Text).ToArray());
@@ -56,7 +56,7 @@ public sealed class ExtensionSuggestionTests(IReflectionHost sharedReflection)
     [Fact]
     public async Task ChoosingTheSuggestionCreatesTheExtensionsNodeAtThePosition()
     {
-        SuggestionItem log = Rows(Graph).Single(r => r is { IsHeader: false, Category: "Test" });
+        SuggestionRowViewModel log = Rows(Graph).Single(r => r is { IsHeader: false, Category: "Test" });
         Graph.Search.Position = new GraphPoint(40, 60);
 
         await Graph.Search.SelectCommand.ExecuteAsync(log);

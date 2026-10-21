@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NetPrintsExtensionId>netprints.godot</NetPrintsExtensionId>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>bin/$(Configuration)/extension/</OutputPath>
+  </PropertyGroup>
+
+  <!-- The extension package: a NuGet package of type NetPrintsExtension that holds the extension folder under extension/. -->
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageId>NetPrints.Godot</PackageId>
+    <Version>0.1.0</Version>
+    <Description>A sample NetPrints extension for Godot: the godot project profile, a Godot project template with launch profiles, a command, a settings section and a status bar item.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageType>NetPrintsExtension</PackageType>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <!-- ADR-0017: an extension opts in to experimental APIs with NoWarn; NU5100: the dll is packed under extension/ on purpose (ADR-0041). -->
+    <NoWarn>$(NoWarn);NU5100;NPXE0002;NPXE0005;NPXE0009;NPXE0012;NPXE0013</NoWarn>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);AddExtensionFolder</TargetsForTfmSpecificContentInPackage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The host supplies the NetPrints assemblies at run time; the extension must see the host's own copies. -->
+    <PackageReference Include="NetPrints.Extensibility.Abstractions" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="netprints-extension.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <Target Name="AddExtensionFolder">
+    <ItemGroup>
+      <ExtensionFile Include="@(IntermediateAssembly)" />
+      <ExtensionFile Include="netprints-extension.json" />
+      <ExtensionFile Include="@(ReferenceCopyLocalPaths)" Condition="'%(Extension)' == '.dll'" />
+      <TfmSpecificPackageFile Include="@(ExtensionFile)" PackagePath="extension/%(Filename)%(Extension)" />
+    </ItemGroup>
+  </Target>
+</Project>

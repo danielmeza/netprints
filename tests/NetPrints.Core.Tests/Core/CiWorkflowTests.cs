@@ -19,7 +19,10 @@ namespace NetPrints.Tests.Core
     {
         private const string CiWorkflow = ".github/workflows/ci.yml";
         private const string CliWindowsWorkflow = ".github/workflows/cli-windows.yml";
+        private const string ExtensionWorkflow = ".github/workflows/netprints-extension.yml";
         private const string AggregateJobName = "Build and test (Linux)";
+
+        private const string KitTestsProject = "NetPrints.Extensibility.Testing.Tests";
 
         private static readonly string[] NotAggregated = ["build-test", "e2e", "packages", "perf"];
 
@@ -32,7 +35,7 @@ namespace NetPrints.Tests.Core
                 .. Directory.EnumerateDirectories(Path.Combine(root, "tests"))
                     .Select(directory => Path.GetFileName(directory))
                     .Where(name => name.EndsWith(".Tests", StringComparison.Ordinal) || name.EndsWith(".UITests", StringComparison.Ordinal))
-                    .Where(name => name != "NetPrints.Desktop.E2ETests")
+                    .Where(name => name != "NetPrints.Desktop.E2ETests" && name != KitTestsProject)
                     .Where(name => File.Exists(Path.Combine(root, "tests", name, name + ".csproj")))
                     .Select(name => "tests/" + name)
                     .Order(StringComparer.Ordinal),
@@ -42,6 +45,67 @@ namespace NetPrints.Tests.Core
 
             Assert.NotEmpty(expected);
             Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void TheCoreLegAlsoBuildsAndRunsTheExtensionKitTests()
+        {
+            string root = SampleProjectFactory.FindRepositoryRoot();
+            Assert.True(File.Exists(Path.Combine(root, "tests", KitTestsProject, KitTestsProject + ".csproj")));
+            string path = "tests/" + KitTestsProject;
+
+            object? step = Items(Get(Get(Jobs(), "test"), "steps")).SingleOrDefault(candidate => Text(Get(candidate, "if")) == "matrix.leg == 'core'");
+
+            Assert.NotNull(step);
+            string run = Text(Get(step, "run"));
+            Assert.Contains("dotnet build " + path, run, StringComparison.Ordinal);
+            Assert.Contains("dotnet test --project " + path, run, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void TheAuthorWorkflowIsReusableAndBuildsTestsPacksAndVerifiesAnExtension()
+        {
+            string path = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), ExtensionWorkflow);
+            Assert.True(File.Exists(path), $"{ExtensionWorkflow} does not exist.");
+
+            object? workflow = Read(path);
+            object? inputs = Get(workflow, "on", "workflow_call", "inputs");
+            Assert.Equal("true", Text(Get(inputs, "extension-folder", "required")));
+            Assert.Equal("false", Text(Get(inputs, "packages-artifact", "required")));
+
+            Dictionary<string, object?> jobs = Get(workflow, "jobs") as Dictionary<string, object?> ?? [];
+            string[] commands = [.. jobs.Values.SelectMany(job => Items(Get(job, "steps"))).Select(step => Text(Get(step, "run"))).Where(run => run.Length > 0)];
+            string all = string.Join('\n', commands);
+            int[] positions = [.. new[] { "dotnet restore", "dotnet build", "dotnet test", "dotnet pack", "extension verify" }.Select(command => all.IndexOf(command, StringComparison.Ordinal))];
+            Assert.DoesNotContain(-1, positions);
+            Assert.Equal(positions.Order(), positions);
+
+            string text = File.ReadAllText(path);
+            Assert.DoesNotContain("secrets.", text, StringComparison.Ordinal);
+            string[] uses = [.. Regex.Matches(text, @"uses:\s*(\S+)").Select(match => match.Groups[1].Value)];
+            Assert.NotEmpty(uses);
+            Assert.All(uses, action => Assert.Matches("@[0-9a-f]{40}$", action));
+        }
+
+        [Fact]
+        public void TheGodotExtensionIsBuiltFromThePackedPackagesAndLoadedInTheEditorHost()
+        {
+            Dictionary<string, object?> jobs = Jobs();
+            object? upload = Items(Get(jobs["packages"], "steps")).Single(step => Text(Get(step, "uses")).StartsWith("actions/upload-artifact@", StringComparison.Ordinal));
+            object? godot = jobs["godot-extension"];
+            object? smoke = jobs["godot-smoke"];
+
+            Assert.Equal("./" + ExtensionWorkflow, Text(Get(godot, "uses")));
+            Assert.Equal(["packages"], Needs(godot));
+            Assert.Equal("extensions/NetPrints.Godot", Text(Get(godot, "with", "extension-folder")));
+            Assert.Equal(Text(Get(upload, "with", "name")), Text(Get(godot, "with", "packages-artifact")));
+            Assert.Equal(["godot-extension"], Needs(smoke));
+            string script = string.Join('\n', Items(Get(smoke, "steps")).Select(step => Text(Get(step, "run"))));
+            Assert.Contains(Items(Get(smoke, "steps")), step => Text(Get(step, "env", "NETPRINTS_GODOT_EXTENSION_DIR")).Length > 0);
+            Assert.Contains("GodotExtensionHostTests", script, StringComparison.Ordinal);
+            Assert.Contains("--fail-skips on", script, StringComparison.Ordinal);
+            Assert.Contains("godot-smoke", Needs(jobs["build-test"]));
+            Assert.Contains("godot-extension", Needs(jobs["build-test"]));
         }
 
         [Fact]
@@ -110,7 +174,7 @@ namespace NetPrints.Tests.Core
             string[] names = [.. legs.Select(leg => Text(Get(leg, "name")))];
             string[] slugs = [.. legs.Select(leg => Text(Get(leg, "leg")))];
 
-            Assert.Equal(["Core", "Catalog", "CLI", "Editor", "Editor UI (headless) 1/4", "Editor UI (headless) 2/4", "Editor UI (headless) 3/4", "Editor UI (headless) 4/4"], names);
+            Assert.Equal(["Core", "Analyzers", "Catalog", "CLI", "Editor", "Editor UI (headless) 1/4", "Editor UI (headless) 2/4", "Editor UI (headless) 3/4", "Editor UI (headless) 4/4"], names);
             Assert.All(slugs, slug => Assert.NotEmpty(slug));
             Assert.Equal(slugs.Length, slugs.Distinct(StringComparer.Ordinal).Count());
         }
@@ -158,7 +222,7 @@ namespace NetPrints.Tests.Core
         [Fact]
         public void TestMatrixLegsRunTheirOwnProjectWithTheAdr0008CoverageSettings()
         {
-            string[] runs = [.. Items(Get(Ci(), "jobs", "test", "steps")).Select(step => Text(Get(step, "run")))];
+            string[] runs = [.. Items(Get(Ci(), "jobs", "test", "steps")).Where(step => Text(Get(step, "if")).Length == 0).Select(step => Text(Get(step, "run")))];
             string testRun = Assert.Single(runs, run => run.Contains("dotnet test", StringComparison.Ordinal));
 
             Assert.Contains("${{ matrix.project }}", testRun, StringComparison.Ordinal);
@@ -179,7 +243,8 @@ namespace NetPrints.Tests.Core
             string[] expectedNeeds =
             [
                 .. jobs.Where(job => !NotAggregated.Contains(job.Key, StringComparer.Ordinal))
-                    .Where(job => Items(Get(job.Value, "steps")).Any(step => Text(Get(step, "run")).Contains("dotnet test", StringComparison.Ordinal)))
+                    .Where(job => Items(Get(job.Value, "steps")).Any(step => Text(Get(step, "run")).Contains("dotnet test", StringComparison.Ordinal))
+                        || Text(Get(job.Value, "uses")) == "./" + ExtensionWorkflow)
                     .Select(job => job.Key)
                     .Order(StringComparer.Ordinal),
             ];
@@ -192,6 +257,11 @@ namespace NetPrints.Tests.Core
             Assert.DoesNotContain("||", script, StringComparison.Ordinal);
             Assert.Null(Get(step, "continue-on-error"));
             Assert.Null(Get(aggregate, "continue-on-error"));
+
+            foreach (string id in needs)
+            {
+                Assert.Contains("needs." + id + ".result", script, StringComparison.Ordinal);
+            }
 
             string[] checks = [.. script.Split('\n').Select(line => line.Trim()).Where(line => line.StartsWith('['))];
             string check = Assert.Single(checks);
@@ -212,6 +282,20 @@ namespace NetPrints.Tests.Core
             Assert.Contains("Category=Performance", script, StringComparison.Ordinal);
             object? strictStep = Items(Get(perf, "steps")).Single(step => Text(Get(step, "name")).StartsWith("Performance tests", StringComparison.Ordinal));
             Assert.Equal("1", Text(Get(strictStep, "env", "NETPRINTS_PERF_STRICT")));
+        }
+
+        // SC-005 (M1, M2): the head is judged against R5-0 built and run on the same runner, in the same job.
+        [Fact]
+        public void ThePerformanceJobComparesTheHeadWithR5ZeroOnTheSameRunner()
+        {
+            List<object?> steps = Items(Get(Get(Jobs(), "perf"), "steps"));
+            int prepare = steps.FindIndex(step => Text(Get(step, "run")).Contains("eng/perf/prepare-r5-0.sh", StringComparison.Ordinal));
+            int compare = steps.FindIndex(step => Text(Get(step, "run")).Contains("eng/perf/ab.sh", StringComparison.Ordinal));
+
+            Assert.True(prepare >= 0, "The perf job does not build R5-0 with eng/perf/prepare-r5-0.sh.");
+            Assert.True(compare > prepare, "The perf job does not run eng/perf/ab.sh after building R5-0.");
+            Assert.Equal("${{ !cancelled() }}", Text(Get(steps[prepare], "if")));
+            Assert.Equal("${{ !cancelled() }}", Text(Get(steps[compare], "if")));
         }
 
         [Fact]
@@ -300,6 +384,18 @@ namespace NetPrints.Tests.Core
 
             FormatException error = Assert.Throws<FormatException>(() => new YamlReader(lines).Parse());
             Assert.Contains("line 5", error.Message, StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void TheTestingGuidePinsTheReusableWorkflowToAReleaseTag()
+        {
+            string root = SampleProjectFactory.FindRepositoryRoot();
+            string guide = File.ReadAllText(Path.Combine(root, "docs", "guide", "extension-testing.md"));
+            string usesLine = guide.Split('\n').Single(candidate => candidate.Contains("netprints-extension.yml@", StringComparison.Ordinal));
+
+            Match match = Regex.Match(usesLine, @"@v(?<version>\d+\.\d+\.\d+)\s*$");
+            Assert.True(match.Success, usesLine);
+            Assert.Contains($"netprints-version: {match.Groups["version"].Value}", guide, StringComparison.Ordinal);
         }
 
         [Fact]

@@ -1,0 +1,8 @@
+<Project>
+  <!-- Conformance fixtures: each Fx.Fail.* extension breaks exactly one rule of the kit (FR-078). -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)..\Shared\FxKit.cs" Link="FxKit.cs" />
+  </ItemGroup>
+</Project>

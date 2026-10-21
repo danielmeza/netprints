@@ -1,0 +1,8 @@
+{
+  "id": "fx.fail.packaging",
+  "name": "Fails NPK002: ships a copy of a host assembly",
+  "version": "1.0.0",
+  "assembly": "Fx.Fail.Packaging.dll",
+  "netprintsApi": "0.4",
+  "dependsOn": []
+}

@@ -62,7 +62,7 @@ public sealed class ScopedCommandKeysBehavior : StyledElementBehavior<InputEleme
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
-        if (Invoker is not { } invoker || CommandKeyGestures.IsInsideValueEditor(e.Source))
+        if (Invoker is not { GesturesSuspended: false } invoker || CommandKeyGestures.IsInsideValueEditor(e.Source))
         {
             return;
         }

@@ -14,7 +14,7 @@ namespace NetPrints.Catalog;
 /// class, struct and enum is an <c>System.Object</c>, and static classes are offered as types like the live provider
 /// does (its test for them never holds), so that the composite provider can ask the other providers.
 /// </summary>
-public sealed class CatalogTypeCatalog : ITypeCatalog
+public sealed class CatalogTypeCatalog : ITypeCatalog, INodeHintSource
 {
     private const string ImplicitOperator = "op_Implicit";
 
@@ -263,6 +263,16 @@ public sealed class CatalogTypeCatalog : ITypeCatalog
     }
 
     /// <inheritdoc />
+    public NodeHint? GetMethodHint(MethodSpecifier method) => Hint(FindMethod(method)?.Method.Node);
+
+    /// <inheritdoc />
+    public NodeHint? GetTypeHint(TypeSpecifier type)
+    {
+        ArgumentNullException.ThrowIfNull(type);
+        return Hint(Find(type)?.Type.Node);
+    }
+
+    /// <inheritdoc />
     public string? GetMethodDocumentation(MethodSpecifier methodSpecifier) => FindMethod(methodSpecifier)?.Method.Summary;
 
     /// <inheritdoc />
@@ -294,6 +304,9 @@ public sealed class CatalogTypeCatalog : ITypeCatalog
 
     private static string Render(CatalogTypeRef reference) =>
         reference.Args is { Count: > 0 } args ? $"{reference.Name}<{string.Join(",", args.Select(Render))}>" : reference.Name;
+
+    private static NodeHint? Hint(CatalogNodeHint? hint) =>
+        hint is null ? null : new NodeHint(hint.DisplayName, hint.Category, hint.Keywords ?? []);
 
     private TypeEntry? Find(TypeSpecifier type) => byKey.GetValueOrDefault(Key(type));
 

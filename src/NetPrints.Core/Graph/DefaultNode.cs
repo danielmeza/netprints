@@ -7,23 +7,21 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node that returns the default value of a type.
     /// </summary>
-    public class DefaultNode : Node
+    [NodeKind(NodeKindIds.Default)]
+    public sealed partial class DefaultNode : Node
     {
-        /// <summary>
-        /// Pin for the default value.
-        /// </summary>
-        public NodeOutputDataPin DefaultValuePin
-        {
-            get { return OutputDataPins[0]; }
-        }
+        private readonly ObservableValue<BaseType> defaultType = new(TypeSpecifier.FromType<object>());
 
         /// <summary>
         /// Input type pin for the type to cast to.
         /// </summary>
-        public NodeInputTypePin TypePin
-        {
-            get { return InputTypePins[0]; }
-        }
+        public partial NodeInputTypePin TypePin { get; }
+
+        /// <summary>
+        /// Pin for the default value.
+        /// </summary>
+        [PinType(nameof(defaultType))]
+        public partial NodeOutputDataPin DefaultPin { get; }
 
         /// <summary>
         /// Type for the default value output. Inferred from input type pin.
@@ -40,12 +38,11 @@ namespace NetPrints.Graph
         public DefaultNode(NodeGraph graph)
             : base(graph)
         {
-            AddInputTypePin("Type");
-            AddOutputDataPin("Default", Type);
+            DeclarePins();
         }
 
         /// <summary>
-        /// Propagates <see cref="Type"/> (the inferred type) to <see cref="DefaultValuePin"/>.
+        /// Propagates <see cref="Type"/> (the inferred type) to <see cref="DefaultPin"/>.
         /// </summary>
         /// <param name="sender">The node whose input type changed.</param>
         /// <param name="eventArgs">Unused; forwarded to the base implementation.</param>
@@ -53,7 +50,7 @@ namespace NetPrints.Graph
         {
             base.HandleInputTypeChanged(sender, eventArgs);
 
-            DefaultValuePin.PinType.Value = Type;
+            DefaultPin.PinType.Value = Type;
         }
 
         /// <summary>

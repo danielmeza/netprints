@@ -1,0 +1,8 @@
+{
+  "id": "fx.fail.settings",
+  "name": "Fails NPK009: its default settings do not validate",
+  "version": "1.0.0",
+  "assembly": "Fx.Fail.Settings.dll",
+  "netprintsApi": "0.4",
+  "dependsOn": []
+}

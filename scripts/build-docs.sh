@@ -16,6 +16,7 @@ cp assets/brand/netprints-mark-32.png website/static/img/favicon.png
 
 dotnet tool restore
 dotnet restore NetPrints.slnx
+dotnet build src/NetPrints.Core/NetPrints.Core.csproj -c Release -v q -tl:off --nologo
 dotnet docfx docs/api/docfx.json
 
 (cd website && npm ci --silent && npm run build --silent)
@@ -28,3 +29,4 @@ test -f website/build/api/index.html
 cmp schemas/netpc.v1.schema.json website/build/schemas/netpc.v1.schema.json
 cmp schemas/npcat.v1.schema.json website/build/schemas/npcat.v1.schema.json
 cmp schemas/netprints.catalog.v1.schema.json website/build/schemas/netprints.catalog.v1.schema.json
+cmp schemas/settings.v1.schema.json website/build/schemas/settings.v1.schema.json

@@ -27,12 +27,13 @@ public sealed partial class CommandPaletteViewModel : DialogViewModel<object>
         this.invoker = invoker;
         all =
         [
-            .. registry.Commands.Select(command => new PaletteItem(
+            .. registry.Snapshot.Commands.Select(command => new PaletteItem(
                 command,
-                command.Menu?.Submenu is { } submenu ? submenu + ": " + command.Label : command.Label,
-                string.Join(", ", command.DefaultGestures ?? []),
+                command.Menu?.Submenu is { } submenu ? submenu + ": " + command.DisplayLabel : command.DisplayLabel,
+                string.Join(", ", (command.DefaultGestures ?? []).Select(gesture => gesture.Display)),
                 command.Menu?.Display ?? "",
-                invoker.CanRun(command))),
+                invoker.CanRun(command),
+                registry.OwnerNameOf(command.Id) ?? "")),
         ];
         Refresh();
     }

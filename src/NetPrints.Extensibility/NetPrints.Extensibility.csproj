@@ -4,6 +4,9 @@
     <NetPrintsTrackPublicApi>true</NetPrintsTrackPublicApi>
     <AssemblyName>NetPrints.Extensibility</AssemblyName>
     <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <Description>The NetPrints extension host: discovery, manifests, loading and the contribution registry. NetPrints continues the original NetPrints by Robin Kahlow (https://github.com/RobinKa/netprints).</Description>
     <WarningsAsErrors>$(WarningsAsErrors);CA1848;CA2254</WarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
@@ -11,11 +14,22 @@
     <NetPrintsExperimentalOptIn Include="NPXE0002" />
     <NetPrintsExperimentalOptIn Include="NPXE0003" />
     <NetPrintsExperimentalOptIn Include="NPXE0004" />
+    <NetPrintsExperimentalOptIn Include="NPXE0005" />
+    <NetPrintsExperimentalOptIn Include="NPXE0006" />
+    <NetPrintsExperimentalOptIn Include="NPXE0007" />
+    <NetPrintsExperimentalOptIn Include="NPXE0008" />
+    <NetPrintsExperimentalOptIn Include="NPXE0009" />
+    <NetPrintsExperimentalOptIn Include="NPXE0011" />
+    <NetPrintsExperimentalOptIn Include="NPXE0012" />
+    <NetPrintsExperimentalOptIn Include="NPXE0013" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\NetPrints.Extensibility.Abstractions\NetPrints.Extensibility.Abstractions.csproj" />
     <ProjectReference Include="..\NetPrints.Catalog\NetPrints.Catalog.csproj" />
     <ProjectReference Include="..\NetPrints.Core\NetPrints.Core.csproj" />
     <ProjectReference Include="..\NetPrints.Reflection\NetPrints.Reflection.csproj" />

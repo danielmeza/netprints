@@ -21,11 +21,11 @@
         </Interaction.Behaviors>
       </Button>
     </ctl:DialogShell.Actions>
-    <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="{StaticResource Space.S.Size}">
-      <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space.S.Size}">
+    <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="{DynamicResource Space.S.Size}">
+      <StackPanel Orientation="Horizontal" Spacing="{DynamicResource Space.S.Size}">
         <Image Source="{DynamicResource App.Mark}" Width="{DynamicResource Icon.Large}" Height="{DynamicResource Icon.Large}"
                VerticalAlignment="Center" AutomationProperties.AccessibilityView="Raw" />
-        <TextBlock Text="NetPrints" FontSize="{StaticResource Font.Title}" FontWeight="SemiBold" VerticalAlignment="Center" />
+        <TextBlock Text="NetPrints" FontSize="{DynamicResource Font.Title}" FontWeight="SemiBold" VerticalAlignment="Center" />
       </StackPanel>
       <TextBlock Grid.Row="1" Text="{Binding Version, StringFormat='Version {0}'}"
                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.AboutVersion}" />

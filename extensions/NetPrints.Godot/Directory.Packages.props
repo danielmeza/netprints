@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>
+    <!-- The newest locally packed NetPrints release in local-packages/ or in the feed a CI job adds; pass -p:NetPrintsPackageVersion=<version> to pin one. -->
+    <NetPrintsPackageVersion Condition="'$(NetPrintsPackageVersion)' == ''">0.1.0-local.*</NetPrintsPackageVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="NetPrints.Extensibility.Abstractions" Version="$(NetPrintsPackageVersion)" />
+    <PackageVersion Include="NetPrints.Extensibility.Testing.Xunit" Version="$(NetPrintsPackageVersion)" />
+    <PackageVersion Include="xunit.v3" Version="3.2.2" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,5 @@
+<UserControl xmlns="https://github.com/avaloniaui">
+  <Border Background="#FF0000" Padding="4">
+    <TextBlock Text="Hello" Foreground="{DynamicResource TextBrush}" FontSize="18" />
+  </Border>
+</UserControl>

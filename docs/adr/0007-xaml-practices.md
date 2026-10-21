@@ -36,7 +36,7 @@ The owner set three ground rules for any such policy:
 
 > **Amended 2026-10-01** (owner decision, P3a spec `specs/005-editor-shell/`, research R16): view model types are
 > named `<Name>ViewModel`; the `VM` suffix is not used. The existing `*VM` types are renamed at the start of P3a,
-> and a `SourceHygieneTests` check fails on any type whose name ends in `VM`. Mentions of the old names below
+> and a hygiene check fails on any type whose name ends in `VM` (first a `SourceHygieneTests` test, now the NPH002 analyzer). Mentions of the old names below
 > (for example `DialogVM<TResult>`, now `DialogViewModel<TResult>`) are updated by that rename.
 
 - **Three `avalonia-*` skills** (`.claude/skills/`) are the single place these rules live. They share one
@@ -164,3 +164,9 @@ E7 now also counts `+=` event subscriptions and `AddHandler` calls (method group
 handler, not only `EventArgs` signatures and `On*` overrides. A lambda is keyed by its event (`SearchPopup.Opened`), a method group
 by its method. The grid sync in `GraphEditorView` became a `#Editor` binding; the seven newly found handlers (two in `EditorApp`,
 five in `GraphEditorView`) are listed with a reason, so the list is 23. It stays shrink-only for the handlers E7 already knew.
+
+## Amendment 4: E7 stays a test (2026-10-17)
+
+The hygiene tests that became NPH analyzers (ADR-0003) do not include the XAML rules. E7, like the other `XamlHygieneTests` rules,
+reads `.axaml` files with their code-behind, which a Roslyn analyzer does not see, so it stays a test with its shrink-only list. The
+`NullForgivingAllowlist` and `SuppressionAllowlist` named in the allowlist policy above are now rows of `HygieneLedger.txt`.

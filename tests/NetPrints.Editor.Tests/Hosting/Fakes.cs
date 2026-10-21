@@ -31,8 +31,11 @@ namespace NetPrints.Editor.Tests.Hosting;
 public sealed class FakeFilePicker : IFilePickerService
 {
     public Queue<string?> OpenFileAnswers { get; } = new();
+
     public Queue<string?> SaveFileAnswers { get; } = new();
+
     public Queue<string?> FolderAnswers { get; } = new();
+
     public List<string> Calls { get; } = [];
 
     public Task<string?> OpenFileAsync(string title, IReadOnlyList<FileFilter> filters)
@@ -58,15 +61,25 @@ public sealed class FakeFilePicker : IFilePickerService
 public sealed class FakeDialogs : IEditorDialogs
 {
     public List<(string Title, string Message)> Errors { get; } = [];
+
     public List<TypeSpecifier> SelectTypeCalls { get; } = [];
+
     public int SelectMethodCalls { get; private set; }
+
     public List<MethodSpecifier> LastMethods { get; private set; } = [];
+
     public IReadOnlySet<string> LastOverriddenNames { get; private set; } = new HashSet<string>();
+
     public List<ReferenceListViewModel> ReferenceDialogs { get; } = [];
+
     public TypeSpecifier? TypeAnswer { get; set; } = TypeSpecifier.FromType<int>();
+
     public Func<IReadOnlyList<MethodSpecifier>, MethodSpecifier?> MethodAnswer { get; set; } = m => m.FirstOrDefault();
+
     public List<(string ProjectPath, IReadOnlyList<string> Folders)> TrustCalls { get; } = [];
+
     public bool TrustAnswer { get; set; }
+
     public List<(string Title, IReadOnlyList<CodeDiagnostic> Issues)> IssueDialogs { get; } = [];
 
     /// <summary>Acts as the user in the New project dialog (set the fields, run Create or Cancel); the dialog is cancelled when null.</summary>
@@ -98,12 +111,15 @@ public sealed class FakeDialogs : IEditorDialogs
     }
 
     public List<(string Title, string Message)> ConfirmCalls { get; } = [];
+
     public bool ConfirmAnswer { get; set; } = true;
 
     public List<IReadOnlyList<UnsavedFile>> UnsavedCalls { get; } = [];
+
     public UnloadChoice UnsavedAnswer { get; set; } = UnloadChoice.Cancel;
 
     public List<IReadOnlyList<RecoveryFile>> RecoverCalls { get; } = [];
+
     public RecoveryChoice RecoverAnswer { get; set; } = RecoveryChoice.Later;
 
     /// <summary>The paths <see cref="ConfirmRecoverAsync"/> chooses to restore with <see cref="RecoveryChoice.Restore"/>; every offered file when null.</summary>
@@ -185,6 +201,15 @@ public sealed class FakeDialogs : IEditorDialogs
     public Task ShowAboutAsync(AboutViewModel about)
     {
         AboutDialogs.Add(about);
+        return Task.CompletedTask;
+    }
+
+    /// <summary>The titles and view models shown with <see cref="ShowViewModelAsync"/>.</summary>
+    public List<(string Title, object ViewModel)> ViewModelDialogs { get; } = [];
+
+    public Task ShowViewModelAsync(string title, object viewModel, CancellationToken cancellationToken)
+    {
+        ViewModelDialogs.Add((title, viewModel));
         return Task.CompletedTask;
     }
 
@@ -298,8 +323,11 @@ public sealed class FakeProjectSystem : IProjectSystem
     private readonly Dictionary<string, ProjectSnapshot> snapshots = new(StringComparer.Ordinal);
 
     public List<string> LoadCalls { get; } = [];
+
     public List<IReadOnlyList<ProjectEdit>> ApplyCalls { get; } = [];
+
     public Func<string, BuildResult>? BuildResultFactory { get; set; }
+
     public Func<string, ProcessStartRequest>? RunCommandFactory { get; set; }
 
     /// <summary>When set and it returns non-null for a given batch of edits, <see cref="ApplyAsync"/> throws that instead of applying (test seam for F-06).</summary>
@@ -472,7 +500,7 @@ public sealed class TestEditor : IAsyncDisposable
     {
     }
 
-    private TestEditor(IReflectionHost reflection, ExtensionHost extensions, IHostChannel hostChannel)
+    private TestEditor(IReflectionHost reflection, ExtensionHost extensions, IHostChannel hostChannel, ExtensionContributionRecorder? recorder = null)
     {
         ArgumentNullException.ThrowIfNull(reflection);
         Reflection = reflection;
@@ -483,17 +511,17 @@ public sealed class TestEditor : IAsyncDisposable
 
         Context = new EditorContext(FilePicker, Dialogs, Clipboard, Dispatcher, Reflection, Windows, Processes,
             Scheduler, () => new StrongReferenceMessenger(), NullLoggerFactory.Instance, Projects, Persistence,
-            Extensions, hostChannel, Settings, CodeAnalysis, new RunStateTracker(Processes), Locations: Locations);
+            Extensions, hostChannel, Settings, CodeAnalysis, new RunStateTracker(Processes), Locations: Locations, Contributions: recorder);
     }
 
     /// <summary>
     /// Creates an editor whose reflection host is built over the editor's own extension host, so a project's extensions
     /// (catalogs, translators) reach it; <paramref name="hostChannel"/> defaults to the null channel.
     /// </summary>
-    public static TestEditor Create(Func<IExtensionHost, IReflectionHost> createReflection, ExtensionHost? extensions = null, IHostChannel? hostChannel = null)
+    public static TestEditor Create(Func<IExtensionHost, IReflectionHost> createReflection, ExtensionHost? extensions = null, IHostChannel? hostChannel = null, ExtensionContributionRecorder? recorder = null)
     {
         ExtensionHost host = extensions ?? TestExtensions.CreateBuiltIn();
-        return new TestEditor(createReflection(host), host, hostChannel ?? NullHostChannel.Instance);
+        return new TestEditor(createReflection(host), host, hostChannel ?? NullHostChannel.Instance, recorder);
     }
 
     /// <summary>A real reflection host over <paramref name="extensions"/> that publishes inline.</summary>
@@ -519,13 +547,21 @@ public sealed class TestEditor : IAsyncDisposable
     public ProjectLocations Locations => new(null, documentsFolder);
 
     public FakeFilePicker FilePicker { get; } = new();
+
     public FakeDialogs Dialogs { get; } = new();
+
     public FakeClipboard Clipboard { get; } = new();
+
     public InlineDispatcher Dispatcher { get; } = new();
+
     public FakeWindowService Windows { get; } = new();
+
     public FakeProcessLauncher Processes { get; } = new();
+
     public IReflectionHost Reflection { get; }
+
     public FakeProjectSystem Projects { get; } = new();
+
     public ProjectPersistence Persistence { get; }
 
     /// <summary>The real extension host with only the built-in extension; project folders load through it.</summary>
@@ -580,6 +616,13 @@ public static class TestExtensionFolder
     /// <summary>A real extension host with the built-in extension and the test extension loaded from its output folder.</summary>
     public static ExtensionHost CreateHost() =>
         new(ExtensionLoaderOptions.BuiltInOnly with { ExtensionFolders = [Folder] }, NullLoggerFactory.Instance);
+
+    /// <summary>The output folder of a fixture extension project under <c>tests/Fixtures/Extensions</c>.</summary>
+    /// <param name="project">The project folder name, for example <c>Fx.Editor</c>.</param>
+    /// <param name="extensionFolder">The folder under <c>extensions</c>, for example <c>fx.editor</c>.</param>
+    /// <returns>The folder holding the dll and the manifest.</returns>
+    public static string FixtureFolder(string project, string extensionFolder) =>
+        Path.Combine(FindRepositoryRoot(), "tests", "Fixtures", "Extensions", project, "bin", DetectConfiguration(), "extensions", extensionFolder);
 
     private static string FindRepositoryRoot()
     {

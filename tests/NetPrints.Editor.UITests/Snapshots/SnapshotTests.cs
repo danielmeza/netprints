@@ -69,7 +69,8 @@ public class SnapshotTests
         var page = await new ShellPage(app.Driver).WaitShownAsync(Token);
 
         var version = await MaskOfAsync(new UiElement(app.Driver, new AutomationQuery(AutomationIds.StartPageVersion)));
-        await MatchWindowAsync(app.Driver, page, "editor-shell-no-project", new SnapshotOptions { Masks = [version] });
+        var search = await MaskOfAsync(new UiElement(app.Driver, new AutomationQuery(AutomationIds.StartPageRecentSearch)));
+        await MatchWindowAsync(app.Driver, page, "editor-shell-no-project", new SnapshotOptions { Masks = [version, search] });
     }
 
     [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]
@@ -82,7 +83,8 @@ public class SnapshotTests
         using var rig = StartPageRig.Create(width, height, withRecent);
 
         var version = await MaskOfAsync(rig.Element(AutomationIds.StartPageVersion));
-        await MatchWindowAsync(rig.Ui.Driver, rig.Element(AutomationIds.StartPageRoot), name, new SnapshotOptions { Masks = [version] });
+        var search = await MaskOfAsync(rig.Element(AutomationIds.StartPageRecentSearch));
+        await MatchWindowAsync(rig.Ui.Driver, rig.Element(AutomationIds.StartPageRoot), name, new SnapshotOptions { Masks = [version, search] });
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

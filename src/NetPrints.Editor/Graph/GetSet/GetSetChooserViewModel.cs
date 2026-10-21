@@ -83,9 +83,9 @@ public sealed partial class GetSetChooserViewModel(NodeGraphViewModel graph) : O
     [RelayCommand(CanExecute = nameof(CanGet))]
     private void Get()
     {
-        if (Variable is not null)
+        if (Variable is { } variable)
         {
-            graph.AddNode<VariableGetterNode>(Position, Pin, Variable);
+            graph.AddNode(Position, Pin, g => new VariableGetterNode(g, variable));
         }
 
         Close();
@@ -94,9 +94,9 @@ public sealed partial class GetSetChooserViewModel(NodeGraphViewModel graph) : O
     [RelayCommand(CanExecute = nameof(CanSet))]
     private void Set()
     {
-        if (Variable is not null)
+        if (Variable is { } variable)
         {
-            graph.AddNode<VariableSetterNode>(Position, Pin, Variable);
+            graph.AddNode(Position, Pin, g => new VariableSetterNode(g, variable));
         }
 
         Close();

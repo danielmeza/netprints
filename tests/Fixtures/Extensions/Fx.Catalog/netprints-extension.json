@@ -3,6 +3,6 @@
   "name": "NetPrints catalog fixture extension",
   "version": "1.0.0",
   "assembly": "Fx.Catalog.dll",
-  "netprintsApi": "1.0",
+  "netprintsApi": "0.4",
   "dependsOn": []
 }

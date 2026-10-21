@@ -89,7 +89,7 @@ public sealed class ScaleTests : IAsyncLifetime
             Directory.CreateDirectory(folders[index]);
             File.Copy(Path.Combine(template, "fx.scale.dll"), Path.Combine(folders[index], "fx.scale.dll"));
             File.Copy(dependency, Path.Combine(folders[index], "fx.scale.dep.dll"));
-            File.WriteAllText(Path.Combine(folders[index], "netprints-extension.json"), ManifestJson(Id(index), "fx.scale.dll", "1.0", dependsOn));
+            File.WriteAllText(Path.Combine(folders[index], "netprints-extension.json"), ManifestJson(Id(index), "fx.scale.dll", "0.4", dependsOn));
         }
 
         return folders;

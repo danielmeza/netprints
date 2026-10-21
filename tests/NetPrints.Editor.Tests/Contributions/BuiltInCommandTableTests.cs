@@ -36,6 +36,7 @@ public class BuiltInCommandTableTests
         new("saveAll", "Save all", "File", "save", ["Ctrl+Shift+S"], Everywhere, null, typeof(SaveAllCommandHandler)),
         new("projectSettings", "Project settings", "File", "project-settings", [], Everywhere, null, typeof(ProjectSettingsCommandHandler)),
         new("references", "References…", "File", "project-settings", [], Everywhere, 7, typeof(ReferencesCommandHandler)),
+        new("openSettings", "Settings", "File", "settings", ["Ctrl+,"], Everywhere, null, typeof(OpenSettingsCommandHandler)),
         new("exit", "Exit", "File", "exit", [], Everywhere, null, typeof(ExitCommandHandler)),
         new("undo", "Undo", "Edit", "history", ["Ctrl+Z"], Everywhere, 4, typeof(UndoCommandHandler)),
         new("redo", "Redo", "Edit", "history", ["Ctrl+Y", "Ctrl+Shift+Z"], Everywhere, 5, typeof(RedoCommandHandler)),
@@ -114,10 +115,10 @@ public class BuiltInCommandTableTests
         Row row = Table.Single(candidate => candidate.Id == id);
         CommandDescriptor command = Assert.Single(Registered().Commands, candidate => candidate.Id == FullId(id));
 
-        Assert.Equal(row.Label, command.Label);
+        Assert.Equal(row.Label, command.Label.Text);
         Assert.Equal(row.Menu, command.Menu?.Path);
         Assert.Equal(row.Group, command.Menu?.Group);
-        Assert.Equal(row.Gestures.Select(Canonical), (command.DefaultGestures ?? []).Select(Canonical));
+        Assert.Equal(row.Gestures.Select(Canonical), (command.DefaultGestures ?? []).Select(gesture => gesture.ToString()));
         Assert.Equal(row.Scope, command.Scope);
         Assert.Equal(row.Bar, command.CommandBarOrder);
         Assert.Equal(row.Handler, command.Handler.GetType());
@@ -153,7 +154,7 @@ public class BuiltInCommandTableTests
 
     [Fact]
     public void ExitsAltF4BelongsToTheOsAndIsNotARegisteredGesture() =>
-        Assert.DoesNotContain(Registered().Commands.SelectMany(command => command.DefaultGestures ?? []), gesture => Canonical(gesture) == "Alt+F4");
+        Assert.DoesNotContain(Registered().Commands.SelectMany(command => command.DefaultGestures ?? []), gesture => gesture.ToString() == "Alt+F4");
 
     [Fact]
     public void ThePendingListIsShrinkOnlyAndEachEntryIsStillPending()

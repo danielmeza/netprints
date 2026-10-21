@@ -6,66 +6,46 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing an integer-based for-loop.
     /// </summary>
-    public class ForLoopNode : Node
+    [NodeKind(NodeKindIds.ForLoop)]
+    public sealed partial class ForLoopNode : Node
     {
-        /// <summary>
-        /// Execution pin that gets executed for each loop.
-        /// </summary>
-        public NodeOutputExecPin LoopPin
-        {
-            get { return OutputExecPins[0]; }
-        }
-
-        /// <summary>
-        /// Execution pin that gets executed when the loop is over.
-        /// </summary>
-        public NodeOutputExecPin CompletedPin
-        {
-            get { return OutputExecPins[1]; }
-        }
-
         /// <summary>
         /// Input execution pin that executes the loop.
         /// </summary>
-        public NodeInputExecPin ExecutionPin
-        {
-            get { return InputExecPins[0]; }
-        }
+        public partial NodeInputExecPin ExecPin { get; }
 
         /// <summary>
         /// Input execution pin that skips the current loop step.
         /// Should only be executed from within this loop.
         /// </summary>
-        public NodeInputExecPin ContinuePin
-        {
-            get { return InputExecPins[1]; }
-        }
+        public partial NodeInputExecPin ContinuePin { get; }
+
+        /// <summary>
+        /// Execution pin that gets executed for each loop.
+        /// </summary>
+        public partial NodeOutputExecPin LoopPin { get; }
+
+        /// <summary>
+        /// Execution pin that gets executed when the loop is over.
+        /// </summary>
+        public partial NodeOutputExecPin CompletedPin { get; }
 
         /// <summary>
         /// Input data pin for the initial inclusive index value of the loop.
         /// </summary>
-        public NodeInputDataPin InitialIndexPin
-        {
-            get { return InputDataPins[0]; }
-        }
+        public partial NodeInputDataPin<int> InitialIndexPin { get; }
 
         /// <summary>
         /// Input data pin for the maximum exclusive index value of the loop.
         /// </summary>
-        public NodeInputDataPin MaxIndexPin
-        {
-            get { return InputDataPins[1]; }
-        }
+        public partial NodeInputDataPin<int> MaxIndexPin { get; }
 
         /// <summary>
         /// Output data pin for the current index value of the loop.
         /// Starts at the value of InitialIndexPin and increases up to,
         /// but not including, MaxIndexPin.
         /// </summary>
-        public NodeOutputDataPin IndexPin
-        {
-            get { return OutputDataPins[0]; }
-        }
+        public partial NodeOutputDataPin<int> IndexPin { get; }
 
         /// <summary>
         /// Adds this node to <paramref name="graph"/> and gives it its execution, continue, index-range
@@ -75,18 +55,9 @@ namespace NetPrints.Graph
         public ForLoopNode(NodeGraph graph)
             : base(graph)
         {
-            AddInputExecPin("Exec");
-            AddInputExecPin("Continue");
+            DeclarePins();
 
-            AddOutputExecPin("Loop");
-            AddOutputExecPin("Completed");
-
-            AddInputDataPin("InitialIndex", TypeSpecifier.FromType<int>());
-            AddInputDataPin("MaxIndex", TypeSpecifier.FromType<int>());
-
-            AddOutputDataPin("Index", TypeSpecifier.FromType<int>());
-
-            InitialIndexPin.UnconnectedValue = 0;
+            MaxIndexPin.UnconnectedValue = null;
         }
 
         /// <summary>
@@ -97,5 +68,8 @@ namespace NetPrints.Graph
         {
             return "For Loop";
         }
+
+        /// <inheritdoc />
+        public override bool TitleIsFixed => true;
     }
 }

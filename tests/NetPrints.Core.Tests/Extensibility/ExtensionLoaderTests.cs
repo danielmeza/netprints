@@ -23,7 +23,7 @@ public class ExtensionLoaderTests : IDisposable
 
     public void Dispose() => Directory.Delete(root, recursive: true);
 
-    private static string Sample(string id, string api = "1.0", params string[] dependsOn) =>
+    private static string Sample(string id, string api = "0.4", params string[] dependsOn) =>
         ManifestJson(id, api: api, dependsOn: dependsOn);
 
     [Fact]
@@ -94,7 +94,7 @@ public class ExtensionLoaderTests : IDisposable
     [Fact]
     public async Task ACompatibleApiVersionPassesValidation()
     {
-        string folder = Path.GetDirectoryName(WriteManifest(Path.Combine(root, "x"), Sample("test.x", "1.0"))) ?? root;
+        string folder = Path.GetDirectoryName(WriteManifest(Path.Combine(root, "x"), Sample("test.x", "0.4"))) ?? root;
 
         await using ExtensionRegistry registry = Load(Options(folders: [folder]));
 
@@ -155,6 +155,23 @@ public class ExtensionLoaderTests : IDisposable
         Assert.Equal("NPX004", SingleFailure(registry, "test.dup").Code);
         Assert.Single(registry.Loaded);
         Assert.Contains(logs.Entries, e => e.EventId.Id == 2004 && e.Level == LogLevel.Warning);
+    }
+
+    [Fact]
+    public async Task AProjectCopyShadowsAUserCopyWithNpx012NamingBothVersions()
+    {
+        string project = Path.GetDirectoryName(WriteManifest(Path.Combine(root, "project", "dup"),
+            ManifestJson("test.dup").Replace("\"1.0.0\"", "\"2.0.0\"", StringComparison.Ordinal))) ?? root;
+        WriteManifest(Path.Combine(root, "user", "dup"), ManifestJson("test.dup").Replace("\"1.0.0\"", "\"0.9.0\"", StringComparison.Ordinal));
+
+        await using ExtensionRegistry registry = Load(Options(folders: [project], searchDirectories: [Path.Combine(root, "user")]));
+
+        var shadowed = Assert.Single(registry.Results.OfType<ExtensionLoadResult.Failed>(), r => r.Code == ExtensionDiagnosticCodes.Shadowed);
+        Assert.Equal("NPX012", shadowed.Code);
+        Assert.Equal("test.dup", shadowed.Id);
+        Assert.Contains("2.0.0", shadowed.Reason, StringComparison.Ordinal);
+        Assert.Contains("0.9.0", shadowed.Reason, StringComparison.Ordinal);
+        Assert.DoesNotContain(registry.Results.OfType<ExtensionLoadResult.Failed>(), r => r.Code == ExtensionDiagnosticCodes.DuplicateId);
     }
 
     [Fact]
@@ -421,8 +438,8 @@ public class ExtensionLoaderTests : IDisposable
 
         Assert.Equal(["netprints.test"], registry.Loaded.Select(m => m.Id));
         Assert.Empty(registry.Issues);
-        NodeKindDescriptor kind = Assert.Single(registry.NodeKinds);
-        Assert.Equal("netprints.test/Log", kind.Kind);
+        NodeKindDescriptor kind = Assert.Single(registry.NodeKinds, candidate => candidate.Kind == "netprints.test/Log");
+        Assert.Equal("netprints.test/Legacy", Assert.Single(registry.NodeKinds, candidate => candidate.Kind != kind.Kind).Kind);
 
         var assembly = kind.NodeType.Assembly;
         var context = AssemblyLoadContext.GetLoadContext(assembly);
@@ -450,7 +467,7 @@ public class ExtensionLoaderTests : IDisposable
         await using ExtensionRegistry registry = Load(Options(folders: [TestExtensionLocation.Folder]));
 
         Assert.Equal(["netprints.test"], registry.Loaded.Select(m => m.Id));
-        NodeKindDescriptor kind = Assert.Single(registry.NodeKinds);
+        NodeKindDescriptor kind = Assert.Single(registry.NodeKinds, candidate => candidate.Kind == "netprints.test/Log");
         Assert.Same(kind.Translator, registry.Translation.Nodes.Find(kind.NodeType));
         Assert.Same(kind.Converter, registry.NodeConverters.FindByDocumentType(kind.Converter.DocumentType));
     }
@@ -468,7 +485,7 @@ public class ExtensionLoaderTests : IDisposable
         Assert.Equal(["netprints.test"], registry.Loaded.Select(m => m.Id));
         Assert.Equal("NPX002", SingleFailure(registry, "test.future").Code);
         Assert.Equal("NPX007", SingleFailure(registry, "test.gone").Code);
-        Assert.Single(registry.NodeKinds);
+        Assert.Equal(["netprints.test/Log", "netprints.test/Legacy"], registry.NodeKinds.Select(kind => kind.Kind));
     }
 
     [Fact]
@@ -484,6 +501,81 @@ public class ExtensionLoaderTests : IDisposable
         Assert.Equal(["bbb.independent", "netprints.test", "aaa.dependent"], registry.Loaded.Select(m => m.Id));
         Assert.Equal(["bbb.emitter", "netprints.test/class", "aaa.emitter"], registry.ClassEmitters.Select(e => e.Id));
     }
+
+    // US11 scenario 1 (FR-082): a private reference newer than the host's copy is NPX008, not a later MissingMethodException.
+    [Fact]
+    public async Task AnExtensionBuiltAgainstANewerHostProvidedLibraryFailsWithNpx008()
+    {
+        Assert.Equal("host-lib-v1", Fixture.HostLib.Describe());
+        string folder = MultiExtension.FixtureExtensions.CopyTo(root, MultiExtension.FixtureExtensions.HostConflict);
+
+        await using ExtensionRegistry registry = Load(Options(folders: [folder]));
+
+        ExtensionLoadResult.Failed failure = SingleFailure(registry, MultiExtension.FixtureExtensions.HostConflict);
+        Assert.Equal("NPX008", failure.Code);
+        Assert.Contains("Fixture.HostLib", failure.Reason, StringComparison.Ordinal);
+        Assert.Contains("2.0.0.0", failure.Reason, StringComparison.Ordinal);
+        Assert.Contains("1.0.0.0", failure.Reason, StringComparison.Ordinal);
+        Assert.Empty(registry.NodeKinds);
+    }
+
+    // US11 scenario 1 (FR-082): the reference that conflicts may be one of the extension's own private libraries.
+    [Fact]
+    public async Task APrivateLibraryBuiltAgainstANewerDependencyCopyFailsWithNpx008()
+    {
+        string provider = MultiExtension.FixtureExtensions.CopyTo(root, MultiExtension.FixtureExtensions.LibV1);
+        string consumer = MultiExtension.FixtureExtensions.CopyTo(root, MultiExtension.FixtureExtensions.TransitiveConflict);
+
+        await using ExtensionRegistry registry = Load(Options(folders: [provider, consumer]));
+
+        ExtensionLoadResult.Failed failure = SingleFailure(registry, MultiExtension.FixtureExtensions.TransitiveConflict);
+        Assert.Equal("NPX008", failure.Code);
+        Assert.Contains("Fixture.MidLib", failure.Reason, StringComparison.Ordinal);
+        Assert.Contains("Fixture.SharedLib", failure.Reason, StringComparison.Ordinal);
+        Assert.Contains("2.0.0.0", failure.Reason, StringComparison.Ordinal);
+        Assert.Contains("1.0.0.0", failure.Reason, StringComparison.Ordinal);
+        Assert.DoesNotContain(registry.NodeKinds, kind => kind.Kind == "fx.transitive-conflict/Describe");
+        Assert.Contains(registry.NodeKinds, kind => kind.Kind == "fx.libv1/Describe");
+    }
+
+    // R8-1: the error attribution trusts a context's name as the id of the extension that created it.
+    [Fact]
+    public async Task EveryContextHoldingAnExtensionsMainAssemblyIsNamedAfterItsManifestId()
+    {
+        const string Source = """
+            using NetPrints.Extensibility;
+            public class Ext : INetPrintsExtension
+            {
+                public void Register(IExtensionBuilder builder) { }
+            }
+            """;
+        string search = Path.Combine(root, "search");
+        string baseUser = Path.Combine(search, "base-user");
+        string baseProject = Path.Combine(root, "base-project");
+        string user = Path.Combine(search, "user");
+        WriteManifest(baseUser, ManifestJson("test.base", "test.base.dll"));
+        Compile(baseUser, "test.base", Source);
+        WriteManifest(baseProject, ManifestJson("test.base", "test.base.dll"));
+        Compile(baseProject, "test.base", Source);
+        WriteManifest(user, ManifestJson("test.user", "test.user.dll", dependsOn: "test.base"));
+        string userAssembly = Compile(user, "test.user", Source);
+        await using var host = new ExtensionHost(Options(searchDirectories: [search]), new CollectingLoggerFactory());
+
+        string[] first = ContextNamesHolding(userAssembly);
+        await host.LoadForProjectAsync([baseProject], TestContext.Current.CancellationToken);
+        string[] afterReplacement = ContextNamesHolding(userAssembly);
+
+        Assert.Equal(["test.user"], first);
+        Assert.Equal(["test.user", "test.user"], afterReplacement);
+    }
+
+    private static string[] ContextNamesHolding(string assemblyPath) =>
+    [
+        .. AssemblyLoadContext.All
+            .Where(context => context.Assemblies.Any(assembly => !assembly.IsDynamic && assembly.Location.Length > 0 && Path.GetFullPath(assembly.Location) == Path.GetFullPath(assemblyPath)))
+            .Select(context => context.Name)
+            .OfType<string>(),
+    ];
 
     [Fact]
     public void ACancelledTokenThrowsOperationCanceled()

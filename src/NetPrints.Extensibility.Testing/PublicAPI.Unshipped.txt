@@ -1,0 +1,189 @@
+#nullable enable
+const NetPrints.Extensibility.Testing.NpkDiagnosticCodes.DeterministicEmitters = "NPK008" -> string!
+const NetPrints.Extensibility.Testing.NpkDiagnosticCodes.Manifest = "NPK001" -> string!
+const NetPrints.Extensibility.Testing.NpkDiagnosticCodes.NodeRoundTrip = "NPK006" -> string!
+const NetPrints.Extensibility.Testing.NpkDiagnosticCodes.Packaging = "NPK002" -> string!
+const NetPrints.Extensibility.Testing.NpkDiagnosticCodes.Registration = "NPK004" -> string!
+const NetPrints.Extensibility.Testing.NpkDiagnosticCodes.RegistryIssues = "NPK005" -> string!
+const NetPrints.Extensibility.Testing.NpkDiagnosticCodes.TranslationCompiles = "NPK007" -> string!
+const NetPrints.Extensibility.Testing.NpkDiagnosticCodes.TypeIdentity = "NPK003" -> string!
+const NetPrints.Extensibility.Testing.TestState.DefaultExtensionId = "test.extension" -> string!
+NetPrints.Extensibility.Testing.ConformanceCheckResult
+NetPrints.Extensibility.Testing.ConformanceCheckResult.<Clone>$() -> NetPrints.Extensibility.Testing.ConformanceCheckResult!
+NetPrints.Extensibility.Testing.ConformanceCheckResult.Code.get -> string!
+NetPrints.Extensibility.Testing.ConformanceCheckResult.Code.init -> void
+NetPrints.Extensibility.Testing.ConformanceCheckResult.ConformanceCheckResult(string! Code, string! Name, NetPrints.Extensibility.Testing.ConformanceStatus Status, System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Testing.ConformanceFinding!>! Findings, string! Note) -> void
+NetPrints.Extensibility.Testing.ConformanceCheckResult.Deconstruct(out string! Code, out string! Name, out NetPrints.Extensibility.Testing.ConformanceStatus Status, out System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Testing.ConformanceFinding!>! Findings, out string! Note) -> void
+NetPrints.Extensibility.Testing.ConformanceCheckResult.Equals(NetPrints.Extensibility.Testing.ConformanceCheckResult? other) -> bool
+NetPrints.Extensibility.Testing.ConformanceCheckResult.Findings.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Testing.ConformanceFinding!>!
+NetPrints.Extensibility.Testing.ConformanceCheckResult.Findings.init -> void
+NetPrints.Extensibility.Testing.ConformanceCheckResult.Name.get -> string!
+NetPrints.Extensibility.Testing.ConformanceCheckResult.Name.init -> void
+NetPrints.Extensibility.Testing.ConformanceCheckResult.Note.get -> string!
+NetPrints.Extensibility.Testing.ConformanceCheckResult.Note.init -> void
+NetPrints.Extensibility.Testing.ConformanceCheckResult.Status.get -> NetPrints.Extensibility.Testing.ConformanceStatus
+NetPrints.Extensibility.Testing.ConformanceCheckResult.Status.init -> void
+NetPrints.Extensibility.Testing.ConformanceFinding
+NetPrints.Extensibility.Testing.ConformanceFinding.<Clone>$() -> NetPrints.Extensibility.Testing.ConformanceFinding!
+NetPrints.Extensibility.Testing.ConformanceFinding.Code.get -> string!
+NetPrints.Extensibility.Testing.ConformanceFinding.Code.init -> void
+NetPrints.Extensibility.Testing.ConformanceFinding.ConformanceFinding(string! Code, string! Rule, string! Item) -> void
+NetPrints.Extensibility.Testing.ConformanceFinding.Deconstruct(out string! Code, out string! Rule, out string! Item) -> void
+NetPrints.Extensibility.Testing.ConformanceFinding.Equals(NetPrints.Extensibility.Testing.ConformanceFinding? other) -> bool
+NetPrints.Extensibility.Testing.ConformanceFinding.Item.get -> string!
+NetPrints.Extensibility.Testing.ConformanceFinding.Item.init -> void
+NetPrints.Extensibility.Testing.ConformanceFinding.Rule.get -> string!
+NetPrints.Extensibility.Testing.ConformanceFinding.Rule.init -> void
+NetPrints.Extensibility.Testing.ConformanceOptions
+NetPrints.Extensibility.Testing.ConformanceOptions.ConformanceOptions() -> void
+NetPrints.Extensibility.Testing.ConformanceOptions.ExtensionFolder.get -> string?
+NetPrints.Extensibility.Testing.ConformanceOptions.ExtensionFolder.init -> void
+NetPrints.Extensibility.Testing.ConformanceOptions.ExtensionId.get -> string?
+NetPrints.Extensibility.Testing.ConformanceOptions.ExtensionId.init -> void
+NetPrints.Extensibility.Testing.ConformanceOptions.HarnessFactory.get -> System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<NetPrints.Extensibility.Testing.ExtensionHarness!>!>?
+NetPrints.Extensibility.Testing.ConformanceOptions.HarnessFactory.init -> void
+NetPrints.Extensibility.Testing.ConformanceOptions.SourceDirectory.get -> string?
+NetPrints.Extensibility.Testing.ConformanceOptions.SourceDirectory.init -> void
+NetPrints.Extensibility.Testing.ConformanceReport
+NetPrints.Extensibility.Testing.ConformanceReport.ConformanceReport(System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Testing.ConformanceCheckResult!>! results) -> void
+NetPrints.Extensibility.Testing.ConformanceReport.Find(string! code) -> NetPrints.Extensibility.Testing.ConformanceCheckResult?
+NetPrints.Extensibility.Testing.ConformanceReport.Format() -> string!
+NetPrints.Extensibility.Testing.ConformanceReport.Passed.get -> bool
+NetPrints.Extensibility.Testing.ConformanceReport.Results.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Testing.ConformanceCheckResult!>!
+NetPrints.Extensibility.Testing.ConformanceStatus
+NetPrints.Extensibility.Testing.ConformanceStatus.Failed = 1 -> NetPrints.Extensibility.Testing.ConformanceStatus
+NetPrints.Extensibility.Testing.ConformanceStatus.Passed = 0 -> NetPrints.Extensibility.Testing.ConformanceStatus
+NetPrints.Extensibility.Testing.ConformanceStatus.Skipped = 2 -> NetPrints.Extensibility.Testing.ConformanceStatus
+NetPrints.Extensibility.Testing.ConformanceSuite
+NetPrints.Extensibility.Testing.ExtensionHarness
+NetPrints.Extensibility.Testing.ExtensionHarness.BuildClass(string! ns, string! name, params string![]! kinds) -> NetPrints.Core.ClassGraph!
+NetPrints.Extensibility.Testing.ExtensionHarness.DisposeAsync() -> System.Threading.Tasks.ValueTask
+NetPrints.Extensibility.Testing.ExtensionHarness.Registry.get -> NetPrints.Extensibility.Loading.ExtensionRegistry!
+NetPrints.Extensibility.Testing.ExtensionHarness.RoundTripAsync(byte[]! document, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<byte[]!>!
+NetPrints.Extensibility.Testing.ExtensionHarness.Translate(NetPrints.Core.ClassGraph! graph) -> string!
+NetPrints.Extensibility.Testing.ExtensionHarness.WriteAsync(NetPrints.Core.ClassGraph! graph, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<byte[]!>!
+NetPrints.Extensibility.Testing.ExtensionTest<TExtension>
+NetPrints.Extensibility.Testing.ExtensionTest<TExtension>.DisposeAsync() -> System.Threading.Tasks.ValueTask
+NetPrints.Extensibility.Testing.ExtensionTest<TExtension>.ExtensionTest() -> void
+NetPrints.Extensibility.Testing.ExtensionTest<TExtension>.RunAsync(System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<NetPrints.Extensibility.Testing.ExtensionTestResult!>!
+NetPrints.Extensibility.Testing.ExtensionTest<TExtension>.State.get -> NetPrints.Extensibility.Testing.TestState!
+NetPrints.Extensibility.Testing.ExtensionTestResult
+NetPrints.Extensibility.Testing.ExtensionTestResult.Document.get -> byte[]?
+NetPrints.Extensibility.Testing.ExtensionTestResult.Harness.get -> NetPrints.Extensibility.Testing.ExtensionHarness!
+NetPrints.Extensibility.Testing.ExtensionTestResult.LoadFailures.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Loading.ExtensionLoadResult.Failed!>!
+NetPrints.Extensibility.Testing.ExtensionTestResult.Registry.get -> NetPrints.Extensibility.Loading.ExtensionRegistry!
+NetPrints.Extensibility.Testing.ExtensionTestResult.RoundTrippedDocument.get -> byte[]?
+NetPrints.Extensibility.Testing.ExtensionTestResult.TranslatedCode.get -> string?
+NetPrints.Extensibility.Testing.NpkDiagnosticCodes
+NetPrints.Extensibility.Testing.TestState
+NetPrints.Extensibility.Testing.TestState.ExtensionFolders.get -> System.Collections.ObjectModel.Collection<string!>!
+NetPrints.Extensibility.Testing.TestState.ExtensionId.get -> string!
+NetPrints.Extensibility.Testing.TestState.ExtensionId.set -> void
+NetPrints.Extensibility.Testing.TestState.NodeKinds.get -> System.Collections.ObjectModel.Collection<string!>!
+NetPrints.Extensibility.Testing.TestState.TestState() -> void
+override NetPrints.Extensibility.Testing.ConformanceCheckResult.Equals(object? obj) -> bool
+override NetPrints.Extensibility.Testing.ConformanceCheckResult.GetHashCode() -> int
+override NetPrints.Extensibility.Testing.ConformanceCheckResult.ToString() -> string!
+override NetPrints.Extensibility.Testing.ConformanceFinding.Equals(object? obj) -> bool
+override NetPrints.Extensibility.Testing.ConformanceFinding.GetHashCode() -> int
+override NetPrints.Extensibility.Testing.ConformanceFinding.ToString() -> string!
+static NetPrints.Extensibility.Testing.ConformanceCheckResult.operator !=(NetPrints.Extensibility.Testing.ConformanceCheckResult? left, NetPrints.Extensibility.Testing.ConformanceCheckResult? right) -> bool
+static NetPrints.Extensibility.Testing.ConformanceCheckResult.operator ==(NetPrints.Extensibility.Testing.ConformanceCheckResult? left, NetPrints.Extensibility.Testing.ConformanceCheckResult? right) -> bool
+static NetPrints.Extensibility.Testing.ConformanceFinding.operator !=(NetPrints.Extensibility.Testing.ConformanceFinding? left, NetPrints.Extensibility.Testing.ConformanceFinding? right) -> bool
+static NetPrints.Extensibility.Testing.ConformanceFinding.operator ==(NetPrints.Extensibility.Testing.ConformanceFinding? left, NetPrints.Extensibility.Testing.ConformanceFinding? right) -> bool
+static NetPrints.Extensibility.Testing.ConformanceSuite.RunAsync(NetPrints.Extensibility.Testing.ExtensionHarness! harness, NetPrints.Extensibility.Testing.ConformanceOptions! options, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<NetPrints.Extensibility.Testing.ConformanceReport!>!
+static NetPrints.Extensibility.Testing.ConformanceSuite.RunCheckAsync(NetPrints.Extensibility.Testing.ExtensionHarness! harness, NetPrints.Extensibility.Testing.ConformanceOptions! options, string! code, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<NetPrints.Extensibility.Testing.ConformanceCheckResult!>!
+static NetPrints.Extensibility.Testing.ExtensionHarness.CreateAsync(System.Collections.Generic.IReadOnlyList<string!>! folders, System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.INetPrintsExtension!>! inProcess, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<NetPrints.Extensibility.Testing.ExtensionHarness!>!
+static NetPrints.Extensibility.Testing.ExtensionHarness.CreateWithManifestsAsync(System.Collections.Generic.IReadOnlyList<string!>! folders, System.Collections.Generic.IReadOnlyList<(NetPrints.Extensibility.Loading.ExtensionManifest! Manifest, NetPrints.Extensibility.INetPrintsExtension! Extension)>! inProcess, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<NetPrints.Extensibility.Testing.ExtensionHarness!>!
+static NetPrints.Extensibility.Testing.NpkDiagnosticCodes.All.get -> System.Collections.Generic.IReadOnlyList<string!>!
+virtual NetPrints.Extensibility.Testing.ExtensionTest<TExtension>.DisposeAsyncCore() -> System.Threading.Tasks.ValueTask
+const NetPrints.Extensibility.Testing.NpkDiagnosticCodes.Settings = "NPK009" -> string!
+const NetPrints.Extensibility.Testing.NpkDiagnosticCodes.HostChannel = "NPK010" -> string!
+const NetPrints.Extensibility.Testing.NpkDiagnosticCodes.Coexistence = "NPK011" -> string!
+const NetPrints.Extensibility.Testing.NpkDiagnosticCodes.Disposal = "NPK012" -> string!
+const NetPrints.Extensibility.Testing.NpkDiagnosticCodes.Services = "NPK013" -> string!
+const NetPrints.Extensibility.Testing.NpkDiagnosticCodes.EditorContributions = "NPK015" -> string!
+const NetPrints.Extensibility.Testing.NpkDiagnosticCodes.ContributedViews = "NPK016" -> string!
+NetPrints.Extensibility.Testing.ConformanceOptions.NeighbourHarnessFactory.get -> System.Func<System.Collections.Generic.IReadOnlyList<(NetPrints.Extensibility.Loading.ExtensionManifest! Manifest, NetPrints.Extensibility.INetPrintsExtension! Extension)>!, System.Threading.CancellationToken, System.Threading.Tasks.Task<NetPrints.Extensibility.Testing.ExtensionHarness!>!>?
+NetPrints.Extensibility.Testing.ConformanceOptions.NeighbourHarnessFactory.init -> void
+NetPrints.Extensibility.Testing.ExtensionHarness.EditorContributions.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Testing.RecordedContribution!>!
+NetPrints.Extensibility.Testing.ExtensionHarness.Log.get -> NetPrints.Extensibility.Testing.HarnessLog!
+NetPrints.Extensibility.Testing.HarnessLog
+NetPrints.Extensibility.Testing.HarnessLog.Entries.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Testing.HarnessLogEntry!>!
+NetPrints.Extensibility.Testing.HarnessLog.HarnessLog() -> void
+NetPrints.Extensibility.Testing.HarnessLogEntry
+NetPrints.Extensibility.Testing.HarnessLogEntry.<Clone>$() -> NetPrints.Extensibility.Testing.HarnessLogEntry!
+NetPrints.Extensibility.Testing.HarnessLogEntry.Category.get -> string!
+NetPrints.Extensibility.Testing.HarnessLogEntry.Category.init -> void
+NetPrints.Extensibility.Testing.HarnessLogEntry.Deconstruct(out Microsoft.Extensions.Logging.LogLevel Level, out Microsoft.Extensions.Logging.EventId EventId, out string! Category, out string! Message) -> void
+NetPrints.Extensibility.Testing.HarnessLogEntry.Equals(NetPrints.Extensibility.Testing.HarnessLogEntry? other) -> bool
+NetPrints.Extensibility.Testing.HarnessLogEntry.EventId.get -> Microsoft.Extensions.Logging.EventId
+NetPrints.Extensibility.Testing.HarnessLogEntry.EventId.init -> void
+NetPrints.Extensibility.Testing.HarnessLogEntry.HarnessLogEntry(Microsoft.Extensions.Logging.LogLevel Level, Microsoft.Extensions.Logging.EventId EventId, string! Category, string! Message) -> void
+NetPrints.Extensibility.Testing.HarnessLogEntry.Level.get -> Microsoft.Extensions.Logging.LogLevel
+NetPrints.Extensibility.Testing.HarnessLogEntry.Level.init -> void
+NetPrints.Extensibility.Testing.HarnessLogEntry.Message.get -> string!
+NetPrints.Extensibility.Testing.HarnessLogEntry.Message.init -> void
+NetPrints.Extensibility.Testing.RecordedContribution
+NetPrints.Extensibility.Testing.RecordedContribution.<Clone>$() -> NetPrints.Extensibility.Testing.RecordedContribution!
+NetPrints.Extensibility.Testing.RecordedContribution.Deconstruct(out string! ExtensionId, out object! Descriptor) -> void
+NetPrints.Extensibility.Testing.RecordedContribution.Descriptor.get -> object!
+NetPrints.Extensibility.Testing.RecordedContribution.Descriptor.init -> void
+NetPrints.Extensibility.Testing.RecordedContribution.Equals(NetPrints.Extensibility.Testing.RecordedContribution? other) -> bool
+NetPrints.Extensibility.Testing.RecordedContribution.ExtensionId.get -> string!
+NetPrints.Extensibility.Testing.RecordedContribution.ExtensionId.init -> void
+NetPrints.Extensibility.Testing.RecordedContribution.RecordedContribution(string! ExtensionId, object! Descriptor) -> void
+override NetPrints.Extensibility.Testing.HarnessLogEntry.Equals(object? obj) -> bool
+override NetPrints.Extensibility.Testing.HarnessLogEntry.GetHashCode() -> int
+override NetPrints.Extensibility.Testing.HarnessLogEntry.ToString() -> string!
+override NetPrints.Extensibility.Testing.RecordedContribution.Equals(object? obj) -> bool
+override NetPrints.Extensibility.Testing.RecordedContribution.GetHashCode() -> int
+override NetPrints.Extensibility.Testing.RecordedContribution.ToString() -> string!
+static NetPrints.Extensibility.Testing.HarnessLogEntry.operator !=(NetPrints.Extensibility.Testing.HarnessLogEntry? left, NetPrints.Extensibility.Testing.HarnessLogEntry? right) -> bool
+static NetPrints.Extensibility.Testing.HarnessLogEntry.operator ==(NetPrints.Extensibility.Testing.HarnessLogEntry? left, NetPrints.Extensibility.Testing.HarnessLogEntry? right) -> bool
+static NetPrints.Extensibility.Testing.RecordedContribution.operator !=(NetPrints.Extensibility.Testing.RecordedContribution? left, NetPrints.Extensibility.Testing.RecordedContribution? right) -> bool
+static NetPrints.Extensibility.Testing.RecordedContribution.operator ==(NetPrints.Extensibility.Testing.RecordedContribution? left, NetPrints.Extensibility.Testing.RecordedContribution? right) -> bool
+const NetPrints.Extensibility.Testing.NpkDiagnosticCodes.ApiCompatibility = "NPK017" -> string!
+NetPrints.Extensibility.Testing.ExtensionVerification
+NetPrints.Extensibility.Testing.ExtensionVerification.<Clone>$() -> NetPrints.Extensibility.Testing.ExtensionVerification!
+NetPrints.Extensibility.Testing.ExtensionVerification.Deconstruct(out NetPrints.Extensibility.Testing.ConformanceReport! Report, out string? ExtensionId, out string? ExtensionVersion, out string? NetprintsApi, out System.Collections.Generic.IReadOnlyList<string!>! HostAssemblies, out System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Testing.MissingMember!>! MissingMembers) -> void
+NetPrints.Extensibility.Testing.ExtensionVerification.Equals(NetPrints.Extensibility.Testing.ExtensionVerification? other) -> bool
+NetPrints.Extensibility.Testing.ExtensionVerification.ExtensionId.get -> string?
+NetPrints.Extensibility.Testing.ExtensionVerification.ExtensionId.init -> void
+NetPrints.Extensibility.Testing.ExtensionVerification.ExtensionVerification(NetPrints.Extensibility.Testing.ConformanceReport! Report, string? ExtensionId, string? ExtensionVersion, string? NetprintsApi, System.Collections.Generic.IReadOnlyList<string!>! HostAssemblies, System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Testing.MissingMember!>! MissingMembers) -> void
+NetPrints.Extensibility.Testing.ExtensionVerification.ExtensionVersion.get -> string?
+NetPrints.Extensibility.Testing.ExtensionVerification.ExtensionVersion.init -> void
+NetPrints.Extensibility.Testing.ExtensionVerification.HostAssemblies.get -> System.Collections.Generic.IReadOnlyList<string!>!
+NetPrints.Extensibility.Testing.ExtensionVerification.HostAssemblies.init -> void
+NetPrints.Extensibility.Testing.ExtensionVerification.MissingMembers.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Testing.MissingMember!>!
+NetPrints.Extensibility.Testing.ExtensionVerification.MissingMembers.init -> void
+NetPrints.Extensibility.Testing.ExtensionVerification.NetprintsApi.get -> string?
+NetPrints.Extensibility.Testing.ExtensionVerification.NetprintsApi.init -> void
+NetPrints.Extensibility.Testing.ExtensionVerification.Report.get -> NetPrints.Extensibility.Testing.ConformanceReport!
+NetPrints.Extensibility.Testing.ExtensionVerification.Report.init -> void
+NetPrints.Extensibility.Testing.ExtensionVerifier
+NetPrints.Extensibility.Testing.MissingMember
+NetPrints.Extensibility.Testing.MissingMember.Assembly.get -> string!
+NetPrints.Extensibility.Testing.MissingMember.Assembly.init -> void
+NetPrints.Extensibility.Testing.MissingMember.<Clone>$() -> NetPrints.Extensibility.Testing.MissingMember!
+NetPrints.Extensibility.Testing.MissingMember.Deconstruct(out string! Assembly, out string! Type, out string? Member, out string! ReferencedFrom) -> void
+NetPrints.Extensibility.Testing.MissingMember.Equals(NetPrints.Extensibility.Testing.MissingMember? other) -> bool
+NetPrints.Extensibility.Testing.MissingMember.Member.get -> string?
+NetPrints.Extensibility.Testing.MissingMember.Member.init -> void
+NetPrints.Extensibility.Testing.MissingMember.MissingMember(string! Assembly, string! Type, string? Member, string! ReferencedFrom) -> void
+NetPrints.Extensibility.Testing.MissingMember.ReferencedFrom.get -> string!
+NetPrints.Extensibility.Testing.MissingMember.ReferencedFrom.init -> void
+NetPrints.Extensibility.Testing.MissingMember.Type.get -> string!
+NetPrints.Extensibility.Testing.MissingMember.Type.init -> void
+override NetPrints.Extensibility.Testing.ExtensionVerification.Equals(object? obj) -> bool
+override NetPrints.Extensibility.Testing.ExtensionVerification.GetHashCode() -> int
+override NetPrints.Extensibility.Testing.ExtensionVerification.ToString() -> string!
+override NetPrints.Extensibility.Testing.MissingMember.Equals(object? obj) -> bool
+override NetPrints.Extensibility.Testing.MissingMember.GetHashCode() -> int
+override NetPrints.Extensibility.Testing.MissingMember.ToString() -> string!
+static NetPrints.Extensibility.Testing.ExtensionVerification.operator !=(NetPrints.Extensibility.Testing.ExtensionVerification? left, NetPrints.Extensibility.Testing.ExtensionVerification? right) -> bool
+static NetPrints.Extensibility.Testing.ExtensionVerification.operator ==(NetPrints.Extensibility.Testing.ExtensionVerification? left, NetPrints.Extensibility.Testing.ExtensionVerification? right) -> bool
+static NetPrints.Extensibility.Testing.ExtensionVerifier.VerifyFolderAsync(string! folder, string? hostFolder, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<NetPrints.Extensibility.Testing.ExtensionVerification!>!
+static NetPrints.Extensibility.Testing.ExtensionVerifier.VerifyPackageAsync(string! package, string? hostFolder, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<NetPrints.Extensibility.Testing.ExtensionVerification!>!
+static NetPrints.Extensibility.Testing.MissingMember.operator !=(NetPrints.Extensibility.Testing.MissingMember? left, NetPrints.Extensibility.Testing.MissingMember? right) -> bool
+static NetPrints.Extensibility.Testing.MissingMember.operator ==(NetPrints.Extensibility.Testing.MissingMember? left, NetPrints.Extensibility.Testing.MissingMember? right) -> bool

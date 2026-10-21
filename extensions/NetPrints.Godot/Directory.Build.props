@@ -1,0 +1,12 @@
+<Project>
+  <!-- Stops the walk to the repository's props: this extension builds only against the packed NetPrints packages (research R26). -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Deterministic>true</Deterministic>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+</Project>

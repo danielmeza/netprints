@@ -27,6 +27,7 @@ namespace NetPrints.Editor.Diagnostics;
 /// <see cref="session"/> stale or briefly <see langword="null"/> instead of always reflecting the
 /// latest snapshot synchronously. Kept synchronous on the calling (UI) thread.
 /// </summary>
+[Singleton<ICodeAnalysisHost>]
 public sealed class CodeAnalysisHost : ICodeAnalysisHost
 {
     /// <summary>Debounce window between the last <see cref="RequestAnalysis"/> call and the start of analysis (SC-006).</summary>
