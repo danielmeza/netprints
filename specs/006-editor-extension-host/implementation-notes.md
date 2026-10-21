@@ -2370,5 +2370,7 @@ R10-1 is decided as an accepted recall loss, because FR-034 favours precision ov
 - R11-1 (6eaae9a1): R10-F's first paragraph now states the dependency-swap case truthfully (case I, pass 1's stop names none because the served copy's context has no origin), and P3c's roadmap section ends with a "Carried from P3's review" bullet deferring the served copy's context to the extension manager. No code changes.
 - R11-2, R11-3 (8545377e): the attribution paragraph in `docs/guide/extensions.md` now says the assembly version (the one your project builds, which the manifest's `version` does not set), "same assembly version" in the earlier-copy and library-only cases, "another assembly version", and "first loaded after a project replaced" for the swap case.
 - Gates: Release build 0 warnings, 0 errors; docs tests (`--filter-class *Docs* --filter-class *Guide*`, fresh state and config folders) 39 total, 39 passed, 0 skipped, 0 failed; `dotnet format --verify-no-changes` exit 0; `bash eng/trim-warnings.sh` 8, baseline 8.
-- Decisions (delegated): the R10-F paragraph replacement is one line, matching the notes' one-line paragraphs, with the wording unchanged; the roadmap bullet is wrapped at 120 columns like its neighbours; the guide paragraph is rewrapped at 124 columns, its existing width, which keeps most unchanged breaks in place.
+- Decision (delegated): the R10-F paragraph replacement is written as one line, matching the notes' one-line paragraphs, with the wording unchanged.
+- Decision (delegated): the roadmap bullet is wrapped at 120 columns like its neighbours.
+- Decision (delegated): the guide paragraph is rewrapped at 124 columns, its existing width, which keeps most unchanged breaks in place.
 - Slips: none.
