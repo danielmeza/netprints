@@ -2374,3 +2374,22 @@ R10-1 is decided as an accepted recall loss, because FR-034 favours precision ov
 - Decision (delegated): the roadmap bullet is wrapped at 120 columns like its neighbours.
 - Decision (delegated): the guide paragraph is rewrapped at 124 columns, its existing width; the rewrap moved five of the six line ends in the paragraph's unchanged lines by one word.
 - Slip (batch spec): commit 6eaae9a1 edited `.specify/memory/roadmap.md`, which AGENTS.md reserves to the coordinating session with the owner's approval; the batch spec directed the edit, and Batch R12-F reverted it.
+
+## Batch R12-F (round-12 review fixes)
+
+- R12-1: removed the P3c "Carried from P3's review" bullet from `.specify/memory/roadmap.md` (`git diff c57f96ad -- .specify/memory/roadmap.md` is empty); the R10-F paragraph now says the served-copy context is proposed for P3c, and the R11-F section records the roadmap edit as a slip.
+- R12-2: the R10-F paragraph now restricts the swap case to "a library that no copy of the extension loaded before that swap".
+- R12-3: the R11-F rewrap note states the fact: the rewrap moved five of the six line ends in the paragraph's unchanged lines by one word.
+- Gates: Release build 0 warnings, 0 errors; docs tests (`--filter-class *Docs* --filter-class *Guide*`, fresh state and config folders) 39 total, 39 passed, 0 skipped, 0 failed.
+
+Roadmap proposal for the coordinator (needs the owner's approval), for the P3c section's list:
+
+- **Carried from P3's review** (PR #20, round 10): the error dialog's attribution (FR-034) takes an extension's load
+  context from the first copy loaded from its manifest's path. After a project's copy of a dependency makes the host
+  reload the dependent extension in a new context, a library that no copy of the extension loaded before that reload
+  names no extension (an accepted recall loss). The extension manager changes how the host loads extensions; it also
+  makes the context the host serves now available to the editor (on the load result or the host), so that case names
+  the extension.
+
+- Decisions (delegated): none.
+- Slips: none. One no-op probe, `cat >> /dev/null` with no content, was run in the shell; nothing was written to the repo.
