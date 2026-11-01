@@ -195,6 +195,58 @@ public class LaunchSettingsReaderTests
         Assert.Null(settings.DefaultProfile(BinaryType.Executable));
     }
 
+    [Theory]
+    [InlineData("""{ "profiles": { "Bad\ud800": { "commandName": "Project" } } }""")]
+    [InlineData("""{ "profiles": { "Game": { "commandName": "Pro\ud800" } } }""")]
+    [InlineData("""{ "profiles": { "Game": { "commandName": "Executable", "executablePath": "a\ud800" } } }""")]
+    [InlineData("""{ "profiles": { "Game": { "commandName": "Project", "environmentVariables": { "K\ud800": "v" } } } }""")]
+    [InlineData("""{ "profiles": { "Game": { "commandName": "Project", "environmentVariables": { "K": "v\ud800" } } } }""")]
+    public void ALoneSurrogateEscapeGivesNpr001(string json)
+    {
+        LaunchSettings settings = LaunchSettingsReader.Parse(json, "x.json");
+
+        Assert.False(settings.IsUsable);
+        Assert.Empty(settings.Profiles);
+        RunProblem problem = Assert.Single(settings.Problems);
+        Assert.Equal("NPR001", problem.Code);
+        Assert.Equal(RunProblemSeverity.Error, problem.Severity);
+        Assert.StartsWith("'x.json' is not valid launch settings: ", problem.Message, StringComparison.Ordinal);
+        Assert.EndsWith(".", problem.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("..", problem.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void NestingBeyondTheLimitGivesNpr001()
+    {
+        string json = new string('[', 100) + new string(']', 100);
+
+        LaunchSettings settings = LaunchSettingsReader.Parse(json, "x.json");
+
+        Assert.Equal("NPR001", Assert.Single(settings.Problems).Code);
+    }
+
+    [Fact]
+    public void InvalidUtf8BytesOnDiskGiveNpr001OrNoException()
+    {
+        string folder = Path.Combine(Path.GetTempPath(), "nprints-reader-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(folder, "Properties"));
+        try
+        {
+            byte[] head = System.Text.Encoding.UTF8.GetBytes("""{ "profiles": { "Game": { "commandName": "Project", "commandLineArgs": "a""");
+            byte[] tail = System.Text.Encoding.UTF8.GetBytes("""b" } } }""");
+            byte[] bytes = [.. head, 0xFF, 0xC3, .. tail];
+            File.WriteAllBytes(Path.Combine(folder, "Properties", "launchSettings.json"), bytes);
+
+            LaunchSettings settings = LaunchSettingsReader.Read(folder);
+
+            Assert.NotNull(settings);
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
     [Fact]
     public void ANpr001FileKeepsNoProfileEvenWhenAnEarlierOneWasValid()
     {

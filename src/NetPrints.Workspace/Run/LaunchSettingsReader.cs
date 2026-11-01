@@ -64,7 +64,7 @@ public static class LaunchSettingsReader
             using JsonDocument document = JsonDocument.Parse(json, DocumentOptions);
             return Build(document.RootElement, filePath, hasComments);
         }
-        catch (JsonException exception)
+        catch (Exception exception) when (exception is JsonException or InvalidOperationException)
         {
             return Invalid(filePath, exception.Message, hasComments);
         }

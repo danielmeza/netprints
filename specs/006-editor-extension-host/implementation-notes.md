@@ -2560,3 +2560,29 @@ Gates
 - `DiagnosticsGuideTests` 7 of 7, `SourceHygieneTests` 17 of 17, `LaunchSettingsReaderTests` 38 of 38,
   `CommandLineSplitterTests` 71 of 71 (38 of them round-trip cases).
 - Not run: `eng/trim-warnings.sh` and the pack scripts (the brief's gates do not list them; Workspace is not packed).
+
+## Batch E1-F (invalid surrogates in launch settings)
+
+Red
+- `ALoneSurrogateEscapeGivesNpr001` (5 cases: profile name, `commandName`, `executablePath`, environment variable name,
+  environment variable value, each with a lone `\ud800` escape): all 5 failed with `InvalidOperationException`
+  ("Cannot read incomplete UTF-16 JSON text as string with missing low surrogate") escaping `Parse`.
+- Also tried, both already green without a fix: nesting 100 deep (the default depth limit of 64 raises `JsonException`,
+  also in the comment pass) and a file holding invalid UTF-8 bytes (`File.ReadAllText` substitutes U+FFFD, no throw).
+
+Fix
+- `Parse` catches `JsonException or InvalidOperationException` and returns `Invalid(...)`; the message format of
+  `Invalid` is unchanged (single trailing dot). Green: `LaunchSettingsReaderTests` 45 of 45.
+
+Decision (delegated): the catch sits in `Parse`, the one place that wraps every `JsonElement`/`JsonProperty` access
+(`Build`, `TryReadProfile`, `TryReadOptionalString`, `TryReadEnvironment`), instead of guarding each `GetString()`/`Name`
+call. Other exception types still propagate. The detail is the framework's message, as for `JsonException`.
+
+Gates
+- `NetPrints.Core.Tests` whole project: 1191 passed, 0 failed, 0 skipped.
+- `dotnet build NetPrints.slnx` and `-c Release`: 0 warnings, 0 errors. `dotnet format --verify-no-changes --no-restore`: exit 0.
+- Not run: the other test projects and the E2E run (CI runs them).
+
+Slips
+- First `dotnet test --project` call was issued from outside the worktree and failed with MSB1001 (no `global.json`
+  found); re-run from inside it. The red run used the built test executable directly.
