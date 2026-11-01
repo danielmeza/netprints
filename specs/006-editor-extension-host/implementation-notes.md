@@ -170,6 +170,22 @@ and is marked "default pending owner" in tasks.md.
 | External terminal | Linux detection order behind `run.linuxTerminal`; the Windows console closes at exit; macOS through `open -a Terminal` | T123 |
 | Search order: This Methods before This Variables (the old canvas search showed variables first per base type) | This Methods first, as the default ranker's fixed order says; one ranker constant to flip | T022 |
 
+## Sub-phase E contracts (2026-10-19)
+
+The sub-phase E contracts (contracts/run-profiles.md §7) and design cards ([design-cards-e.md](design-cards-e.md))
+settle the audit's sub-phase E gaps before E1. Batches record deviations from the design cards here, under each
+batch's heading.
+
+Decided, OWNER-1: which `$(Name)` a run profile may use. The owner delegated the call on 2026-10-19; the
+coordinating session chose (b) after the contract audit's arbitration (A-9) and two adversarial passes.
+- (a) The listed names only (`ProjectDir`, `TargetDir`, `TargetPath`, `OutDir`, `Configuration`, `TargetFramework`
+  and the extensions' `AddProjectProperty` names). `netprints run` then loads the project (a design-time build,
+  seconds) and its extensions whenever a profile uses a name outside the six.
+- (b) Chosen: any property the project defines in the selected configuration; NPR006 means "the
+  project does not define this property". `netprints run` evaluates the project once per run under either option
+  (it needs `OutputType`), so (b) adds no cost there; the editor evaluates at most once per run, and not at all when
+  the profile has no `$(`.
+
 ## Batch A3 (CI fix, T006, T007)
 
 - CI fix (cause): CI builds Release, the local build Debug. `ReferenceAssemblyPackageTests.cs` and
