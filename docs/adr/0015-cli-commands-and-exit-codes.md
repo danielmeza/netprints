@@ -57,3 +57,14 @@ fail on any release that changes the emitted C#, and `generate` would write outp
   without generating.
 - **Rejected.** Exec'ing the project's own generator host for `--check` would make the check exact, but it ties the
   tool to the host's private command line, which ADR-0009 keeps internal.
+
+## Amendment 2: where `netprints run` writes its profile problems (sub-phase E contracts, 2026-10-19)
+
+- **NPR lines go to stderr.** "Results and diagnostics on stdout" above covers results and build diagnostics, as
+  `docs/guide/cli.md` lists them. The run profile problems of `netprints run` (`error NPR005: …`, warnings included)
+  are neither: they are written to stderr, one line each, before the build, because stdout belongs to the program the
+  command runs. Build diagnostics keep their place on stdout.
+- **Exit codes.** NPR003, NPR004 and NPR011 (a profile chosen with `--launch-profile`) exit 2 like a usage error; every other NPR
+  error exits 1; warnings do not change the exit code (contracts/run-profiles.md §4).
+- **Rejected.** NPR lines on stdout, which would mix them into the program's own output and break a caller that pipes
+  it.
