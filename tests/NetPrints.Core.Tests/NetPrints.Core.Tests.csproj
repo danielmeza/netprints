@@ -63,6 +63,8 @@
     <None Include="Fixtures/HelloWorld/HelloWorld.csproj" CopyToOutputDirectory="PreserveNewest" />
     <!-- The C# target fixtures (T048): copied to a temp folder by each test, since the repository's props would set LangVersion. -->
     <None Include="../Fixtures/CSharpTarget/**" LinkBase="Fixtures/CSharpTarget" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The launch settings reader fixtures (T113). Only Reader: the folder later also holds EchoTool and GodotCopy. -->
+    <None Include="../Fixtures/RunProfiles/Reader/**" LinkBase="Fixtures/RunProfiles/Reader" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

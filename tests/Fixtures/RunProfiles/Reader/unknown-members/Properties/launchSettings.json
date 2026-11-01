@@ -1,0 +1,11 @@
+{
+  "iisSettings": { "windowsAuthentication": false },
+  "profiles": {
+    "Game": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "applicationUrl": "http://localhost:5000",
+      "dotnetRunMessages": true
+    }
+  }
+}

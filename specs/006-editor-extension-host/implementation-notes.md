@@ -2496,3 +2496,67 @@ Base c1cbc962, branch `p3-e-run-build`; fix in 23be9747. `ubuntu-latest` moved f
     outside the repository, so `global.json` did not select the runner. Both stopped at once and changed nothing.
   - The harness allows display numbers 100 to 199, so test runs on this machine used 180 and up, not a number above 300.
     The manual probes used 351. Containers have their own displays.
+
+## Batch E1 (launch settings reader, splitter and joiner)
+
+T113 and T114, built against cards C-01 and C-02.
+
+What changed
+- `src/NetPrints.Workspace/Run/`: `NprDiagnosticCodes`, `RunProblemSeverity`, `RunProblem`, `RunProfileKinds`,
+  `RunProfileAvailability`, `LaunchProfile`, `LaunchSettings`, `LaunchSettingsReader`, `CommandLineSplitter`, one type per file.
+- `tests/NetPrints.Core.Tests/Run/LaunchSettingsReaderTests.cs` over 20 fixture folders in
+  `tests/Fixtures/RunProfiles/Reader/` (linked into Core.Tests, `Reader` only); `CommandLineSplitterTests.cs`.
+- `"NPR"` in `DiagnosticsGuideTests.Prefixes`; the NPR prefix row and the NPR section in `docs/guide/diagnostics.md`
+  (no link to `run-profiles.md`, T125 adds it).
+- T113 and T114 ticked.
+
+Tests
+- Splitter and joiner: 38 round-trip cases (`RoundTrip`, with a guard test that the count stays at 30 or more), 20 fixed
+  `Split` cases, 11 fixed `Join` cases.
+- Reader: 38 test cases in `LaunchSettingsReaderTests` (theories counted by row).
+- Red runs, before the code, against stubs (`AvailabilityFor` returned `Runnable`, `Parse` and `Read` returned `None`,
+  `Split` returned an empty list, `Join` was `string.Join(' ', args)`): reader 32 of 38 failed, splitter 62 of 71
+  failed, all on assertions (`Assert.NotNull`, `Assert.True`, `Assert.Equal`). Green after the code: 38 of 38 and 71 of 71.
+- Gates: see the numbers at the end of this section.
+
+Decision (delegated)
+- NPR001 detail: the JSON exception message and the IO message are written with their trailing dots removed, so the
+  message never ends in two dots (contract text: `... is not valid launch settings: {detail}.`).
+- Two profile names with the same spelling (a duplicate key) are not an NPR002 (the rule is "differ only by case"); both
+  stay in `Profiles` and `Find` returns the first.
+- `Read` treats `FileNotFoundException` and `DirectoryNotFoundException` as "no file" (`LaunchSettings.None`), not
+  `File.Exists` first, so a `launchSettings.json` that is a directory gives NPR001 through `UnauthorizedAccessException`.
+- `FilePath` is `Path.GetFullPath` of the combined path.
+- `environmentVariables` and each optional string member with a JSON `null` value is NPR001 (a non-string), as the
+  contract says non-string.
+- `LaunchProfile.AvailabilityFor` messages use `outputType.ToString()` (`SharedLibrary`, `Executable`) for `{outputType}`.
+- The `CommandLineSplitter` constant `Pair` (the 2 of "n/2" and "2n") exists only because S109 is an error in `src/`.
+- `BinaryType` is in namespace `NetPrints.Core`, not `NetPrints.Projects`, so the Workspace files use `NetPrints.Core`.
+- `NetPrints.Workspace` has no `PublicAPI` files, so none was edited.
+
+Deviation from a card
+- C-01 "first red test": `AProjectProfileOnALibraryIsDisabledWithNpr011` failed on `Assert.NotNull(Find(...))` of the
+  stubbed reader, not on `Reason.Code == "NPR011"`, because the stub `Read` returned `None`. Other tests in the class
+  failed on the code assertion of the stubbed `AvailabilityFor`. The card's intent (red before the code) holds.
+- C-02 "first red test" used a stubbed `Split` as well as a stubbed `Join`, so it failed on the first case, not only on a
+  case with a space.
+- C-01 step 1: the comment pass swallows a `JsonException` (invalid JSON) and returns false; NPR001 comes from the
+  document parse.
+
+Slips
+- First build failed: `using NetPrints.Projects` where `BinaryType` is in `NetPrints.Core`; then S109 on the literal 2
+  and IDISP004 on `foreach` over `EnumerateObject()` (fixed with `using JsonElement.ObjectEnumerator`, the repo's
+  precedent). All before any commit.
+- The first attempt to write the reader's environment check counted members twice; replaced by a `valid` flag before running anything.
+- A second `bg-run.sh` call was issued from a directory outside the repository; it attached to the one running job
+  (a single `dotnet test` process), no second suite ran.
+
+Gates
+- Whole suite, Release, `--ignore-exit-code 8`: exit 0, every test assembly "passed", 0 failed, 41 skipped (the E2E
+  scenarios that need `NETPRINTS_E2E`, the three NPK conformance checks that need an extension folder, the Godot host
+  test, one snapshot and `PanCursor`). The run printed no per-assembly totals, so no summed total is recorded.
+  Not run: the dedicated `NETPRINTS_E2E=1` Desktop E2E run (the brief did not ask for it and nothing in E1 touches the editor).
+- `dotnet build NetPrints.slnx -c Release`: 0 warnings, 0 errors. `dotnet format --verify-no-changes --no-restore`: exit 0.
+- `DiagnosticsGuideTests` 7 of 7, `SourceHygieneTests` 17 of 17, `LaunchSettingsReaderTests` 38 of 38,
+  `CommandLineSplitterTests` 71 of 71 (38 of them round-trip cases).
+- Not run: `eng/trim-warnings.sh` and the pack scripts (the brief's gates do not list them; Workspace is not packed).

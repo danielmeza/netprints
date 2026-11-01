@@ -1,0 +1,19 @@
+{
+  // A comment
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "Zeta": {
+      "commandName": "Project",
+      "commandLineArgs": "--fast \"a b\"",
+      "workingDirectory": "bin",
+      "environmentVariables": {
+        "B_VAR": "2",
+        "A_VAR": "1",
+      },
+    },
+    "Alpha": {
+      "commandName": "Executable",
+      "executablePath": "%GODOT4%",
+    },
+  },
+}

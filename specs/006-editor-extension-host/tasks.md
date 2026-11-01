@@ -954,7 +954,7 @@ C-11). Record any deviation from a card in implementation-notes under the batch'
 
 ### Batch E1 — model: sonnet — T113–T114 — 2 units (mechanical)
 
-- [ ] T113 [US7] The launch settings reader (FR-051, FR-052, contracts/run-profiles.md §1 and §7.1, data-model §4,
+- [x] T113 [US7] The launch settings reader (FR-051, FR-052, contracts/run-profiles.md §1 and §7.1, data-model §4,
   card C-01; 1 unit). Test first: `tests/NetPrints.Core.Tests/Run/LaunchSettingsReaderTests.cs` over fixtures in
   `tests/Fixtures/RunProfiles/Reader/<case>/Properties/launchSettings.json`, linked into Core.Tests with
   `<None Include="../Fixtures/RunProfiles/Reader/**" LinkBase="Fixtures/RunProfiles/Reader" CopyToOutputDirectory="PreserveNewest" />`
@@ -968,7 +968,7 @@ C-11). Record any deviation from a card in implementation-notes under the batch'
   `RunProfileKinds`, `RunProfileAvailability`, `LaunchProfile`, `LaunchSettings`, `LaunchSettingsReader`), `"NPR"` in
   `DiagnosticsGuideTests.Prefixes`, and the NPR prefix row and section of `docs/guide/diagnostics.md` (exact text in
   card C-01, "Guide rows"; no link to `run-profiles.md` until T125 writes that page).
-- [ ] T114 [US7] The splitter and the joiner (FR-054, SC-008, contracts/run-profiles.md §7.2, card C-02; 1 unit). Test
+- [x] T114 [US7] The splitter and the joiner (FR-054, SC-008, contracts/run-profiles.md §7.2, card C-02; 1 unit). Test
   first: `tests/NetPrints.Core.Tests/Run/CommandLineSplitterTests.cs`: a round trip `Split(Join(x)) == x` over at
   least 30 cases (quotes, backslashes before quotes, doubled quotes, spaces, tabs, empty arguments, trailing
   backslashes, Unicode, an empty list), plus fixed `Split` cases for each rule of §7.2 (`a\\\"b` → `a\"b`;
