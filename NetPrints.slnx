@@ -82,6 +82,7 @@
     <Project Path="tests/NetPrints.Editor.UITests/NetPrints.Editor.UITests.csproj" />
     <Project Path="tests/NetPrints.TestExtension/NetPrints.TestExtension.csproj" />
     <Project Path="tests/NetPrints.Testing/NetPrints.Testing.csproj" />
+    <Project Path="tests/NetPrints.Run.Testing/NetPrints.Run.Testing.csproj" />
     <Project Path="tests/NetPrints.Testing.Ui/NetPrints.Testing.Ui.csproj" />
   </Folder>
 </Solution>

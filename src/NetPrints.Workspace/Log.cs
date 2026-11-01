@@ -38,6 +38,16 @@ internal static partial class Log
     [LoggerMessage(EventId = 4005, Level = LogLevel.Warning, Message = "No MSBuild instance found; MSBuild-dependent project system features are unavailable")]
     public static partial void NoMsBuildInstanceFound(ILogger logger);
 
+    /// <summary>Logs 4006: a run was resolved into a process to start.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="profile">The profile name, or <c>(none)</c>.</param>
+    /// <param name="kind">The profile kind, or <c>(none)</c>.</param>
+    /// <param name="program">The program that will start.</param>
+    /// <param name="arguments">The number of arguments.</param>
+    /// <param name="workingDirectory">The working directory.</param>
+    [LoggerMessage(EventId = 4006, Level = LogLevel.Debug, EventName = "RunResolved", Message = "Run resolved: profile={Profile} kind={Kind} program={Program} arguments={Arguments} workingDirectory={WorkingDirectory}")]
+    public static partial void RunResolved(ILogger logger, string profile, string kind, string program, int arguments, string workingDirectory);
+
     /// <summary>Logs 4007: the registration added or overwrote these environment variables (<see cref="MsBuildRegistration.Variables"/>).</summary>
     /// <param name="logger">Logger to write to.</param>
     /// <param name="names">The variable names, comma separated.</param>

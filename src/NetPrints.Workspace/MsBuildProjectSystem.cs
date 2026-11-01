@@ -18,6 +18,7 @@ using Microsoft.Extensions.Logging;
 using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Projects;
+using NetPrints.Workspace.Run;
 using MSBuildProject = Microsoft.Build.Evaluation.Project;
 using RoslynProject = Microsoft.CodeAnalysis.Project;
 
@@ -30,13 +31,15 @@ namespace NetPrints.Workspace;
 /// instance; every member throws <see cref="ProjectSystemException"/> with
 /// <see cref="ProjectSystemException.NoSdkRegistered"/> if none is available.
 /// </summary>
-public sealed class MsBuildProjectSystem : IProjectSystem
+public sealed class MsBuildProjectSystem : IProjectSystem, IRunProjectSystem
 {
     private const string SourceDirectoryGlobSuffix = "/**/*.cs";
     private static readonly string[] DirectoryBuildFileNames = ["Directory.Build.props", "Directory.Build.targets", "Directory.Packages.props"];
 
     /// <summary>MSBuild's well-known single-target-framework property name.</summary>
     private const string TargetFrameworkProperty = "TargetFramework";
+
+    private const string ConfigurationProperty = "Configuration";
 
     private const string SkipGenerateProperty = "_NetPrintsSkipGenerate";
 
@@ -117,10 +120,7 @@ public sealed class MsBuildProjectSystem : IProjectSystem
                     diagnostic.Message, projectFilePath, null, null));
             }
 
-            string outputType = evaluated.GetPropertyValue("OutputType");
-            BinaryType binaryType = string.Equals(outputType, "Exe", StringComparison.OrdinalIgnoreCase)
-                ? BinaryType.Executable
-                : BinaryType.SharedLibrary;
+            BinaryType binaryType = OutputTypes.FromProperty(evaluated.GetPropertyValue("OutputType"));
 
             string profileId = evaluated.GetPropertyValue("NetPrintsProfile");
             if (string.IsNullOrEmpty(profileId))
@@ -228,15 +228,64 @@ public sealed class MsBuildProjectSystem : IProjectSystem
     }
 
     /// <inheritdoc/>
-    public async Task<BuildResult> BuildAsync(string projectFilePath, CancellationToken cancellationToken)
+    public Task<BuildResult> BuildAsync(string projectFilePath, CancellationToken cancellationToken) =>
+        BuildCoreAsync(projectFilePath, null, cancellationToken);
+
+    /// <inheritdoc/>
+    public Task<BuildResult> BuildAsync(string projectFilePath, string configuration, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(configuration);
+        return BuildCoreAsync(projectFilePath, configuration, cancellationToken);
+    }
+
+    /// <inheritdoc/>
+    public Task<IReadOnlyDictionary<string, string>> EvaluatePropertiesAsync(
+        string projectFilePath,
+        string configuration,
+        IReadOnlyList<string> names,
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(projectFilePath);
+        ArgumentException.ThrowIfNullOrEmpty(configuration);
+        ArgumentNullException.ThrowIfNull(names);
+        EnsureRegisteredOrThrow();
+
+        (MSBuildProject evaluated, ProjectCollection collection, _) = Evaluate(projectFilePath, new Dictionary<string, string> { [ConfigurationProperty] = configuration });
+        try
+        {
+            var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (string name in names)
+            {
+                if (!string.IsNullOrEmpty(name) && evaluated.GetProperty(name) is { IsEnvironmentProperty: false } property)
+                {
+                    values[name] = property.EvaluatedValue;
+                }
+            }
+
+            return Task.FromResult<IReadOnlyDictionary<string, string>>(values);
+        }
+        finally
+        {
+            collection.Dispose();
+        }
+    }
+
+    private async Task<BuildResult> BuildCoreAsync(string projectFilePath, string? configuration, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrEmpty(projectFilePath);
         EnsureRegisteredOrThrow();
 
         string projectDirectory = GetDirectoryOrThrow(projectFilePath);
+        List<string> arguments = ["build", projectFilePath];
+        if (configuration is not null)
+        {
+            arguments.AddRange(["-c", configuration]);
+        }
+
+        arguments.AddRange(["-nologo", "-tl:off", "-v:quiet", "-clp:NoSummary", "-t:Build", "-getProperty:TargetPath"]);
         var request = new ProcessStartRequest(
             "dotnet",
-            ["build", projectFilePath, "-nologo", "-tl:off", "-v:quiet", "-clp:NoSummary", "-t:Build", "-getProperty:TargetPath"],
+            arguments,
             projectDirectory,
             new Dictionary<string, string> { ["DOTNET_CLI_UI_LANGUAGE"] = "en", ["MSBUILDTERMINALLOGGER"] = "off" });
 
@@ -343,13 +392,13 @@ public sealed class MsBuildProjectSystem : IProjectSystem
     /// framework (project-system.md §1: "NPW004 info") when the project multi-targets
     /// (<c>TargetFrameworks</c>) instead of single-targeting (<c>TargetFramework</c>).
     /// </summary>
-    private static (MSBuildProject Evaluated, ProjectCollection Collection, string? RetargetedFramework) Evaluate(string projectFilePath)
+    private static (MSBuildProject Evaluated, ProjectCollection Collection, string? RetargetedFramework) Evaluate(string projectFilePath, IDictionary<string, string>? globalProperties = null)
     {
         var collection = new ProjectCollection();
         MSBuildProject project;
         try
         {
-            project = EvaluateOrThrow(projectFilePath, null, collection);
+            project = EvaluateOrThrow(projectFilePath, globalProperties, collection);
         }
         catch
         {
@@ -373,8 +422,8 @@ public sealed class MsBuildProjectSystem : IProjectSystem
         var retargeted = new ProjectCollection();
         try
         {
-            MSBuildProject retargetedProject = EvaluateOrThrow(projectFilePath,
-                new Dictionary<string, string> { [TargetFrameworkProperty] = firstFramework }, retargeted);
+            var retargetedProperties = new Dictionary<string, string>(globalProperties ?? new Dictionary<string, string>()) { [TargetFrameworkProperty] = firstFramework };
+            MSBuildProject retargetedProject = EvaluateOrThrow(projectFilePath, retargetedProperties, retargeted);
             return (retargetedProject, retargeted, firstFramework);
         }
         catch

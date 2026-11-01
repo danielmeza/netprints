@@ -1,5 +1,6 @@
 using NetPrints.Core;
 using NetPrints.Projects;
+using NetPrints.Workspace.Run;
 
 namespace NetPrints.Editor.Hosting;
 
@@ -11,7 +12,7 @@ namespace NetPrints.Editor.Hosting;
 /// (<c>NPW001</c>) instead of touching MSBuild, so the editor still starts and reports the problem
 /// through the usual error dialog the first time a project operation is attempted (PS-T13).
 /// </summary>
-public sealed class NoSdkProjectSystem : IProjectSystem
+public sealed class NoSdkProjectSystem : IProjectSystem, IRunProjectSystem
 {
     /// <summary>
     /// Reported through every thrown <see cref="ProjectSystemException"/>; also used, unthrown, by
@@ -30,6 +31,12 @@ public sealed class NoSdkProjectSystem : IProjectSystem
 
     /// <inheritdoc/>
     public Task<BuildResult> BuildAsync(string projectFilePath, CancellationToken cancellationToken) => throw NoSdk();
+
+    /// <inheritdoc/>
+    public Task<BuildResult> BuildAsync(string projectFilePath, string configuration, CancellationToken cancellationToken) => throw NoSdk();
+
+    /// <inheritdoc/>
+    public Task<IReadOnlyDictionary<string, string>> EvaluatePropertiesAsync(string projectFilePath, string configuration, IReadOnlyList<string> names, CancellationToken cancellationToken) => throw NoSdk();
 
     /// <inheritdoc/>
     public ProcessStartRequest GetRunCommand(string projectFilePath) => throw NoSdk();

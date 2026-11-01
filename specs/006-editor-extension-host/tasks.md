@@ -1007,7 +1007,7 @@ C-11). Record any deviation from a card in implementation-notes under the batch'
 
 ### Batch E3 — model: sonnet — T115, T118 — 3 units (design-heavy)
 
-- [ ] T115 [US7] The resolver and the planner (FR-054–FR-057, contracts/run-profiles.md §2 and §7.3, cards C-02 and
+- [x] T115 [US7] The resolver and the planner (FR-054–FR-057, contracts/run-profiles.md §2 and §7.3, cards C-02 and
   C-06; 2 units). First create the test-support library `tests/NetPrints.Run.Testing` (card C-06, "Shared test data":
   the csproj, its `NetPrints.slnx` entry, and references from Core.Tests, Cli.Tests and Editor.Tests) with
   `RunProfileCase`, `RunProfileCases`, `RunRequestAssert` and `FakeRunProjectSystem`; and add

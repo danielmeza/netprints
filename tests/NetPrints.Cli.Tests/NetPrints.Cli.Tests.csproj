@@ -24,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\NetPrints.Cli\NetPrints.Cli.csproj" />
     <ProjectReference Include="..\NetPrints.Testing\NetPrints.Testing.csproj" />
+    <ProjectReference Include="..\NetPrints.Run.Testing\NetPrints.Run.Testing.csproj" />
     <!-- Built first, never referenced: migrate tests load it from its own output folder. -->
     <ProjectReference Include="..\NetPrints.TestExtension\NetPrints.TestExtension.csproj" ReferenceOutputAssembly="false" />
     <!-- Built first, never referenced: tests load the fx.catalog extension from its own output folder. -->
