@@ -5,12 +5,10 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using NetPrints.Cli.Commands;
-using NetPrints.Core;
-using NetPrints.Run.Testing;
-using NetPrints.Workspace;
-using NetPrints.Workspace.Run;
 using NetPrints.Cli.Tests.Support;
 using NetPrints.Projects;
+using NetPrints.Run.Testing;
+using NetPrints.Workspace.Run;
 using Xunit;
 
 namespace NetPrints.Cli.Tests.Commands;
