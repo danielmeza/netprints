@@ -75,7 +75,7 @@ public sealed class ProjectFailureTests : IDisposable
         }
         else
         {
-            _host.Projects.ThrowOnBuild = exception;
+            _host.RunProjects.ThrowOnBuild = exception;
         }
 
         Assert.Equal(ExitCodes.Failed, await _host.RunAsync(args));

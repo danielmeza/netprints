@@ -7,6 +7,7 @@ using NetPrints.Cli.Commands;
 using NetPrints.Cli.Infrastructure;
 using NetPrints.Projects;
 using NetPrints.Workspace;
+using NetPrints.Workspace.Run;
 using Spectre.Console;
 
 namespace NetPrints.Cli;
@@ -32,6 +33,10 @@ internal static class CliServices
         services.AddSingleton<IProgramRunner>(_ => new ProgramRunner());
         services.AddSingleton<IMsBuildRegistration, MsBuildRegistrationAdapter>();
         services.AddSingleton(provider => new Lazy<IProjectSystem>(() => CreateProjectSystem(provider)));
+        services.AddSingleton(provider => new Lazy<IRunProjectSystem>(() => CreateRunProjectSystem(provider)));
+        services.AddSingleton(provider => new Lazy<RunPlanner>(() => RunPlanner.Create(
+            provider.GetRequiredService<Lazy<IRunProjectSystem>>().Value,
+            provider.GetRequiredService<ILoggerFactory>().CreateLogger<RunPlanner>())));
         return services;
     }
 
@@ -61,6 +66,12 @@ internal static class CliServices
             ColorSystem = plain ? ColorSystemSupport.NoColors : ColorSystemSupport.Detect,
         };
     }
+
+    // The same MsBuildProjectSystem instance as the IProjectSystem registration, kept out of line for the same reason.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static IRunProjectSystem CreateRunProjectSystem(IServiceProvider provider) =>
+        provider.GetRequiredService<Lazy<IProjectSystem>>().Value as IRunProjectSystem
+        ?? throw new InvalidOperationException("The CLI's project system does not take a configuration.");
 
     // GenerateOnLoad is off so `generate --check` sees the generated files as they are; `build` and `run` generate through dotnet build.
     // Kept out of line: loading MsBuildProjectSystem loads Microsoft.Build, which must wait for the SDK registration.

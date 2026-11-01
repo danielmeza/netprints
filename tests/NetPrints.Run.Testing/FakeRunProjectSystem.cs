@@ -26,6 +26,9 @@ public sealed class FakeRunProjectSystem : IRunProjectSystem
     /// <summary>Gets or sets what <see cref="BuildAsync"/> returns.</summary>
     public BuildResult BuildResult { get; set; } = new(true, [], null, string.Empty);
 
+    /// <summary>Gets or sets an exception <see cref="BuildAsync"/> throws after recording the build.</summary>
+    public Exception? ThrowOnBuild { get; set; }
+
     /// <summary>Creates the project system of a case: its properties plus the <c>OutputType</c> its output type maps to.</summary>
     /// <param name="runCase">The case.</param>
     /// <returns>The fake.</returns>
@@ -43,7 +46,7 @@ public sealed class FakeRunProjectSystem : IRunProjectSystem
     public Task<BuildResult> BuildAsync(string projectFilePath, string configuration, CancellationToken cancellationToken)
     {
         Builds.Add((projectFilePath, configuration));
-        return Task.FromResult(BuildResult);
+        return ThrowOnBuild is null ? Task.FromResult(BuildResult) : throw ThrowOnBuild;
     }
 
     /// <inheritdoc/>

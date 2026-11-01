@@ -9,6 +9,8 @@ using NetPrints.Cli;
 using NetPrints.Cli.Infrastructure;
 using NetPrints.Core;
 using NetPrints.Projects;
+using NetPrints.Run.Testing;
+using NetPrints.Workspace.Run;
 using Spectre.Console;
 using Spectre.Console.Testing;
 using Xunit;
@@ -71,9 +73,16 @@ internal sealed class FakeProcessRunner : IProgramRunner
 
     public TextWriter Error { get; set; } = TextWriter.Null;
 
+    public Exception? ThrowOnRun { get; set; }
+
     public async Task<int> RunAsync(ProcessStartRequest request, CancellationToken cancellationToken)
     {
         Started.Add(request);
+        if (ThrowOnRun is not null)
+        {
+            throw ThrowOnRun;
+        }
+
         await Out.WriteAsync(Result.StandardOutput);
         await Error.WriteAsync(Result.StandardError);
         return Result.ExitCode;
@@ -123,6 +132,7 @@ internal sealed class UnexpectedProcessRunner : IProcessRunner
 internal sealed class CliTestHost
 {
     private readonly TestConsole _testConsole = new();
+    private RunPlanner? _planner;
 
     public CliTestHost(string? currentDirectory = null, IReadOnlyDictionary<string, string?>? variables = null)
     {
@@ -141,6 +151,14 @@ internal sealed class CliTestHost
     public CliEnvironment Environment { get; }
 
     public FakeProjectSystem Projects { get; } = new();
+
+    public FakeRunProjectSystem RunProjects { get; set; } = new(new Dictionary<string, string> { ["OutputType"] = "Exe" });
+
+    public RunPlanner Planner
+    {
+        get => _planner ??= new RunPlanner(RunProjects, RunPlatform.Current, () => new Dictionary<string, string>(), () => []);
+        set => _planner = value;
+    }
 
     public FakeProcessRunner Processes { get; } = new();
 
@@ -174,6 +192,8 @@ internal sealed class CliTestHost
             }
 
             services.AddSingleton(new Lazy<IProjectSystem>(() => Projects));
+            services.AddSingleton(new Lazy<IRunProjectSystem>(() => RunProjects));
+            services.AddSingleton(new Lazy<RunPlanner>(() => Planner));
             return services;
         }
     }

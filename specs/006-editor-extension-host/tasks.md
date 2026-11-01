@@ -1031,7 +1031,7 @@ C-11). Record any deviation from a card in implementation-notes under the batch'
   `MsBuildProjectSystem.LoadAsync`), and `IRunProjectSystem` on `MsBuildProjectSystem` (tested in
   `MsBuildProjectSystemTests` over `tests/Fixtures/CSharpTarget/Latest`: Release gives a `TargetPath` under
   `bin/Release`; an undefined name is absent; a defined empty one is present and empty) and on `NoSdkProjectSystem`.
-- [ ] T118 [US7] `-c` on `build` and `run`, and `netprints run` with profiles (FR-062, FR-063, SC-008,
+- [x] T118 [US7] `-c` on `build` and `run`, and `netprints run` with profiles (FR-062, FR-063, SC-008,
   contracts/run-profiles.md §4 and §7.9, card C-07; 1 unit). Test first:
   `tests/NetPrints.Cli.Tests/Commands/RunCommandTests.cs`: the default profile; `--launch-profile`;
   `--no-launch-profile`; both together exit 2; `-- <args>` replace the profile's arguments while its environment and
