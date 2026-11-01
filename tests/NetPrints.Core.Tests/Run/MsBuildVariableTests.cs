@@ -110,7 +110,25 @@ public class MsBuildVariableTests
     [Fact]
     public void EveryRecordedNameHasAValueInTheProcessEnvironment()
     {
-        Assert.NotEmpty(MsBuildRegistration.Variables);
         Assert.All(MsBuildRegistration.Variables, v => Assert.False(string.IsNullOrEmpty(Environment.GetEnvironmentVariable(v.Name)), v.Name));
+    }
+
+    [Theory]
+    [InlineData("MSBUILD_EXE_PATH")]
+    [InlineData("MSBuildExtensionsPath")]
+    [InlineData("MSBuildSDKsPath")]
+    public void TheRegistrationLeavesTheLocatorVariablesSetWhetherOrNotItRecordedThem(string name)
+    {
+        Assert.False(string.IsNullOrEmpty(Environment.GetEnvironmentVariable(name)), name);
+    }
+
+    [Fact]
+    public void AVariableAlreadySetToTheSameValueIsNotRecordedSoTheLaunchedProgramKeepsIt()
+    {
+        var inherited = Env(("MSBUILD_EXE_PATH", "/sdk/msbuild"), ("MSBuildSDKsPath", "/sdk/Sdks"));
+
+        var result = MsBuildVariable.Between(inherited, inherited, StringComparer.Ordinal);
+
+        Assert.Empty(result);
     }
 }

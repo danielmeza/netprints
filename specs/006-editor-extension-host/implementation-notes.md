@@ -2674,3 +2674,43 @@ Slips
   failed on my own wrong expectation (last value wins); the test was corrected, not the code.
 - The whole-suite run takes ~25 minutes (Editor.UITests alone 17.5 minutes); the shell moved the job to the background after 180 s
   each time and I re-attached with the same `bg-run.sh` line.
+
+## Batch E2-F (MSBuild variable record on CI)
+
+Failure: CI `Test (Core)`, `MsBuildVariableTests.EveryRecordedNameHasAValueInTheProcessEnvironment`, `Assert.NotEmpty` on
+`MsBuildRegistration.Variables` (empty). The only other failing check, `Build and test (Linux)`, is the aggregate of `Test (Core)`.
+
+Cause. The record is the diff of the environment before and after the locator call. The CI Core leg runs
+`dotnet test ... -- --coverage ... --hangdump ...`. Under `--coverage` the test host is already started with
+`MSBUILD_EXE_PATH`, `MSBuildExtensionsPath` and `MSBuildSDKsPath` set to the values the locator then sets, so the diff is empty. A plain
+`dotnet test --no-build` starts the host without them, so the locator adds all three and the record holds three entries.
+
+Evidence (local, Release, same `dotnet test --project tests/NetPrints.Core.Tests --no-build --filter-method '*EveryRecordedName*'`):
+- no extra options: `VARS=MSBUILD_EXE_PATH<-null,MSBuildExtensionsPath<-null,MSBuildSDKsPath<-null`, passes;
+- `--hangdump` only: passes; `--report-xunit-trx` only: passes;
+- `--coverage --coverage-output-format cobertura --coverage-settings tests/CodeCoverage.config`: `Assert.NotEmpty() Failure: Collection was empty`
+  (the CI failure); a probe test in that mode printed `VARS=` with the three names already in the environment.
+Local runs without coverage passed, which is why the whole suite was green here.
+
+Decision (delegated): the product is right, the test was wrong. When the starting process already holds MSBuild's variables with the same
+values, `Variables` is empty, the scrub removes and restores nothing, and a launched user program inherits them. That matches the card
+and `run-profiles.md` (Environment row): NetPrints removes what its registration added and restores what it overwrote to the value from
+before NetPrints started; a variable the parent already had with that value was neither added nor overwritten, so it is the parent's, and
+removing it would change the program's environment relative to running without NetPrints. The contract is silent on this case only by
+omission; the unchanged-value rule of `Between` (`AnUnchangedVariableIsIgnored`) already pins it, and a new test names it
+(`AVariableAlreadySetToTheSameValueIsNotRecordedSoTheLaunchedProgramKeepsIt`).
+
+Test change: the process-level test drops `NotEmpty` and keeps "every recorded name has a value". A new theory asserts the three locator variables are
+set after registration whether or not they were recorded, which is true on every host and independent of run order and of the runner.
+
+Gates: `dotnet build NetPrints.slnx -c Release` 0 warnings, 0 errors; `dotnet format --verify-no-changes` exit 0;
+`MsBuildVariableTests` 15 of 15 under the CI coverage options (red before the edit, same options); `tests/NetPrints.Core.Tests` whole project
+1206 total, 1206 passed, 0 failed, 0 skipped (without coverage; CI runs it with coverage, and the target test passes in both modes).
+
+Slips
+- The first `dotnet build` stalled for 18 minutes on a reused MSBuild node on this loaded machine; I killed my own build and rebuilt with
+  `-nodeReuse:false`.
+- A temporary probe test file was added to find the variables and removed before the commit.
+- The first whole-project run hung 35 minutes on a `dotnet pack` child of a Core test (the same MSBuild node stall as the build); I stopped it
+  and the rerun with `MSBUILDDISABLENODEREUSE=1` and `DOTNET_CLI_USE_MSBUILD_SERVER=0` finished in 40 s. I also started the same `bg-run.sh` line
+  several times by mistake, which only attached extra waiters.
