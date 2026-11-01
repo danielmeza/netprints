@@ -795,10 +795,11 @@ preset lists while the extension is loaded.
   ignored.
 - **FR-053**: The selected profile and the "Run in external terminal" and "Don't capture output" options MUST be stored
   per user and per project in the session state, never in `launchSettings.json`.
-- **FR-054**: `%NAME%` MUST be expanded from the environment and `$(Name)` from captured project properties
-  (`ProjectDir`, `TargetDir`, `TargetPath`, `OutDir`, `Configuration`, `TargetFramework` and names added through
-  `AddProjectProperty`), then the result split with the Windows `CommandLineToArgvW` rules on every OS and passed as
-  an argument list; a join and split round-trip test MUST pin it.
+- **FR-054**: `%NAME%` MUST be expanded from the environment and `$(Name)` from the project's properties evaluated in
+  the selected configuration (`ProjectDir`, `TargetDir`, `TargetPath`, `OutDir`, `Configuration`, `TargetFramework`
+  are always defined; any other property the project defines, including those an extension's props add), then the
+  result split with the Windows `CommandLineToArgvW` rules on every OS and passed as an argument list; a join and
+  split round-trip test MUST pin it.
 - **FR-055**: Paths MUST follow ADR-0037 decision 6: a relative `workingDirectory` from the project folder, an absent
   one is the project folder, an `executablePath` with a separator relative to the working directory, a bare name from
   `PATH` (with `.exe` and `.com` on Windows); the OS MUST receive an absolute path, and a macOS `.app` folder resolves
@@ -807,8 +808,9 @@ preset lists while the extension is loaded.
   MUST stop the run before the build starts, with a message naming it; in arguments and environment it is a warning
   and the text stays literal. A `.cmd` or `.bat` target on Windows MUST be refused with the reason.
 - **FR-057**: The profile's environment and `DOTNET_LAUNCH_PROFILE` MUST reach the program only (`dotnet run -e` for
-  `Project`, the process request for `Executable`); the MSBuild variables NetPrints' own MSBuild locator set MUST NOT
-  reach an `Executable` program, and values the user set before NetPrints started MUST.
+  `Project`, the process request for `Executable`); the MSBuild variables NetPrints' own MSBuild locator added MUST NOT
+  reach the started process of either kind, and a value the user set before NetPrints started MUST reach it, even
+  when the locator overwrote it in NetPrints' own process.
 - **FR-058**: The first run of each `Executable` profile in a session MUST print the resolved command line in Output;
   there is no new trust prompt (ADR-0037 decision 5).
 - **FR-059**: Stop MUST ask the program to close (its main window, or SIGTERM) and kill its process tree after the stop
@@ -817,15 +819,17 @@ preset lists while the extension is loaded.
 - **FR-060**: Project settings MUST get a Run section (profile list, kind, executable path, arguments with an argument
   preview, working directory, environment variables; other kinds read-only with "Open file"), with the warning that
   `dotnet run` resolves a relative `workingDirectory` from `Properties/`.
-- **FR-061**: The command bar MUST show a run profile split button next to Run and Stop when the project has profiles
-  or is an executable, with the commands `selectRunProfile` and `editRunProfiles`; Run MUST be enabled when the
-  selected profile's kind can run the project, not only for `OutputType` Exe.
+- **FR-061**: The command bar MUST show a run profile split button next to Run and Stop when the project has a
+  `Properties/launchSettings.json` (in any state, so its errors show) or is an executable, with the commands
+  `selectRunProfile` and `editRunProfiles`; Run MUST be enabled when the selected profile's kind can run the project,
+  not only for `OutputType` Exe.
 - **FR-062**: `netprints run` MUST use the default profile and accept `-lp|--launch-profile <name>` and
   `--no-launch-profile`; `-- <args>` replace the profile's arguments while its environment and working directory still
   apply; an unknown profile or a kind NetPrints cannot run exits 2, a profile that cannot be resolved exits 1
   (ADR-0015).
 - **FR-063**: A Debug/Release configuration selector MUST sit next to the run profile button (B23); build and run use
-  the selection, which is remembered per user and per project; the CLI keeps its `-c` option.
+  the selection, which is remembered per user and per project; `netprints build` and `netprints run` take
+  `-c|--configuration <name>` (default `Debug`).
 - **FR-064**: While a program runs with captured output, Output MUST offer an input line that writes a line to the
   program's standard input and a control that closes it (B5); "Run in external terminal" MUST start the program in a
   new terminal window of the OS, with the terminal command configurable on Linux.

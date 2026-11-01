@@ -160,7 +160,7 @@ breaks ADR-0020's scope rules (a single-key or Shift-only gesture in `Global`; f
 
 ## 4. Run
 
-### Launch profile (the subset NetPrints reads from `Properties/launchSettings.json`)
+### Launch profile (the subset NetPrints reads from `Properties/launchSettings.json`; C# `LaunchProfile` in `LaunchSettings`)
 
 | Field | Kinds | Rule |
 |---|---|---|
@@ -184,7 +184,11 @@ The file is read with comments and trailing commas allowed. `<name>.run.json` fi
 ```
 
 Never written to `launchSettings.json` (FR-053). A missing block means: the default profile, `Debug`, capture on,
-external terminal off.
+external terminal off. C#: `SessionState.Run` (`RunSessionState`, with `RunProfileOptionsState` per profile;
+contracts/run-profiles.md §7.8), non-positional `init` members with these defaults. Not to be confused with the `run`
+section of `settings.json` (`RunSettings`: `stopTimeoutSeconds`, `linuxTerminal`). An invalid block (a null profile
+entry, a configuration other than `Debug` or `Release`) loads as missing and the rest of the session stays. Profile
+names in `profiles` are looked up case-insensitively.
 
 ### Process request (resolved)
 
@@ -193,8 +197,11 @@ external terminal off.
 | Program | absolute path (Windows: `PATH` with `.exe`, `.com`; macOS `.app` → `Contents/MacOS/<binary>`) |
 | Arguments | argument list; `-- <args>` from the CLI replaces the profile's |
 | Working directory | absolute |
-| Environment | profile variables and `DOTNET_LAUNCH_PROFILE` added; the MSBuild variables NetPrints' locator set removed |
-| Capture, input, external terminal | from the run options |
+| Environment | `Executable`: profile variables and `DOTNET_LAUNCH_PROFILE` added (`EnvironmentVariables`); `Project`: they are `-e` arguments. Both: the variables NetPrints' MSBuild registration added are removed (`EnvironmentRemovals`) and those it overwrote are set back to their earlier value, except, for `Executable`, a name the profile sets, whose profile value wins |
+| Capture, input, external terminal | `CaptureOutput`, `RedirectInput`, `ExternalTerminal`, set by the editor from the run options after resolution (the CLI leaves the defaults) |
+
+C#: `ProcessStartRequest` (Core) with the non-positional members of contracts/run-profiles.md §7.4, produced by
+`RunProfileResolver.Resolve` inside a `RunResolution` (§7.1-§7.3 of the same contract).
 
 ### Run lifecycle
 
@@ -210,7 +217,9 @@ external terminal off.
                   └──────────────────────────────────────────────────────► Idle
 ```
 
-Unloading a project while an `Executable` run is alive asks whether to leave it running.
+Unloading a project while an `Executable` run is alive asks whether to leave it running (Leave, Stop, Cancel);
+Leave detaches the run (no more output, no kill), Stop waits for the stop before unloading. `Resolving` blocks
+before `Building` on any error problem; warnings are written to Output and the run goes on.
 
 ## 5. Themes
 
