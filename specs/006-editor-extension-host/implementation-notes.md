@@ -2605,6 +2605,7 @@ What changed
   `FakeRunningProcess` with counts and the written lines; `Handles` lists them), `ControlledLauncher` (still throws).
 - T117: `MsBuildVariable` (record, `Between` with a comparer overload), `MsBuildRegistration.Variables`, log event 4007.
 - T116 and T117 ticked. E1's CI line added to its section.
+- CI: run 41287719174 on dfea2ec0, green.
 
 Red and green
 - Card C-05's first test `RemovedVariablesDoNotReachTheProgram` failed on `Assert.Contains` (the tool printed
@@ -2714,3 +2715,95 @@ Slips
 - The first whole-project run hung 35 minutes on a `dotnet pack` child of a Core test (the same MSBuild node stall as the build); I stopped it
   and the rerun with `MSBUILDDISABLENODEREUSE=1` and `DOTNET_CLI_USE_MSBUILD_SERVER=0` finished in 40 s. I also started the same `bg-run.sh` line
   several times by mistake, which only attached extra waiters.
+
+## Batch E3 (resolver and CLI run)
+
+T115 and T118, built against cards C-06 and C-07. Commits 73a49706 (T115), f5beacf7 (T118), a9aa09f8 (import order).
+
+What changed
+- `src/NetPrints.Workspace/Run/`: `RunPlatform` (smart enum, private nested `WindowsPlatform`, `MacOSPlatform`, `LinuxPlatform`),
+  `RunInputs`, `RunResolution`, `RunProfileChoice`, `RunProfileResolver` (`Resolve`, `Choose`, `PropertyNames`), `RunConfigurations`,
+  `IRunProjectSystem`, `RunRequest`, `RunPlanner`; `src/NetPrints.Workspace/OutputTypes.cs` (also used by `MsBuildProjectSystem.LoadAsync`);
+  log event 4006 `RunResolved`.
+- `MsBuildProjectSystem` implements `IRunProjectSystem`: `BuildAsync(path, configuration, ct)` inserts `-c <configuration>` after the project
+  path (the old overload shares one private method and its argument list is unchanged); `EvaluatePropertiesAsync` goes through `Evaluate`, which
+  gained the `globalProperties` parameter (merged with the `TargetFramework` it adds). `NoSdkProjectSystem` throws `NoSdkRegistered` from both
+  new members.
+- `tests/NetPrints.Run.Testing` (`RunProfileCase`, `RunProfileCases` with 32 cases, `RunRequestAssert`, `FakeRunProjectSystem`), its `NetPrints.slnx`
+  entry, references from Core.Tests, Cli.Tests and Editor.Tests, and `tests/NetPrints.Run.Testing/**` in both `paths` lists of `cli-windows.yml`.
+- CLI: `ConfigurationSettings` (`-c|--configuration`), `RunCommandSettings` (`--launch-profile`, `--no-launch-profile`, no short form),
+  `RunCommand` over `Lazy<IRunProjectSystem>` and `Lazy<RunPlanner>`, `RunExitCodes` (in `RunCommand.cs`), `BuildCommand` over
+  `Lazy<IRunProjectSystem>` taking `-c`, the `CliServices` registrations of the contract (`CreateRunProjectSystem`, `NoInlining`), `CliTestHost`
+  (`RunProjects`, `Planner`) and the `--help` text.
+- Existing Cli tests moved to the new seam: `CliExitCodeTests`, `ProjectFailureTests`, `BuildCommandTests` and `RunCommandTests` read builds from
+  `RunProjects.Builds` and set `RunProjects.BuildResult` or `.ThrowOnBuild`; the `run` argument tests expect the `dotnet run ... --no-launch-profile
+  -c Debug` list the resolver now builds.
+- T115 and T118 ticked. E2's CI line added to its section.
+
+Red and green
+- Card C-06's first test `AnUnsetVariableInTheExecutablePathBlocksBeforeTheBuild` failed on `Assert.True(resolution.IsBlocked)` against a stub
+  `Resolve` that returned a request (the same run also failed most of the 32 case theory rows on their problem lists). Green after the implementation:
+  `RunProfileResolverTests` and `RunPlannerTests` 63 of 63 together.
+- Card C-07's first test `AnUnknownProfileExitsTwo` failed on `Expected exit 2, got 1` with `RunExitCodes.For` stubbed to return 1 (4 more tests failed
+  with it: NPR003, NPR004 and NPR011 rows and the first-error test). Green with the mapping.
+- Written after the code, so they pin behaviour and were not seen red: `RunPlannerTests` (the planner was written with the resolver stub),
+  the four `MsBuildProjectSystemTests` additions, `NoSdkRunProjectSystemTests`, and the process-start-failure tests of `RunCommandTests`.
+
+Decision (delegated)
+- `RunPlanner` takes an optional fifth constructor argument `ILogger? logger = null` and `Create` an optional `logger`, because event 4006 needs a logger
+  and the contract's signatures have none; the CLI passes `CreateLogger<RunPlanner>()`. Event 4006 is logged only when a request exists.
+- `EvaluatePropertiesAsync` reports a name as undefined when MSBuild only knows it as an environment variable (`ProjectProperty.IsEnvironmentProperty`):
+  `$(Name)` reads the project, `%NAME%` reads the process, and without this `$(HOME)` would silently mean the environment. Reserved and
+  well-known properties (`ProjectDir`, `TargetPath`, ...) are defined.
+- After expanding every field, any error problem returns at once with the profile and the problems so far, so an unset `%GODOT%` is only NPR005
+  and not also NPR008 for the literal text. Warnings stay in the list. The `Project` kind does not expand `executablePath`, so a leftover
+  value there raises nothing; a `-- <args>` override skips expanding `commandLineArgs` for the same reason.
+- `Choose` follows the contract's order literally: a file with NPR001 or NPR002 blocks even with `--no-launch-profile`. No profile on a library is
+  not an error of the resolver (the contract lists NPR011 for a chosen `Project` profile only); `dotnet run` reports it.
+- `PATH` entries are trimmed and unquoted before the rooted check; the bare name not found on `PATH` is NPR008 with the name; a bundle is only
+  recognised on a path with a separator, because `PATH` search uses `File.Exists`.
+- `CFBundleExecutable` must be one file name: an empty value, `.`, `..` or a value with a separator is NPR010. The plist is read with DTD processing
+  ignored and no resolver.
+- A path that `Path.GetFullPath` refuses (an embedded NUL) stays as written, so the program lookup ends in NPR008 and a working directory that cannot
+  exist is left to the start failure below.
+- The program that cannot start (`IProcessLauncher.Start` carried from E2; here `ProgramRunner.RunAsync`) is caught in `RunCommand` for `Win32Exception`,
+  `InvalidOperationException`, `ArgumentException`, `IOException`, `UnauthorizedAccessException` and `NotSupportedException`: stderr gets
+  `error NPR008: The program '<file>' could not be started: <message>` and the exit code is 1. The contract has no code for "found but cannot start",
+  so NPR008 is the nearest; T119 maps the editor's start failure the same way.
+- `FakeRunProjectSystem` gained `ThrowOnBuild` and `FakeProcessRunner` (Cli.Tests) `ThrowOnRun`, so the moved tests keep their coverage.
+- `RunProfileCase` gained `NeedsColonFreeRoot` and `SkipReason`, plus `Root`: `ExecutableOnPathLinux` writes the root into a `:` separated `PATH`, which
+  a root with a drive letter breaks, so on such a host that one case skips with its reason. It runs on Linux and macOS.
+- `RunProfileCase.Materialize` returns a copy with the token replaced and `Root` set; `ToInputs`, `ProjectFilePath` and `SkipReason` need it.
+- CLI docs (`docs/guide/cli.md`) are left to T124 and T125.
+
+Deviations from the cards
+- None in structure. C-06 gives `RunPlanner` four constructor arguments; the optional logger is the addition above.
+
+SC-008 and the cases
+- 32 `RunProfileCases`; 29 in `EditorNames` (3 `CliOnly`: `NoLaunchProfileOption`, `ArgumentOverride`, `Npr004UnknownProfile`).
+  Core.Tests resolver theory 32 of 32; Cli.Tests `EveryRunProfileCaseHandsTheExpectedRequestToTheRunner` 32 of 32 plus 11 blocked-exit rows, on Linux.
+  The Windows rows (`ExecutableOnPathWindowsExe`, `ExecutableOnPathWindowsCom`, `Npr009Cmd`) and the macOS rows (`MacAppBundle`,
+  `Npr010NoBundleExecutable`) run with their own `RunPlatform` on the Linux host. `ProjectRunnerTests` over `EditorNames` is T119's.
+
+Gates
+- `dotnet build NetPrints.slnx` and `-c Release`: 0 warnings, 0 errors. `dotnet format --verify-no-changes --no-restore`: exit 0 (after one
+  import-order fix in `RunCommandTests`). `eng/trim-warnings.sh`: 8 (baseline 8).
+- Whole suite in Release (`--ignore-exit-code 8`, fresh `NETPRINTS_STATE_DIR` and `XDG_CONFIG_HOME`): 5834 total, 5793 passed, 0 failed, 41 skipped
+  (E2: 5702, 5661, 0, 41). Cli.Tests alone under CI's `--coverage --coverage-output-format cobertura --coverage-settings tests/CodeCoverage.config`:
+  367 of 367. The new Core classes, `MsBuildProjectSystemTests` and `CiWorkflowTests` under the same options: 93 of 93.
+- `MsBuildProjectSystemTests` 10 of 10 (4 new); `EndToEnd/HelloWorldCliTests` green with the `Lazy<>` registrations and the real planner;
+  `Analyzers.Tests`, `Catalog.Tests` and `Extensibility.Testing.Tests` build with no new reference and pass.
+- Evaluation cost: `MsBuildProjectSystemTests` 16 s for 10 tests with 4 real evaluations; one evaluation was not timed on its own (not measured).
+- `CLI (Windows)` not run here; the coordinator must watch it. Windows-specific and unrun: `ExecutableOnPathLinux` skipping on a drive-letter root,
+  the Windows cases with real backslash paths (`Path.GetFullPath` normalisation in `ExpectedRequest`), `ARealProfileProgramThatCannotStartExitsOneNotFour`
+  (a text file as program: `Win32Exception` 193 expected, not seen), `AProgramThatCannotBeStartedIsAProblemLineAndExitOneNotAnException`.
+
+Slips
+- `RunPlannerTests` and the `MsBuildProjectSystemTests` additions were written after their code (see above).
+- The first `BuildCommandTests` option test ran two commands on one `CliTestHost`, which exits 4 on the second run; rewritten as a theory with one run each.
+- A raw interpolated string with `}}}` in `RunProfileResolverTests` failed to compile (CS9007) and was rewritten with concatenation.
+- The format gate failed once on import order in `RunCommandTests`; fixed in a9aa09f8.
+- The harness moved the whole-suite command to the background after 180 s at each call (17 m 34 s for `Editor.UITests` alone); I re-attached with the same
+  `bg-run.sh` line several times, and the first attached waiter had been started with a `| tail` pipe. No second copy of the job ran.
+- `NoSdkProjectSystem.cs` is in `NetPrints.Editor`, so the first Edit was denied by the skill hook (it asks for the Avalonia skills); the file has no XAML, so I
+  retried without loading them and the edit passed.
