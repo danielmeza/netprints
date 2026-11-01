@@ -270,6 +270,56 @@ public sealed class FakeWindowService : IWindowService
     public void CloseMainWindow() => CloseMainWindowCount++;
 }
 
+/// <summary>An <see cref="IRunningProcess"/> that records what was asked of it, each with a count.</summary>
+public sealed class FakeRunningProcess(int id) : IRunningProcess
+{
+    public int Id { get; } = id;
+
+    public bool HasExited { get; set; }
+
+    public bool CanWriteInput { get; set; }
+
+    public bool IsHandedOff { get; set; }
+
+    public event EventHandler? InputStateChanged;
+
+    /// <summary>The lines written, in order.</summary>
+    public List<string> WrittenLines { get; } = [];
+
+    public int WriteLineCalls { get; private set; }
+
+    public int CloseInputCalls { get; private set; }
+
+    public int StopCalls { get; private set; }
+
+    public int KillCalls { get; private set; }
+
+    public Task WriteLineAsync(string line, CancellationToken cancellationToken)
+    {
+        WriteLineCalls++;
+        WrittenLines.Add(line);
+        return Task.CompletedTask;
+    }
+
+    public void CloseInput()
+    {
+        CloseInputCalls++;
+        CanWriteInput = false;
+        InputStateChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public Task StopAsync(TimeSpan timeout, CancellationToken cancellationToken)
+    {
+        StopCalls++;
+        return Task.CompletedTask;
+    }
+
+    public void Kill() => KillCalls++;
+
+    /// <summary>Raises <see cref="InputStateChanged"/> after a test changed <see cref="CanWriteInput"/>.</summary>
+    public void RaiseInputStateChanged() => InputStateChanged?.Invoke(this, EventArgs.Empty);
+}
+
 public sealed class FakeProcessLauncher : IProcessLauncher
 {
     public List<ProcessStartRequest> Started { get; } = [];
@@ -288,12 +338,18 @@ public sealed class FakeProcessLauncher : IProcessLauncher
     /// <summary>The token each start was given, in start order.</summary>
     public List<CancellationToken> Tokens { get; } = [];
 
-    public void Start(ProcessStartRequest request, CancellationToken cancellationToken = default)
+    /// <summary>The handle returned for each start, in start order.</summary>
+    public List<FakeRunningProcess> Handles { get; } = [];
+
+    public IRunningProcess Start(ProcessStartRequest request, CancellationToken cancellationToken = default)
     {
         Started.Add(request);
         Tokens.Add(cancellationToken);
         LastId++;
+        var handle = new FakeRunningProcess(LastId);
+        Handles.Add(handle);
         ProcessStarted?.Invoke(LastId, request);
+        return handle;
     }
 
     /// <summary>Simulates a line of output, for tests of the Output pane wiring.</summary>

@@ -72,6 +72,8 @@
     <ProjectReference Include="..\..\src\NetPrints.Generator\NetPrints.Generator.csproj" ReferenceOutputAssembly="false" />
     <!-- Built first, never referenced: the embedded-catalog discovery tests read its dll. -->
     <ProjectReference Include="..\Fixtures\Catalog\CatalogAnnotatedLib\CatalogAnnotatedLib.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: the process tests start it through the dotnet host. -->
+    <ProjectReference Include="..\Fixtures\RunProfiles\EchoTool\EchoTool.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

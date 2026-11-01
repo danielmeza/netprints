@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using NetPrints.Editor.Hosting;
 using NetPrints.Projects;
 
@@ -27,20 +28,36 @@ public sealed class ProcessLauncher : IProcessLauncher
     public event Action<int, int>? ProcessExited;
 
     /// <inheritdoc/>
-    public void Start(ProcessStartRequest request, CancellationToken cancellationToken = default)
+    public IRunningProcess Start(ProcessStartRequest request, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(request);
         int id = Interlocked.Increment(ref lastId);
+        bool redirectInput = request.CaptureOutput && request.RedirectInput;
         var startInfo = new ProcessStartInfo(request.FileName)
         {
             WorkingDirectory = request.WorkingDirectory,
             UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
+            RedirectStandardOutput = request.CaptureOutput,
+            RedirectStandardError = request.CaptureOutput,
+            RedirectStandardInput = redirectInput,
         };
+
+        if (redirectInput)
+        {
+            startInfo.StandardInputEncoding = new UTF8Encoding(false);
+        }
 
         foreach (string argument in request.Arguments)
         {
             startInfo.ArgumentList.Add(argument);
+        }
+
+        foreach (string name in request.EnvironmentRemovals)
+        {
+            if (!string.IsNullOrEmpty(name))
+            {
+                startInfo.Environment.Remove(name);
+            }
         }
 
         if (request.EnvironmentVariables is not null)
@@ -51,49 +68,39 @@ public sealed class ProcessLauncher : IProcessLauncher
             }
         }
 
-        var process = new Process { StartInfo = startInfo };
-        CancellationTokenRegistration killOnCancel = default;
-
-        process.OutputDataReceived += (_, e) => Report(id, ProcessStream.Output, e.Data);
-        process.ErrorDataReceived += (_, e) => Report(id, ProcessStream.Error, e.Data);
-        process.Exited += (_, _) => _ = ReportExitAsync();
-
-        process.Start();
-        killOnCancel = cancellationToken.Register(() => Kill(process)); // before exit events are enabled, so the exit disposes this registration
-        ProcessStarted?.Invoke(id, request);
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
-        process.EnableRaisingEvents = true; // after the start is reported, so a fast exit never precedes it
-
-        async Task ReportExitAsync()
-        {
-            try
-            {
-                using var drain = new CancellationTokenSource(DrainTimeout);
-                await process.WaitForExitAsync(drain.Token); // every line precedes the exit
-            }
-            catch (OperationCanceledException)
-            {
-                // a grandchild holds the pipes open: report the exit anyway
-            }
-
-            int code = process.ExitCode;
-            ProcessExited?.Invoke(id, code);
-            OutputReceived?.Invoke($"Process exited (code {code}).");
-            await killOnCancel.DisposeAsync();
-            process.Dispose();
-        }
-    }
-
-    private static void Kill(Process process)
-    {
+        var supervisor = new ProcessSupervisor(startInfo, (stream, line) => Report(id, stream, line));
         try
         {
-            process.Kill(entireProcessTree: true);
+            LaunchedProcess handle = supervisor.Start(id, cancellationToken);
+            ProcessStarted?.Invoke(id, request);
+            if (request.CaptureOutput)
+            {
+                supervisor.BeginReads();
+            }
+
+            supervisor.Exited += (_, _) => _ = ReportExitAsync(handle);
+            supervisor.EnableExitEvents();
+            return handle;
         }
-        catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException)
+        catch
         {
-            // already exited
+            supervisor.Handle?.Kill();
+            supervisor.Dispose();
+            throw;
+        }
+
+        async Task ReportExitAsync(LaunchedProcess handle)
+        {
+            if (request.CaptureOutput)
+            {
+                await supervisor.WaitForDrainAsync(DrainTimeout);
+            }
+
+            int code = supervisor.ExitCode;
+            handle.MarkExited();
+            ProcessExited?.Invoke(id, code);
+            OutputReceived?.Invoke($"Process exited (code {code}).");
+            supervisor.Dispose();
         }
     }
 

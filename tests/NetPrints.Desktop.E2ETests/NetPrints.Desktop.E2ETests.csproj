@@ -39,6 +39,8 @@
     <ProjectReference Include="..\NetPrints.TestExtension\NetPrints.TestExtension.csproj" ReferenceOutputAssembly="false" />
     <!-- Built first; started as a separate process from its own output folder. -->
     <ProjectReference Include="..\..\src\NetPrints.Desktop\NetPrints.Desktop.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: the run scenarios start it through the dotnet host. -->
+    <ProjectReference Include="..\Fixtures\RunProfiles\EchoTool\EchoTool.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

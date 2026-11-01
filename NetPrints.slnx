@@ -68,6 +68,7 @@
     <Project Path="tests/Fixtures/Extensions/Fx.TypesConsumer/Fx.TypesConsumer.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.TypesProvider/Fx.TypesProvider.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.Views/Fx.Views.csproj" />
+    <Project Path="tests/Fixtures/RunProfiles/EchoTool/EchoTool.csproj" />
     <Project Path="tests/Fixtures/Extensions/NetPrintsFixture.Runtime/NetPrintsFixture.Runtime.csproj" />
   </Folder>
   <Folder Name="/tests/">

@@ -177,12 +177,12 @@ public sealed class CapturingProcessLauncher : IProcessLauncher, IDisposable
         }
     }
 
-    public void Start(ProcessStartRequest request, CancellationToken cancellationToken = default)
+    public IRunningProcess Start(ProcessStartRequest request, CancellationToken cancellationToken = default)
     {
         Started.Add(request);
         var run = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken); // cancelled on dispose, which kills the program
         runs.Add(run);
-        launcher.Start(request, run.Token);
+        return launcher.Start(request, run.Token);
     }
 
     public void Dispose()

@@ -355,3 +355,11 @@ override NetPrints.Graph.ReturnNode.TitleIsFixed.get -> bool
 override NetPrints.Graph.ThrowNode.TitleIsFixed.get -> bool
 override NetPrints.Graph.TypeOfNode.TitleIsFixed.get -> bool
 override NetPrints.Graph.TypeReturnNode.TitleIsFixed.get -> bool
+NetPrints.Projects.ProcessStartRequest.CaptureOutput.get -> bool
+NetPrints.Projects.ProcessStartRequest.CaptureOutput.init -> void
+NetPrints.Projects.ProcessStartRequest.EnvironmentRemovals.get -> System.Collections.Generic.IReadOnlyList<string!>!
+NetPrints.Projects.ProcessStartRequest.EnvironmentRemovals.init -> void
+NetPrints.Projects.ProcessStartRequest.ExternalTerminal.get -> bool
+NetPrints.Projects.ProcessStartRequest.ExternalTerminal.init -> void
+NetPrints.Projects.ProcessStartRequest.RedirectInput.get -> bool
+NetPrints.Projects.ProcessStartRequest.RedirectInput.init -> void

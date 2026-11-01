@@ -976,7 +976,7 @@ C-11). Record any deviation from a card in implementation-notes under the batch'
 
 ### Batch E2 — model: sonnet — T116–T117 — 2 units (design-heavy)
 
-- [ ] T116 [US7] `ProcessStartRequest` additions and the running-process handle (FR-051, FR-057, research R22,
+- [x] T116 [US7] `ProcessStartRequest` additions and the running-process handle (FR-051, FR-057, research R22,
   contracts/run-profiles.md §7.4 and §7.5, cards C-04 and C-05; 1 unit). First create the echo tool
   `tests/Fixtures/RunProfiles/EchoTool/` (card C-04) with its `NetPrints.slnx` entry under `/tests/Fixtures/`, its
   `ReferenceOutputAssembly="false"` references from Cli.Tests, Editor.Tests, Editor.UITests and Desktop.E2ETests, and
