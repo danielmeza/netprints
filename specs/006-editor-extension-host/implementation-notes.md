@@ -2409,3 +2409,27 @@ Roadmap proposal for the coordinator (needs the owner's approval), for the P3c s
 
 - Decisions (delegated): none.
 - Slips: none. One no-op probe, `cat >> /dev/null` with no content, was run in the shell; nothing was written to the repo.
+
+## Batch E0 (sub-phase E contracts applied)
+
+Docs only; base 82424520, branch `p3-e-run-build`.
+
+- Commit 1, "Settle the run profile contract for sub-phase E": T-01 to T-16, T-25, T-26 in `contracts/run-profiles.md`
+  (§1 to §5 text, §6 bullets, new §7), `contracts/cli.md`, `data-model.md`, `research.md` (R22), `spec.md` (FR-054,
+  FR-057, FR-061, FR-063) and `plan.md` (sub-phase E row). T-27 is left to commit 4.
+- Commit 2, "Amend ADR-0015 and ADR-0037 for sub-phase E": T-17 (ADR-0037 Amendment 1), T-23 (ADR-0015 Amendment 2).
+- Commit 3, "Replace the run and build tasks and add the design cards": T-18 (this file, "Sub-phase E contracts"), T-21
+  (`tasks.md` Phase 7, batches E1 to E7), T-22 (summary row and the 52, 64 and 52 counts), T-24
+  (`design-cards-e.md`, byte for byte).
+- Commit 4, "Decide the external terminal in ADR-0042 and plan its later items": T-27 (R23, matched on the sentence),
+  T-29 (`docs/adr/0042-external-terminal.md`), T-30 (`docs/adr/README.md`) and the coordinating session's
+  `.specify/memory/roadmap.md` edit (T-28 and the P3c entry), committed unchanged.
+- T-19 needed no change; T-20 belongs to batch E1.
+- Gates: `check-e0.py` ends with `new blocks missing: 0` (exit 0); `cmp` of `design-cards-e.md` with its source prints
+  nothing; `git diff --name-only 82424520` lists only `specs/006-editor-extension-host/`, `docs/adr/` and
+  `.specify/memory/roadmap.md`; `dotnet build NetPrints.slnx -c Release` gives 0 warnings and 0 errors; the Editor.Tests
+  docs, guide and hygiene filter selected 39 tests: 39 passed, 0 failed, 0 skipped.
+- The staged-diff path check printed two lines, both from the contract text itself and left as written: the T123 task in
+  `tasks.md` and the Status section of ADR-0042 name `.agent-archive/2026-10-19-p3-terminal-default/`.
+- Decisions (delegated): none.
+- Slips: none.
