@@ -27,11 +27,15 @@ internal static class CliCommandCatalog
         new(BuildCommand.Name, config => config.AddCommand<BuildCommand>(BuildCommand.Name)
             .WithDescription("Build a NetPrints project.")
             .WithExample(BuildCommand.Name)
-            .WithExample(BuildCommand.Name, SampleProject)),
+            .WithExample(BuildCommand.Name, SampleProject)
+            .WithExample(BuildCommand.Name, "-c", "Release")),
         new(RunCommand.Name, config => config.AddCommand<RunCommand>(RunCommand.Name)
-            .WithDescription("Build a NetPrints project and run the program; arguments after -- go to the program.")
+            .WithDescription("Build a NetPrints project and run the program; arguments after -- go to the program. "
+                + "Profiles come from Properties/launchSettings.json. A relative workingDirectory is resolved from the project folder; dotnet run resolves it from Properties/.")
             .WithExample(RunCommand.Name)
-            .WithExample(RunCommand.Name, SampleProject, "--", "arg1", "arg2")),
+            .WithExample(RunCommand.Name, SampleProject, "--", "arg1", "arg2")
+            .WithExample(RunCommand.Name, "--launch-profile", "\"Godot editor\"")
+            .WithExample(RunCommand.Name, "-c", "Release", "--", "--verbose")),
         new(GenerateCommand.Name, config => config.AddCommand<GenerateCommand>(GenerateCommand.Name)
             .WithAlias(GenerateCommand.Alias)
             .WithDescription("Regenerate the C# of a project's graphs, or check that it is up to date (alias: regen).")

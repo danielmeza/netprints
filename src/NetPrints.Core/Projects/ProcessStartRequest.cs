@@ -19,4 +19,17 @@ public sealed record ProcessStartRequest(
     string FileName,
     IReadOnlyList<string> Arguments,
     string WorkingDirectory,
-    IReadOnlyDictionary<string, string>? EnvironmentVariables = null);
+    IReadOnlyDictionary<string, string>? EnvironmentVariables = null)
+{
+    /// <summary>Names removed from the inherited environment before <see cref="EnvironmentVariables"/> apply.</summary>
+    public IReadOnlyList<string> EnvironmentRemovals { get; init; } = [];
+
+    /// <summary>Whether stdout and stderr are redirected and reported line by line (the editor's Output). Default <see langword="true"/>.</summary>
+    public bool CaptureOutput { get; init; } = true;
+
+    /// <summary>Whether stdin is a pipe the launcher writes to; only meaningful with <see cref="CaptureOutput"/>. Default <see langword="false"/>.</summary>
+    public bool RedirectInput { get; init; }
+
+    /// <summary>Whether the program starts in a new terminal window (editor only; the CLI ignores it). Default <see langword="false"/>.</summary>
+    public bool ExternalTerminal { get; init; }
+}

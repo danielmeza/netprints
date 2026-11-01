@@ -510,6 +510,12 @@ P3c follows the same process: one spec, one branch, one PR.
     install` (for B15; not needed for v1), and local-feed `packageType` filtering (recorded by P3's B7 NuGet spike). If
     P3c is tight, screenshots, `localized` and the update badge move to v1.1.
   - Design and prior art: `.agent-archive/2026-10-14-samples-remote/` (outside this repo).
+- **Carried from P3's review** (PR #20, round 10): the error dialog's attribution (FR-034) takes an extension's load
+  context from the first copy loaded from its manifest's path. After a project's copy of a dependency makes the host
+  reload the dependent extension in a new context, a library that no copy of the extension loaded before that reload
+  names no extension (an accepted recall loss). The extension manager changes how the host loads extensions; it also
+  makes the context the host serves now available to the editor (on the load result or the host), so that case names
+  the extension.
 Done when: the phase's features work end to end and the docs are updated (the extensions and samples guides, the CLI
 reference, ADRs as applicable).
 
@@ -1018,6 +1024,15 @@ Done when: also docs updated (guides, API reference, ADRs as applicable).
 - **Release follow-ups after P1**: installers and auto-update (Velopack), code signing (Windows
   signing, Apple Developer ID and notarization), a Windows smoke test of the win-x64 archive,
   `PackageValidationBaselineVersion` after the first stable release.
+- **External terminal, later items** ([ADR-0042](../../docs/adr/0042-external-terminal.md), 2026-10-19; both later
+  than P3):
+  - a console helper inside the editor archive, with a setting `run.keepTerminalOpen` (bool, default on) that turns it
+    off, so a Windows external-terminal run keeps its window open after the program exits without re-parsing the
+    arguments (the way Visual Studio does); it needs a Windows editor CI leg first, because nothing starts the editor
+    on Windows in CI today (estimate 2-3 task units plus the leg);
+  - a `run.macTerminal` setting for other macOS terminals (iTerm2, Ghostty, WezTerm, kitty);
+  - more Linux candidates (alacritty, kitty, foot, wezterm), desktop-aware ordering (`XDG_CURRENT_DESKTOP`) and
+    detection of a terminal command that fails at once. Users of those terminals set `run.linuxTerminal`.
 - **Name and NuGet prefix**: keep the NetPrints name (free on nuget.org, 2026-09-25). Before
   reserving the `NetPrints.*` prefix, the owner contacts Robin Kahlow (RobinKa/netprints).
 - **CI build-artifact reuse** (draft PR #4): the E2E job reuses the build job's output. Kept as a

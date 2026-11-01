@@ -88,3 +88,22 @@ as a coordinator default.
   - a GUI-subsystem program such as `UnrealEditor.exe` has no stdout to capture.
 - Writing `launchSettings.json` back must keep unknown keys, kinds and their order, and warn about comments.
 - Open: the `AddRunProfileKind` shape, decided with U3 or NetPrintsUnity.
+
+## Amendment 1: the environment scrub and the configuration (sub-phase E contracts, 2026-10-19)
+
+- **The scrub is possible and covers four variables.** The first "known limit" above no longer holds: a process
+  request can remove variables (`ProcessStartRequest.EnvironmentRemovals`). With MSBuildLocator 1.11.2 and SDK
+  10.0.400 the registration adds `MSBuildExtensionsPath`, `MSBuildSDKsPath`, `DOTNET_HOST_PATH` and
+  `MSBUILD_EXE_PATH`, and overwrites a value the user set before. `MsBuildRegistration` records each with its earlier
+  value; a run removes those that did not exist and sets the others back, for both kinds, because `dotnet run` with
+  the editor's `MSBuildSDKsPath` builds against the editor's MSBuild. A variable an `Executable` profile sets keeps
+  the profile's value; for `Project` the profile's value reaches the program through `dotnet run -e`.
+- **`.cmd` and `.bat`** (decision 10, "rejected or warned about") are refused (FR-056, NPR009).
+- **`$(Name)`** (decision 7) is evaluated in process in the selected configuration, because the captured snapshot is
+  evaluated once in the default configuration and holds none of the listed names. The listed names are no longer a
+  closed list: a profile may use any property the project defines in the selected configuration, and NPR006 means the
+  project does not define it (decided 2026-10-19, OWNER-1 in `specs/006-editor-extension-host/implementation-notes.md`).
+  The CLI and the editor apply the same rule without loading extensions; an `AddProjectProperty` name works when the
+  extension's props define it.
+- **The configuration** reaches the build through `IRunProjectSystem` in `NetPrints.Workspace`, not through the shipped
+  `IProjectSystem`, whose new members would need an API compatibility suppression.

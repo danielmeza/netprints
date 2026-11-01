@@ -155,7 +155,7 @@ public sealed class CliExitCodeTests : IDisposable
         var host = NewHostInTempDirectory();
         string project = Path.Combine(host.Environment.CurrentDirectory, "App.csproj");
         await File.WriteAllTextAsync(project, "<Project />", TestContext.Current.CancellationToken);
-        host.Projects.ThrowOnBuild = new InvalidOperationException("boom");
+        host.RunProjects.ThrowOnBuild = new InvalidOperationException("boom");
 
         string[] arguments = verbose ? args : args.Where(arg => arg != "--verbose").ToArray();
         Assert.Equal(ExitCodes.InternalError, await host.RunAsync(arguments));
@@ -172,7 +172,7 @@ public sealed class CliExitCodeTests : IDisposable
         string project = Path.Combine(host.Environment.CurrentDirectory, "App.csproj");
         await File.WriteAllTextAsync(project, "<Project />", TestContext.Current.CancellationToken);
         using var cancellation = new CancellationTokenSource();
-        host.Projects.ThrowOnBuild = new OperationCanceledException(cancellation.Token);
+        host.RunProjects.ThrowOnBuild = new OperationCanceledException(cancellation.Token);
         await cancellation.CancelAsync();
 
         Assert.Equal(ExitCodes.Canceled, await host.RunAsync(cancellation.Token, "build"));
@@ -186,7 +186,7 @@ public sealed class CliExitCodeTests : IDisposable
     {
         var host = NewHostInTempDirectory();
         await File.WriteAllTextAsync(Path.Combine(host.Environment.CurrentDirectory, "App.csproj"), "<Project />", TestContext.Current.CancellationToken);
-        host.Projects.ThrowOnBuild = new OperationCanceledException("timed out");
+        host.RunProjects.ThrowOnBuild = new OperationCanceledException("timed out");
 
         Assert.Equal(ExitCodes.InternalError, await host.RunAsync("build"));
     }

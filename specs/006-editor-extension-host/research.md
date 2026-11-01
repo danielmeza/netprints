@@ -447,11 +447,16 @@ ADR-0031, ADR-0033 to ADR-0040.
     the editor and the CLI reference, so both build the identical process request (SC-008).
   - `ProcessStartRequest` (Core) gains an argument list, environment removals, input redirection, output capture and an
     external-terminal flag; `IProcessLauncher` (editor) and `ProgramRunner` (CLI) honour them.
-  - **New**: the MSBuild variable scrub needs to know which variables NetPrints set. `MsBuildRegistration` records the
-    names it set and whether each existed before; the resolver removes only those that did not, so user-set values
-    pass (FR-057).
-  - Stop: `CloseMainWindow()` on Windows and SIGTERM through a `libc` `kill` import on Linux and macOS, then
-    `Kill(entireProcessTree: true)` after `run.stopTimeoutSeconds`.
+  - **New**: the MSBuild variable scrub needs to know which variables NetPrints set. `MsBuildRegistration` records
+    every variable its registering call added or changed, with the value it had before (a diff of the environment
+    around the locator call); the resolver removes those that did not exist and sets the others back, so user-set
+    values pass (FR-057). Measured on 2026-10-19 with MSBuildLocator 1.11.2 and SDK 10.0.400: four variables
+    (`MSBuildExtensionsPath`, `MSBuildSDKsPath`, `DOTNET_HOST_PATH`, `MSBUILD_EXE_PATH`), and a value set before is
+    overwritten. The scrub applies to both kinds.
+  - Stop: `CloseMainWindow()` on Windows and SIGTERM through a `libc` `kill` import (`LibraryImport`, so
+    `NetPrints.Editor` sets `AllowUnsafeBlocks`) on Linux and macOS, then `Kill(entireProcessTree: true)` after
+    `run.stopTimeoutSeconds`; at once when `CloseMainWindow()` finds no main window. `dotnet run` forwards SIGTERM to
+    the program (measured with SDK 10.0.400), so the `Project` kind stops the same way.
   - The Run section of Project settings edits `launchSettings.json` through `JsonNode`, preserving unknown members and
     property order; a file with comments is shown read-only with "Open file", because `JsonNode` would drop them.
   - Problems carry NPR codes ([contracts/run-profiles.md](contracts/run-profiles.md)).
@@ -463,12 +468,12 @@ ADR-0031, ADR-0033 to ADR-0040.
 
 - **Decision**: with output captured, Output shows an input line that writes a line to the program's standard input
   and a control that closes it (end of file); without capture there is no input line. "Run in external terminal"
-  starts the program in a new terminal window: on Linux and macOS NetPrints writes a POSIX `sh` script in the session's
-  temp folder (single-quoted arguments, `cd`, exported environment, a final "Press Enter to close" read) and starts
-  it through the terminal command (`run.linuxTerminal`, default: the first of `x-terminal-emulator -e`,
-  `gnome-terminal --`, `konsole -e`, `xfce4-terminal -x`, `xterm -e` found on `PATH`; macOS: `open -a Terminal`); on
-  Windows the program is started with a new console window and no redirection, and the window closes when the program
-  exits. The configuration selector (Debug, Release) sits next to the run profile button; build and run use it; it is
+  starts the program in a new terminal window: on Linux and macOS NetPrints writes a POSIX `sh` script to
+  `<state>/terminal/<start id>-<8 random hex>.sh` (mode 0700; it deletes itself first; single-quoted arguments, `cd`,
+  the environment through `env -u NAME … NAME=VALUE …`, a final "Press Enter to close" read) and starts
+  it through the terminal command (`run.linuxTerminal`, default: the ADR-0042 detection order; macOS:
+`open -a Terminal`); Linux and macOS hand the run off at once; on Windows the program is started with a new console
+window and no redirection, NetPrints follows it, and the window closes when the program exits (ADR-0042). The configuration selector (Debug, Release) sits next to the run profile button; build and run use it; it is
   remembered per user and per project; the CLI keeps `-c`.
 - **Rationale**: FR-063, FR-064; the script keeps the argument list exact without a shell parse on our side.
 - **Alternatives rejected**: `cmd /k` on Windows (re-parses the arguments, the FR-056 reason); a pseudo-terminal in

@@ -61,6 +61,7 @@
     <!-- ProjectCheckTests (release contract §5) exercises NetPrints.Desktop.ProjectCheck directly. -->
     <ProjectReference Include="..\..\src\NetPrints.Desktop\NetPrints.Desktop.csproj" />
     <ProjectReference Include="..\NetPrints.Testing\NetPrints.Testing.csproj" />
+    <ProjectReference Include="..\NetPrints.Run.Testing\NetPrints.Run.Testing.csproj" />
     <!-- Built first so the extension folder exists; the assembly itself is loaded by the extension loader, not referenced. -->
     <ProjectReference Include="..\NetPrints.TestExtension\NetPrints.TestExtension.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\Fixtures\Extensions\Fx.Editor\Fx.Editor.csproj" ReferenceOutputAssembly="false" />
@@ -72,6 +73,8 @@
     <ProjectReference Include="..\..\src\NetPrints.Generator\NetPrints.Generator.csproj" ReferenceOutputAssembly="false" />
     <!-- Built first, never referenced: the embedded-catalog discovery tests read its dll. -->
     <ProjectReference Include="..\Fixtures\Catalog\CatalogAnnotatedLib\CatalogAnnotatedLib.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: the process tests start it through the dotnet host. -->
+    <ProjectReference Include="..\Fixtures\RunProfiles\EchoTool\EchoTool.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

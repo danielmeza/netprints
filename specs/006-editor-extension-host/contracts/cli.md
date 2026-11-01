@@ -1,8 +1,10 @@
 # Contract: command-line surfaces
 
 FR-036, FR-079, FR-080, FR-107, FR-108; ADR-0015 (exit codes), ADR-0037 (`run`, in
-[run-profiles.md](run-profiles.md)); research R17, R25. Output rules as in `docs/guide/cli.md`: results on stdout,
-diagnostics on stderr, `--format json` where stated.
+[run-profiles.md](run-profiles.md)); research R17, R25. Output rules as in `docs/guide/cli.md`: results on stdout
+(build diagnostics are results), every other message on stderr, including the run profile problems of `netprints run`
+(ADR-0015, Amendment 2), `--format json` where stated. `netprints run` and `netprints build -c` are specified in
+[run-profiles.md](run-profiles.md) §4; `--launch-profile` has no short form there.
 
 ## 1. `netprints new`
 

@@ -167,8 +167,13 @@ public sealed class X11Driver(XServer server, EditorProcess editor, Tool tool) :
         await SettleAsync(cancellationToken);
     }
 
-    /// <summary>Maps "Ctrl+Z", "Delete", "Enter", "Escape" … to xdotool key names.</summary>
-    public static string KeyOf(string chord) => string.Join('+', chord.Split('+').Select(part => part switch
+    /// <summary>
+    /// Maps "Ctrl+Z", "Delete", "Enter", "Escape" … to xdotool keys. A function key goes as its key
+    /// code on <paramref name="displayName"/>: from a key name, xdotool also presses the first
+    /// modifier the key's type lists at that level, and since xkeyboard-config 2.46 that makes F7
+    /// Alt+F7.
+    /// </summary>
+    public static string KeyOf(string chord, string displayName) => string.Join('+', chord.Split('+').Select(part => part switch
     {
         "Ctrl" => "ctrl",
         "Shift" => "shift",
@@ -178,12 +183,15 @@ public sealed class X11Driver(XServer server, EditorProcess editor, Tool tool) :
         "Space" => "space",
         "," => "comma",
         var key when key.Length == 1 => key.ToLowerInvariant(),
+        var key when IsFunctionKey(key) => XKeymap.KeycodeOf(displayName, key).ToString(CultureInfo.InvariantCulture),
         var key => key,
     }));
 
+    private static bool IsFunctionKey(string key) => key.StartsWith('F') && key.Skip(1).All(char.IsAsciiDigit);
+
     public async Task PressAsync(string chord, CancellationToken cancellationToken)
     {
-        await tool.XdotoolAsync(cancellationToken, "key", "--clearmodifiers", KeyOf(chord));
+        await tool.XdotoolAsync(cancellationToken, "key", "--clearmodifiers", KeyOf(chord, server.DisplayName));
         await SettleAsync(cancellationToken);
     }
 

@@ -30,7 +30,7 @@ public sealed class BuildCommandTests : IDisposable
     [Fact]
     public async Task FailedBuildReturnsExitCode1WithFormattedErrors()
     {
-        _host.Projects.Result = new BuildResult(false,
+        _host.RunProjects.BuildResult = new BuildResult(false,
             [
                 new ProjectMessage(ProjectMessageSeverity.Error, "CS1002", "; expected", "Program.cs", 3, 7),
                 new ProjectMessage(ProjectMessageSeverity.Warning, "CS0168", "unused", "Program.cs", 1, 1),
@@ -52,8 +52,37 @@ public sealed class BuildCommandTests : IDisposable
 
         Assert.Equal(ExitCodes.Success, exitCode);
         Assert.Equal("Build succeeded.", _host.Output.Trim().Split('\n')[^1].Trim());
-        Assert.Equal([_project], _host.Projects.BuiltProjects);
+        Assert.Equal([(_project, "Debug")], _host.RunProjects.Builds);
         Assert.Empty(_host.Processes.Started);
+    }
+
+    [Theory]
+    [InlineData("-c", "Release")]
+    [InlineData("--configuration", "Custom")]
+    public async Task TheConfigurationOptionReachesTheBuild(string option, string configuration)
+    {
+        _host.AssertExit(ExitCodes.Success, await _host.RunAsync("build", option, configuration));
+
+        Assert.Equal([(_project, configuration)], _host.RunProjects.Builds);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("  ")]
+    public async Task AnEmptyConfigurationIsAUsageError(string configuration)
+    {
+        Assert.Equal(ExitCodes.Usage, await _host.RunAsync("build", "-c", configuration));
+
+        Assert.Empty(_host.RunProjects.Builds);
+        Assert.Contains("The configuration must not be empty.", _host.Error.ToString() + _host.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task BuildHelpListsTheConfigurationOption()
+    {
+        Assert.Equal(ExitCodes.Success, await _host.RunAsync("build", "--help"));
+
+        Assert.Contains("--configuration", _host.Output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -65,7 +94,7 @@ public sealed class BuildCommandTests : IDisposable
 
         Assert.Equal(ExitCodes.Success, await _host.RunAsync("build", other));
 
-        Assert.Equal([other], _host.Projects.BuiltProjects);
+        Assert.Equal([(other, "Debug")], _host.RunProjects.Builds);
     }
 
     [Fact]
@@ -75,7 +104,7 @@ public sealed class BuildCommandTests : IDisposable
 
         Assert.Equal(ExitCodes.NoSdk, await _host.RunAsync("build"));
 
-        Assert.Empty(_host.Projects.BuiltProjects);
+        Assert.Empty(_host.RunProjects.Builds);
         Assert.Contains("No .NET SDK", _host.Error.ToString(), StringComparison.Ordinal);
         Assert.Empty(_host.Output);
     }

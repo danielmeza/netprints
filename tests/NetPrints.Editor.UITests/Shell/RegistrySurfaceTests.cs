@@ -351,7 +351,7 @@ public class RegistrySurfaceTests
 
         public event Action<int, int>? ProcessExited;
 
-        public void Start(ProcessStartRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public IRunningProcess Start(ProcessStartRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 
         public void Starts(ProcessStartRequest request) => ProcessStarted?.Invoke(1, request);
 

@@ -68,6 +68,7 @@
     <Project Path="tests/Fixtures/Extensions/Fx.TypesConsumer/Fx.TypesConsumer.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.TypesProvider/Fx.TypesProvider.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.Views/Fx.Views.csproj" />
+    <Project Path="tests/Fixtures/RunProfiles/EchoTool/EchoTool.csproj" />
     <Project Path="tests/Fixtures/Extensions/NetPrintsFixture.Runtime/NetPrintsFixture.Runtime.csproj" />
   </Folder>
   <Folder Name="/tests/">
@@ -81,6 +82,7 @@
     <Project Path="tests/NetPrints.Editor.UITests/NetPrints.Editor.UITests.csproj" />
     <Project Path="tests/NetPrints.TestExtension/NetPrints.TestExtension.csproj" />
     <Project Path="tests/NetPrints.Testing/NetPrints.Testing.csproj" />
+    <Project Path="tests/NetPrints.Run.Testing/NetPrints.Run.Testing.csproj" />
     <Project Path="tests/NetPrints.Testing.Ui/NetPrints.Testing.Ui.csproj" />
   </Folder>
 </Solution>

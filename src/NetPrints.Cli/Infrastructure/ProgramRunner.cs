@@ -10,6 +10,8 @@ namespace NetPrints.Cli.Infrastructure;
 /// <summary>
 /// <see cref="IProgramRunner"/> over <see cref="Process"/>. By default the child inherits stdin, stdout and stderr, so prompts, ordering,
 /// colours and Ctrl+C behave as if the program were started directly; a stream given for an output redirects that output into it instead.
+/// The request's <see cref="ProcessStartRequest.EnvironmentRemovals"/> apply; its <see cref="ProcessStartRequest.CaptureOutput"/>, <see cref="ProcessStartRequest.RedirectInput"/>
+/// and <see cref="ProcessStartRequest.ExternalTerminal"/> are editor options and are ignored here.
 /// </summary>
 /// <param name="standardOutput">Receives the child's stdout when not <see langword="null"/>.</param>
 /// <param name="standardError">Receives the child's stderr when not <see langword="null"/>.</param>
@@ -30,6 +32,14 @@ internal sealed class ProgramRunner(Stream? standardOutput = null, Stream? stand
         foreach (string argument in request.Arguments)
         {
             startInfo.ArgumentList.Add(argument);
+        }
+
+        foreach (string name in request.EnvironmentRemovals)
+        {
+            if (!string.IsNullOrEmpty(name))
+            {
+                startInfo.Environment.Remove(name);
+            }
         }
 
         if (request.EnvironmentVariables is not null)

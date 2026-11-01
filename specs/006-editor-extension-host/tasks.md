@@ -14,7 +14,7 @@ task here. Batch P3-S2d moved User Stories 16 and 17 to P3b; batch P3-S2e (2026-
 spec's Clarifications) brought them back with User Story 12. The tail is sub-phase G (T136–T146 and its gate T170;
 T153 and T154 are the E+F+G checkpoint's review and fixes) and the NuGet packages are sub-phase H (T158–T169). No ID
 was renumbered. Counts after S2e: 15 active stories, 105 active FRs, 15 active SCs; 160 active tasks of 170 IDs (10
-merged); 50 implementation batches with 190 units, plus 5 units in PR-P (195); 62 batches in all. Review C1+C2 added
+merged); 52 implementation batches with 190 units, plus 5 units in PR-P (195); 64 batches in all. Review C1+C2 added
 T172–T175 (164 active of 175 IDs, 194 units plus 5 in PR-P = 199). P3's release is
 0.4.0 (P3a ships as v0.3.0; spec "Version").
 
@@ -948,100 +948,246 @@ contracts/cli.md §2–§3. **Independent test**: US10's independent test. **Gat
 `netprints run`; a configuration selector, console input and an external terminal complete it. Contract:
 contracts/run-profiles.md. **Independent test**: US7's independent test. **Gate (plan)**: SC-008.
 
-### Batch E1 — model: sonnet — T113–T115 — 4 units
+Contract: contracts/run-profiles.md, including §7 "Types and names" (every type, member, code, message, id and key).
+Design cards: [design-cards-e.md](design-cards-e.md) (`specs/006-editor-extension-host/design-cards-e.md`, C-01 to
+C-11). Record any deviation from a card in implementation-notes under the batch's heading.
 
-- [ ] T113 [US7] The launch settings reader (FR-051, FR-052, contracts/run-profiles.md §1, data-model §4; 1 unit). Test
-  first: `tests/NetPrints.Core.Tests/Run/LaunchSettingsReaderTests.cs` over fixtures in `tests/Fixtures/RunProfiles/`:
-  comments and trailing commas allowed; file order kept; `commandName` case-sensitive; names compared case-insensitively,
-  with NPR002 for names that differ only by case; `Project` and `Executable` run, other kinds are listed disabled with
-  the reason (NPR003, NPR011); NPR001 for invalid JSON; the default is the first runnable profile; `<name>.run.json` and
-  `My Project/` are ignored. Then `src/NetPrints.Workspace/Run/` (the reader, the internal kinds table,
-  `NprDiagnosticCodes`) and guide rows.
-- [ ] T114 [US7] The splitter and the joiner (FR-054, SC-008; 1 unit). Test first: a round trip of at least 30 cases
-  (quotes, backslashes before quotes, doubled quotes, spaces, empty arguments, trailing backslashes, Unicode) with the
-  `CommandLineToArgvW` rules on every OS. Then `src/NetPrints.Workspace/Run/CommandLineSplitter.cs`.
-- [ ] T115 [US7] The resolver (FR-054–FR-056, contracts/run-profiles.md §2; 2 units). Test first: one fixture per row
-  of the resolution table and per code NPR004–NPR010: `%NAME%` from the environment, `$(Name)` from the captured
-  properties and the `AddProjectProperty` names; the working directory rules; the executable rules (a separator, `PATH`
-  with `.exe` and `.com` on Windows, a macOS `.app`); an unset variable stops before the build in a path field and
-  warns in arguments and environment (US7 scenario 3); a `.cmd` or `.bat` target on Windows is refused with the reason
-  (edge case). Then `src/NetPrints.Workspace/Run/RunProfileResolver.cs`, producing the resolved request.
+### Batch E1 — model: sonnet — T113–T114 — 2 units (mechanical)
 
-### Batch E2 — model: sonnet — T116–T118 — 3 units
+- [x] T113 [US7] The launch settings reader (FR-051, FR-052, contracts/run-profiles.md §1 and §7.1, data-model §4,
+  card C-01; 1 unit). Test first: `tests/NetPrints.Core.Tests/Run/LaunchSettingsReaderTests.cs` over fixtures in
+  `tests/Fixtures/RunProfiles/Reader/<case>/Properties/launchSettings.json`, linked into Core.Tests with
+  `<None Include="../Fixtures/RunProfiles/Reader/**" LinkBase="Fixtures/RunProfiles/Reader" CopyToOutputDirectory="PreserveNewest" />`
+  (only `Reader`: the folder also holds `EchoTool` and `GodotCopy` later): comments and trailing commas allowed, `HasComments` set; file order kept;
+  `commandName` case-sensitive (`project` is NPR003); names compared case-insensitively, with NPR002 for names that
+  differ only by case (both kept, `IsUsable` false); `Project` and `Executable` run, other kinds are disabled with
+  NPR003 through `AvailabilityFor`, and a `Project` profile on a library with NPR011; NPR001 for invalid JSON and for
+  each shape error of §1; the default is the first profile that can run, and none on a library whose only profile is
+  `Project`; `<name>.run.json` and `My Project/launchSettings.json` give `LaunchSettings.None`; unknown members
+  ignored. Then `src/NetPrints.Workspace/Run/` (`NprDiagnosticCodes`, `RunProblem`, `RunProblemSeverity`,
+  `RunProfileKinds`, `RunProfileAvailability`, `LaunchProfile`, `LaunchSettings`, `LaunchSettingsReader`), `"NPR"` in
+  `DiagnosticsGuideTests.Prefixes`, and the NPR prefix row and section of `docs/guide/diagnostics.md` (exact text in
+  card C-01, "Guide rows"; no link to `run-profiles.md` until T125 writes that page).
+- [x] T114 [US7] The splitter and the joiner (FR-054, SC-008, contracts/run-profiles.md §7.2, card C-02; 1 unit). Test
+  first: `tests/NetPrints.Core.Tests/Run/CommandLineSplitterTests.cs`: a round trip `Split(Join(x)) == x` over at
+  least 30 cases (quotes, backslashes before quotes, doubled quotes, spaces, tabs, empty arguments, trailing
+  backslashes, Unicode, an empty list), plus fixed `Split` cases for each rule of §7.2 (`a\\\"b` → `a\"b`;
+  `"a""b"` → `a"b`; `""` → one empty argument; `a\\b` → `a\\b`). Then `CommandLineSplitter.cs`.
 
-- [ ] T116 [US7] `ProcessStartRequest` additions (FR-051, FR-057, research R22; 1 unit). Test first: launcher tests:
-  the argument list reaches the program exactly, with no shell; environment additions and removals; input redirection;
-  output capture off for "Don't capture output" (the GUI program edge case); the external-terminal flag. Then
-  `src/NetPrints.Core/Projects/ProcessStartRequest.cs`, the editor's `IProcessLauncher` implementation and
-  `src/NetPrints.Cli/Infrastructure/ProgramRunner.cs`.
-- [ ] T117 [US7] The MSBuild variable scrub (FR-057; 1 unit). Test first: a variable `MsBuildRegistration` set is
-  removed from an `Executable` program's environment, and the same variable set by the user before NetPrints started
-  is kept (edge case). Then `src/NetPrints.Workspace/MsBuildRegistration.cs` records the names it set and whether each
-  existed before; the resolver removes only those that did not.
-- [ ] T118 [US7] `netprints run` with profiles (FR-062, SC-008, contracts/run-profiles.md §4; 1 unit). Test first:
-  `tests/NetPrints.Cli.Tests/Commands/RunCommandTests.cs`: the default profile; `-lp|--launch-profile` and
-  `--no-launch-profile`; `-- <args>` replace the profile's arguments while its environment and working directory apply;
-  exit 2 for NPR003, NPR004 and usage errors (US7 scenario 4), exit 1 for NPR001, NPR002, NPR005, NPR006 (path) and
-  NPR008–NPR010; for every resolver fixture the CLI and the editor's run path build the identical request (program,
-  argument list, working directory, environment) — SC-008. Then `src/NetPrints.Cli/Commands/RunCommand.cs` and its
-  `--help` text.
+### Batch E2 — model: sonnet — T116–T117 — 2 units (design-heavy)
 
-### Batch E3 — model: sonnet — T119–T120 — 4 units
+- [x] T116 [US7] `ProcessStartRequest` additions and the running-process handle (FR-051, FR-057, research R22,
+  contracts/run-profiles.md §7.4 and §7.5, cards C-04 and C-05; 1 unit). First create the echo tool
+  `tests/Fixtures/RunProfiles/EchoTool/` (card C-04) with its `NetPrints.slnx` entry under `/tests/Fixtures/`, its
+  `ReferenceOutputAssembly="false"` references from Cli.Tests, Editor.Tests, Editor.UITests and Desktop.E2ETests, and
+  `tests/NetPrints.Testing/RunFixtures.cs` (`EchoToolDll()`, `DotnetHost()`). Test first:
+  `tests/NetPrints.Editor.Tests/Hosting/ProcessLauncherTests.cs`
+  over the echo tool: the argument list reaches the program exactly, with no shell (empty, quote, backslash and
+  Unicode arguments); `EnvironmentRemovals` removes an inherited variable and `EnvironmentVariables` then applies;
+  `RedirectInput`: two `WriteLineAsync` lines are echoed and `CloseInput` ends the tool's read loop (it prints
+  `stdin-eof`); `CanWriteInput` turns false on exit and `InputStateChanged` fires; `CaptureOutput` false: no
+  `LineReceived`, but `ProcessStarted` and `ProcessExited` (the GUI program edge case); `Kill` is idempotent; and
+  `tests/NetPrints.Cli.Tests/Infrastructure/ProgramRunnerTests.cs` over the echo tool: a removed variable prints
+  `env:<NAME> unset`, and a request with `CaptureOutput = false`, `RedirectInput = true` and `ExternalTerminal = true`
+  runs exactly as one with the defaults. Then `ProcessStartRequest.cs` (+ `PublicAPI.Unshipped.txt`),
+  `IRunningProcess.cs`, `IProcessLauncher.cs` (`Start` returns the handle), `Hosting/Avalonia/ProcessLauncher.cs` and
+  `LaunchedProcess.cs`, `ProgramRunner.cs`, and the three launcher test doubles: `CapturingProcessLauncher`
+  (Editor.UITests `Hosting/TestDoubles.cs`, returns the inner launcher's handle), `FakeProcessLauncher` (Editor.Tests
+  `Hosting/Fakes.cs`, returns a new `FakeRunningProcess` in the same file that records `WriteLineAsync`, `CloseInput`,
+  `StopAsync` and `Kill`, each with a count) and `ControlledLauncher` (Editor.UITests `Shell/RegistrySurfaceTests.cs`,
+  whose `Start` keeps throwing `NotSupportedException` with the new return type). `StopAsync` is a stub that calls
+  `Kill` until T120.
+- [x] T117 [US7] The MSBuild variable record (FR-057, contracts/run-profiles.md §7.6, card C-03; 1 unit). Test first:
+  `tests/NetPrints.Core.Tests/Run/MsBuildVariableTests.cs`: `Between` reports an added variable with `PriorValue`
+  null, a changed one with its earlier value, ignores an unchanged one, and compares names case-insensitively only on
+  Windows (a parameter of the comparison, so both branches run on Linux); after the test assembly's registration,
+  every name in `MsBuildRegistration.Variables` has a value in the process environment (the record describes a real
+  registration). Then
+  `src/NetPrints.Workspace/MsBuildVariable.cs` and `MsBuildRegistration.cs` (snapshot, register, diff, log 4007).
 
-- [ ] T119 [US7] The run profile button and Run enablement (FR-053, FR-058, FR-061; 2 units; load `avalonia-xaml` and
-  `avalonia-styling`). Test first: headless tests: the split button sits next to Run and Stop when the project has
-  profiles or is an executable; profiles in file order, disabled ones with their reason, a check on the selected one,
-  and "Edit run profiles…" (US7 scenario 1); the per-profile options "Run in external terminal" and "Don't capture
-  output"; `selectRunProfile` and `editRunProfiles`; Run is enabled for a library with an `Executable` profile; the
-  selection and the options are remembered per user and per project in the session state's `run` block, never in
-  `launchSettings.json`; the first run of each `Executable` profile prints the resolved command line in Output
-  (scenario 2); a file with NPR001 or NPR002 shows the error on the button and disables Run for profiles (edge case).
-  Then `src/NetPrints.Editor/Run/` (view models; commands through the facet) and the `run` block in
-  `src/NetPrints.Editor/State/SessionState.cs`.
-- [ ] T120 [US7] Stop, the process tree and the unload prompt (FR-059; 2 units). Test first: the echo tool in
-  `tests/Fixtures/RunProfiles/` set to ignore SIGTERM is killed with its child after `run.stopTimeoutSeconds`; the
-  Windows branch asks the main window to close first (a unit test of the platform branch); unloading a project with a
-  live `Executable` run asks Leave, Stop or Cancel (US7 scenario 5). Then `CloseMainWindow` on Windows, SIGTERM through a
-  `libc` `kill` import on Linux and macOS, `Kill(entireProcessTree: true)` after the timeout, and the prompt in the
-  unload path.
+### Batch E3 — model: sonnet — T115, T118 — 3 units (design-heavy)
 
-### Batch E4 — model: sonnet — T121–T122 — 3 units
+- [x] T115 [US7] The resolver and the planner (FR-054–FR-057, contracts/run-profiles.md §2 and §7.3, cards C-02 and
+  C-06; 2 units). First create the test-support library `tests/NetPrints.Run.Testing` (card C-06, "Shared test data":
+  the csproj, its `NetPrints.slnx` entry, and references from Core.Tests, Cli.Tests and Editor.Tests) with
+  `RunProfileCase`, `RunProfileCases`, `RunRequestAssert` and `FakeRunProjectSystem`; and add
+  `      - 'tests/NetPrints.Run.Testing/**'` after the `      - 'tests/NetPrints.Testing/**'` line in both `paths` lists
+  (`push` and `pull_request`) of `.github/workflows/cli-windows.yml`, because
+  `CiWorkflowTests.CliWindowsPathFilterCoversTheCliTestsBuildInputs` requires every project in `NetPrints.Cli.Tests`'s
+  closure to be covered (B-4). Test first: the cases (one per
+  row of §2, per code NPR004–NPR010, and the C-06 list) and `tests/NetPrints.Core.Tests/Run/RunProfileResolverTests.cs`
+  over every case: `%NAME%` from the environment, `$(Name)` from the evaluated properties; the working directory
+  rules; the executable rules (a separator, `PATH` with `.exe` and `.com` under `RunPlatform.Windows`, a macOS `.app`
+  under `RunPlatform.MacOS`; a relative `PATH` entry is skipped: `ExecutableOnPathRelativeEntry` has `PATH` `bin` and the tool at `<project folder>/bin/<tool>`, and ends in NPR008); an unset variable stops before the build in a path field and warns in arguments and
+  environment (US7 scenario 3); a `.cmd` or `.bat` target under `RunPlatform.Windows` is NPR009; the scrub removes
+  added variables and restores overwritten ones (T117's record) and leaves a name the `Executable` profile sets to the
+  profile; the `Project` kind's `-e` arguments and `DOTNET_LAUNCH_PROFILE`; "No profile".
+  `tests/NetPrints.Core.Tests/Run/RunPlannerTests.cs` over `FakeRunProjectSystem`: with `OutputType` set, only the
+  chosen profile's `$(Name)`s are evaluated, no evaluation when it has none or when the choice blocks; with
+  `OutputType` null, exactly one evaluation of `OutputType` plus every profile's names; the configuration is passed;
+  `OutputType` `WinExe` maps to `SharedLibrary`. Then `RunPlatform.cs`, `RunInputs.cs`, `RunResolution.cs`,
+  `RunProfileChoice.cs`, `RunProfileResolver.cs`, `RunConfigurations.cs`, `IRunProjectSystem.cs`, `RunRequest.cs`,
+  `RunPlanner.cs` in `src/NetPrints.Workspace/Run/`, `src/NetPrints.Workspace/OutputTypes.cs` (also used by
+  `MsBuildProjectSystem.LoadAsync`), and `IRunProjectSystem` on `MsBuildProjectSystem` (tested in
+  `MsBuildProjectSystemTests` over `tests/Fixtures/CSharpTarget/Latest`: Release gives a `TargetPath` under
+  `bin/Release`; an undefined name is absent; a defined empty one is present and empty) and on `NoSdkProjectSystem`.
+- [x] T118 [US7] `-c` on `build` and `run`, and `netprints run` with profiles (FR-062, FR-063, SC-008,
+  contracts/run-profiles.md §4 and §7.9, card C-07; 1 unit). Test first:
+  `tests/NetPrints.Cli.Tests/Commands/RunCommandTests.cs`: the default profile; `--launch-profile`;
+  `--no-launch-profile`; both together exit 2; `-- <args>` replace the profile's arguments while its environment and
+  working directory apply; exit 2 for NPR003, NPR004, NPR011 (with `--launch-profile`) and usage errors (US7 scenario 4), exit 1
+  for NPR001, NPR002, NPR005, NPR006 (path) and NPR008–NPR010, problems on stderr and nothing of them on stdout; for
+  every `RunProfileCases` case, with `CliTestHost`'s planner built over the case (its platform, environment, MSBuild
+  variables and `FakeRunProjectSystem.For(case)`), the request handed to `IProgramRunner` equals the case's expected
+  request (`RunRequestAssert.Same`) — SC-008; `BuildCommandTests`: `-c Release` reaches `IRunProjectSystem.BuildAsync`;
+  the existing `EndToEnd/HelloWorldCliTests` (real `CliServices`, `netprints run`) stays green. Then `ConfigurationSettings.cs`,
+  `RunCommandSettings.cs`, `RunCommand.cs`, `BuildCommand.cs`, `CliServices.cs`, `CliTestHost.cs` and the `--help` text.
 
-- [ ] T121 [US7] Project settings › Run (FR-060, research R22; 2 units; load `avalonia-xaml` and `avalonia-styling`).
-  Test first: edits go through `JsonNode` and keep unknown members and property order (a byte comparison); a file with
-  comments is read-only with "Open file", as are kinds NetPrints cannot run; the argument preview shows the split list;
-  the warning that `dotnet run` resolves a relative `workingDirectory` from `Properties/`. Then the Run section of
-  `src/NetPrints.Editor/Shell/ProjectSettingsDocumentViewModel.cs` and its view.
-- [ ] T122 [US7] The configuration selector (FR-063; 1 unit). Test first: Debug or Release next to the profile button;
-  build and run use it; it is remembered per user and per project (US7 scenario 7); the CLI keeps `-c`. Then the
-  selector.
+### Batch E4 — model: sonnet — T119, T122 — 3 units (design-heavy, XAML)
 
-### Batch E5 — model: sonnet — T123–T126 — 3 units
+- [ ] T119 [US7] The run profile button and Run enablement (FR-053, FR-058, FR-061, contracts/run-profiles.md §3, §5,
+  §7.5, §7.8, §7.10, §7.11, card C-08; 2 units; load `avalonia-xaml`, `avalonia-styling` and `avalonia-behaviors`).
+  Test first: `tests/NetPrints.Editor.Tests/Run/RunOptionsStoreTests.cs` (the `run` block round-trips; a missing or
+  invalid block gives the defaults and keeps the open documents; `SessionService.Save` keeps the block; a null store
+  keeps the values in memory), `tests/NetPrints.Editor.Tests/Run/ProjectRunnerTests.cs` (the `RunProfileCases` parity
+  as in T118 over `RunProfileCases.EditorNames`, the cases whose inputs the editor has, each case's planner built over
+  the case and its profile set through `RunOptionsStore.SetProfile` — SC-008; Run enabled for a library with an `Executable`
+  profile and disabled for a library with no profile or whose only profile is `Project`; the button visible for a
+  library with an NPR001 file and hidden for a library with no file; NPR001 or NPR002 disable Run; a remembered
+  profile that is gone falls back to the default; `ProjectRunner.Create` over an `EditorContext` uses its
+  `Processes` and `RunState`), `tests/NetPrints.Editor.Tests/Shell/ProjectSessionRunFlowTests.cs` (a blocked run
+  appends its problem lines as notices, reports "Run stopped: …" and does not build; a warning written by a run that
+  goes on is still in the Output panel's lines after the program started; the first run of each `Executable`
+  profile announces the command line once per session, after the Running phase and before the program's first
+  line; a start that throws leaves no pending announcement, so the next run prints no first-run block), and headless tests in `tests/NetPrints.Editor.UITests/Run/RunTargetTests.cs`: the split button sits next to
+  Run and Stop by the visibility rule of contracts/run-profiles.md §1; profiles in file order, disabled
+  ones with their reason, a check on the selected one, and "Edit run profiles…" (contracts/run-profiles.md §3); the
+  per-profile options "Run in external terminal" and "Don't capture output"; `selectRunProfile` opens the drop-down and
+  `editRunProfiles` opens Project settings; the selection and the options are remembered per user and per project in
+  the session state's `run` block, never in `launchSettings.json`; "Edit run profiles…" reaches the registered
+  `editRunProfiles` handler through a real `CommandInvoker` (the id given to `TryRun` has no prefix, B-5); a file with NPR001 or NPR002 shows the error on the
+  button. Then `src/NetPrints.Editor/Run/` (`RunOptionsStore`, `ProjectRunner`, `RunProjectSystems`,
+  `RunTargetViewModel`, `RunProfileItemViewModel`), the state records, `CommandBarSlotViewModel.Accessory`, the
+  `ShellWindow.axaml` accessory template, `OpenFlyoutOnRequestBehavior`, the two command handlers and ids,
+  `IShell.RunTarget` (`DockShellAdapter`, `FakeShell`, `KeyStubShell`), `ShellViewModel.RunTarget`,
+  `RunStateTracker.Announce`/`WriteNotice`/`Forget`, the `Notice` output kind, and `ProjectSessionViewModel` (`Runner`;
+  Run and Compile go through it).
+- [ ] T122 [US7] The configuration selector (FR-063, card C-08; 1 unit). Test first: headless, in
+  `tests/NetPrints.Editor.UITests/Run/RunTargetTests.cs`, and `ProjectRunnerTests` for the build: Debug or Release next to
+  the profile button; Compile and Run pass the selection to `IRunProjectSystem.BuildAsync` and the `Project` kind's
+  `-c`; it is remembered per user and per project (US7 scenario 7). Then `RunTargetViewModel.Configurations`
+  (`RunConfigurations.All`), `Configuration` and its template (a `ComboBox` with automation id
+  `CommandBar.Configuration`).
 
-- [ ] T123 [US7] Console input and the external terminal (FR-064, research R23; 1 unit; **default pending owner**:
-  "external terminal" — the Linux detection order behind `run.linuxTerminal`, the Windows console window closing when
-  the program exits, and macOS through `open -a Terminal`). Test first: with output captured, Output shows an input
-  line that writes a line to standard input and "Close input" sends end of file (US7 scenario 6); there is no input
-  line without capture or in an external terminal; the generated POSIX `sh` script single-quotes every argument and
-  exports the environment (run through a fake terminal command); the Windows start options are unit-tested. Then the
-  input line in `src/NetPrints.Editor/Output/` and the terminal launcher, one path per OS behind one service. The
-  Windows and macOS behaviour goes on the owner's manual list.
+### Batch E5 — model: sonnet — T120, T123 — 3 units (design-heavy)
+
+- [ ] T120 [US7] Stop, the process tree and the unload prompt (FR-059, contracts/run-profiles.md §3 and §7.7, card C-09;
+  2 units; load `avalonia-xaml` for the dialog). Test first: `tests/NetPrints.Editor.Tests/Hosting/LaunchedProcessStopTests.cs`:
+  the echo tool with `ECHO_TOOL_MODE=sleep,ignore-sigterm,spawn-child` is killed with its child after
+  `run.stopTimeoutSeconds` (Linux and macOS; skipped on Windows); with `ECHO_TOOL_MODE=sleep` it exits on SIGTERM before
+  the timeout (outcome `closed`); `tests/NetPrints.Editor.Tests/Hosting/ProcessCloseRequestTests.cs`:
+  `ProcessCloseRequest.For(isWindows: true)` is the `Windows` member and its `Send` on a program with no main window
+  returns false, so `StopAsync` kills at once; in `tests/NetPrints.Editor.Tests/Hosting/ShellProjectActionsTests.cs`:
+  unloading a project with a live `Executable` run asks Leave, Stop or Cancel (US7 scenario 5): Cancel keeps the
+  project, Stop waits for the stop and then unloads, Leave unloads and the program keeps running after the session is
+  disposed (no more output lines; with the echo tool in `sleep` mode, its pid is alive after `Dispose`); the exit
+  path asks once and kills at once; a `Project`-kind run is stopped on unload without a prompt. Then
+  `ProcessCloseRequest`, `PosixSignals` (`AllowUnsafeBlocks` in `NetPrints.Editor.csproj`), `LaunchedProcess.StopAsync`,
+  `RunUnloadChoice`, `RunningProgramDialog`, `IEditorDialogs.ConfirmLeaveRunningAsync` (and its doubles
+  `RecordingDialogs` and `FakeDialogs`, which answer from a queue, `Cancel` when empty), `ProjectRunner.StopAsync`/
+  `Detach`/`Kill`/`Dispose` (card C-09), `ProjectSessionViewModel.StopAsync`/`Kill` (its `Stop()` is removed; the two
+  `session.Stop()` calls in `ProjectSessionViewModelTests` become `session.Kill()` and assert the handle's kill count),
+  `StopCommandHandler` and `ShellProjectActions`.
+- [ ] T123 [US7] Console input and the external terminal (FR-064, research R23, contracts/run-profiles.md §3 and §7.5,
+  card C-10; 1 unit; load `avalonia-xaml`, `avalonia-styling` and `avalonia-behaviors`; decided in ADR-0042). Test first: headless
+  `tests/NetPrints.Editor.UITests/BottomPanels/OutputInputTests.cs` over the echo tool in `read-line` mode: with output
+  captured, Output shows an input line that writes a line to standard input (Enter or Send) and "Close input" sends
+  end of file (US7 scenario 6); there is no input line without capture or in an external terminal; after Leave (`Forget`) the input line is gone and a
+  later run's Output panel has none until that run attaches its own handle (B-9);
+  `tests/NetPrints.Editor.Tests/Hosting/TerminalScriptTests.cs`: `TerminalScript` single-quotes every argument, `cd`s,
+  passes the environment through `env -u … NAME=VALUE …`, deletes itself and ends with the Enter read (golden text);
+  `tests/NetPrints.Editor.Tests/Hosting/TerminalLauncherTests.cs`: run through a fake terminal command
+  (`run.linuxTerminal` = `sh -c "\"$@\" </dev/null" fake-terminal`, which runs the appended `/bin/sh <script>` with
+  standard input at end of file) the echo tool writes its report to `ECHO_TOOL_OUT`; the script is mode 0700 and its
+  name ends with the current `ScriptExtension`; a missing configured program (`np-no-such-terminal -e`) gives the
+  "could not be started" message and leaves no script;
+  `tests/NetPrints.Editor.Tests/Hosting/LinuxTerminalsTests.cs` (each candidate alone, the ADR-0042 order, null when
+  nothing is on `PATH`, the exact not-found message); `TerminalStartTests` (Linux appends `/bin/sh` and the script path;
+  macOS `open -a Terminal`; `FollowsProgram` and `ScriptExtension` per member); in `ProcessLauncherTests` a handed-off
+  start raises no `ProcessExited`; in `ProjectRunnerTests` a handed-off run is detached (`NotStarted`, no live run, not
+  killed on `Dispose`); the Windows start options (no redirection, `CreateNoWindow` false, the exact
+  `ArgumentList`) through `TerminalStart.Windows`. Then the input row in
+  `src/NetPrints.Editor/Output/`, `RunStateTracker.AttachInput`/`Input`, `ITerminalLauncher`, `TerminalLauncher` (with
+  its `[Singleton<ITerminalLauncher>(Factory = "Create")]` registration, contracts/run-profiles.md §7.5),
+  `TerminalNotFoundException`, `TerminalScript`, `TerminalStart`, `LinuxTerminals`, the `ProcessLauncher(ITerminalLauncher)`
+  constructor and its `ExternalTerminal` branch, and the hand-built launchers (`ProcessLauncherTests`,
+  `CapturingProcessLauncher`) passing
+  `new TerminalLauncher(() => new RunSettings(), Path.Combine(EditorDataPaths.Resolve().StateDirectory, "terminal"))`.
+  Also `IRunningProcess.IsHandedOff`, `ITerminalLauncher.FollowsProgram`, `ProjectRunner.Start`'s hand-off, the
+  status-bar report in `ProjectSessionViewModel.RunFlowAsync`, and the `run.linuxTerminal` description in
+  `RunSettings.cs` (`[Description]`), `Strings.resx` (`Settings.run.linuxTerminal.Description`),
+  `schemas/settings.v1.schema.json` and `docs/guide/editor/settings.md`. New description text (all four copies):
+  `Linux only: the terminal command for a run in an external terminal. NetPrints appends /bin/sh and a script path, so
+  end it with an option that runs the rest of the command line (for example ptyxis --, gnome-terminal --, konsole -e,
+  xfce4-terminal -x, alacritty -e). Empty detects one`. The Windows and macOS behaviour goes on the owner's manual list:
+  Windows, the console window under Windows Terminal and conhost closes at exit and Stop works; macOS, Terminal opens
+  the `.command` file and waits for Enter; Linux spot checks on Fedora (Ptyxis), Ubuntu 24.04 (`x-terminal-emulator`)
+  and Ubuntu 26.04 (`xdg-terminal-exec` to Ptyxis).
+
+### Batch E6 — model: sonnet — T121, T125 — 3 units (design-heavy, XAML)
+
+- [ ] T121 [US7] Project settings › Run (FR-060, research R22, contracts/run-profiles.md §3 and §7.10, card C-11;
+  2 units; load `avalonia-xaml` and `avalonia-styling`). Test first: `tests/NetPrints.Core.Tests/Run/LaunchSettingsEditorTests.cs`:
+  an edit goes through `JsonNode` and keeps unknown members and property order (a byte comparison with an expected
+  file); the file's line endings are kept; and headless tests in `tests/NetPrints.Editor.UITests/Run/RunSectionTests.cs`:
+  a file with comments is read-only with "Open file", as
+  are kinds NetPrints cannot run and an NPR001 file; the argument preview shows the split list; the warning that
+  `dotnet run` resolves a relative `workingDirectory` from `Properties/`; an edit refreshes the run profile button;
+  "Open file" calls `IFolderLauncher.Open` with the file's full path. Then `LaunchSettingsEditor.cs` (Workspace),
+  `RunSectionViewModel` and `RunProfileEditorViewModel` (built by `ProjectSettingsDocumentViewModel`, card C-11),
+  `RunSectionView.axaml` in `ProjectSettingsView.axaml`, and `IFolderLauncher.Open` (in `ShellFolderLauncher` and in the
+  two `RecordingFolders` doubles of Editor.Tests).
+- [ ] T125 [US4] The Godot profiles, the run profiles guide and the CLI reference (FR-065, US4 scenario 7, FR-116; no
+  card: tests and docs; 1 unit). Test first: `tests/NetPrints.Core.Tests/Run/GodotProfilesTests.cs` over
+  `tests/Fixtures/RunProfiles/GodotCopy/` (a plain library `GodotCopy.csproj`,
+  `<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>`,
+  and a byte copy of the template's `Properties/launchSettings.json`; not in `NetPrints.slnx`), read from the checkout
+  through `LocalSdkLayout.FindRepositoryRoot()`: both profiles resolve with `GODOT4` set to a stub file and fail with
+  NPR005 when it is unset; `GodotTemplateTests.TheLaunchProfilesMatchTheRunFixture` (new file
+  `extensions/NetPrints.Godot/tests/NetPrints.Godot.Tests/GodotTemplateTests.cs`, run in the Godot job) compares the
+  UTF-8 bytes of the template file `Properties/launchSettings.json` from `GodotTemplate.Create().Files` with the bytes
+  of the copy, whose path it reads from the `AssemblyMetadataAttribute` with key `RunFixtureLaunchSettings` that
+  `NetPrints.Godot.Tests.csproj` adds next to `ExtensionFolder`, with the value
+  `$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)/../../../../tests/Fixtures/RunProfiles/GodotCopy/Properties/launchSettings.json'))`;
+  a headless test in
+  `tests/NetPrints.Editor.UITests/Run/GodotProfilesUiTests.cs` copies `GodotCopy` to a temp folder and opens it: the
+  run profile button lists the game and the Godot editor profiles, Run is enabled on the library, and with `GODOT4`
+  unset Run writes NPR005 and starts no build (US4 scenario 7); a new guard `[Fact] NoGodotSpecificCodeInSources` in
+  `tests/NetPrints.Core.Tests/Core/SourceHygieneTests.cs` finds no `godot` (`OrdinalIgnoreCase`) in any `src/**/*.cs`,
+  `*.axaml` or `*.resx` file and lists the offending files in its message (a guard: green when written, so it is not
+  written red first). Then `docs/guide/run-profiles.md` (the kinds, resolution, the NPR table, the per-profile
+  options, the `workingDirectory` difference from `dotnet run`, the limits of contracts/run-profiles.md §3, and an
+  "External terminal" section with ADR-0042's per-OS table (command, window lifetime, what NetPrints follows) and the
+  `run.linuxTerminal` examples), the line
+  `Run profiles are described in [Run profiles](run-profiles.md).` under `## NPR: run profiles` in
+  `docs/guide/diagnostics.md`, and the `build` and `run` sections of `docs/guide/cli.md` (NPR lines go to stderr).
+
+### Batch E7 — model: sonnet — T124, T126 — 1 unit + gate (mechanical)
+
 - [ ] T124 [US7] The `RunExecutableProfile` E2E (SC-008, FR-118; 1 unit).
-  `tests/NetPrints.Desktop.E2ETests/Scenarios/RunExecutableProfileTests.cs`: a fixture `Executable` profile starts the
-  echo tool, which prints its argv, working directory and one environment variable and reads a line from standard
-  input; the test types a line in Output and sees it echoed.
-- [ ] T125 [US4] The Godot profiles, the run profiles guide and the CLI reference (FR-065, US4 scenario 7, FR-116; 1
-  unit). Test first: the Godot template's profiles (`extensions/NetPrints.Godot`, run in the Godot job) resolve with
-  `GODOT4` set to a stub and fail with NPR005 when it is unset; a headless test opens a project created from a copy of
-  the template's files in `tests/Fixtures/RunProfiles/`: it builds, and the run profile button lists the game and the
-  Godot editor profiles (US4 scenario 7); a test over `src/` finds no Godot-specific code. Then
-  `docs/guide/run-profiles.md` (the kinds, resolution, the NPR table, the per-profile options, the `workingDirectory`
-  difference from `dotnet run`) and the `run` section of `docs/guide/cli.md`.
-- [ ] T126 **Checkpoint E**. Whole suite plus the E2E pass; CI green, including `CLI (Windows)`. Report the plan's gate
-  E: SC-008 (the round-trip case count, the resolver fixtures with identical editor and CLI requests,
-  `RunExecutableProfileTests`); the owner's manual list (external terminals on Windows and macOS, Stop on Windows); the
-  longest CI job; the Dock check. Docs updated: the run profiles guide, `cli.md`, the diagnostics guide, the release
-  notes.
+  `tests/NetPrints.Desktop.E2ETests/Scenarios/RunExecutableProfileTests.cs`: before start, the test writes the
+  HelloWorld copy's `Properties/launchSettings.json` with one `Executable` profile: `executablePath` =
+  `RunFixtures.DotnetHost()`, `commandLineArgs` = `CommandLineSplitter.Join([RunFixtures.EchoToolDll()])`, then a
+  space and `alpha "b c"`,
+  `workingDirectory` = `work` (created), `environmentVariables` =
+  `{ "NETPRINTS_ECHO": "e2e", "ECHO_TOOL_MODE": "read-line" }`. The test presses F5, waits for Output lines `argv[0]=alpha`, `argv[1]=b c` (the host consumes the DLL path), `cwd=<…>/work`,
+  `env:NETPRINTS_ECHO=e2e`, types `hello` in `Output.Input`, presses Enter and sees `stdin=hello`.
+- [ ] T126 **Checkpoint E**. Whole suite plus the E2E pass; CI green, and the `CLI (Windows)` workflow green on the last
+  commit that touched `src/NetPrints.Cli`. Report the plan's gate E: SC-008 (the round-trip case count, the
+  `RunProfileCases` count with the resolver, CLI and editor tests green, `RunExecutableProfileTests`); the owner's
+  manual list (external terminals on Windows and macOS, Stop on Windows with a GUI program, Leave with a real engine);
+  the longest CI job; the Dock check. Docs updated: the run profiles guide, `cli.md`, the diagnostics guide, the
+  release notes ("Unreleased": run profiles, the configuration selector, `-c`, `--launch-profile`, `--no-launch-profile`).
 
 ### Batch E-R — no batch (T127 merged into T153)
 
@@ -1437,14 +1583,14 @@ batch runs after sub-phase H (Checkpoint H, T169).
 | C2 — facets and the publish gate | 19 (T060–T078) | C2a 4, C2b 4, C2c 4, C2d 3, C2e 4, C2f 3 = 22 | C2-R (T077), C2-F (T078) |
 | D1 — extension host in the editor | 22 (T079–T098, T173, T175); T099, T100 merged | D1a 4, D1b 5, D1c 4, D1d 4, D1e 4, D1f 3, D1g 4 = 28 | into D2-R, D2-F (D1+D2) |
 | D2 — author kit and the Godot sample | 12 (T101–T112) | D2a 4, D2b 4, D2c 4, D2d 3 = 15 | D2-R (T111), D2-F (T112) |
-| E — run and build | 14 (T113–T126); T127, T128 merged | E1 4, E2 3, E3 4, E4 3, E5 3 = 17 | into G-R, G-F (E+F+G) |
+| E — run and build | 14 (T113–T126); T127, T128 merged | E1 2, E2 2, E3 3, E4 3, E5 3, E6 3, E7 1 = 17 | into G-R, G-F (E+F+G) |
 | F — command line and the C# target in the editor | 6 (T129–T133, T172); T134, T135 merged | F1 3, F2 4 = 7 | into G-R, G-F (E+F+G) |
 | G — tail | 15 (T136–T146, T170, T174, T153, T154) | G1 4, G2 4, G3 5, G4 5 = 18 | G-R (T153), G-F (T154) |
 | H — NuGet packages | 12 (T158–T169) | H1 4, H2 5, H3 5, H4 4 = 18 | into PR-R, PR-F (the final checkpoint) |
 | Release preparation, final review and merge | 9 (T147–T152, T155–T157) | PR-P carries 5 units of release preparation | PR-P, PR-R, PR-F, PR-M |
-| **Total** | **164 active of 175 IDs** (10 merged; T172–T175 added by Review C1+C2) | **50 batches, 194 units** (+5 units in PR-P = 199) | **12 batches** (4 review, 4 fix, PR-P, PR-R, PR-F, PR-M) |
+| **Total** | **164 active of 175 IDs** (10 merged; T172–T175 added by Review C1+C2) | **52 batches, 194 units** (+5 units in PR-P = 199) | **12 batches** (4 review, 4 fix, PR-P, PR-R, PR-F, PR-M) |
 
-62 batches in all (54 after S2d and A2, 68 before S2d). The units refine plan.md's first estimate per sub-phase, and its
+64 batches in all (62 before the sub-phase E contracts, 54 after S2d and A2, 68 before S2d). The units refine plan.md's first estimate per sub-phase, and its
 table carries them: A 19 (was 16: the M5 spike and the carry-overs are sized separately), B 26 (25), D1 26 (25), D2 15
 (14); C1, C2, E, F and G are unchanged; H (18) is new in S2e. The total, 195 units, is the plan's "about 195". Five
 review checkpoints replace the nine per-sub-phase reviews; T170 (Checkpoint G) has a higher ID than H's tasks because
@@ -1628,7 +1774,7 @@ counts".
 `speckit-analyze` ran again over spec.md, plan.md and this file (with the constitution, research.md, data-model.md,
 quickstart.md and the contracts as references) after US12, US16 and US17 came back and the version moved to 0.4.0.
 Result: 0 CRITICAL, 0 HIGH, 6 MEDIUM and 8 LOW findings. No constitution conflict. Every active FR (105) and SC (15)
-has a task; every task ID T001–T170 exists once; each batch header's units equal its tasks' units (50 implementation
+has a task; every task ID T001–T170 exists once; each batch header's units equal its tasks' units (52 implementation
 batches, 190 units); no task serves a P3c item.
 
 Fixed in the same commit:

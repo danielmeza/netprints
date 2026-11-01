@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "Game": { "commandName": "Project" },
+    "Other": { "commandName": "Project" },
+    "game": { "commandName": "Executable", "executablePath": "tool" }
+  }
+}

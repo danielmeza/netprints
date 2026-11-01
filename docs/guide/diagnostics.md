@@ -12,6 +12,7 @@ This page lists every code. The tests keep it in step with the sources: a code t
 | NPE | The editor |
 | NPI | The repository's internal source generators (NetPrints' own source, not shipped) |
 | NPK | The extension test kit's conformance checks (`NetPrints.Extensibility.Testing`) |
+| NPR | Run profiles: reading `Properties/launchSettings.json` and resolving a profile (the editor and `netprints run`) |
 | NPS | The repository style analyzers (NetPrints' own source, not shipped) |
 | NPT | The translator and the code generator |
 | NPW | The project system (project evaluation and restore) |
@@ -128,6 +129,22 @@ The conformance suite of [`NetPrints.Extensibility.Testing`](extensions.md) repo
 | NPK015 | error | An editor contribution id does not start with the extension id, a label has neither a default text nor a string resource, a gesture does not parse back to itself or has no modifier on a global command, or an icon id is not the extension id, a dot and a name that a view resource defines. |
 | NPK016 | error | A `.axaml` view of the extension holds a colour literal outside a theme dictionary or a `FontSize` or `FontFamily` literal. |
 | NPK017 | error | The extension references a NetPrints type or member that the host does not have. Reported by `netprints extension verify`, not by the conformance suite; each missing member is listed with the extension type that references it. |
+
+## NPR: run profiles
+
+| Code | Severity | Cause |
+|---|---|---|
+| NPR001 | error | `Properties/launchSettings.json` is not valid JSON or does not have the launch settings shape; Run is disabled for the project and `netprints run` exits 1. |
+| NPR002 | error | Two profile names differ only by case; as NPR001. |
+| NPR003 | error | The profile's `commandName` is a kind NetPrints cannot run (`IISExpress`, `Docker`, `WSL2`, …); it is listed disabled, and `netprints run --launch-profile` exits 2. |
+| NPR004 | error | `netprints run --launch-profile` names no profile of the file; exit 2. |
+| NPR005 | error | A `%NAME%` in `executablePath` or `workingDirectory` is not set; the run stops before the build. |
+| NPR006 | error | A `$(Name)` the project does not define, in `executablePath` or `workingDirectory` (error, the run stops before the build) or in the arguments or environment (warning, the text stays). |
+| NPR007 | warning | A `%NAME%` in the arguments or environment is not set; the text stays as written. |
+| NPR008 | error | The executable was not found (or `executablePath` is empty); the run stops before the build. |
+| NPR009 | error | On Windows, a `.cmd` or `.bat` executable is refused, because `cmd.exe` parses the arguments again. |
+| NPR010 | error | A macOS `.app` bundle names no executable in `Contents/Info.plist`; the run stops before the build. |
+| NPR011 | error | A `Project` profile on a project that is not an executable; it is listed disabled, and `netprints run --launch-profile` exits 2. |
 
 ## NPS: repository style
 

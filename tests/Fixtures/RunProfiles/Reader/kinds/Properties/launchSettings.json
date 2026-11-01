@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "Web": { "commandName": "IISExpress" },
+    "Lower": { "commandName": "project" },
+    "Box": { "commandName": "Docker" },
+    "Tool": { "commandName": "Executable", "executablePath": "tool" },
+    "Game": { "commandName": "Project" }
+  }
+}

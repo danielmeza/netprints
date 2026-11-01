@@ -11,7 +11,8 @@ public interface IProcessLauncher
     /// <param name="request">The process to start, typically <see cref="IProjectSystem.GetRunCommand"/>'s
     /// result (project-system.md §4).</param>
     /// <param name="cancellationToken">Cancelling it kills the process and its child processes; a token that is already cancelled kills the process right after it starts.</param>
-    void Start(ProcessStartRequest request, CancellationToken cancellationToken = default);
+    /// <returns>The handle of the started process.</returns>
+    IRunningProcess Start(ProcessStartRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// One line of a started process's stdout or stderr, or a status line ("Process exited (code

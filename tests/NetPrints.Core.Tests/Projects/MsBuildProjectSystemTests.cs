@@ -370,5 +370,125 @@ namespace NetPrints.Tests.Projects
                 Directory.Delete(directory, recursive: true);
             }
         }
+
+        private sealed class AnsweringProcessRunner : IProcessRunner
+        {
+            public List<ProcessStartRequest> Requests { get; } = [];
+
+            public Task<ProcessResult> RunAsync(ProcessStartRequest request, CancellationToken cancellationToken)
+            {
+                Requests.Add(request);
+                return Task.FromResult(new ProcessResult(0, string.Empty, string.Empty));
+            }
+        }
+
+        private static string CopyFixture(string name, string? extraProperty = null)
+        {
+            string source = Path.Combine(AppContext.BaseDirectory, "Fixtures", "CSharpTarget", name);
+            string directory = Directory.CreateTempSubdirectory($"netprints-mbps-eval-{name}-").FullName;
+            foreach (string file in Directory.EnumerateFiles(source))
+            {
+                File.Copy(file, Path.Combine(directory, Path.GetFileName(file)));
+            }
+
+            string project = Path.Combine(directory, $"{name}.csproj");
+            if (extraProperty is not null)
+            {
+                File.WriteAllText(project, File.ReadAllText(project).Replace("</PropertyGroup>", extraProperty + "</PropertyGroup>", StringComparison.Ordinal));
+            }
+
+            return project;
+        }
+
+        [Fact]
+        public async Task EvaluatePropertiesAsyncGivesTheConfigurationsOutputPaths()
+        {
+            string project = CopyFixture("Latest");
+            try
+            {
+                MsBuildProjectSystem system = NewSystem();
+                string[] names = ["TargetPath", "Configuration", "ProjectDir", "TargetDir", "OutDir", "TargetFramework"];
+
+                IReadOnlyDictionary<string, string> release = await system.EvaluatePropertiesAsync(project, "Release", names, TestContext.Current.CancellationToken);
+                IReadOnlyDictionary<string, string> debug = await system.EvaluatePropertiesAsync(project, "Debug", names, TestContext.Current.CancellationToken);
+
+                Assert.Contains(Path.Combine("bin", "Release") + Path.DirectorySeparatorChar, release["TargetPath"], StringComparison.Ordinal);
+                Assert.Equal("Release", release["Configuration"]);
+                Assert.Equal("net10.0", release["TargetFramework"]);
+                Assert.Equal(names.Length, release.Count);
+                Assert.True(release["ProjectDir"].EndsWith(Path.DirectorySeparatorChar), release["ProjectDir"]);
+                Assert.Contains(Path.Combine("bin", "Debug") + Path.DirectorySeparatorChar, debug["TargetPath"], StringComparison.Ordinal);
+                Assert.Equal(release["Configuration"], release["configuration"]);
+            }
+            finally
+            {
+                Directory.Delete(Path.GetDirectoryName(project) ?? project, recursive: true);
+            }
+        }
+
+        [Fact]
+        public async Task EvaluatePropertiesAsyncOmitsAnUndefinedNameAndKeepsADefinedEmptyOne()
+        {
+            string project = CopyFixture("Latest", "<NpEmptyProperty></NpEmptyProperty>");
+            const string environmentOnly = "NP_ENVIRONMENT_ONLY_EVAL";
+            Environment.SetEnvironmentVariable(environmentOnly, "from-environment");
+            try
+            {
+                IReadOnlyDictionary<string, string> values = await NewSystem().EvaluatePropertiesAsync(
+                    project, "Debug", ["NpEmptyProperty", "NpNeverDefined", environmentOnly, string.Empty], TestContext.Current.CancellationToken);
+
+                Assert.Equal(string.Empty, values["NpEmptyProperty"]);
+                Assert.False(values.ContainsKey("NpNeverDefined"));
+                Assert.False(values.ContainsKey(environmentOnly));
+                Assert.Single(values);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(environmentOnly, null);
+                Directory.Delete(Path.GetDirectoryName(project) ?? project, recursive: true);
+            }
+        }
+
+        [Fact]
+        public async Task EvaluatePropertiesAsyncUsesTheFirstFrameworkOfAMultiTargetingProject()
+        {
+            string project = CopyFixture("MultiTarget");
+            try
+            {
+                IReadOnlyDictionary<string, string> values = await NewSystem().EvaluatePropertiesAsync(
+                    project, "Release", ["TargetFramework", "Configuration"], TestContext.Current.CancellationToken);
+
+                Assert.False(string.IsNullOrEmpty(values["TargetFramework"]));
+                Assert.Equal("Release", values["Configuration"]);
+            }
+            finally
+            {
+                Directory.Delete(Path.GetDirectoryName(project) ?? project, recursive: true);
+            }
+        }
+
+        [Fact]
+        public async Task BuildAsyncWithAConfigurationInsertsItAfterTheProjectPath()
+        {
+            string directory = Directory.CreateTempSubdirectory("netprints-mbps-buildc-").FullName;
+            try
+            {
+                string project = Path.Combine(directory, "Cfg.csproj");
+                File.WriteAllText(project, "<Project />");
+                var runner = new AnsweringProcessRunner();
+                MsBuildProjectSystem system = NewSystem(runner);
+
+                await system.BuildAsync(project, "Release", TestContext.Current.CancellationToken);
+                await system.BuildAsync(project, TestContext.Current.CancellationToken);
+
+                Assert.Equal(["build", project, "-c", "Release"], runner.Requests[0].Arguments.Take(4));
+                Assert.Equal(["build", project, "-nologo"], runner.Requests[1].Arguments.Take(3));
+                Assert.DoesNotContain("-c", runner.Requests[1].Arguments);
+            }
+            finally
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
     }
 }
