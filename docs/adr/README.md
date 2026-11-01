@@ -50,6 +50,7 @@ instead.
 - [0039: User attributes and their editor extension model](0039-user-attributes-and-editor-extension-model.md)
 - [0040: Editor settings: one store, typed sections, generated pages and user key bindings](0040-editor-settings-pages-and-key-bindings.md)
 - [0041: Extension packages, `netprints extension verify` and the author workflow](0041-extension-packages-and-verify.md)
+- [0042: Run in external terminal](0042-external-terminal.md)
 
 Numbers 0026 and 0032 are reserved by the roadmap for ADRs not yet written (node kinds,
 graph rules); 0031 and later were written first. Declarative pins

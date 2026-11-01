@@ -471,10 +471,9 @@ ADR-0031, ADR-0033 to ADR-0040.
   starts the program in a new terminal window: on Linux and macOS NetPrints writes a POSIX `sh` script to
   `<state>/terminal/<start id>-<8 random hex>.sh` (mode 0700; it deletes itself first; single-quoted arguments, `cd`,
   the environment through `env -u NAME … NAME=VALUE …`, a final "Press Enter to close" read) and starts
-  it through the terminal command (`run.linuxTerminal`, default: the first of `x-terminal-emulator -e`,
-  `gnome-terminal --`, `konsole -e`, `xfce4-terminal -x`, `xterm -e` found on `PATH`; macOS: `open -a Terminal`); on
-  Windows the program is started with a new console window and no redirection, and the window closes when the program
-  exits. The configuration selector (Debug, Release) sits next to the run profile button; build and run use it; it is
+  it through the terminal command (`run.linuxTerminal`, default: the ADR-0042 detection order; macOS:
+`open -a Terminal`); Linux and macOS hand the run off at once; on Windows the program is started with a new console
+window and no redirection, NetPrints follows it, and the window closes when the program exits (ADR-0042). The configuration selector (Debug, Release) sits next to the run profile button; build and run use it; it is
   remembered per user and per project; the CLI keeps `-c`.
 - **Rationale**: FR-063, FR-064; the script keeps the argument list exact without a shell parse on our side.
 - **Alternatives rejected**: `cmd /k` on Windows (re-parses the arguments, the FR-056 reason); a pseudo-terminal in
