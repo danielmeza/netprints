@@ -2434,3 +2434,65 @@ Docs only; base 82424520, branch `p3-e-run-build`.
   the contract's text was at fault, not the batch.
 - Decisions (delegated): none.
 - Slips: none.
+
+## Batch CI-U26 (E2E on ubuntu-26.04)
+Base c1cbc962, branch `p3-e-run-build`; fix in 23be9747. `ubuntu-latest` moved from `ubuntu-24.04` to `ubuntu-26.04`
+(image 20261025.179.1) and three Desktop E2E tests timed out after F7 or F2.
+
+- Cause: the E2E driver, not the runner's X server, not Avalonia and not the editor. xkeyboard-config 2.46 (`xkb-data`
+  2.46; 24.04 has 2.41) adds `map[Alt] = Level1` and `map[Control] = Level1`, with their `preserve` lines, to the
+  `CTRL+ALT` key type of F1 to F12. `xdotool` 3.20160805 (the same upstream version on both images) reads a key name
+  through `_xdo_populate_charcode_map`, which takes the first active map entry for a level as the modifier that level
+  needs (`xdo.c`, lines 1320 to 1325). So `xdotool key F7` now presses Alt_L too and the client gets Alt+F7, which is
+  bound to nothing. The hypothesis in the batch brief was half wrong: function keys do reach the editor, with Alt added.
+- Evidence, on a rootless `ubuntu:26.04` container with the packages of the `Install X11 tools` step:
+  - `xev` under Xvfb and openbox, 37 chords on each of 24.04 and 26.04: the only rows that differ are F1 to F12,
+    Shift+F5 and Ctrl+F5. `F7` gives `Alt_L, F7 state 0x8` on 26.04 and `F7 state 0x0` on 24.04. Every other key the
+    driver sends (Return, Escape, Tab, space, BackSpace, Delete, arrows, Ctrl and Ctrl+Shift letters) is the same.
+  - `xkbcomp` dump of the two servers: the `CTRL+ALT` type is the only meaningful difference, and F1 to F12 plus the
+    four keypad operators are the only keys of that type.
+  - Causality: deleting the `map[Alt]` line from the live 26.04 keymap moves the stray modifier to `Control`, the next
+    Level1 entry (F7 `state 0x4`). Adding the `map[Alt]` lines to a 24.04 server gives `state 0x8` there.
+  - A key code gets `modmask = 0` in `xdotool`: `xdotool key 73` gives `F7 state 0x0` on 26.04.
+- Why these three and no others: they are the only tests that press a bare function key
+  (`KeyboardOnlyTests`, `EventEntryInspectorTests`, `TreeInlineRenameTests`). `EditCompileAndRun` compiles through the
+  pointer. `Alt+F4` still worked because Alt was meant to be there. `GuideScreenshotTests` presses F2 and F7 but is
+  explicit, so neither the green nor the red run executed it; it says nothing either way and would have failed the same
+  way, as it goes through the same driver.
+- `wait for worker`: a consequence, not a second problem. With one worker, the 270 s of timeouts held up everything
+  queued behind them. Median 112.8 s on master, 212.1 s in the failed run, 89.5 s in the green 26.04 run. Job duration
+  11m 04s, 16m 46s and 9m 03s. Steps of at least 1 s run at a median of 0.77 times their master time, so the new runner
+  is not slower.
+- Fix: `X11Driver.KeyOf` sends a function key as its key code, read from the server by the new `XKeymap.KeycodeOf`
+  (`XKeysymToKeycode`), so `F7` becomes `73`, `Shift+F5` becomes `shift+71`. `FunctionKeyTests` runs `xev` on a private
+  server and checks the modifier state of F7, F2 and Shift+F5. It adds the `map[Alt]` entry to any keymap that lacks
+  it, so it fails without the fix on every host. Nothing changed in `src/`.
+- Decision: asking the server rather than keeping a table of evdev key codes, so no key code number is written in the
+  code. Rejected: a table (assumes the keycode set); loading an edited keymap into Xvfb (tests would no longer run on
+  the keymap users have); replacing `xdotool` with direct XTest calls for all input (a far larger change for one key
+  family); sending every key by code (the `9` of Escape would be read as the key symbol `9`, and only this key type
+  needs it). The four keypad operators share the type, but the driver never sends them.
+- Not a product bug: a real key press has no reason to carry Alt, and the fix sends F7 the way a keyboard does, by key
+  code with no modifier. The editor then builds, runs and stops on F7, F5 and Shift+F5 and renames on F2, on the 26.04
+  keymap. Only tools that synthesize keys through `xdotool`'s name lookup are affected. Limit of that evidence: it is X11
+  under Xvfb with XTest input; a Wayland session and a hardware keyboard on Ubuntu 26.04 were not tried.
+- Runs, red then green. The fix was written after the red runs.
+  - Red, c1cbc962 on 26.04: the three classes, 3 of 3 failed, with the waits CI reports.
+  - Red, `FunctionKeyTests` without the fix: expected `0x0`, actual `0x8` on 26.04 and on 24.04.
+  - Green, with the fix: `FunctionKeyTests` 1 of 1 on both; with `TreeInlineRenameTests`, 2 of 2 on 26.04.
+- Gates:
+  - `dotnet build NetPrints.slnx -c Release`: 0 warnings, 0 errors.
+  - `dotnet format NetPrints.slnx --verify-no-changes --no-restore`: exit 0.
+  - E2E on 24.04 with `--fail-skips on`: total 57, 56 passed, 0 failed, 1 skipped (the explicit guide test), 3m 05s.
+  - E2E on the 26.04 container, one worker, 4 CPUs: 57, 56 passed, 0 failed, 0 skipped, 1 not run, 615 s.
+  - CI run 41276416816 on 23be9747, image `ubuntu-26.04` 20261025.179.1: all jobs green, E2E 57 total, 56 passed,
+    0 failed, 1 skipped.
+- Slips:
+  - The first `xev` probes were wrong: truncating the log under `xev` made it binary, a bare `F4` became Alt+F4 and
+    closed `xev`, and a `grep -A1` missed the state line. Results were taken only from the corrected probe.
+  - `FunctionKeyTests` first failed on 24.04 on its own guard, not on the cause: `xkbcomp` drops a base level entry that
+    preserves nothing. Fixed before the red run counted, by adding the `preserve` line.
+  - The first container run used `dotnet test` switches the test executable does not accept, and one local run started
+    outside the repository, so `global.json` did not select the runner. Both stopped at once and changed nothing.
+  - The harness allows display numbers 100 to 199, so test runs on this machine used 180 and up, not a number above 300.
+    The manual probes used 351. Containers have their own displays.
