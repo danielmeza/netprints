@@ -1099,9 +1099,7 @@ C-11). Record any deviation from a card in implementation-notes under the batch'
   `session.Stop()` calls in `ProjectSessionViewModelTests` become `session.Kill()` and assert the handle's kill count),
   `StopCommandHandler` and `ShellProjectActions`.
 - [ ] T123 [US7] Console input and the external terminal (FR-064, research R23, contracts/run-profiles.md §3 and §7.5,
-  card C-10; 1 unit; load `avalonia-xaml`, `avalonia-styling` and `avalonia-behaviors`; decided in ADR-0042 (add
-  `docs/adr/0042-external-terminal.md` from `.agent-archive/2026-10-19-p3-terminal-default/audit.md` and its line in
-  `docs/adr/README.md`)). Test first: headless
+  card C-10; 1 unit; load `avalonia-xaml`, `avalonia-styling` and `avalonia-behaviors`; decided in ADR-0042). Test first: headless
   `tests/NetPrints.Editor.UITests/BottomPanels/OutputInputTests.cs` over the echo tool in `read-line` mode: with output
   captured, Output shows an input line that writes a line to standard input (Enter or Send) and "Close input" sends
   end of file (US7 scenario 6); there is no input line without capture or in an external terminal; after Leave (`Forget`) the input line is gone and a

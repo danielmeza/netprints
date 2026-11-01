@@ -3,8 +3,7 @@
 ## Status
 
 Accepted, 2026-10-19 (P3 sub-phase E, T123; `specs/006-editor-extension-host/` research R23, FR-056, FR-064). Decided
-by the coordinating session under the owner's delegation, after a research report and its adversarial audit
-(`.agent-archive/2026-10-19-p3-terminal-default/`). It replaces R23's draft detection order.
+by the coordinating session under the owner's delegation, after a research report and its adversarial audit. It replaces R23's draft detection order.
 
 ## Context
 

@@ -2429,7 +2429,8 @@ Docs only; base 82424520, branch `p3-e-run-build`.
   nothing; `git diff --name-only 82424520` lists only `specs/006-editor-extension-host/`, `docs/adr/` and
   `.specify/memory/roadmap.md`; `dotnet build NetPrints.slnx -c Release` gives 0 warnings and 0 errors; the Editor.Tests
   docs, guide and hygiene filter selected 39 tests: 39 passed, 0 failed, 0 skipped.
-- The staged-diff path check printed two lines, both from the contract text itself and left as written: the T123 task in
-  `tasks.md` and the Status section of ADR-0042 name `.agent-archive/2026-10-19-p3-terminal-default/`.
+- The staged-diff path check printed two lines, both from the contract text itself: the T123 task in `tasks.md` and the
+  Status section of ADR-0042 named a local working folder outside the repository. Batch E0-F removed both references;
+  the contract's text was at fault, not the batch.
 - Decisions (delegated): none.
 - Slips: none.
