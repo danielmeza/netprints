@@ -37,4 +37,10 @@ internal static partial class Log
     /// <param name="logger">Logger to write to.</param>
     [LoggerMessage(EventId = 4005, Level = LogLevel.Warning, Message = "No MSBuild instance found; MSBuild-dependent project system features are unavailable")]
     public static partial void NoMsBuildInstanceFound(ILogger logger);
+
+    /// <summary>Logs 4007: the registration added or overwrote these environment variables (<see cref="MsBuildRegistration.Variables"/>).</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="names">The variable names, comma separated.</param>
+    [LoggerMessage(EventId = 4007, Level = LogLevel.Debug, EventName = "MsBuildVariablesRecorded", Message = "MSBuild registration set environment variables: {Names}")]
+    public static partial void MsBuildVariablesRecorded(ILogger logger, string names);
 }

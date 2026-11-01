@@ -1,5 +1,7 @@
 #nullable enable
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Microsoft.Build.Locator;
@@ -33,6 +35,12 @@ public static class MsBuildRegistration
     public static VisualStudioInstance? RegisteredInstance { get; private set; }
 
     /// <summary>
+    /// The environment variables the registration that this process performed added or overwrote, with their earlier values
+    /// (<see cref="MsBuildVariable"/>). Empty until a call registers; set once by that call, and unchanged by later ones.
+    /// </summary>
+    public static IReadOnlyList<MsBuildVariable> Variables { get; private set; } = [];
+
+    /// <summary>
     /// Ensures an MSBuild instance is registered with <see cref="MSBuildLocator"/>: the newest Visual
     /// Studio instance <see cref="MSBuildLocator.QueryVisualStudioInstances()"/> reports, or (when none
     /// is found) whatever <see cref="MSBuildLocator.RegisterDefaults"/> resolves, typically the
@@ -61,17 +69,20 @@ public static class MsBuildRegistration
         VisualStudioInstance? instance = MSBuildLocator.QueryVisualStudioInstances()
             .OrderByDescending(candidate => candidate.Version)
             .FirstOrDefault();
+        Dictionary<string, string> before = SnapshotEnvironment();
 
         if (instance is not null)
         {
             MSBuildLocator.RegisterInstance(instance);
             RegisteredInstance = instance;
+            RecordVariables(before, logger);
             return true;
         }
 
         try
         {
             RegisteredInstance = MSBuildLocator.RegisterDefaults();
+            RecordVariables(before, logger);
             return true;
         }
         catch (InvalidOperationException)
@@ -79,5 +90,25 @@ public static class MsBuildRegistration
             Log.NoMsBuildInstanceFound(logger);
             return false;
         }
+    }
+
+    private static void RecordVariables(Dictionary<string, string> before, ILogger logger)
+    {
+        Variables = MsBuildVariable.Between(before, SnapshotEnvironment());
+        Log.MsBuildVariablesRecorded(logger, string.Join(", ", Variables.Select(variable => variable.Name)));
+    }
+
+    private static Dictionary<string, string> SnapshotEnvironment()
+    {
+        var snapshot = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
+        {
+            if (entry.Key is string name && entry.Value is string value)
+            {
+                snapshot[name] = value;
+            }
+        }
+
+        return snapshot;
     }
 }

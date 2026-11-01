@@ -997,7 +997,7 @@ C-11). Record any deviation from a card in implementation-notes under the batch'
   `StopAsync` and `Kill`, each with a count) and `ControlledLauncher` (Editor.UITests `Shell/RegistrySurfaceTests.cs`,
   whose `Start` keeps throwing `NotSupportedException` with the new return type). `StopAsync` is a stub that calls
   `Kill` until T120.
-- [ ] T117 [US7] The MSBuild variable record (FR-057, contracts/run-profiles.md §7.6, card C-03; 1 unit). Test first:
+- [x] T117 [US7] The MSBuild variable record (FR-057, contracts/run-profiles.md §7.6, card C-03; 1 unit). Test first:
   `tests/NetPrints.Core.Tests/Run/MsBuildVariableTests.cs`: `Between` reports an added variable with `PriorValue`
   null, a changed one with its earlier value, ignores an unchanged one, and compares names case-insensitively only on
   Windows (a parameter of the comparison, so both branches run on Linux); after the test assembly's registration,
